@@ -91,7 +91,8 @@ function catalogView(){
   <div class="card catalog-footer"><b>Un exercice = une référence unique.</b><p>Ses performances pourront ensuite être comparées d’une séance à l’autre.</p></div>
  </section>`;
 }
-function catalogRows(items){return items.map((e,i)=>`<div class="card catalog-item" data-exercise="${i}"><div class="exercise-glyph">${e.g}</div><div><h3>${e.n}</h3><p>${e.m}</p><div class="tags">${e.t.map(x=>`<span class="tag">${x}</span>`).join("")}</div></div><div class="chev">›</div></div>`).join("")}
+function slugify(s){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
+function catalogRows(items){return items.map((e,i)=>`<div class="card catalog-item" data-route="exercise-${slugify(e.n)}"><div class="exercise-glyph">${e.g}</div><div><h3>${e.n}</h3><p>${e.m}</p><div class="tags">${e.t.map(x=>`<span class="tag">${x}</span>`).join("")}</div></div><div class="chev">›</div></div>`).join("")}
 function bindCatalog(){
  const input=document.querySelector("#exerciseSearch"); if(!input)return;
 let activeFilter="Tous";
@@ -100,11 +101,85 @@ let activeFilter="Tous";
  document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");activeFilter=c.dataset.filter||"Tous";refresh();}));
 }
 
+
+function chestPressDetail(){
+ return `<section class="page">
+  <div class="exercise-detail-head">
+    <button class="backbtn" data-route="new">‹</button>
+    <div class="exercise-detail-title"><h1>Chest Press</h1><p>Pectoraux · triceps · machine guidée</p></div>
+    <button class="favorite-btn" aria-label="Favori">♡</button>
+  </div>
+
+  <div class="card exercise-hero">
+    <div class="exercise-hero-main">
+      <div class="exercise-hero-icon">🏋️</div>
+      <div><h2>Chest Press</h2><div class="sub">Mouvement de poussée pour le haut du corps</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><b>Machine</b><span>Matériel</span></div>
+      <div class="metric"><b>kg + reps</b><span>Mesure</span></div>
+      <div class="metric"><b>Poussée</b><span>Famille</span></div>
+    </div>
+  </div>
+
+  <div class="info-section"><h2>Muscles sollicités</h2>
+    <div class="card info-card"><div class="muscle-tags"><span class="muscle-tag">Pectoraux</span><span class="muscle-tag">Triceps</span><span class="muscle-tag">Épaules</span></div></div>
+  </div>
+
+  <div class="info-section"><h2>Exécution</h2>
+    <div class="card info-card">
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><p>Règle le siège pour que les poignées arrivent à hauteur du milieu de la poitrine.</p></div>
+        <div class="step"><div class="step-num">2</div><p>Garde le dos et les omoplates en appui contre le dossier.</p></div>
+        <div class="step"><div class="step-num">3</div><p>Pousse sans verrouiller brutalement les coudes, puis reviens lentement.</p></div>
+        <div class="step"><div class="step-num">4</div><p>Conserve un mouvement fluide et contrôlé sur toute l’amplitude confortable.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-section"><h2>Ta référence actuelle</h2>
+    <div class="card progress-preview">
+      <div class="progress-preview-top"><h3>Dernière référence</h3><span class="trend">Point de départ</span></div>
+      <div class="last-performance">
+        <div class="perf"><b>35 kg</b><span>Charge</span></div>
+        <div class="perf"><b>10 reps</b><span>Meilleure série</span></div>
+        <div class="perf"><b>RPE 8</b><span>Effort</span></div>
+      </div>
+      <div class="spark"><svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="2,31 18,28 34,27 50,23 66,21 82,15 98,11"/></svg></div>
+      <button class="secondary" style="width:100%;margin-top:12px">Voir toute la progression</button>
+    </div>
+  </div>
+
+  <div class="info-section"><h2>Conseil Coach JM</h2>
+    <div class="coach-tip"><b>Priorité à la technique.</b> L’objectif n’est pas de charger vite, mais de faire progresser charge, répétitions et contrôle sans dégrader le mouvement.</div>
+  </div>
+
+  <button class="primary sticky-action">+ Ajouter à une séance</button>
+ </section>`;
+}
+function genericExerciseDetail(name){
+ const e=EXERCISES.find(x=>slugify(x.n)===slugify(name))||EXERCISES[0];
+ return `<section class="page">
+   <div class="exercise-detail-head"><button class="backbtn" data-route="new">‹</button><div class="exercise-detail-title"><h1>${e.n}</h1><p>${e.m}</p></div><button class="favorite-btn">♡</button></div>
+   <div class="card exercise-hero"><div class="exercise-hero-main"><div class="exercise-hero-icon">${e.g}</div><div><h2>${e.n}</h2><div class="sub">${e.m}</div></div></div><div class="metrics-row"><div class="metric"><b>${e.t[0]}</b><span>Type</span></div><div class="metric"><b>${e.t[1]||"—"}</b><span>Mesure</span></div><div class="metric"><b>${e.c}</b><span>Famille</span></div></div></div>
+   <div class="info-section"><h2>Fiche exercice</h2><div class="card info-card"><p>Cette fiche sera enrichie avec les consignes, les muscles sollicités et ta progression propre à cet exercice.</p></div></div>
+   <button class="primary sticky-action">+ Ajouter à une séance</button>
+ </section>`;
+}
+
 function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}
 function render(route){
  const app=document.querySelector("#app");
- app.innerHTML = route==="today"?todayView():route==="program"?programView():route==="workout-muscu-a"?workoutDetail():route==="new"?catalogView():route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):placeholder("Plus","Profil, paramètres, sauvegarde et export.");
- document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active", route==="workout-muscu-a" ? b.dataset.route==="program" : b.dataset.route===route));
+ app.innerHTML =
+ route==="today"?todayView():
+ route==="program"?programView():
+ route==="workout-muscu-a"?workoutDetail():
+ route==="new"?catalogView():
+ route==="exercise-chest-press"?chestPressDetail():
+ route.startsWith("exercise-")?genericExerciseDetail(route.replace("exercise-","")):
+ route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):
+ placeholder("Plus","Profil, paramètres, sauvegarde et export.");
+ document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=route==="workout-muscu-a"?"program":route.startsWith("exercise-")?"new":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
  document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.route)));
  bindCatalog(); window.scrollTo(0,0);
 }

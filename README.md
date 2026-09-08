@@ -1,11 +1,16 @@
-# Coach JM — UI 4.1
+# COACH JM V1 — Étape 7/15 — UI 5 Fiche exercice
 
-Catalogue exercices finalisé après validation iPhone.
+Ajouts :
+- clic depuis le catalogue vers une fiche exercice ;
+- fiche complète de référence pour **Chest Press** ;
+- muscles sollicités ;
+- type de mesure ;
+- consignes d'exécution ;
+- référence actuelle (charge / reps / RPE) ;
+- aperçu de progression ;
+- conseil Coach JM ;
+- bouton Ajouter à une séance ;
+- fiches génériques de secours pour les autres exercices.
 
-- filtres sur 2 lignes, sans défilement horizontal ;
-- Tous / Jambes / Tirage / Poussée / Tronc / Cardio / Mobilité / Autres ;
-- recherche + filtre combinables ;
-- catégories exactes, sans filtre par simple texte ;
-- cache PWA v8.
-
-Commit conseillé : `UI 4.1 - filtres catalogue fixes`
+Commit conseillé :
+`UI 5 - fiche exercice`
