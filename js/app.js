@@ -68,23 +68,23 @@ function workoutDetail(){
 }
 
 const EXERCISES=[
- {n:"Leg Press horizontale",g:"🦵",m:"Quadriceps · fessiers",t:["Machine","kg + reps"]},
- {n:"Leg Curl",g:"🦵",m:"Ischio-jambiers",t:["Machine","kg + reps"]},
- {n:"Leg Extension",g:"🦵",m:"Quadriceps",t:["Machine","kg + reps"]},
- {n:"Squat au poids du corps",g:"🏋️",m:"Jambes · tronc",t:["Poids du corps","reps"]},
- {n:"Tirage vertical",g:"💪",m:"Dos · biceps",t:["Machine","kg + reps"]},
- {n:"Rowing assis",g:"💪",m:"Dos · biceps",t:["Machine","kg + reps"]},
- {n:"Chest Press",g:"🏋️",m:"Pectoraux · triceps",t:["Machine","kg + reps"]},
- {n:"Gainage frontal",g:"🛡️",m:"Tronc",t:["Poids du corps","secondes"]},
- {n:"Tapis de marche",g:"🚶",m:"Cardio · échauffement",t:["Cardio","durée + vitesse + pente"]},
- {n:"Vélo",g:"🚴",m:"Cardio · jambes",t:["Cardio","durée + résistance"]},
- {n:"Mobilité hanches / ischios",g:"🧘",m:"Mobilité · souplesse",t:["Mobilité","durée"]}
+ {n:"Leg Press horizontale",g:"🦵",m:"Quadriceps · fessiers",t:["Machine","kg + reps"],c:"Jambes"},
+ {n:"Leg Curl",g:"🦵",m:"Ischio-jambiers",t:["Machine","kg + reps"],c:"Jambes"},
+ {n:"Leg Extension",g:"🦵",m:"Quadriceps",t:["Machine","kg + reps"],c:"Jambes"},
+ {n:"Squat au poids du corps",g:"🏋️",m:"Jambes · tronc",t:["Poids du corps","reps"],c:"Jambes"},
+ {n:"Tirage vertical",g:"💪",m:"Dos · biceps",t:["Machine","kg + reps"],c:"Tirage"},
+ {n:"Rowing assis",g:"💪",m:"Dos · biceps",t:["Machine","kg + reps"],c:"Tirage"},
+ {n:"Chest Press",g:"🏋️",m:"Pectoraux · triceps",t:["Machine","kg + reps"],c:"Poussée"},
+ {n:"Gainage frontal",g:"🛡️",m:"Tronc",t:["Poids du corps","secondes"],c:"Tronc"},
+ {n:"Tapis de marche",g:"🚶",m:"Cardio · échauffement",t:["Cardio","durée + vitesse + pente"],c:"Cardio"},
+ {n:"Vélo",g:"🚴",m:"Cardio · jambes",t:["Cardio","durée + résistance"],c:"Cardio"},
+ {n:"Mobilité hanches / ischios",g:"🧘",m:"Mobilité · souplesse",t:["Mobilité","durée"],c:"Mobilité"}
 ];
 function catalogView(){
  return `<section class="page">
   <div class="catalog-head"><h1>Exercices</h1><p>Choisis, consulte ou ajoute un exercice.</p></div>
   <label class="searchbox">⌕ <input id="exerciseSearch" placeholder="Rechercher un exercice…" autocomplete="off"></label>
-  <div class="chips"><button class="chip active">Tous</button><button class="chip">Jambes</button><button class="chip">Tirage</button><button class="chip">Poussée</button><button class="chip">Tronc</button><button class="chip">Cardio</button><button class="chip">Mobilité</button></div>
+  <div class="chips"><button class="chip active" data-filter="Tous">Tous</button><button class="chip" data-filter="Jambes">🦵 Jambes</button><button class="chip" data-filter="Tirage">💪 Tirage</button><button class="chip" data-filter="Poussée">💪 Poussée</button><button class="chip" data-filter="Tronc">🛡️ Tronc</button><button class="chip" data-filter="Cardio">❤️ Cardio</button><button class="chip" data-filter="Mobilité">🧘 Mobilité</button><button class="chip" data-filter="Autres">••• Autres</button></div>
   <div class="catalog-count"><h2>Catalogue</h2><span id="exerciseCount">${EXERCISES.length} exercices</span></div>
   <div class="exercise-catalog" id="exerciseCatalog">${catalogRows(EXERCISES)}</div>
   <button class="primary">+ Créer un exercice</button>
@@ -94,8 +94,10 @@ function catalogView(){
 function catalogRows(items){return items.map((e,i)=>`<div class="card catalog-item" data-exercise="${i}"><div class="exercise-glyph">${e.g}</div><div><h3>${e.n}</h3><p>${e.m}</p><div class="tags">${e.t.map(x=>`<span class="tag">${x}</span>`).join("")}</div></div><div class="chev">›</div></div>`).join("")}
 function bindCatalog(){
  const input=document.querySelector("#exerciseSearch"); if(!input)return;
- input.addEventListener("input",()=>{const q=input.value.toLowerCase().trim();const items=EXERCISES.filter(e=>(e.n+" "+e.m+" "+e.t.join(" ")).toLowerCase().includes(q));document.querySelector("#exerciseCatalog").innerHTML=catalogRows(items);document.querySelector("#exerciseCount").textContent=`${items.length} exercice${items.length>1?"s":""}`;});
- document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");const f=c.textContent;const items=f==="Tous"?EXERCISES:EXERCISES.filter(e=>(e.n+" "+e.m+" "+e.t.join(" ")).toLowerCase().includes(f.toLowerCase()));document.querySelector("#exerciseCatalog").innerHTML=catalogRows(items);document.querySelector("#exerciseCount").textContent=`${items.length} exercice${items.length>1?"s":""}`;}));
+let activeFilter="Tous";
+ const refresh=()=>{const q=input.value.toLowerCase().trim();let items=EXERCISES.filter(e=>(e.n+" "+e.m+" "+e.t.join(" ")).toLowerCase().includes(q));if(activeFilter!=="Tous"){items=activeFilter==="Autres"?items.filter(e=>!["Jambes","Tirage","Poussée","Tronc","Cardio","Mobilité"].includes(e.c)):items.filter(e=>e.c===activeFilter)}document.querySelector("#exerciseCatalog").innerHTML=catalogRows(items);document.querySelector("#exerciseCount").textContent=`${items.length} exercice${items.length>1?"s":""}`;};
+ input.addEventListener("input",refresh);
+ document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");activeFilter=c.dataset.filter||"Tous";refresh();}));
 }
 
 function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}

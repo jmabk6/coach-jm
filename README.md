@@ -1,12 +1,11 @@
-# Coach JM — UI 4 : Catalogue exercices
+# Coach JM — UI 4.1
 
-Ajouts :
-- catalogue d'exercices ;
-- recherche instantanée ;
-- filtres par famille ;
-- type de mesure visible (kg + reps, secondes, cardio, durée...) ;
-- bouton Créer un exercice ;
-- renommage « Modifier pour aujourd’hui » en « Adapter la séance ».
+Catalogue exercices finalisé après validation iPhone.
 
-Pour cette étape de prototype, le bouton central « + Séance » ouvre le catalogue.
-Étape suivante : fiche exercice.
+- filtres sur 2 lignes, sans défilement horizontal ;
+- Tous / Jambes / Tirage / Poussée / Tronc / Cardio / Mobilité / Autres ;
+- recherche + filtre combinables ;
+- catégories exactes, sans filtre par simple texte ;
+- cache PWA v8.
+
+Commit conseillé : `UI 4.1 - filtres catalogue fixes`
