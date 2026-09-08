@@ -160,11 +160,95 @@ function chestPressDetail(){
 function genericExerciseDetail(name){
  const e=EXERCISES.find(x=>slugify(x.n)===slugify(name))||EXERCISES[0];
  return `<section class="page">
-   <div class="exercise-detail-head"><button class="backbtn" data-route="new">‹</button><div class="exercise-detail-title"><h1>${e.n}</h1><p>${e.m}</p></div><button class="favorite-btn">♡</button></div>
+   <div class="exercise-detail-head"><button class="backbtn" data-route="catalog">‹</button><div class="exercise-detail-title"><h1>${e.n}</h1><p>${e.m}</p></div><button class="favorite-btn">♡</button></div>
    <div class="card exercise-hero"><div class="exercise-hero-main"><div class="exercise-hero-icon">${e.g}</div><div><h2>${e.n}</h2><div class="sub">${e.m}</div></div></div><div class="metrics-row"><div class="metric"><b>${e.t[0]}</b><span>Type</span></div><div class="metric"><b>${e.t[1]||"—"}</b><span>Mesure</span></div><div class="metric"><b>${e.c}</b><span>Famille</span></div></div></div>
    <div class="info-section"><h2>Fiche exercice</h2><div class="card info-card"><p>Cette fiche sera enrichie avec les consignes, les muscles sollicités et ta progression propre à cet exercice.</p></div></div>
    <button class="primary sticky-action">+ Ajouter à une séance</button>
  </section>`;
+}
+
+
+const BUILDER_EXERCISES=[
+ {id:"lat-pulldown",n:"Tirage vertical",g:"💪",m:"Dos · biceps",meta:"3 × 8–10 · repos 90 s"},
+ {id:"rowing-assis",n:"Rowing assis",g:"💪",m:"Dos · biceps",meta:"3 × 10–12 · repos 90 s"},
+ {id:"chest-press",n:"Chest Press",g:"🏋️",m:"Pectoraux · triceps",meta:"3 × 8–10 · repos 90 s"},
+ {id:"leg-press",n:"Leg Press horizontale",g:"🦵",m:"Quadriceps · fessiers",meta:"3 × 10–12 · repos 90 s"},
+ {id:"gainage",n:"Gainage frontal",g:"🛡️",m:"Tronc",meta:"3 × 30–45 s · repos 45 s"},
+ {id:"mobilite",n:"Mobilité hanches / ischios",g:"🧘",m:"Mobilité",meta:"5–8 min"}
+];
+let builderState={mode:"custom",name:"Haut du corps — Tirage",type:"Tirage",duration:55,goal:"Renforcer le dos et progresser vers la traction.",selected:["lat-pulldown","rowing-assis","gainage"]};
+
+function builderStart(){
+ return `<section class="page">
+  <div class="builder-head"><div><h1>Créer une séance</h1><p class="builder-sub">Choisis un modèle ou pars de zéro.</p></div></div>
+  <div class="choice-grid">
+    <div class="card choice selected" data-route="builder-info"><div class="ico">➕</div><h3>Séance personnalisée</h3><p>Je choisis mes exercices.</p></div>
+    <div class="card choice" data-route="builder-template"><div class="ico">📋</div><h3>À partir d’un modèle</h3><p>Je duplique une séance existante.</p></div>
+  </div>
+  <div class="section-head"><h2>Modèles proposés</h2></div>
+  <div class="template-list">
+   ${[
+    ["💪","Muscu A — Jambes","Jambes · gainage · mobilité"],
+    ["💪","Muscu B — Tirage","Dos · biceps · traction"],
+    ["💪","Muscu C — Poussée","Pectoraux · épaules · triceps"],
+    ["❤️","Cardio — Intervalles","Tapis · blocs de travail"],
+    ["🧘","Mobilité","Souplesse · récupération"]
+   ].map((x,i)=>`<div class="card template-row" data-route="builder-info"><div class="ico">${x[0]}</div><div><h3>${x[1]}</h3><p>${x[2]}</p></div><div class="chev">›</div></div>`).join("")}
+  </div>
+ </section>`;
+}
+function builderInfo(){
+ return `<section class="page">
+  <div class="builder-head"><button class="backbtn" data-route="new">‹</button><div><h1>Séance personnalisée</h1><p class="builder-sub">Étape 1 sur 3</p></div></div>
+  <div class="stepper"><div class="step-dot active"><b>1</b>Informations</div><div class="step-dot"><b>2</b>Exercices</div><div class="step-dot"><b>3</b>Récapitulatif</div></div>
+  <div class="card form-card">
+   <div class="field"><label>Nom de la séance</label><input id="builderName" value="${builderState.name}"></div>
+   <div class="field"><label>Type principal</label><div class="type-grid">${["Jambes","Tirage","Poussée","Cardio","Mobilité","Tronc","Marche","Autre"].map(t=>`<button class="type-btn ${builderState.type===t?'active':''}" data-type="${t}">${t}</button>`).join("")}</div></div>
+   <div class="field"><label>Durée estimée</label><select id="builderDuration"><option>30</option><option>45</option><option ${builderState.duration===55?'selected':''}>55</option><option>60</option><option>75</option></select></div>
+   <div class="field"><label>Objectif de la séance</label><textarea id="builderGoal">${builderState.goal}</textarea></div>
+  </div>
+  <button class="primary" data-route="builder-exercises">Suivant →</button>
+ </section>`;
+}
+function builderExercises(){
+ const selected=builderState.selected.map(id=>BUILDER_EXERCISES.find(e=>e.id===id)).filter(Boolean);
+ return `<section class="page">
+  <div class="builder-head"><button class="backbtn" data-route="builder-info">‹</button><div><h1>Ajouter des exercices</h1><p class="builder-sub">Étape 2 sur 3</p></div></div>
+  <div class="stepper"><div class="step-dot"><b>1</b>Informations</div><div class="step-dot active"><b>2</b>Exercices</div><div class="step-dot"><b>3</b>Récapitulatif</div></div>
+  <label class="searchbox">⌕ <input id="builderSearch" placeholder="Rechercher un exercice…"></label>
+  <div class="section-head"><h2>Exercices disponibles</h2><button class="linkbtn" data-route="catalog">Catalogue</button></div>
+  <div class="exercise-picker" id="builderPicker">${BUILDER_EXERCISES.map(e=>`<div class="card pick-row"><div class="ico">${e.g}</div><div><h3>${e.n}</h3><p>${e.m}</p></div><button class="add-circle" data-add="${e.id}">+</button></div>`).join("")}</div>
+  <div class="section-head"><h2>Dans ma séance</h2><span class="small">${selected.length} exercices</span></div>
+  <div class="selected-list" id="selectedList">${selected.map((e,i)=>`<div class="card selected-row"><div class="drag">☰</div><div><h3>${i+1}. ${e.n}</h3><p>${e.meta}</p></div><button class="remove-btn" data-remove="${e.id}">×</button></div>`).join("")}</div>
+  <div class="builder-actions"><button class="secondary" data-route="builder-info">← Retour</button><button class="primary compact" data-route="builder-recap">Suivant →</button></div>
+ </section>`;
+}
+function builderRecap(){
+ const selected=builderState.selected.map(id=>BUILDER_EXERCISES.find(e=>e.id===id)).filter(Boolean);
+ return `<section class="page">
+  <div class="builder-head"><button class="backbtn" data-route="builder-exercises">‹</button><div><h1>Récapitulatif</h1><p class="builder-sub">Étape 3 sur 3</p></div></div>
+  <div class="stepper"><div class="step-dot"><b>1</b>Informations</div><div class="step-dot"><b>2</b>Exercices</div><div class="step-dot active"><b>3</b>Récapitulatif</div></div>
+  <div class="card recap-card">
+   <span class="badge">${builderState.type}</span>
+   <h2 style="margin-top:10px">${builderState.name}</h2>
+   <p>≈ ${builderState.duration} min · ${selected.length} exercices</p>
+   <div class="goalbox"><strong>🎯 Objectif</strong><p>${builderState.goal}</p></div>
+   <div class="recap-ex">${selected.map((e,i)=>`<div class="line"><b>${i+1}</b><div><strong>${e.n}</strong><div class="small">${e.meta}</div></div><span>☰</span></div>`).join("")}</div>
+  </div>
+  <div class="hint"><b>Cette séance devient un modèle.</b> Quand tu la planifieras, chaque séance réalisée gardera son propre historique, même si tu modifies ce modèle plus tard.</div>
+  <button class="primary" id="saveTemplate">Enregistrer la séance</button>
+ </section>`;
+}
+function bindBuilder(){
+ document.querySelectorAll("[data-type]").forEach(b=>b.addEventListener("click",()=>{builderState.type=b.dataset.type;document.querySelectorAll("[data-type]").forEach(x=>x.classList.toggle("active",x.dataset.type===builderState.type))}));
+ const n=document.querySelector("#builderName"),d=document.querySelector("#builderDuration"),g=document.querySelector("#builderGoal");
+ if(n)n.addEventListener("input",()=>builderState.name=n.value);
+ if(d)d.addEventListener("change",()=>builderState.duration=Number(d.value));
+ if(g)g.addEventListener("input",()=>builderState.goal=g.value);
+ document.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",()=>{if(!builderState.selected.includes(b.dataset.add))builderState.selected.push(b.dataset.add);render("builder-exercises")}));
+ document.querySelectorAll("[data-remove]").forEach(b=>b.addEventListener("click",()=>{builderState.selected=builderState.selected.filter(x=>x!==b.dataset.remove);render("builder-exercises")}));
+ const s=document.querySelector("#builderSearch"); if(s)s.addEventListener("input",()=>{const q=s.value.toLowerCase();document.querySelectorAll(".pick-row").forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?"grid":"none")});
+ const save=document.querySelector("#saveTemplate"); if(save)save.addEventListener("click",()=>{alert("Séance modèle enregistrée (prototype UI6).");navigate("program")});
 }
 
 function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}
@@ -174,14 +258,14 @@ function render(route){
  route==="today"?todayView():
  route==="program"?programView():
  route==="workout-muscu-a"?workoutDetail():
- route==="new"?catalogView():
- route==="exercise-chest-press"?chestPressDetail():
+ route==="new"?builderStart():route==="catalog"?catalogView():
+ route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
  route.startsWith("exercise-")?genericExerciseDetail(route.replace("exercise-","")):
  route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):
  placeholder("Plus","Profil, paramètres, sauvegarde et export.");
- document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=route==="workout-muscu-a"?"program":route.startsWith("exercise-")?"new":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
+ document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=route==="workout-muscu-a"?"program":(route.startsWith("exercise-")||route.startsWith("builder-")||route==="catalog")?"new":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
  document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.route)));
- bindCatalog(); window.scrollTo(0,0);
+ bindCatalog(); bindBuilder(); window.scrollTo(0,0);
 }
 function navigate(route){location.hash=route}
 window.addEventListener("hashchange",()=>render(location.hash.slice(1)||"today"));

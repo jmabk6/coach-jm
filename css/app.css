@@ -61,4 +61,39 @@ body{min-height:100vh}button{font:inherit}.page{padding:24px 18px calc(150px + e
 .spark svg{position:absolute;inset:8px 6px 8px 6px;width:calc(100% - 12px);height:calc(100% - 16px)}.spark polyline{fill:none;stroke:var(--rose);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .last-performance{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.perf{background:#fff7f7;border-radius:14px;padding:10px;text-align:center}.perf b{display:block;font-size:16px}.perf span{font-size:11px;color:var(--muted)}
 .coach-tip{padding:15px;background:var(--rose-soft);border-radius:18px;color:#704f53;line-height:1.45}.coach-tip b{color:var(--rose-dark)}
-.sticky-action{position:sticky;bottom:92px;margin-top:18px}
+.sticky-action{position:static;margin-top:18px}
+
+/* UI6 créer / modifier une séance */
+.builder-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.builder-head h1{font:700 30px Georgia,serif;margin:0}
+.builder-sub{color:var(--muted);margin:4px 0 0}
+.stepper{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}
+.step-dot{text-align:center;color:var(--muted);font-size:12px}
+.step-dot b{width:30px;height:30px;border-radius:50%;background:#f0e3e4;display:grid;place-items:center;margin:0 auto 5px;color:#76585c}
+.step-dot.active{color:var(--rose-dark);font-weight:800}
+.step-dot.active b{background:var(--rose);color:white}
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.choice{padding:18px;text-align:center;min-height:145px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.choice .ico{font-size:34px}.choice h3{margin:8px 0 4px;font-size:18px}.choice p{margin:0;color:var(--muted);font-size:13px}
+.choice.selected{border:2px solid var(--rose);background:#fff4f5}
+.template-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.template-row{padding:14px 15px;display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center}
+.template-row .ico{font-size:25px}.template-row h3{margin:0;font-size:17px}.template-row p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.form-card{padding:16px}.field{margin-bottom:15px}.field:last-child{margin-bottom:0}.field label{display:block;font-size:12px;font-weight:800;color:var(--rose-dark);letter-spacing:.05em;margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:white;border-radius:14px;padding:13px 14px;font-size:16px;color:var(--ink);outline:none}
+.field textarea{min-height:82px;resize:vertical}
+.type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.type-btn{border:1px solid var(--line);background:white;border-radius:14px;padding:10px 6px;text-align:center;color:#745d60;font-size:12px}
+.type-btn.active{background:var(--rose);color:white;border-color:var(--rose)}
+.exercise-picker{display:flex;flex-direction:column;gap:10px}
+.pick-row{padding:12px 14px;display:grid;grid-template-columns:42px 1fr 38px;gap:10px;align-items:center}
+.pick-row .ico{font-size:23px}.pick-row h3{margin:0;font-size:16px}.pick-row p{margin:3px 0 0;color:var(--muted);font-size:12px}
+.add-circle{width:34px;height:34px;border-radius:50%;border:0;background:var(--rose);color:white;font-size:23px}
+.selected-list{display:flex;flex-direction:column;gap:9px}
+.selected-row{padding:12px 14px;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center}
+.drag{color:#b89ea1}.selected-row h3{font-size:16px;margin:0}.selected-row p{margin:3px 0 0;color:var(--muted);font-size:12px}
+.remove-btn{border:0;background:#fff0f1;color:var(--rose-dark);width:32px;height:32px;border-radius:50%}
+.builder-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.recap-card{padding:16px}.recap-card h2{margin:0 0 6px;font-size:22px}.recap-card p{margin:0;color:var(--muted)}
+.recap-ex{margin-top:12px;display:flex;flex-direction:column;gap:8px}.recap-ex .line{padding:10px 0;border-top:1px solid #f1e3e4;display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center}.recap-ex .line:first-child{border-top:0}
+.badge{display:inline-block;background:var(--rose-soft);padding:6px 9px;border-radius:999px;color:#765257;font-size:11px;font-weight:800}

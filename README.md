@@ -1,16 +1,17 @@
-# COACH JM V1 — Étape 7/15 — UI 5 Fiche exercice
+# COACH JM V1 — ÉTAPE 8/15 — UI 6
 
-Ajouts :
-- clic depuis le catalogue vers une fiche exercice ;
-- fiche complète de référence pour **Chest Press** ;
-- muscles sollicités ;
-- type de mesure ;
-- consignes d'exécution ;
-- référence actuelle (charge / reps / RPE) ;
-- aperçu de progression ;
-- conseil Coach JM ;
-- bouton Ajouter à une séance ;
-- fiches génériques de secours pour les autres exercices.
+Créer / modifier une séance modèle.
+
+Workflow :
+1. partir de zéro ou d'un modèle ;
+2. informations générales ;
+3. ajouter / retirer des exercices ;
+4. récapitulatif ;
+5. enregistrer le modèle.
+
+Corrections :
+- le bouton « Ajouter à une séance » de la fiche exercice n'est plus sticky, donc plus de doublon visuel ;
+- le catalogue reste accessible depuis le sélecteur d'exercices.
 
 Commit conseillé :
-`UI 5 - fiche exercice`
+`UI 6 - creation modification seance`
