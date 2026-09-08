@@ -3,32 +3,50 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#fff4f3" />
+  <meta name="theme-color" content="#fff5f4" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Coach JM" />
   <title>Coach JM</title>
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
-  <link rel="stylesheet" href="./css/app.css" />
+  <link rel="manifest" href="./manifest.json?v=3" />
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png?v=3" />
+  <link rel="stylesheet" href="./css/app.css?v=3" />
 </head>
 <body>
-  <div class="app">
+  <div class="app-shell">
     <header class="topbar">
-      <div><div class="brand">Coach JM</div><div class="date" id="today-label">Aujourd’hui</div></div>
-      <button class="avatar" aria-label="Profil">JM</button>
+      <div>
+        <div class="brand">Coach JM</div>
+        <div class="today-label" id="today-label">Aujourd’hui</div>
+      </div>
+      <button class="avatar" type="button" aria-label="Profil">JM</button>
     </header>
 
-    <main id="view" class="view" aria-live="polite"></main>
+    <main id="view" class="view">
+      <!-- Fallback visible even if JavaScript is delayed -->
+      <p class="eyebrow">AUJOURD’HUI</p>
+      <h1 class="headline">Prêt pour aujourd’hui ?</h1>
+      <section class="card workout-card">
+        <div class="workout-top">
+          <span class="session-icon">💪</span>
+          <div>
+            <div class="pill">SÉANCE DU JOUR</div>
+            <h2>Muscu A — Jambes</h2>
+            <p>≈ 55 min · Salle · 5 exercices</p>
+          </div>
+        </div>
+        <button class="primary" type="button">Voir la séance</button>
+      </section>
+    </main>
 
     <nav class="bottom-nav" aria-label="Navigation principale">
-      <button class="nav-item active" data-route="today"><span>⌂</span><small>Aujourd’hui</small></button>
-      <button class="nav-item" data-route="program"><span>▣</span><small>Programme</small></button>
-      <button class="nav-item nav-create" data-route="new"><span>＋</span><small>Séance</small></button>
-      <button class="nav-item" data-route="progress"><span>↗</span><small>Progression</small></button>
-      <button class="nav-item" data-route="more"><span>•••</span><small>Plus</small></button>
+      <button class="nav-item active" type="button" data-route="today"><span class="nav-ico">⌂</span><small>Aujourd’hui</small></button>
+      <button class="nav-item" type="button" data-route="program"><span class="nav-ico">▣</span><small>Programme</small></button>
+      <button class="nav-item nav-create" type="button" data-route="new"><span class="plus">＋</span><small>Séance</small></button>
+      <button class="nav-item" type="button" data-route="progress"><span class="nav-ico">▥</span><small>Progression</small></button>
+      <button class="nav-item" type="button" data-route="more"><span class="nav-ico">•••</span><small>Plus</small></button>
     </nav>
   </div>
-  <script type="module" src="./js/app.js"></script>
+  <script src="./js/app.js?v=3" defer></script>
 </body>
 </html>

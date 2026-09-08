@@ -1,20 +1,62 @@
-import { DB_VERSION } from "./core/schema.js";
-import { getSchemaMeta, openCoachDb } from "./db/db.js";
+(function(){
+  'use strict';
+  const view=document.getElementById('view');
+  const todayLabel=document.getElementById('today-label');
 
-const view=document.getElementById("view");
-const routes={
- today:()=>`<p class="hello">Bonjour JM</p><h1 class="headline">Prêt pour aujourd’hui ?</h1>
- <section class="card workout"><span class="pill">SÉANCE DU JOUR</span><h2>Muscu A · Jambes</h2><div class="meta">Environ 55 min · 5 exercices</div><div class="workout-row"><span class="mini">🏃 Échauffement</span><span class="mini">🦵 Presse</span><span class="mini">🧱 Tronc</span></div><button class="primary">Voir la séance</button></section>
- <div class="section-head"><h2>Ma semaine</h2><button data-go="program">Voir</button></div><section class="week"><div class="day done"><small>Lun</small><strong>7</strong><i></i></div><div class="day today"><small>Mar</small><strong>8</strong><i></i></div><div class="day"><small>Mer</small><strong>9</strong><i></i></div><div class="day"><small>Jeu</small><strong>10</strong><i></i></div><div class="day"><small>Ven</small><strong>11</strong><i></i></div><div class="day"><small>Sam</small><strong>12</strong><i></i></div><div class="day"><small>Dim</small><strong>13</strong><i></i></div></section>
- <div class="section-head"><h2>Mes objectifs</h2><button data-go="progress">Progression</button></div><section class="goals"><div class="card goal"><div class="ico">💪</div><b>Traction</b><div class="bar"><span style="width:25%"></span></div><small>En route</small></div><div class="card goal"><div class="ico">🧘</div><b>Souplesse</b><div class="bar"><span style="width:18%"></span></div><small>Départ</small></div><div class="card goal"><div class="ico">🛡️</div><b>Tronc</b><div class="bar"><span style="width:22%"></span></div><small>En route</small></div></section><div class="tech" id="tech">Base locale…</div>`,
- program:()=>`<h1 class="headline">Mon programme</h1><section class="card empty"><div class="big">📅</div><h2>La semaine arrive ici</h2><p>Les séances prévues, déplacées ou remplacées seront organisées dans cette vue.</p><button class="primary" data-go="new">Créer ma première séance</button></section>`,
- new:()=>`<h1 class="headline">Nouvelle séance</h1><section class="card empty"><div class="big">＋</div><h2>Créer une séance modèle</h2><p>Le futur assistant permettra de choisir les exercices, les séries, les objectifs et le repos.</p><button class="primary">Commencer</button></section>`,
- progress:()=>`<h1 class="headline">Ma progression</h1><section class="card empty"><div class="big">📈</div><h2>D’où je pars → où j’arrive</h2><p>Force, cardio, traction, souplesse et tronc seront réunis ici. Cet écran reprendra le mockup 47.</p></section><div class="section-head"><h2>Mes axes</h2></div><section class="card list"><div class="list-row"><span class="icon">💪</span><div><b>Musculation</b><small>Charges · reps · RPE</small></div></div><div class="list-row"><span class="icon">❤️</span><div><b>Cardio</b><small>Durée · vitesse · fréquence cardiaque</small></div></div><div class="list-row"><span class="icon">🎯</span><div><b>Mes 3 objectifs</b><small>Traction · souplesse · tronc</small></div></div></section>`,
- more:()=>`<h1 class="headline">Plus</h1><section class="card list"><div class="list-row"><span class="icon">👤</span><div><b>Profil</b><small>Informations et préférences</small></div></div><div class="list-row"><span class="icon">⚙️</span><div><b>Paramètres d’entraînement</b><small>Unités · repos · RPE</small></div></div><div class="list-row"><span class="icon">💾</span><div><b>Sauvegarde</b><small>Exporter ou restaurer mes données</small></div></div></section>`
-};
-function go(route){view.innerHTML=routes[route]();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.route===route));view.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));window.scrollTo(0,0);if(route==='today')showTech();}
-document.querySelectorAll('.nav-item').forEach(b=>b.onclick=()=>go(b.dataset.route));
-const fmt=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long'});document.getElementById('today-label').textContent=fmt.format(new Date()).replace(/^./,c=>c.toUpperCase());
-async function showTech(){const el=document.getElementById('tech');if(!el)return;try{await openCoachDb();const m=await getSchemaMeta();el.textContent=`Coach JM · base locale v${m?.version??DB_VERSION} opérationnelle`;}catch(e){console.error(e);el.textContent='Base locale indisponible';}}
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));
-go('today');
+  function todayHTML(){
+    return `
+      <p class="eyebrow">AUJOURD’HUI</p>
+      <h1 class="headline">Prêt pour aujourd’hui ?</h1>
+      <section class="card workout-card">
+        <div class="workout-top"><span class="session-icon">💪</span><div><div class="pill">SÉANCE DU JOUR</div><h2>Muscu A — Jambes</h2><p>≈ 55 min · Salle · 5 exercices</p></div></div>
+        <button class="primary" type="button" data-go="program">Voir la séance</button>
+      </section>
+      <div class="section-head"><h2>Ma semaine</h2><button type="button" data-go="program">Voir</button></div>
+      <section class="week">
+        <div class="day done"><small>Lun</small><strong>7</strong><i></i></div><div class="day today"><small>Mar</small><strong>8</strong><i></i></div><div class="day"><small>Mer</small><strong>9</strong><i></i></div><div class="day"><small>Jeu</small><strong>10</strong><i></i></div><div class="day"><small>Ven</small><strong>11</strong><i></i></div><div class="day"><small>Sam</small><strong>12</strong><i></i></div><div class="day"><small>Dim</small><strong>13</strong><i></i></div>
+      </section>
+      <div class="section-head"><h2>Mes 3 objectifs</h2><button type="button" data-go="progress">Progression</button></div>
+      <section class="goals">
+        <div class="card goal"><div class="ico">💪</div><b>Traction</b><div class="bar"><span style="width:8%"></span></div><small>À mesurer</small></div>
+        <div class="card goal"><div class="ico">🧘</div><b>Souplesse</b><div class="bar"><span style="width:8%"></span></div><small>À mesurer</small></div>
+        <div class="card goal"><div class="ico">🛡️</div><b>Tronc</b><div class="bar"><span style="width:8%"></span></div><small>À mesurer</small></div>
+      </section>
+      <div class="section-head"><h2>Point de départ</h2></div>
+      <section class="stats"><div class="card stat"><strong>Semaine 1</strong><small>Baseline officielle</small></div><div class="card stat"><strong>5 séances</strong><small>Premier repère</small></div></section>
+      <div class="tech">Coach JM · UI 1 corrigée</div>`;
+  }
+
+  const routes={
+    today:todayHTML,
+    program:()=>`<p class="eyebrow">PROGRAMME</p><h1 class="headline">Ma semaine</h1><section class="card empty"><div class="big">📅</div><h2>Programme hebdomadaire</h2><p>Les séances prévues, déplacées ou remplacées seront organisées ici.</p><button class="primary" type="button" data-go="new">Créer ma première séance</button></section>`,
+    new:()=>`<p class="eyebrow">NOUVELLE SÉANCE</p><h1 class="headline">Créer une séance</h1><section class="card empty"><div class="big">＋</div><h2>Assistant de création</h2><p>On y construira tes séances modèles, exercice par exercice.</p><button class="primary" type="button">Bientôt disponible</button></section>`,
+    progress:()=>`<p class="eyebrow">PROGRESSION</p><h1 class="headline">Ma progression</h1><section class="card empty"><div class="big">📈</div><h2>D’où je pars → où j’arrive</h2><p>Musculation, cardio, traction, souplesse, tronc et régularité seront réunis ici.</p></section><div class="section-head"><h2>Mes domaines</h2></div><section class="card list"><div class="list-row"><span class="icon">💪</span><div><b>Musculation</b><small>Charges · répétitions · RPE</small></div></div><div class="list-row"><span class="icon">❤️</span><div><b>Cardio</b><small>Durée · vitesse · pente · FC</small></div></div><div class="list-row"><span class="icon">🎯</span><div><b>Objectifs</b><small>Traction · souplesse · tronc</small></div></div></section>`,
+    more:()=>`<p class="eyebrow">PLUS</p><h1 class="headline">Réglages</h1><section class="card list"><div class="list-row"><span class="icon">👤</span><div><b>Profil</b><small>Informations et préférences</small></div></div><div class="list-row"><span class="icon">⚙️</span><div><b>Paramètres d’entraînement</b><small>Unités · repos · RPE</small></div></div><div class="list-row"><span class="icon">💾</span><div><b>Sauvegarde</b><small>Exporter ou restaurer mes données</small></div></div></section>`
+  };
+
+  function bindInternalLinks(){
+    view.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>go(btn.dataset.go)));
+  }
+  function go(route){
+    if(!routes[route]) route='today';
+    view.innerHTML=routes[route]();
+    document.querySelectorAll('.nav-item').forEach(btn=>btn.classList.toggle('active',btn.dataset.route===route));
+    bindInternalLinks();
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+  document.querySelectorAll('.nav-item').forEach(btn=>btn.addEventListener('click',()=>go(btn.dataset.route)));
+  try{
+    const fmt=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    todayLabel.textContent=fmt.format(new Date()).replace(/^./,c=>c.toUpperCase());
+  }catch(_){todayLabel.textContent='Aujourd’hui';}
+  go('today');
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',async()=>{
+      try{
+        const reg=await navigator.serviceWorker.register('./sw.js?v=3',{updateViaCache:'none'});
+        reg.update();
+      }catch(err){console.warn('SW',err);}
+    });
+  }
+})();
