@@ -1,11 +1,13 @@
-# Coach JM — UI 2
+# Coach JM — UI 3
 
-Étape 4 : écran **Programme / Ma semaine**.
+Étape 5 : **Détail d'une séance prévue**.
 
-- conserve le socle UI 1.1 ;
-- navigation semaine ;
-- 7 jours avec prévu / réalisé / repos ;
-- premières actions Ajouter / Modifier la semaine ;
-- structure prête pour `plannedWorkouts`.
+Ajouts :
+- correction du résumé hebdomadaire : `1 réalisée · 5 prévues` ;
+- clic sur `Muscu A — Jambes` depuis Aujourd'hui ou Programme ;
+- détail de la séance prévue ;
+- objectifs, exercices, séries cibles, charge prévue, échauffement ;
+- distinction visible entre **prévu** et **réalisé** ;
+- actions `Modifier pour aujourd'hui` et `Démarrer`.
 
-Les données affichées sont encore de démonstration : le branchement IndexedDB réel arrive dans l'étape 8 du planning.
+Les données restent encore de démonstration ; la persistance réelle sera branchée plus tard.
