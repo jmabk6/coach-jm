@@ -23,7 +23,7 @@
       </section>
       <div class="section-head"><h2>Point de départ</h2></div>
       <section class="stats"><div class="card stat"><strong>Semaine 1</strong><small>Baseline officielle</small></div><div class="card stat"><strong>5 séances</strong><small>Premier repère</small></div></section>
-      <div class="tech">Coach JM · UI 1 corrigée</div>`;
+      <div class="tech">Coach JM · UI 1.1</div>`;
   }
 
   const routes={
@@ -54,7 +54,7 @@
   if('serviceWorker' in navigator){
     window.addEventListener('load',async()=>{
       try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=3',{updateViaCache:'none'});
+        const reg=await navigator.serviceWorker.register('./sw.js?v=4',{updateViaCache:'none'});
         reg.update();
       }catch(err){console.warn('SW',err);}
     });

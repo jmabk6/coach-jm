@@ -10,3 +10,9 @@ PWA de suivi sportif construite depuis zéro.
 - JavaScript sans modules pour fiabiliser ce premier jalon sur Safari iPhone.
 
 La base IndexedDB V1 reste présente dans `js/db/` et sera reconnectée au fur et à mesure des fonctionnalités.
+
+
+## UI 1.1
+- Icônes SVG fiables sur iOS
+- marge basse renforcée au-dessus de la navigation fixe
+- cache PWA versionné v4
