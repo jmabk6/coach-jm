@@ -1,62 +1,49 @@
-(function(){
-  'use strict';
-  const view=document.getElementById('view');
-  const todayLabel=document.getElementById('today-label');
 
-  function todayHTML(){
-    return `
-      <p class="eyebrow">AUJOURD’HUI</p>
-      <h1 class="headline">Prêt pour aujourd’hui ?</h1>
-      <section class="card workout-card">
-        <div class="workout-top"><span class="session-icon">💪</span><div><div class="pill">SÉANCE DU JOUR</div><h2>Muscu A — Jambes</h2><p>≈ 55 min · Salle · 5 exercices</p></div></div>
-        <button class="primary" type="button" data-go="program">Voir la séance</button>
-      </section>
-      <div class="section-head"><h2>Ma semaine</h2><button type="button" data-go="program">Voir</button></div>
-      <section class="week">
-        <div class="day done"><small>Lun</small><strong>7</strong><i></i></div><div class="day today"><small>Mar</small><strong>8</strong><i></i></div><div class="day"><small>Mer</small><strong>9</strong><i></i></div><div class="day"><small>Jeu</small><strong>10</strong><i></i></div><div class="day"><small>Ven</small><strong>11</strong><i></i></div><div class="day"><small>Sam</small><strong>12</strong><i></i></div><div class="day"><small>Dim</small><strong>13</strong><i></i></div>
-      </section>
-      <div class="section-head"><h2>Mes 3 objectifs</h2><button type="button" data-go="progress">Progression</button></div>
-      <section class="goals">
-        <div class="card goal"><div class="ico">💪</div><b>Traction</b><div class="bar"><span style="width:8%"></span></div><small>À mesurer</small></div>
-        <div class="card goal"><div class="ico">🧘</div><b>Souplesse</b><div class="bar"><span style="width:8%"></span></div><small>À mesurer</small></div>
-        <div class="card goal"><div class="ico">🛡️</div><b>Tronc</b><div class="bar"><span style="width:8%"></span></div><small>À mesurer</small></div>
-      </section>
-      <div class="section-head"><h2>Point de départ</h2></div>
-      <section class="stats"><div class="card stat"><strong>Semaine 1</strong><small>Baseline officielle</small></div><div class="card stat"><strong>5 séances</strong><small>Premier repère</small></div></section>
-      <div class="tech">Coach JM · UI 1.1</div>`;
-  }
+const DAYS = [
+ {dow:"LUN",n:7,status:"done",name:"Cardio léger + mobilité",meta:"42 min · réalisé",kind:"done"},
+ {dow:"MAR",n:8,status:"today",name:"Muscu A — Jambes",meta:"≈ 55 min · Salle · 5 exercices",kind:"planned"},
+ {dow:"MER",n:9,status:"planned",name:"Muscu B — Tirage",meta:"≈ 55 min · Salle · 5 exercices",kind:"planned"},
+ {dow:"JEU",n:10,status:"planned",name:"Cardio — Intervalles",meta:"≈ 35 min · Cardio",kind:"planned"},
+ {dow:"VEN",n:11,status:"rest",name:"Repos / mobilité libre",meta:"Aucune séance imposée",kind:"rest"},
+ {dow:"SAM",n:12,status:"planned",name:"Muscu C — Poussée",meta:"≈ 55 min · Salle · 5 exercices",kind:"planned"},
+ {dow:"DIM",n:13,status:"planned",name:"Cardio long",meta:"≈ 50 min · Endurance",kind:"planned"}
+];
 
-  const routes={
-    today:todayHTML,
-    program:()=>`<p class="eyebrow">PROGRAMME</p><h1 class="headline">Ma semaine</h1><section class="card empty"><div class="big">📅</div><h2>Programme hebdomadaire</h2><p>Les séances prévues, déplacées ou remplacées seront organisées ici.</p><button class="primary" type="button" data-go="new">Créer ma première séance</button></section>`,
-    new:()=>`<p class="eyebrow">NOUVELLE SÉANCE</p><h1 class="headline">Créer une séance</h1><section class="card empty"><div class="big">＋</div><h2>Assistant de création</h2><p>On y construira tes séances modèles, exercice par exercice.</p><button class="primary" type="button">Bientôt disponible</button></section>`,
-    progress:()=>`<p class="eyebrow">PROGRESSION</p><h1 class="headline">Ma progression</h1><section class="card empty"><div class="big">📈</div><h2>D’où je pars → où j’arrive</h2><p>Musculation, cardio, traction, souplesse, tronc et régularité seront réunis ici.</p></section><div class="section-head"><h2>Mes domaines</h2></div><section class="card list"><div class="list-row"><span class="icon">💪</span><div><b>Musculation</b><small>Charges · répétitions · RPE</small></div></div><div class="list-row"><span class="icon">❤️</span><div><b>Cardio</b><small>Durée · vitesse · pente · FC</small></div></div><div class="list-row"><span class="icon">🎯</span><div><b>Objectifs</b><small>Traction · souplesse · tronc</small></div></div></section>`,
-    more:()=>`<p class="eyebrow">PLUS</p><h1 class="headline">Réglages</h1><section class="card list"><div class="list-row"><span class="icon">👤</span><div><b>Profil</b><small>Informations et préférences</small></div></div><div class="list-row"><span class="icon">⚙️</span><div><b>Paramètres d’entraînement</b><small>Unités · repos · RPE</small></div></div><div class="list-row"><span class="icon">💾</span><div><b>Sauvegarde</b><small>Exporter ou restaurer mes données</small></div></div></section>`
-  };
-
-  function bindInternalLinks(){
-    view.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>go(btn.dataset.go)));
-  }
-  function go(route){
-    if(!routes[route]) route='today';
-    view.innerHTML=routes[route]();
-    document.querySelectorAll('.nav-item').forEach(btn=>btn.classList.toggle('active',btn.dataset.route===route));
-    bindInternalLinks();
-    window.scrollTo({top:0,behavior:'instant'});
-  }
-  document.querySelectorAll('.nav-item').forEach(btn=>btn.addEventListener('click',()=>go(btn.dataset.route)));
-  try{
-    const fmt=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-    todayLabel.textContent=fmt.format(new Date()).replace(/^./,c=>c.toUpperCase());
-  }catch(_){todayLabel.textContent='Aujourd’hui';}
-  go('today');
-
-  if('serviceWorker' in navigator){
-    window.addEventListener('load',async()=>{
-      try{
-        const reg=await navigator.serviceWorker.register('./sw.js?v=4',{updateViaCache:'none'});
-        reg.update();
-      }catch(err){console.warn('SW',err);}
-    });
-  }
-})();
+function todayView(){
+ return `<section class="page">
+ <div class="topline"><div><h1 class="brand">Coach JM</h1><div class="date">Mardi 8 septembre</div></div><div class="avatar">JM</div></div>
+ <div class="eyebrow">AUJOURD’HUI</div><h2 class="hero-title">Prêt pour aujourd’hui ?</h2>
+ <div class="card today-card"><div class="session-title">💪 Muscu A — Jambes</div><div class="meta">≈ 55 min · Salle · 5 exercices</div><button class="primary" data-route="program">Voir la séance</button></div>
+ <div class="section-head"><h2>Ma semaine</h2><button class="linkbtn" data-route="program">Voir</button></div>
+ <div class="week-strip">${DAYS.map(d=>`<div class="day-mini ${d.n===8?'active':''}"><span class="dow">${d.dow}</span><b>${d.n}</b><i class="dot ${d.kind==='done'?'done':''}"></i></div>`).join("")}</div>
+ <div class="section-head"><h2>Mes 3 objectifs</h2><button class="linkbtn" data-route="progress">Progression</button></div>
+ <div class="goals"><div class="card goal"><div class="emoji">💪</div><b>Traction</b><div class="bar"><i></i></div><div class="small">À mesurer</div></div><div class="card goal"><div class="emoji">🧘</div><b>Souplesse</b><div class="bar"><i></i></div><div class="small">À mesurer</div></div><div class="card goal"><div class="emoji">🛡️</div><b>Tronc</b><div class="bar"><i></i></div><div class="small">À mesurer</div></div></div>
+ <div class="section-head"><h2>Point de départ</h2></div><div class="card today-card"><b>La première semaine servira de référence.</b><div class="meta">Tes performances réelles alimenteront automatiquement ta progression.</div></div>
+ </section>`;
+}
+function programView(){
+ return `<section class="page">
+ <div class="program-header"><div class="backless"><h1>Mon programme</h1><p>Une semaine prévue, adaptable au réel.</p></div></div>
+ <div class="week-nav"><button class="round" aria-label="Semaine précédente">‹</button><div class="week-label"><strong>7 — 13 septembre</strong><span>Semaine 2 · 5 séances prévues</span></div><button class="round" aria-label="Semaine suivante">›</button></div>
+ <div class="program-list">${DAYS.map(d=>`<div class="program-day">
+   <div class="datebox ${d.n===8?'today':''}"><span>${d.dow}</span><b>${d.n}</b></div>
+   <div class="card workout-card ${d.kind==='done'?'done':''} ${d.kind==='rest'?'rest':''}">
+    <div class="workout-main"><div class="status">${d.kind==='done'?'Réalisée':d.kind==='rest'?'Repos':d.n===8?'Aujourd’hui':'Prévue'}</div><div class="workout-name">${d.name}</div><div class="workout-meta">${d.meta}</div></div>
+    <div class="chev">›</div>
+   </div></div>`).join("")}</div>
+ <div class="week-actions"><button class="secondary">+ Ajouter</button><button class="secondary">Modifier la semaine</button></div>
+ <div class="hint"><b>Flexible par conception.</b> Une séance prévue pourra être déplacée, remplacée ou adaptée sans modifier ce qui a déjà été réellement effectué.</div>
+ </section>`;
+}
+function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}
+function render(route){
+ const app=document.querySelector("#app");
+ app.innerHTML = route==="today"?todayView():route==="program"?programView():route==="new"?placeholder("Nouvelle séance","L’assistant de création arrivera à l’étape dédiée."):route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):placeholder("Plus","Profil, paramètres, sauvegarde et export.");
+ document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.route===route));
+ document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.route)));
+ window.scrollTo(0,0);
+}
+function navigate(route){location.hash=route}
+window.addEventListener("hashchange",()=>render(location.hash.slice(1)||"today"));
+render(location.hash.slice(1)||"today");
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js").catch(()=>{});}

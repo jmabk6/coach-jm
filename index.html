@@ -1,52 +1,39 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#fff5f4" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Coach JM" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fff8f7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Coach JM">
   <title>Coach JM</title>
-  <link rel="manifest" href="./manifest.json?v=4" />
-  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png?v=4" />
-  <link rel="stylesheet" href="./css/app.css?v=4" />
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./css/app.css?v=5">
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div>
-        <div class="brand">Coach JM</div>
-        <div class="today-label" id="today-label">Aujourd’hui</div>
-      </div>
-      <button class="avatar" type="button" aria-label="Profil">JM</button>
-    </header>
+  <main id="app"></main>
 
-    <main id="view" class="view">
-      <!-- Fallback visible even if JavaScript is delayed -->
-      <p class="eyebrow">AUJOURD’HUI</p>
-      <h1 class="headline">Prêt pour aujourd’hui ?</h1>
-      <section class="card workout-card">
-        <div class="workout-top">
-          <span class="session-icon">💪</span>
-          <div>
-            <div class="pill">SÉANCE DU JOUR</div>
-            <h2>Muscu A — Jambes</h2>
-            <p>≈ 55 min · Salle · 5 exercices</p>
-          </div>
-        </div>
-        <button class="primary" type="button">Voir la séance</button>
-      </section>
-    </main>
-
-    <nav class="bottom-nav" aria-label="Navigation principale">
-      <button class="nav-item active" type="button" data-route="today"><span class="nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-5v-6h-5v6h-5A1.5 1.5 0 0 1 3 19.5z"/></svg></span><small>Aujourd’hui</small></button>
-      <button class="nav-item" type="button" data-route="program"><span class="nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16"/></svg></span><small>Programme</small></button>
-      <button class="nav-item nav-create" type="button" data-route="new"><span class="plus">＋</span><small>Séance</small></button>
-      <button class="nav-item" type="button" data-route="progress"><span class="nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span><small>Progression</small></button>
-      <button class="nav-item" type="button" data-route="more"><span class="nav-ico nav-dots" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></span><small>Plus</small></button>
-    </nav>
-  </div>
-  <script src="./js/app.js?v=4" defer></script>
+  <nav class="bottom-nav" aria-label="Navigation principale">
+    <button data-route="today" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v9.7a.5.5 0 0 1-.5.5H15v-6H9v6H3.5a.5.5 0 0 1-.5-.5z"/></svg></span>
+      <span>Aujourd’hui</span>
+    </button>
+    <button data-route="program" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6 2v3M18 2v3M3.5 8h17M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2z"/></svg></span>
+      <span>Programme</span>
+    </button>
+    <button data-route="new" class="nav-item nav-main">
+      <span class="plus">+</span><span>Séance</span>
+    </button>
+    <button data-route="progress" class="nav-item">
+      <span class="nav-icon chart"><svg viewBox="0 0 24 24"><path d="M5 20V12M12 20V4M19 20V9"/></svg></span>
+      <span>Progression</span>
+    </button>
+    <button data-route="more" class="nav-item">
+      <span class="nav-icon dots">•••</span><span>Plus</span>
+    </button>
+  </nav>
+  <script type="module" src="./js/app.js?v=5"></script>
 </body>
 </html>

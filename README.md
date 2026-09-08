@@ -1,18 +1,11 @@
-# Coach JM
+# Coach JM — UI 2
 
-PWA de suivi sportif construite depuis zéro.
+Étape 4 : écran **Programme / Ma semaine**.
 
-## Jalon UI 1 — correction iPhone
-- navigation 5 onglets fixée en bas ;
-- écran Aujourd'hui visible même si JavaScript tarde ;
-- chemins relatifs compatibles GitHub Pages `/coach-jm/` ;
-- cache PWA versionné (`ui3`) ;
-- JavaScript sans modules pour fiabiliser ce premier jalon sur Safari iPhone.
+- conserve le socle UI 1.1 ;
+- navigation semaine ;
+- 7 jours avec prévu / réalisé / repos ;
+- premières actions Ajouter / Modifier la semaine ;
+- structure prête pour `plannedWorkouts`.
 
-La base IndexedDB V1 reste présente dans `js/db/` et sera reconnectée au fur et à mesure des fonctionnalités.
-
-
-## UI 1.1
-- Icônes SVG fiables sur iOS
-- marge basse renforcée au-dessus de la navigation fixe
-- cache PWA versionné v4
+Les données affichées sont encore de démonstration : le branchement IndexedDB réel arrive dans l'étape 8 du planning.
