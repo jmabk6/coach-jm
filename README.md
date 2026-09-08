@@ -1,13 +1,12 @@
-# Coach JM — UI 3
-
-Étape 5 : **Détail d'une séance prévue**.
+# Coach JM — UI 4 : Catalogue exercices
 
 Ajouts :
-- correction du résumé hebdomadaire : `1 réalisée · 5 prévues` ;
-- clic sur `Muscu A — Jambes` depuis Aujourd'hui ou Programme ;
-- détail de la séance prévue ;
-- objectifs, exercices, séries cibles, charge prévue, échauffement ;
-- distinction visible entre **prévu** et **réalisé** ;
-- actions `Modifier pour aujourd'hui` et `Démarrer`.
+- catalogue d'exercices ;
+- recherche instantanée ;
+- filtres par famille ;
+- type de mesure visible (kg + reps, secondes, cardio, durée...) ;
+- bouton Créer un exercice ;
+- renommage « Modifier pour aujourd’hui » en « Adapter la séance ».
 
-Les données restent encore de démonstration ; la persistance réelle sera branchée plus tard.
+Pour cette étape de prototype, le bouton central « + Séance » ouvre le catalogue.
+Étape suivante : fiche exercice.

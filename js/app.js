@@ -63,16 +63,48 @@ function workoutDetail(){
        <div class="chev">›</div>
      </div>`).join("")}</div>
    <div class="note-card card"><strong>Prévu ≠ réalisé.</strong><br>Tu pourras changer une charge, faire moins ou plus de reps, remplacer ou ajouter un exercice pendant la séance. L’historique enregistrera ce que tu as réellement fait.</div>
-   <div class="detail-actions"><button class="secondary">Modifier pour aujourd’hui</button><button class="primary compact">▶ Démarrer</button></div>
+   <div class="detail-actions"><button class="secondary">Adapter la séance</button><button class="primary compact">▶ Démarrer</button></div>
  </section>`;
 }
+
+const EXERCISES=[
+ {n:"Leg Press horizontale",g:"🦵",m:"Quadriceps · fessiers",t:["Machine","kg + reps"]},
+ {n:"Leg Curl",g:"🦵",m:"Ischio-jambiers",t:["Machine","kg + reps"]},
+ {n:"Leg Extension",g:"🦵",m:"Quadriceps",t:["Machine","kg + reps"]},
+ {n:"Squat au poids du corps",g:"🏋️",m:"Jambes · tronc",t:["Poids du corps","reps"]},
+ {n:"Tirage vertical",g:"💪",m:"Dos · biceps",t:["Machine","kg + reps"]},
+ {n:"Rowing assis",g:"💪",m:"Dos · biceps",t:["Machine","kg + reps"]},
+ {n:"Chest Press",g:"🏋️",m:"Pectoraux · triceps",t:["Machine","kg + reps"]},
+ {n:"Gainage frontal",g:"🛡️",m:"Tronc",t:["Poids du corps","secondes"]},
+ {n:"Tapis de marche",g:"🚶",m:"Cardio · échauffement",t:["Cardio","durée + vitesse + pente"]},
+ {n:"Vélo",g:"🚴",m:"Cardio · jambes",t:["Cardio","durée + résistance"]},
+ {n:"Mobilité hanches / ischios",g:"🧘",m:"Mobilité · souplesse",t:["Mobilité","durée"]}
+];
+function catalogView(){
+ return `<section class="page">
+  <div class="catalog-head"><h1>Exercices</h1><p>Choisis, consulte ou ajoute un exercice.</p></div>
+  <label class="searchbox">⌕ <input id="exerciseSearch" placeholder="Rechercher un exercice…" autocomplete="off"></label>
+  <div class="chips"><button class="chip active">Tous</button><button class="chip">Jambes</button><button class="chip">Tirage</button><button class="chip">Poussée</button><button class="chip">Tronc</button><button class="chip">Cardio</button><button class="chip">Mobilité</button></div>
+  <div class="catalog-count"><h2>Catalogue</h2><span id="exerciseCount">${EXERCISES.length} exercices</span></div>
+  <div class="exercise-catalog" id="exerciseCatalog">${catalogRows(EXERCISES)}</div>
+  <button class="primary">+ Créer un exercice</button>
+  <div class="card catalog-footer"><b>Un exercice = une référence unique.</b><p>Ses performances pourront ensuite être comparées d’une séance à l’autre.</p></div>
+ </section>`;
+}
+function catalogRows(items){return items.map((e,i)=>`<div class="card catalog-item" data-exercise="${i}"><div class="exercise-glyph">${e.g}</div><div><h3>${e.n}</h3><p>${e.m}</p><div class="tags">${e.t.map(x=>`<span class="tag">${x}</span>`).join("")}</div></div><div class="chev">›</div></div>`).join("")}
+function bindCatalog(){
+ const input=document.querySelector("#exerciseSearch"); if(!input)return;
+ input.addEventListener("input",()=>{const q=input.value.toLowerCase().trim();const items=EXERCISES.filter(e=>(e.n+" "+e.m+" "+e.t.join(" ")).toLowerCase().includes(q));document.querySelector("#exerciseCatalog").innerHTML=catalogRows(items);document.querySelector("#exerciseCount").textContent=`${items.length} exercice${items.length>1?"s":""}`;});
+ document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");const f=c.textContent;const items=f==="Tous"?EXERCISES:EXERCISES.filter(e=>(e.n+" "+e.m+" "+e.t.join(" ")).toLowerCase().includes(f.toLowerCase()));document.querySelector("#exerciseCatalog").innerHTML=catalogRows(items);document.querySelector("#exerciseCount").textContent=`${items.length} exercice${items.length>1?"s":""}`;}));
+}
+
 function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}
 function render(route){
  const app=document.querySelector("#app");
- app.innerHTML = route==="today"?todayView():route==="program"?programView():route==="workout-muscu-a"?workoutDetail():route==="new"?placeholder("Nouvelle séance","L’assistant de création arrivera à l’étape dédiée."):route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):placeholder("Plus","Profil, paramètres, sauvegarde et export.");
+ app.innerHTML = route==="today"?todayView():route==="program"?programView():route==="workout-muscu-a"?workoutDetail():route==="new"?catalogView():route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):placeholder("Plus","Profil, paramètres, sauvegarde et export.");
  document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active", route==="workout-muscu-a" ? b.dataset.route==="program" : b.dataset.route===route));
  document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.route)));
- window.scrollTo(0,0);
+ bindCatalog(); window.scrollTo(0,0);
 }
 function navigate(route){location.hash=route}
 window.addEventListener("hashchange",()=>render(location.hash.slice(1)||"today"));

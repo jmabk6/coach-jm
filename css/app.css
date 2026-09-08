@@ -26,3 +26,16 @@ body{min-height:100vh}button{font:inherit}.page{padding:24px 18px calc(150px + e
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;height:82px;padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:20;backdrop-filter:blur(14px)}
 .nav-item{border:0;background:transparent;color:#a28d90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px}.nav-item.active{color:var(--rose-dark);font-weight:800}.nav-icon{width:25px;height:25px;display:grid;place-items:center}.nav-icon svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.dots{font-size:22px;letter-spacing:2px}.nav-main{position:relative}.nav-main .plus{width:52px;height:52px;border-radius:50%;background:var(--rose);color:white;display:grid;place-items:center;font-size:38px;line-height:1;margin-top:-25px;box-shadow:0 8px 20px rgba(205,95,114,.25)}
 @media(min-width:600px){.page{padding-left:28px;padding-right:28px}.bottom-nav{left:50%;transform:translateX(-50%);max-width:720px}}
+
+/* UI4 catalogue exercices */
+.catalog-head h1{font:700 34px Georgia,serif;margin:0}.catalog-head p{color:var(--muted);margin:6px 0 18px}
+.searchbox{display:flex;align-items:center;gap:10px;background:white;border:1px solid var(--line);border-radius:18px;padding:13px 15px}
+.searchbox input{border:0;outline:0;background:transparent;width:100%;font-size:16px;color:var(--ink)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;border:1px solid var(--line);background:white;border-radius:999px;padding:9px 13px;color:#80696b;font-weight:700}
+.chip.active{background:var(--rose);border-color:var(--rose);color:white}
+.catalog-count{display:flex;justify-content:space-between;align-items:center;margin:22px 2px 12px}.catalog-count h2{margin:0;font-size:21px}.catalog-count span{color:var(--muted);font-size:13px}
+.exercise-catalog{display:flex;flex-direction:column;gap:10px}.catalog-item{padding:14px;display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center}
+.exercise-glyph{width:48px;height:48px;border-radius:15px;background:var(--rose-soft);display:grid;place-items:center;font-size:24px}
+.catalog-item h3{font-size:17px;margin:0}.catalog-item p{font-size:13px;color:var(--muted);margin:4px 0 0}.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.tag{font-size:10px;padding:4px 7px;border-radius:999px;background:#f4eeee;color:#80696b}
+.catalog-footer{margin-top:16px;padding:15px;text-align:center}.catalog-footer b{color:var(--rose-dark)}.catalog-footer p{font-size:13px;color:var(--muted);margin:5px 0 0}
