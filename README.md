@@ -1,30 +1,14 @@
-# Coach JM v37 — Étape 12/15 : Progression
+# Coach JM v38 — correctif Étape 12 Progression
 
-Premier écran de progression construit à partir des séances réellement sauvegardées.
+Cause trouvée :
+- le bouton de navigation du bas utilise la route `progress`;
+- l'écran de progression v37 avait été branché sur `progression`;
+- l'ancienne route `progress` affichait encore le placeholder `Ma progression`.
 
-## Musculation
-Pour chaque exercice :
-- meilleure charge de la dernière séance ;
-- reps réalisées à cette charge ;
-- volume total charge × reps ;
-- RPE moyen ;
-- évolution depuis la première séance ;
-- historique séance par séance.
+Correction :
+- `progress` affiche maintenant le vrai écran `progressionView()`;
+- `progression` reste accepté comme alias ;
+- retour du détail vers `progress`;
+- suppression de l'ancien placeholder.
 
-## Cardio
-- vitesse maximale ;
-- pente maximale ;
-- durée totale ;
-- fréquence cardiaque moyenne si renseignée ;
-- évolution de la vitesse max.
-
-## Gainage / durée
-- meilleure durée ;
-- durée totale ;
-- évolution.
-
-Aucune donnée fictive n'est injectée : l'écran se construit uniquement depuis `workoutSessions`.
-
-Marqueurs : v37 + JS37.
-Commit conseillé :
-`Etape 12 v37 - progression`
+Marqueurs attendus : v38 + JS38.
