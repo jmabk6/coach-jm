@@ -276,6 +276,10 @@ function sessionsView(){
  ];
  return `<section class="page">
   <div class="program-header"><div class="backless"><h1>Mes séances</h1><p>Choisis une séance à voir ou à démarrer.</p></div></div>
+  ${activeSessionRestored?`<div class="resume-card card session-resume">
+    <div><b>⏱ Séance en cours</b><span>${ACTIVE_PLAN.name} · exercice ${LS.x+1}/${LIVE.length} · ${ft(LS.t)}</span></div>
+    <button class="secondary" data-route="live-workout">Reprendre</button>
+  </div>`:""}
   <div class="template-list">
    ${models.map(m=>`<div class="card template-row" data-route="${m.route}"><div class="ico">${m.icon}</div><div><h3>${m.name}</h3><p>${m.meta}</p></div><div class="chev">›</div></div>`).join("")}
   </div>
@@ -724,6 +728,7 @@ function historyView(){
 
 function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}
 function render(route){
+ if(route==="sessions" && activeSessionRestored) route="live-workout";
  const app=document.querySelector("#app");
  app.innerHTML =
  route==="today"?todayView():
@@ -745,7 +750,13 @@ function render(route){
   });
   window.scrollTo(0,0);
 }
-function navigate(route){location.hash=route}
+function navigate(route){
+  if(route==="sessions" && activeSessionRestored){
+    location.hash="live-workout";
+    return;
+  }
+  location.hash=route;
+}
 window.addEventListener("hashchange",()=>render(location.hash.slice(1)||"today"));
 async function initCoachJM(){
   await restoreActiveSession();
