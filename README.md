@@ -1,14 +1,15 @@
-# Coach JM v64 — poignée intelligente
+# Coach JM v65 — retour au drag v63 + menu sur la date
 
-Programme :
-- bouton global `Ajouter une séance` supprimé;
-- appui court sur les 3 barres :
-  - séance prévue -> Modifier la séance / Mettre en repos;
-  - Repos -> Ajouter une séance;
-- appui long (~450 ms) sur les 3 barres -> drag & drop;
-- relâchement après drag -> échange de cases;
-- séance réalisée : reste consultable par son chevron et n'est pas déplaçable.
+On revient au comportement de v63 pour les 3 barres :
+- les 3 barres servent uniquement au drag & drop ;
+- aucun menu sur la poignée ;
+- échange de cases conservé.
 
-Le jour choisi lors de `Ajouter une séance` est mémorisé dans sessionStorage pour permettre au créateur existant de le rattacher ensuite à la bonne case.
+Nouveau comportement :
+- clic sur la case date à gauche ouvre le menu du jour ;
+- séance prévue : Modifier la séance / Mettre en repos ;
+- Repos : Ajouter une séance ;
+- séance réalisée : Voir la séance réalisée ;
+- bouton global Ajouter une séance supprimé.
 
-Marqueurs : v64 + JS64.
+Marqueurs : v65 + JS65.
