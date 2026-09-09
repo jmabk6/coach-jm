@@ -144,28 +144,52 @@ function workoutDetail(which="A"){
      <div class="detail-title"><h1>Séance prévue</h1><p>${w.name}</p></div>
    </div>
 
-   <div class="card summary workout-unified">
-     <div class="summary-head"><div class="bigemoji">💪</div><div><h2>${w.name}</h2><div class="meta">${w.subtitle}</div></div></div>
-     <div class="pills"><span class="pill">⏱ ${w.duration}</span><span class="pill">🏋️ ${w.place}</span><span class="pill">📋 ${w.exercises.length} exercices</span></div>
+   <div class="card workout-one-card">
+     <div class="summary-head">
+       <div class="bigemoji">💪</div>
+       <div><h2>${w.name}</h2><div class="meta">${w.subtitle}</div></div>
+     </div>
 
-     ${hasActive?`<div class="inline-active-phase" data-route="${liveRoute}">
-       <div class="inline-active-head"><span class="live-dot"></span><b>SÉANCE EN COURS</b><span>${ft(LS.t)}</span></div>
-       <div class="inline-active-main">
+     <div class="pills">
+       <span class="pill">⏱ ${w.duration}</span>
+       <span class="pill">🏋️ ${w.place}</span>
+       <span class="pill">📋 ${w.exercises.length} exercices</span>
+     </div>
+
+     ${hasActive?`<div class="workout-live-section" data-route="${liveRoute}">
+       <div class="workout-live-title">
+         <div><span class="live-dot"></span><b>SÉANCE EN COURS</b></div>
+         <span>${ft(LS.t)}</span>
+       </div>
+       <div class="workout-live-content">
          <div class="active-phase-icon">${currentExercise?.i||"▶️"}</div>
-         <div><div class="active-phase-label">PHASE ${LS.x+1}/${LIVE.length}</div><h3>${currentExercise?.n||w.name}</h3><p>${currentExercise?.m||""}</p></div>
+         <div class="workout-live-copy">
+           <div class="active-phase-label">PHASE ${LS.x+1}/${LIVE.length}</div>
+           <h3>${currentExercise?.n||w.name}</h3>
+           <p>${currentExercise?.m||""}</p>
+         </div>
          <div class="chev">›</div>
        </div>
-       <div class="inline-resume">Reprendre exactement ici ›</div>
+       <button class="resume-inline" type="button">Reprendre exactement ici ›</button>
      </div>`:""}
 
-     <div class="goalbox"><strong>🎯 Objectif de la séance</strong><p>${w.goal}</p></div>
+     <div class="workout-goal-section">
+       <strong>🎯 Objectif de la séance</strong>
+       <p>${w.goal}</p>
+     </div>
    </div>
 
    <div class="section-head"><h2>Exercices prévus</h2><button class="linkbtn">Modifier</button></div>
    <div class="exercise-list">${w.exercises.map((e,i)=>`
      <div class="card exercise ${hasActive && i===LS.x?'exercise-current':''}">
        <div class="num">${i+1}</div>
-       <div><div class="exercise-name">${e.name}</div><div class="exercise-meta">${e.meta}</div><div class="exercise-extra">${e.extra}</div>${e.warmup?`<span class="warmup">${e.warmup}</span>`:''}${hasActive && i===LS.x?`<span class="current-badge">En cours</span>`:""}</div>
+       <div>
+         ${hasActive && i===LS.x?`<span class="current-badge">EN COURS</span>`:""}
+         <div class="exercise-name">${e.name}</div>
+         <div class="exercise-meta">${e.meta}</div>
+         <div class="exercise-extra">${e.extra}</div>
+         ${e.warmup?`<span class="warmup">${e.warmup}</span>`:''}
+       </div>
        <div class="chev">›</div>
      </div>`).join("")}</div>
 

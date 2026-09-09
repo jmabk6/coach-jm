@@ -184,3 +184,32 @@ body{min-height:100vh}button{font:inherit}.page{padding:24px 18px calc(150px + e
 .inline-active-main h3{margin:2px 0;font-size:18px}
 .inline-active-main p{margin:0;color:var(--muted);font-size:12px}
 .inline-resume{margin-top:10px;padding-top:9px;border-top:1px solid #efd8da;text-align:center;color:var(--rose-dark);font-size:12px;font-weight:900}
+
+/* v32 — reproduction du mockup validé : UN SEUL cadre séance */
+.workout-one-card{padding:20px 16px 16px;overflow:hidden}
+.workout-one-card .summary-head{margin-bottom:13px}
+.workout-one-card .pills{margin-bottom:15px}
+.workout-live-section{
+  margin:0;
+  padding:15px 0 0;
+  border-top:1px solid #efd9dc;
+  border-bottom:1px solid #efd9dc;
+  background:transparent;
+  cursor:pointer;
+}
+.workout-live-title{display:flex;justify-content:space-between;align-items:center;color:var(--rose-dark);font-size:12px;font-weight:900}
+.workout-live-title>div{display:flex;align-items:center;gap:8px}
+.workout-live-title>span{color:var(--muted);font-size:14px}
+.workout-live-content{display:grid;grid-template-columns:50px 1fr 20px;gap:11px;align-items:center;padding:13px 0}
+.workout-live-copy h3{font-size:20px;margin:2px 0}
+.workout-live-copy p{margin:0;color:var(--muted);font-size:13px}
+.resume-inline{
+  display:block;width:100%;border:0;border-top:1px solid #efd9dc;
+  background:transparent;color:var(--rose-dark);font-weight:900;
+  font-size:14px;padding:12px 4px;cursor:pointer
+}
+.workout-goal-section{padding:15px 2px 2px}
+.workout-goal-section strong{display:block;color:var(--rose-dark);font-size:16px;margin-bottom:7px}
+.workout-goal-section p{margin:0;color:#725d60;font-size:14px;line-height:1.45}
+.exercise-current{border:2px solid #df929c;background:#fff8f9}
+.exercise-current .current-badge{margin:0 0 4px;padding:3px 7px;font-size:9px}

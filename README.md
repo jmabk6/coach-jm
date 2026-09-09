@@ -1,10 +1,13 @@
-# Coach JM — Étape 11 v31 — carte séance fusionnée
+# Coach JM — Étape 11 v32 — carte unique conforme au mockup
 
-- Suppression du cadre séparé `Séance en cours`.
-- Un seul cadre `Muscu D — Full Body`.
-- La phase en cours est intégrée dans ce cadre entre les informations générales et l'objectif.
-- Le bloc `Reprendre exactement ici` renvoie à la phase live.
-- L'exercice courant reste marqué `En cours` dans la liste.
+Version alignée sur le mockup validé :
+- UN SEUL cadre extérieur pour Muscu D / Muscu A ;
+- titre + badges en haut ;
+- `SÉANCE EN COURS` intégrée dans ce même cadre, sans deuxième carte ;
+- phase en cours + chrono + `Reprendre exactement ici` ;
+- objectif intégré dans le même cadre ;
+- liste des exercices ensuite ;
+- exercice actuel marqué `EN COURS`.
 
 Commit conseillé :
-`Etape 11 v31 - fusion carte seance et phase`
+`Etape 11 v32 - carte unique conforme mockup`
