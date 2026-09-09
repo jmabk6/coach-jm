@@ -1,16 +1,17 @@
-# Coach JM v57 — drag + ouverture des séances prévues
+# Coach JM v58 — correction définitive relâchement drag
 
-Drag :
-- doigt posé sur les 3 barres = cadre immédiatement rouge ;
-- un clone du cadre suit le doigt pendant le déplacement ;
-- au relâchement = rouge supprimé immédiatement, même si aucun déplacement n'a eu lieu ;
-- touchcancel nettoie aussi l'état ;
-- le drag ne démarre que depuis les 3 barres.
+Bug v57 :
+`touchend` était attaché à la poignée.
+Quand le doigt se déplaçait hors de la poignée avant d'être relâché,
+Safari pouvait ne jamais envoyer `touchend` à cet élément.
+La classe `.dragging` restait donc sur le cadre, d'où le rouge permanent.
 
-Consultation :
-- une séance réalisée ouvre son détail historique ;
-- une séance non réalisée est maintenant cliquable ;
-- clic sur une séance prévue ouvre `Séance prévue` avec son contenu ;
-- la poignée de drag n'ouvre pas la séance.
+Correction v58 :
+- `touchstart` reste sur les 3 barres ;
+- `touchmove`, `touchend` et `touchcancel` sont maintenant écoutés sur `document` ;
+- quel que soit l'endroit où le doigt est relâché, `resetDrag()` est exécuté ;
+- le cadre redevient normal immédiatement ;
+- le clone de déplacement est supprimé ;
+- les cibles rouges sont nettoyées.
 
-Marqueurs : v57 + JS57.
+Marqueurs : v58 + JS58.
