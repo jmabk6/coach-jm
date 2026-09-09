@@ -1,12 +1,16 @@
-# Coach JM v44 — Finalisation écran 1 Aujourd'hui
+# Coach JM v45 — correctif fin de séance
 
-Corrections validées :
-- si une séance est en cours, le titre devient `On continue ?`;
-- la carte de séance prévue Muscu A disparaît pendant une séance en cours;
-- la seule action principale devient `Reprendre` la séance active;
-- la carte en cours affiche la phase actuelle;
-- `Point de départ` reste seulement tant qu'aucune séance n'est enregistrée;
-- dès qu'un historique existe, il devient `Mes premières données` avec accès Progression;
-- Ma semaine et Mes 3 objectifs restent inchangés.
+Bug :
+Après `Terminer la séance`, la séance active restait dans IndexedDB jusqu'à l'enregistrement du bilan.
+En revenant sur Aujourd'hui avant/après certaines navigations, elle pouvait donc être restaurée comme `Séance en cours`.
 
-Marqueurs temporaires : v44 + JS44.
+Correction :
+- au clic sur `Terminer la séance`, l'état courant est figé puis l'entrée `meta / active_session` est supprimée immédiatement ;
+- `activeSessionRestored` passe immédiatement à `false` ;
+- l'écran de bilan continue d'utiliser les données en mémoire, donc rien n'est perdu ;
+- lors de `Enregistrer le bilan`, la séance est enregistrée dans l'historique et le flag est de nouveau sécurisé à `false`.
+
+Résultat attendu :
+Une fois `Terminer la séance` pressé, Aujourd'hui ne doit plus jamais proposer `Reprendre` cette séance.
+
+Marqueurs : v45 + JS45.
