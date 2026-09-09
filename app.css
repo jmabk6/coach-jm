@@ -213,3 +213,18 @@ body{min-height:100vh}button{font:inherit}.page{padding:24px 18px calc(150px + e
 .workout-goal-section p{margin:0;color:#725d60;font-size:14px;line-height:1.45}
 .exercise-current{border:2px solid #df929c;background:#fff8f9}
 .exercise-current .current-badge{margin:0 0 4px;padding:3px 7px;font-size:9px}
+
+.version-badge{
+  position:fixed;
+  right:8px;
+  bottom:92px;
+  z-index:9999;
+  font-size:9px;
+  line-height:1;
+  padding:4px 6px;
+  border-radius:999px;
+  background:#f4dfe2;
+  color:#a64b5a;
+  opacity:.78;
+  pointer-events:none;
+}

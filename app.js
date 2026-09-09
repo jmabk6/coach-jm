@@ -817,4 +817,4 @@ async function initCoachJM(){
   render(location.hash.slice(1)||"today");
 }
 initCoachJM();
-if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js").catch(()=>{});}
+
