@@ -1,17 +1,15 @@
-# Coach JM v39 — Étape 12 : catégories de progression
+# Coach JM v40 — filtres Progression + anti-zoom iPhone
 
-Ajout des filtres :
-- Tout
-- Cardio
-- Jambes
-- Tirage
-- Poussée
-- Abdos/Gainage
-- Mobilité
+Corrections :
+- les catégories Progression ne défilent plus vers la droite ;
+- elles se répartissent automatiquement sur plusieurs lignes ;
+- aucun bouton ne doit dépasser de l'écran ;
+- le double-tap accidentel ne doit plus zoomer la page ;
+- largeur globale verrouillée pour empêcher les champs de partir hors écran après interaction.
 
-Les exercices enregistrés sont classés automatiquement selon leur type/nom.
-Le filtre ne modifie aucune donnée : il agit uniquement sur l'affichage.
+Marqueurs attendus :
+- v40
+- JS40
 
-Marqueurs : v39 + JS39.
 Commit conseillé :
-`Etape 12 v39 - filtres progression`
+`v40 filtres progression + anti zoom iphone`
