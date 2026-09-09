@@ -327,35 +327,47 @@ function liveFields(e){
           <button class="remove-line" data-remove-block="${i}" ${e.cardio.blocks.length===1?'disabled':''}>×</button>
         </div>`).join("")}
       </div>
-      <button class="add-treadmill-line" id="addTreadmillBlock">+ Ajouter une ligne</button>
-      <button class="primary" id="completeBlock" style="margin-top:10px">${ok.includes(0)?"✓ Échauffement validé":"Valider l’échauffement"}</button>`;
+      <button class="add-treadmill-line" id="addTreadmillBlock">+ Ajouter une ligne</button>`;
   }
   if(e.type==="sets"){
+    const firstOpen=Math.min(ok.length,e.s.length-1);
+    const allDone=ok.length>=e.s.length;
     return `<div class="series-head"><span>Série</span><span>Charge</span><span>Reps</span><span>RPE</span><span></span></div>
-      ${e.s.map((a,i)=>`<div class="series-row">
-        <span class="series-n">${i+1}</span>
-        <input data-li="${i}" data-lf="0" value="${a[0]}">
-        <input data-li="${i}" data-lf="1" value="${a[1]}">
-        <select data-li="${i}" data-lf="2">${[5,6,7,8,9,10].map(r=>`<option ${+a[2]===r?'selected':''}>${r}</option>`).join("")}</select>
-        <button class="set-ok ${ok.includes(i)?'checked':''}" data-setok="${i}">${ok.includes(i)?'✓':'○'}</button>
-      </div>`).join("")}
-      <button class="add-set-line" id="addSetLine">+ Ajouter une série</button>`;
+      ${e.s.map((a,i)=>{
+        const done=ok.includes(i);
+        const active=!done && i===firstOpen && !allDone;
+        const locked=!done && !active;
+        return `<div class="series-row ${done?'series-done':active?'series-active':'series-locked'}">
+          <span class="series-n">${i+1}</span>
+          <input data-li="${i}" data-lf="0" value="${a[0]}" ${done||locked?'disabled':''}>
+          <input data-li="${i}" data-lf="1" value="${a[1]}" ${done||locked?'disabled':''}>
+          <select data-li="${i}" data-lf="2" ${done||locked?'disabled':''}>${[5,6,7,8,9,10].map(r=>`<option ${+a[2]===r?'selected':''}>${r}</option>`).join("")}</select>
+          <button class="set-ok ${done?'checked':''}" data-setok="${i}" ${locked?'disabled':''}>${done?'✓':'○'}</button>
+        </div>`;
+      }).join("")}
+      <button class="add-set-line" id="addSetLine" ${allDone?'':'disabled'}>+ Ajouter une série</button>`; 
   }
   if(e.type==="duration"){
+    const firstOpen=Math.min(ok.length,e.d.length-1);
+    const allDone=ok.length>=e.d.length;
     return `<div class="series-head"><span>Série</span><span>Temps</span><span>Unité</span><span>RPE</span><span></span></div>
-      ${e.d.map((a,i)=>`<div class="series-row">
-        <span class="series-n">${i+1}</span>
-        <input data-di="${i}" data-df="0" value="${a[0]}">
-        <input value="s" disabled>
-        <select data-di="${i}" data-df="1">${[5,6,7,8,9,10].map(r=>`<option ${+a[1]===r?'selected':''}>${r}</option>`).join("")}</select>
-        <button class="set-ok ${ok.includes(i)?'checked':''}" data-setok="${i}">${ok.includes(i)?'✓':'○'}</button>
-      </div>`).join("")}
-      <button class="add-set-line" id="addDurationSet">+ Ajouter une série</button>`;
+      ${e.d.map((a,i)=>{
+        const done=ok.includes(i);
+        const active=!done && i===firstOpen && !allDone;
+        const locked=!done && !active;
+        return `<div class="series-row ${done?'series-done':active?'series-active':'series-locked'}">
+          <span class="series-n">${i+1}</span>
+          <input data-di="${i}" data-df="0" value="${a[0]}" ${done||locked?'disabled':''}>
+          <input value="s" disabled>
+          <select data-di="${i}" data-df="1" ${done||locked?'disabled':''}>${[5,6,7,8,9,10].map(r=>`<option ${+a[1]===r?'selected':''}>${r}</option>`).join("")}</select>
+          <button class="set-ok ${done?'checked':''}" data-setok="${i}" ${locked?'disabled':''}>${done?'✓':'○'}</button>
+        </div>`;
+      }).join("")}
+      <button class="add-set-line" id="addDurationSet" ${allDone?'':'disabled'}>+ Ajouter une série</button>`; 
   }
   return `<div class="mobility-live">
     <label>Durée prévue<input id="mobilityDuration" inputmode="numeric" value="${e.mobility.durationMin}"><span>min</span></label>
     <textarea id="mobilityNote" class="live-note" placeholder="Ce que tu as réellement fait…">${e.mobility.note||""}</textarea>
-    <button class="primary" id="completeBlock" style="margin-top:12px">${ok.includes(0)?"✓ Mobilité validée":"Valider la mobilité"}</button>
   </div>`;
 }
 
@@ -437,7 +449,17 @@ function bindLive(){
  document.querySelectorAll("[data-setok]").forEach(b=>b.addEventListener("click",()=>{
    LS.ok[LS.x]=LS.ok[LS.x]||[];
    let i=+b.dataset.setok;
-   if(!LS.ok[LS.x].includes(i))LS.ok[LS.x].push(i);
+   if(LS.ok[LS.x].includes(i)){
+     // Correction: reopen this set and every later validated set.
+     LS.ok[LS.x]=LS.ok[LS.x].filter(v=>v<i);
+     LS.rest=0;
+     if(liveRestTimer)clearInterval(liveRestTimer);
+     liveRestTimer=null;
+     render("live-workout");
+     return;
+   }
+   LS.ok[LS.x].push(i);
+   LS.ok[LS.x].sort((a,b)=>a-b);
    LS.rest=(LIVE[LS.x].n==="Leg Curl"?75:LIVE[LS.x].type==="duration"?45:90);
    render("live-workout"); startLiveRest();
  }));
@@ -456,8 +478,17 @@ function bindLive(){
  });
 
  let n=document.querySelector("#liveNote"); if(n)n.addEventListener("input",()=>LS.notes[LS.x]=n.value);
- let nx=document.querySelector("#nextLive"); if(nx)nx.addEventListener("click",()=>{LS.x++;LS.rest=0;render("live-workout")});
- let f=document.querySelector("#finishLive"); if(f)f.addEventListener("click",()=>render("live-complete"));
+ let nx=document.querySelector("#nextLive"); if(nx)nx.addEventListener("click",()=>{
+   const e=LIVE[LS.x];
+   // Cardio/mobility have no separate validation button: finishing the exercise validates the block.
+   if(e.type==="cardio"||e.type==="mobility") LS.ok[LS.x]=[0];
+   LS.x++; LS.rest=0; render("live-workout");
+ });
+ let f=document.querySelector("#finishLive"); if(f)f.addEventListener("click",()=>{
+   const e=LIVE[LS.x];
+   if(e.type==="cardio"||e.type==="mobility") LS.ok[LS.x]=[0];
+   render("live-complete");
+ });
  let sk=document.querySelector("#skipRest"); if(sk)sk.addEventListener("click",()=>{LS.rest=0;if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=null;render("live-workout")});
 }
 function startLiveRest(){if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=setInterval(()=>{if(LS.rest<=0){clearInterval(liveRestTimer);liveRestTimer=null;return}LS.rest--;let c=document.querySelector("#restClock");if(c)c.textContent=ft(LS.rest)},1000)}

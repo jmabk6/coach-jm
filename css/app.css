@@ -131,3 +131,11 @@ body{min-height:100vh}button{font:inherit}.page{padding:24px 18px calc(150px + e
 }
 
 .add-set-line{width:100%;margin-top:9px;border:1px dashed #d9b9bd;background:#fffafa;color:var(--rose-dark);border-radius:12px;padding:10px;font-weight:800}
+
+/* UI7 v21 — séries séquentielles */
+.series-row.series-locked{opacity:.42;background:#faf8f8}
+.series-row.series-active{background:#fffafa;box-shadow:inset 3px 0 0 #d8a3aa}
+.series-row.series-done{background:#f3faf6}
+.series-row input:disabled,.series-row select:disabled{background:transparent;color:inherit;-webkit-text-fill-color:inherit;opacity:1}
+.set-ok:disabled{opacity:.35}
+.add-set-line:disabled{opacity:.38;cursor:not-allowed}

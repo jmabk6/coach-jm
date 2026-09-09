@@ -1,11 +1,12 @@
-# Coach JM UI7 v20 — ajout de séries
+# Coach JM UI7 v21 — saisie séquentielle
 
-Correction :
-- bouton `+ Ajouter une série` sous chaque exercice de musculation ;
-- une série ajoutée reprend la charge et le nombre de reps de la dernière ligne pour éviter de tout retaper ;
-- le RPE de la nouvelle série repart à 7 et reste modifiable ;
-- même possibilité ajoutée au gainage.
+Modifications :
+- suppression de `Valider l’échauffement` : `Exercice terminé →` valide le tapis et passe au suivant ;
+- même principe pour la mobilité ;
+- en musculation, seule la première série non validée est saisissable ;
+- après ✓, la série devient verte et verrouillée, le repos démarre et la suivante se déverrouille ;
+- toucher la coche verte permet de rouvrir la série pour correction ;
+- `+ Ajouter une série` n’est disponible qu’après validation de toutes les séries affichées ;
+- même fonctionnement séquentiel pour le gainage.
 
-Le prévu reste affiché, mais le réalisé peut donc contenir plus de séries que le programme.
-
-Commit : `UI7 v20 - ajout serie libre`
+Commit : `UI7 v21 - saisie sequentielle`
