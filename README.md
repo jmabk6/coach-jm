@@ -1,15 +1,22 @@
-# Coach JM v40 — filtres Progression + anti-zoom iPhone
+# Coach JM v41 — Étape 13/15 : Conseils Coach JM
 
-Corrections :
-- les catégories Progression ne défilent plus vers la droite ;
-- elles se répartissent automatiquement sur plusieurs lignes ;
-- aucun bouton ne doit dépasser de l'écran ;
-- le double-tap accidentel ne doit plus zoomer la page ;
-- largeur globale verrouillée pour empêcher les champs de partir hors écran après interaction.
+Ajout d'un écran de recommandations basé sur l'historique réel.
 
-Marqueurs attendus :
-- v40
-- JS40
+Coach JM regarde notamment :
+- RPE moyen des exercices ;
+- progression de charge et de volume ;
+- évolution cardio ;
+- RPE global de la dernière séance ;
+- énergie ;
+- sommeil ;
+- gêne/douleur signalée.
 
+Accès :
+- depuis Aujourd'hui ;
+- depuis Plus.
+
+Aucune recommandation n'est stockée en dur à partir de données fictives : elle est calculée depuis `workoutSessions`.
+
+Marqueurs : v41 + JS41.
 Commit conseillé :
-`v40 filtres progression + anti zoom iphone`
+`Etape 13 v41 - conseils coach jm`
