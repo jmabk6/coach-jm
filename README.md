@@ -1,16 +1,17 @@
-# Coach JM v45 — correctif fin de séance
+# Coach JM v46 — Finalisation écran Programme
 
-Bug :
-Après `Terminer la séance`, la séance active restait dans IndexedDB jusqu'à l'enregistrement du bilan.
-En revenant sur Aujourd'hui avant/après certaines navigations, elle pouvait donc être restaurée comme `Séance en cours`.
+Modifications :
+- suppression des textes PRÉVU / RÉALISÉ / AUJOURD'HUI dans les cartes ;
+- cartes plus compactes ;
+- pastille verte = réalisée ;
+- pastille rose = aujourd'hui ;
+- pastille rose pâle = prévue ;
+- repos distingué discrètement ;
+- suppression de `Modifier la semaine` ;
+- appui long (~450 ms) + glissement tactile pour déplacer une séance prévue ;
+- dépôt sur un autre jour prévu = échange des deux séances ;
+- une séance réalisée n'est jamais déplaçable ;
+- l'ordre choisi est mémorisé dans localStorage ;
+- `+ Ajouter` et `Historique des séances` restent disponibles.
 
-Correction :
-- au clic sur `Terminer la séance`, l'état courant est figé puis l'entrée `meta / active_session` est supprimée immédiatement ;
-- `activeSessionRestored` passe immédiatement à `false` ;
-- l'écran de bilan continue d'utiliser les données en mémoire, donc rien n'est perdu ;
-- lors de `Enregistrer le bilan`, la séance est enregistrée dans l'historique et le flag est de nouveau sécurisé à `false`.
-
-Résultat attendu :
-Une fois `Terminer la séance` pressé, Aujourd'hui ne doit plus jamais proposer `Reprendre` cette séance.
-
-Marqueurs : v45 + JS45.
+Marqueurs : v46 + JS46.
