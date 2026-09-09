@@ -158,3 +158,5 @@ body{min-height:100vh}button{font:inherit}.page{padding:24px 18px calc(150px + e
 
 .resume-card{padding:14px 15px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;gap:12px}.resume-card div{display:flex;flex-direction:column;gap:4px}.resume-card span{color:var(--muted);font-size:13px}.resume-card .secondary{padding:10px 12px}
 .history-open{width:100%;margin-top:10px}.history-list{display:flex;flex-direction:column;gap:10px}.history-row{padding:15px;display:flex;justify-content:space-between;align-items:center;gap:12px}.history-meta{display:flex;flex-direction:column;gap:5px;align-items:flex-end;color:var(--muted);font-size:12px}
+
+.session-resume{margin:4px 0 16px}

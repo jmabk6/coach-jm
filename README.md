@@ -1,20 +1,12 @@
-# COACH JM V1 — ÉTAPE 11/15 — Sauvegarde + historique
+# Coach JM — Étape 11 v26 — reprise immédiate
 
-Cette version branche réellement IndexedDB.
+Correctif de navigation pendant une séance en cours.
 
-## Sauvegarde automatique
-- une séance démarrée est enregistrée localement;
-- les charges, reps, RPE, tapis, mobilité, notes et progression sont autosauvegardés;
-- le chrono est sauvegardé régulièrement;
-- après fermeture/rechargement, Coach JM affiche `Séance en cours → Reprendre`.
-
-## Fin de séance
-- `Enregistrer le bilan` écrit une vraie entrée dans `workoutSessions`;
-- la séance en cours est alors supprimée de `meta.active_session`;
-- le bilan apparaît dans `Programme → Historique des séances`.
-
-## Important
-Les données sont locales à ce navigateur/iPhone pour l'instant. Export/restauration viendront plus tard.
+- Une séance active reste en mémoire + IndexedDB.
+- Si tu quittes la séance pour **Aujourd’hui**, puis appuies de nouveau sur **Séance**,
+  Coach JM revient directement sur la séance en cours, au même exercice.
+- `Mes séances` affiche également un encart **Séance en cours → Reprendre** si cet écran est ouvert autrement.
+- Une séance n'est considérée comme terminée qu'après enregistrement du bilan.
 
 Commit conseillé :
-`Etape 11 - sauvegarde IndexedDB et historique`
+`Etape 11 v26 - reprise immediate seance`
