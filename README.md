@@ -1,15 +1,11 @@
-# Coach JM v47 — Programme final
+# Coach JM v48 — diagnostic page blanche
 
-Conforme au mockup validé :
-- 7 jours visibles sur un écran compact ;
-- cartes de 58 px de haut ;
-- statut uniquement par pastille ;
-- poignée à 3 traits à droite ;
-- le déplacement démarre uniquement depuis la poignée ;
-- texte non sélectionnable / callout iOS désactivé ;
-- appui court ailleurs sur la carte conserve le comportement normal ;
-- séances réalisées verrouillées ;
-- + Ajouter une séance et Historique visibles sous la semaine ;
-- suppression du bloc explicatif pour gagner de la hauteur.
+Cette version ne change pas le design Programme.
 
-Marqueurs temporaires : v47 + JS47.
+Elle :
+- charge de nouveaux assets `coachjm-v48.js` / `coachjm-v48.css`;
+- ajoute un panneau rouge visible si Safari rencontre une erreur JavaScript;
+- conserve le programme compact v47.
+
+Marqueurs attendus : v48 + JS48.
+Si l'écran ne s'affiche pas normalement, envoie une capture du message rouge.

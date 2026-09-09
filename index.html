@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Coach JM">
   <title>Coach JM</title>
   <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="./coachjm-v47.css">
+  <link rel="stylesheet" href="./coachjm-v48.css">
 
 <script>
 (async function () {
@@ -28,6 +28,20 @@
 })();
 </script>
 
+<script>
+window.addEventListener('error', function(e){
+  var d=document.createElement('div');
+  d.style='position:fixed;inset:16px;z-index:99999;background:#fff;color:#900;padding:16px;border:2px solid #c66;overflow:auto;font:13px/1.4 monospace;white-space:pre-wrap';
+  d.textContent='Coach JM erreur JS\n'+(e.message||'Erreur inconnue')+'\n'+(e.filename||'')+':'+(e.lineno||'');
+  document.body.appendChild(d);
+});
+window.addEventListener('unhandledrejection', function(e){
+  var d=document.createElement('div');
+  d.style='position:fixed;inset:16px;z-index:99999;background:#fff;color:#900;padding:16px;border:2px solid #c66;overflow:auto;font:13px/1.4 monospace;white-space:pre-wrap';
+  d.textContent='Coach JM promesse rejetée\n'+String(e.reason && (e.reason.stack||e.reason.message||e.reason));
+  document.body.appendChild(d);
+});
+</script>
 </head>
 <body>
   <main id="app"></main>
@@ -51,7 +65,7 @@
       <span class="nav-icon dots">•••</span><span>Plus</span>
     </button>
   </nav>
-  <script type="module" src="./coachjm-v47.js"></script>
-<div class="version-badge">v47</div>
+  <script type="module" src="./coachjm-v48.js"></script>
+<div class="version-badge">v48</div>
 </body>
 </html>
