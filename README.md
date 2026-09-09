@@ -1,17 +1,11 @@
-# Coach JM v58 — correction définitive relâchement drag
+# Coach JM v59 — drag avec un seul bloc
 
-Bug v57 :
-`touchend` était attaché à la poignée.
-Quand le doigt se déplaçait hors de la poignée avant d'être relâché,
-Safari pouvait ne jamais envoyer `touchend` à cet élément.
-La classe `.dragging` restait donc sur le cadre, d'où le rouge permanent.
+Comportement :
+- toucher les 3 barres : le bloc ORIGINAL devient rouge ;
+- garder le doigt : ce même bloc suit le doigt ;
+- aucun clone / deuxième cadre ;
+- aucune destination ne devient rouge ;
+- relâcher : échange avec le jour visé puis retour immédiat au style normal ;
+- annulation : retour immédiat au style normal.
 
-Correction v58 :
-- `touchstart` reste sur les 3 barres ;
-- `touchmove`, `touchend` et `touchcancel` sont maintenant écoutés sur `document` ;
-- quel que soit l'endroit où le doigt est relâché, `resetDrag()` est exécuté ;
-- le cadre redevient normal immédiatement ;
-- le clone de déplacement est supprimé ;
-- les cibles rouges sont nettoyées.
-
-Marqueurs : v58 + JS58.
+Marqueurs : v59 + JS59.
