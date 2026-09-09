@@ -424,7 +424,7 @@ function coachText(e,ok){
 }
 
 function liveDone(){
- return `<section class="page"><div class="card live-done"><div class="check">✅</div><h1>Séance terminée</h1><p>La séance réalisée reprend exactement les exercices de la séance prévue, avec tes valeurs réelles.</p><button class="primary" data-route="program">Voir le bilan</button></div></section>`;
+ return `<section class="page"><div class="card live-done"><div class="check">✅</div><h1>Séance terminée</h1><p>La séance réalisée reprend exactement les exercices de la séance prévue, avec tes valeurs réelles.</p><button class="primary" data-route="workout-summary">Voir le bilan</button></div></section>`;
 }
 
 let liveRestTimer=null,liveMainTimer=null;
@@ -528,6 +528,94 @@ function bindLive(){
 }
 function startLiveRest(){if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=setInterval(()=>{if(LS.rest<=0){clearInterval(liveRestTimer);liveRestTimer=null;return}LS.rest--;let c=document.querySelector("#restClock");if(c)c.textContent=ft(LS.rest)},1000)}
 
+
+function completedCount(i){
+ const e=LIVE[i], ok=LS.ok[i]||[];
+ if(e.type==="sets"||e.type==="duration")return ok.length;
+ if(e.type==="cardio")return ok.length?1:0;
+ if(e.type==="mobility")return e.mobility.movements.filter(m=>m.done).length;
+ return 0;
+}
+function plannedCount(e){
+ if(e.type==="sets")return e.s.length;
+ if(e.type==="duration")return e.d.length;
+ if(e.type==="cardio")return 1;
+ if(e.type==="mobility")return e.mobility.movements.length;
+ return 0;
+}
+function tonnage(){
+ let t=0;
+ LIVE.forEach((e,i)=>{
+  if(e.type!=="sets")return;
+  (LS.ok[i]||[]).forEach(si=>{
+   const s=e.s[si],load=parseFloat(s[0]),reps=parseFloat(s[1]);
+   if(Number.isFinite(load)&&Number.isFinite(reps))t+=load*reps;
+  });
+ });
+ return Math.round(t);
+}
+function workoutSummary(){
+ const exDone=LIVE.filter((e,i)=>completedCount(i)>0).length;
+ const setsDone=LIVE.reduce((s,e,i)=>s+((e.type==="sets"||e.type==="duration")?(LS.ok[i]||[]).length:0),0);
+ const setsPlan=LIVE.reduce((s,e)=>s+(e.type==="sets"?e.s.length:e.type==="duration"?e.d.length:0),0);
+ const cardio=LIVE.find(e=>e.type==="cardio");
+ const mobility=LIVE.find(e=>e.type==="mobility");
+ const cardioMin=cardio?cardio.cardio.blocks.reduce((s,b)=>s+(+b.duration||0),0):0;
+ const cardioMax=cardio?Math.max(0,...cardio.cardio.blocks.map(b=>+b.hr||0)):0;
+ const mobDone=mobility?mobility.mobility.movements.filter(m=>m.done).length:0;
+ const mobTotal=mobility?mobility.mobility.movements.length:0;
+ return `<section class="page">
+  <div class="detail-top"><button class="backbtn" data-route="live-complete">‹</button><div class="detail-title"><h1>Bilan de séance</h1><p>${ACTIVE_PLAN.name}</p></div></div>
+
+  <div class="card summary">
+   <div class="summary-head"><div class="bigemoji">✅</div><div><h2>Séance réalisée</h2><div class="meta">${ft(LS.t)} · ${exDone}/${LIVE.length} exercices</div></div></div>
+   <div class="metrics-row">
+    <div class="metric"><b>${exDone}/${LIVE.length}</b><span>Exercices</span></div>
+    <div class="metric"><b>${setsDone}/${setsPlan}</b><span>Séries</span></div>
+    <div class="metric"><b>${tonnage().toLocaleString("fr-FR")} kg</b><span>Tonnage</span></div>
+   </div>
+  </div>
+
+  <div class="section-head"><h2>Prévu vs réalisé</h2></div>
+  <div class="summary-ex-list">
+   ${LIVE.map((e,i)=>{
+    const done=completedCount(i),planned=plannedCount(e);
+    let detail="";
+    if(e.type==="sets")detail=(LS.ok[i]||[]).map(si=>`${e.s[si][0]} kg × ${e.s[si][1]} · RPE ${e.s[si][2]}`).join(" · ");
+    if(e.type==="duration")detail=(LS.ok[i]||[]).map(si=>`${e.d[si][0]} s · RPE ${e.d[si][1]}`).join(" · ");
+    if(e.type==="cardio")detail=e.cardio.blocks.map(b=>`${b.duration} min · ${b.speed} km/h · ${b.incline}%${b.hr?` · ${b.hr} bpm`:""}`).join(" / ");
+    if(e.type==="mobility")detail=e.mobility.movements.filter(m=>m.done).map(m=>m.name).join(" · ");
+    return `<div class="card summary-ex"><div class="summary-ex-top"><div><b>${e.i} ${e.n}</b><div class="small">${e.plan}</div></div><span class="status-pill ${done?'done-pill':'skip-pill'}">${done?`${done}/${planned}`:"Passé"}</span></div>${detail?`<div class="summary-ex-detail">${detail}</div>`:""}${LS.notes[i]?`<div class="summary-note">${LS.notes[i]}</div>`:""}</div>`;
+   }).join("")}
+  </div>
+
+  <div class="section-head"><h2>Cardio</h2></div>
+  <div class="card recap-card"><div class="last-performance"><div class="perf"><b>${cardioMin} min</b><span>Durée</span></div><div class="perf"><b>${cardio?cardio.cardio.blocks.length:0}</b><span>Blocs</span></div><div class="perf"><b>${cardioMax||"—"} bpm</b><span>FC max relevée</span></div></div></div>
+
+  <div class="section-head"><h2>Mobilité</h2></div>
+  <div class="card recap-card"><div class="progress-preview-top"><h3>${mobDone}/${mobTotal} mouvements réalisés</h3><span class="trend">${mobDone===mobTotal?"Complet":"Partiel"}</span></div></div>
+
+  <div class="section-head"><h2>Mon ressenti</h2></div>
+  <div class="card feedback-card">
+   <div class="feedback-grid">
+    <label>Énergie<select id="fbEnergy"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></label>
+    <label>Motivation<select id="fbMotivation"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></label>
+    <label>RPE global<select id="fbRpe"><option>5</option><option>6</option><option selected>7</option><option>8</option><option>9</option><option>10</option></select></label>
+    <label>Sommeil<select id="fbSleep"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></label>
+   </div>
+   <label class="feedback-check"><input type="checkbox" id="fbPain"> Gêne ou douleur pendant la séance</label>
+   <textarea class="quick-note" id="fbNote" placeholder="Comment s’est passée la séance ?"></textarea>
+  </div>
+
+  <div class="hint"><b>Prototype UI8.</b> Rien n’est encore sauvegardé de façon permanente.</div>
+  <button class="primary" id="saveWorkoutSummary">Enregistrer le bilan</button>
+ </section>`;
+}
+function bindSummary(){
+ const b=document.querySelector("#saveWorkoutSummary");if(!b)return;
+ b.addEventListener("click",()=>{alert("Bilan validé pour le prototype. La sauvegarde permanente arrive à l’étape historique.");navigate("program")});
+}
+
 function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}
 function render(route){
  const app=document.querySelector("#app");
@@ -536,7 +624,7 @@ function render(route){
  route==="program"?programView():
  route==="workout-muscu-a"?workoutDetail("A"):route==="workout-muscu-d"?workoutDetail("D"):
  route==="sessions"?sessionsView():route==="new"?builderStart():route==="catalog"?catalogView():
- route==="live-workout"?liveView():route==="live-workout-d"?liveView():route==="live-complete"?liveDone():route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
+ route==="live-workout"?liveView():route==="live-workout-d"?liveView():route==="live-complete"?liveDone():route==="workout-summary"?workoutSummary():route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
  route.startsWith("exercise-")?genericExerciseDetail(route.replace("exercise-","")):
  route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):
  placeholder("Plus","Profil, paramètres, sauvegarde et export.");
