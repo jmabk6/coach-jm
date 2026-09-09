@@ -1,3 +1,73 @@
+import { dbPut, dbGet, dbDelete, dbGetAll } from "./db/db.js";
+
+
+const ACTIVE_SESSION_ID="active_session";
+let activeSessionRestored=false;
+let historyCache=[];
+
+function cloneData(v){return JSON.parse(JSON.stringify(v));}
+function planKey(plan){return plan===MUSCU_D?"D":"A";}
+
+async function persistActiveSession(){
+  try{
+    if(typeof LIVE==="undefined"||typeof LS==="undefined"||!ACTIVE_PLAN)return;
+    await dbPut("meta",{
+      id:ACTIVE_SESSION_ID,
+      kind:"active_workout",
+      planKey:planKey(ACTIVE_PLAN),
+      live:cloneData(LIVE),
+      state:cloneData({...LS,restTimer:undefined}),
+      updatedAt:new Date().toISOString()
+    });
+  }catch(err){console.error("Coach JM persistence",err);}
+}
+
+async function clearActiveSession(){
+  try{await dbDelete("meta",ACTIVE_SESSION_ID);}catch(err){console.error(err);}
+}
+
+async function restoreActiveSession(){
+  try{
+    const saved=await dbGet("meta",ACTIVE_SESSION_ID);
+    if(!saved||!saved.live||!saved.state)return false;
+    ACTIVE_PLAN=saved.planKey==="D"?MUSCU_D:MUSCU_A;
+    LIVE=saved.live;
+    LS=saved.state;
+    LS.restTimer=null;
+    activeSessionRestored=true;
+    return true;
+  }catch(err){console.error("Restore failed",err);return false;}
+}
+
+async function saveCompletedWorkout(feedback){
+  const id=`session_${Date.now()}`;
+  const record={
+    id,
+    type:"workout_session",
+    templateName:ACTIVE_PLAN.name,
+    planKey:planKey(ACTIVE_PLAN),
+    startedAt:new Date(Date.now()-(LS.t*1000)).toISOString(),
+    endedAt:new Date().toISOString(),
+    elapsedSeconds:LS.t,
+    exercises:cloneData(LIVE),
+    completed:cloneData(LS.ok),
+    notes:cloneData(LS.notes),
+    feedback:cloneData(feedback),
+    createdAt:new Date().toISOString()
+  };
+  await dbPut("workoutSessions",record);
+  await clearActiveSession();
+  historyCache=await dbGetAll("workoutSessions");
+  return record;
+}
+
+async function loadHistory(){
+  try{
+    historyCache=(await dbGetAll("workoutSessions"))
+      .filter(x=>x&&x.type==="workout_session")
+      .sort((a,b)=>new Date(b.endedAt)-new Date(a.endedAt));
+  }catch(err){console.error(err);historyCache=[];}
+}
 
 const DAYS = [
  {dow:"LUN",n:7,status:"done",name:"Cardio léger + mobilité",meta:"42 min · réalisé",kind:"done"},
@@ -38,7 +108,7 @@ const MUSCU_D = {
 function todayView(){
  return `<section class="page">
  <div class="topline"><div><h1 class="brand">Coach JM</h1><div class="date">Mardi 8 septembre</div></div><div class="avatar">JM</div></div>
- <div class="eyebrow">AUJOURD’HUI</div><h2 class="hero-title">Prêt pour aujourd’hui ?</h2>
+ <div class="eyebrow">AUJOURD’HUI</div><h2 class="hero-title">Prêt pour aujourd’hui ?</h2>${activeSessionRestored?`<div class="resume-card card"><div><b>⏱ Séance en cours</b><span>${ACTIVE_PLAN.name} · ${ft(LS.t)}</span></div><button class="secondary" data-route="live-workout">Reprendre</button></div>`:""}
  <div class="card today-card"><div class="session-title">💪 Muscu A — Jambes</div><div class="meta">≈ 55 min · Salle · 5 exercices</div><button class="primary" data-route="workout-muscu-a">Voir la séance</button></div>
  <div class="section-head"><h2>Ma semaine</h2><button class="linkbtn" data-route="program">Voir</button></div>
  <div class="week-strip">${DAYS.map(d=>`<div class="day-mini ${d.n===8?'active':''}"><span class="dow">${d.dow}</span><b>${d.n}</b><i class="dot ${d.kind==='done'?'done':''}"></i></div>`).join("")}</div>
@@ -57,7 +127,7 @@ function programView(){
     <div class="workout-main"><div class="status">${d.kind==='done'?'Réalisée':d.kind==='rest'?'Repos':d.n===8?'Aujourd’hui':'Prévue'}</div><div class="workout-name">${d.name}</div><div class="workout-meta">${d.meta}</div></div>
     <div class="chev">›</div>
    </div></div>`).join("")}</div>
- <div class="week-actions"><button class="secondary">+ Ajouter</button><button class="secondary">Modifier la semaine</button></div>
+ <div class="week-actions"><button class="secondary">+ Ajouter</button><button class="secondary">Modifier la semaine</button></div><button class="secondary history-open" data-route="history">Historique des séances</button>
  <div class="hint"><b>Flexible par conception.</b> Une séance prévue pourra être déplacée, remplacée ou adaptée sans modifier ce qui a déjà été réellement effectué.</div>
  </section>`;
 }
@@ -431,20 +501,20 @@ let liveRestTimer=null,liveMainTimer=null;
 function bindLive(){
  document.querySelectorAll("[data-plan]").forEach(btn=>btn.addEventListener("click",()=>{
    ACTIVE_PLAN=btn.dataset.plan==="D"?MUSCU_D:MUSCU_A;
-   LIVE=makeLiveFromPlan(ACTIVE_PLAN); LS={x:0,t:0,ok:{},rest:0,notes:{}};
+   LIVE=makeLiveFromPlan(ACTIVE_PLAN); LS={x:0,t:0,ok:{},rest:0,notes:{}}; activeSessionRestored=true; persistActiveSession();
  }));
- if(document.querySelector("#liveClock")&&!liveMainTimer)liveMainTimer=setInterval(()=>{LS.t++;let c=document.querySelector("#liveClock");if(c)c.textContent=ft(LS.t)},1000);
+ if(document.querySelector("#liveClock")&&!liveMainTimer){let autosaveTicks=0;liveMainTimer=setInterval(()=>{LS.t++;autosaveTicks++;let c=document.querySelector("#liveClock");if(c)c.textContent=ft(LS.t);if(autosaveTicks%10===0)persistActiveSession()},1000);}
 
- document.querySelectorAll("[data-lf]").forEach(x=>x.addEventListener("change",()=>LIVE[LS.x].s[+x.dataset.li][+x.dataset.lf]=x.dataset.lf==="2"?+x.value:x.value));
- document.querySelectorAll("[data-df]").forEach(x=>x.addEventListener("change",()=>LIVE[LS.x].d[+x.dataset.di][+x.dataset.df]=+x.value));
+ document.querySelectorAll("[data-lf]").forEach(x=>x.addEventListener("change",()=>{LIVE[LS.x].s[+x.dataset.li][+x.dataset.lf]=x.dataset.lf==="2"?+x.value:x.value; persistActiveSession();}));
+ document.querySelectorAll("[data-df]").forEach(x=>x.addEventListener("change",()=>{LIVE[LS.x].d[+x.dataset.di][+x.dataset.df]=+x.value; persistActiveSession();}));
  document.querySelectorAll("[data-bf]").forEach(x=>x.addEventListener("change",()=>{
    const b=LIVE[LS.x].cardio.blocks[+x.dataset.bi], f=x.dataset.bf;
-   b[f]=(f==="hr")?x.value:(+x.value||0);
+   b[f]=(f==="hr")?x.value:(+x.value||0); persistActiveSession();
  }));
  const addBlock=document.querySelector("#addTreadmillBlock");
  if(addBlock)addBlock.addEventListener("click",()=>{
    LIVE[LS.x].cardio.blocks.push({duration:2,speed:5,incline:0,hr:""});
-   render("live-workout");
+   persistActiveSession(); render("live-workout");
  });
  document.querySelectorAll("[data-remove-block]").forEach(b=>b.addEventListener("click",()=>{
    if(LIVE[LS.x].cardio.blocks.length>1)LIVE[LS.x].cardio.blocks.splice(+b.dataset.removeBlock,1);
@@ -455,7 +525,7 @@ function bindLive(){
  if(addSet)addSet.addEventListener("click",()=>{
    const e=LIVE[LS.x], last=e.s[e.s.length-1]||["",10,7];
    e.s.push([last[0],last[1],7]);
-   render("live-workout");
+   persistActiveSession(); render("live-workout");
  });
  const addDuration=document.querySelector("#addDurationSet");
  if(addDuration)addDuration.addEventListener("click",()=>{
@@ -472,13 +542,13 @@ function bindLive(){
      LS.rest=0;
      if(liveRestTimer)clearInterval(liveRestTimer);
      liveRestTimer=null;
-     render("live-workout");
+     persistActiveSession(); render("live-workout");
      return;
    }
    LS.ok[LS.x].push(i);
    LS.ok[LS.x].sort((a,b)=>a-b);
    LS.rest=(LIVE[LS.x].n==="Leg Curl"?75:LIVE[LS.x].type==="duration"?45:90);
-   render("live-workout"); startLiveRest();
+   persistActiveSession(); render("live-workout"); startLiveRest();
  }));
 
  const block=document.querySelector("#completeBlock");
@@ -493,38 +563,38 @@ function bindLive(){
 
  document.querySelectorAll("[data-mobility-check]").forEach(btn=>btn.addEventListener("click",()=>{
    const e=LIVE[LS.x], i=+btn.dataset.mobilityCheck;
-   e.mobility.movements[i].done=!e.mobility.movements[i].done;
+   e.mobility.movements[i].done=!e.mobility.movements[i].done; persistActiveSession();
    LS.ok[LS.x]=e.mobility.movements.some(m=>m.done)?[0]:[];
-   render("live-workout");
+   persistActiveSession(); render("live-workout");
  }));
  const addMob=document.querySelector("#addMobility");
  if(addMob)addMob.addEventListener("click",()=>{
    const name=window.prompt("Nom du mouvement à ajouter");
    if(!name)return;
    const target=window.prompt("Durée ou répétitions prévues","30 s")||"";
-   LIVE[LS.x].mobility.movements.push({name,target,done:false});
+   LIVE[LS.x].mobility.movements.push({name,target,done:false}); persistActiveSession();
    render("live-workout");
  });
- let n=document.querySelector("#liveNote"); if(n)n.addEventListener("input",()=>LS.notes[LS.x]=n.value);
+ let n=document.querySelector("#liveNote"); if(n)n.addEventListener("input",()=>{LS.notes[LS.x]=n.value; persistActiveSession();});
  let skipEx=document.querySelector("#skipExercise");
  if(skipEx)skipEx.addEventListener("click",()=>{
    const reason=window.prompt("Pourquoi passes-tu cet exercice ?\n\nDouleur · Machine occupée · Fatigue · Autre","Machine occupée");
    if(reason===null)return;
-   LS.notes[LS.x]=`Exercice passé — ${reason}`;
-   LS.x++; LS.rest=0; render("live-workout");
+   LS.notes[LS.x]=`Exercice passé — ${reason}`; persistActiveSession();
+   LS.x++; LS.rest=0; persistActiveSession(); render("live-workout");
  });
  let nx=document.querySelector("#nextLive"); if(nx)nx.addEventListener("click",()=>{
    const e=LIVE[LS.x];
    // Cardio/mobility have no separate validation button: finishing the exercise validates the block.
    if(e.type==="cardio") LS.ok[LS.x]=[0];
-   LS.x++; LS.rest=0; render("live-workout");
+   LS.x++; LS.rest=0; persistActiveSession(); render("live-workout");
  });
  let f=document.querySelector("#finishLive"); if(f)f.addEventListener("click",()=>{
    const e=LIVE[LS.x];
    if(e.type==="cardio") LS.ok[LS.x]=[0];
    render("live-complete");
  });
- let sk=document.querySelector("#skipRest"); if(sk)sk.addEventListener("click",()=>{LS.rest=0;if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=null;render("live-workout")});
+ let sk=document.querySelector("#skipRest"); if(sk)sk.addEventListener("click",()=>{LS.rest=0;if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=null;persistActiveSession();render("live-workout")});
 }
 function startLiveRest(){if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=setInterval(()=>{if(LS.rest<=0){clearInterval(liveRestTimer);liveRestTimer=null;return}LS.rest--;let c=document.querySelector("#restClock");if(c)c.textContent=ft(LS.rest)},1000)}
 
@@ -607,13 +677,49 @@ function workoutSummary(){
    <textarea class="quick-note" id="fbNote" placeholder="Comment s’est passée la séance ?"></textarea>
   </div>
 
-  <div class="hint"><b>Prototype UI8.</b> Rien n’est encore sauvegardé de façon permanente.</div>
+  <div class="hint"><b>Sauvegarde réelle.</b> Une fois enregistré, ce bilan reste dans l’historique local de Coach JM.</div>
   <button class="primary" id="saveWorkoutSummary">Enregistrer le bilan</button>
  </section>`;
 }
 function bindSummary(){
  const b=document.querySelector("#saveWorkoutSummary");if(!b)return;
- b.addEventListener("click",()=>{alert("Bilan validé pour le prototype. La sauvegarde permanente arrive à l’étape historique.");navigate("program")});
+ b.addEventListener("click",async ()=>{
+   b.disabled=true; b.textContent="Enregistrement…";
+   const feedback={
+     energy:+document.querySelector("#fbEnergy").value,
+     motivation:+document.querySelector("#fbMotivation").value,
+     globalRpe:+document.querySelector("#fbRpe").value,
+     sleepQuality:+document.querySelector("#fbSleep").value,
+     discomfort:document.querySelector("#fbPain").checked,
+     note:document.querySelector("#fbNote").value
+   };
+   try{
+     await saveCompletedWorkout(feedback);
+     activeSessionRestored=false;
+     b.textContent="✓ Enregistré";
+     navigate("history");
+   }catch(err){
+     console.error(err); b.disabled=false; b.textContent="Réessayer";
+     alert("Impossible d’enregistrer la séance.");
+   }
+ });
+}
+
+
+function fmtDateFr(iso){
+ const d=new Date(iso);
+ return d.toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"});
+}
+function historyView(){
+ return `<section class="page">
+  <div class="detail-top"><button class="backbtn" data-route="program">‹</button><div class="detail-title"><h1>Historique</h1><p>${historyCache.length} séance${historyCache.length>1?"s":""} enregistrée${historyCache.length>1?"s":""}</p></div></div>
+  ${historyCache.length?`<div class="history-list">${historyCache.map(s=>`
+    <div class="card history-row">
+      <div><b>${s.templateName}</b><div class="small">${fmtDateFr(s.endedAt)} · ${ft(s.elapsedSeconds||0)}</div></div>
+      <div class="history-meta"><span>RPE ${s.feedback?.globalRpe??"—"}</span><span>${s.exercises?.length||0} ex.</span></div>
+    </div>`).join("")}</div>`:
+    `<div class="card placeholder"><h2>Aucune séance enregistrée</h2><p>Ta première séance sauvegardée apparaîtra ici.</p></div>`}
+ </section>`;
 }
 
 function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}
@@ -624,13 +730,13 @@ function render(route){
  route==="program"?programView():
  route==="workout-muscu-a"?workoutDetail("A"):route==="workout-muscu-d"?workoutDetail("D"):
  route==="sessions"?sessionsView():route==="new"?builderStart():route==="catalog"?catalogView():
- route==="live-workout"?liveView():route==="live-workout-d"?liveView():route==="live-complete"?liveDone():route==="workout-summary"?workoutSummary():route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
+ route==="live-workout"?liveView():route==="live-workout-d"?liveView():route==="live-complete"?liveDone():route==="workout-summary"?workoutSummary():route==="history"?historyView():route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
  route.startsWith("exercise-")?genericExerciseDetail(route.replace("exercise-","")):
  route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):
  placeholder("Plus","Profil, paramètres, sauvegarde et export.");
- document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=(route==="workout-muscu-a"||route==="workout-muscu-d"||route==="live-workout"||route==="live-workout-d"||route==="live-complete")?"sessions":(route==="sessions"||route==="new"||route.startsWith("builder-")||route.startsWith("exercise-")||route==="catalog")?"sessions":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
+ document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=(route==="workout-summary"||route==="history")?"program":(route==="workout-muscu-a"||route==="workout-muscu-d"||route==="live-workout"||route==="live-workout-d"||route==="live-complete")?"sessions":(route==="sessions"||route==="new"||route.startsWith("builder-")||route.startsWith("exercise-")||route==="catalog")?"sessions":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
  document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.route)));
- bindCatalog(); bindBuilder(); bindLive();
+ bindCatalog(); bindBuilder(); bindLive(); bindSummary();
   document.querySelectorAll('[data-route="live-workout"], .start-workout').forEach(el=>{
     if(!el.dataset.startBound){
       el.dataset.startBound="1";
@@ -641,5 +747,10 @@ function render(route){
 }
 function navigate(route){location.hash=route}
 window.addEventListener("hashchange",()=>render(location.hash.slice(1)||"today"));
-render(location.hash.slice(1)||"today");
+async function initCoachJM(){
+  await restoreActiveSession();
+  await loadHistory();
+  render(location.hash.slice(1)||"today");
+}
+initCoachJM();
 if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js").catch(()=>{});}
