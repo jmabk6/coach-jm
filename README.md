@@ -1,11 +1,15 @@
-# Coach JM v48 — diagnostic page blanche
+# Coach JM v49 — correctif écran blanc
 
-Cette version ne change pas le design Programme.
+Cause exacte trouvée grâce au diagnostic v48 :
+`ReferenceError: Can't find variable: MUSCU_A`.
 
-Elle :
-- charge de nouveaux assets `coachjm-v48.js` / `coachjm-v48.css`;
-- ajoute un panneau rouge visible si Safari rencontre une erreur JavaScript;
-- conserve le programme compact v47.
+Lors de la construction de v47, le remplacement du bloc de drag tactile a accidentellement supprimé
+les définitions `MUSCU_A` et `MUSCU_D`.
 
-Marqueurs attendus : v48 + JS48.
-Si l'écran ne s'affiche pas normalement, envoie une capture du message rouge.
+Correction v49 :
+- réinsertion des définitions exactes depuis la base stable v45 ;
+- conservation du Programme compact validé ;
+- conservation du drag uniquement par la poignée ;
+- suppression du panneau diagnostic rouge.
+
+Marqueurs temporaires : v49 + JS49.
