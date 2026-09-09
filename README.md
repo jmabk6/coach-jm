@@ -1,11 +1,11 @@
-# Coach JM UI7 v19 — Tapis en lignes compactes
+# Coach JM UI7 v20 — ajout de séries
 
-Correction demandée :
-- une ligne = Durée | Vitesse | Pente | BPM
-- pas de RPE sur chaque ligne
-- bouton `+ Ajouter une ligne`
-- une seule validation à la fin du bloc tapis
-- le ressenti peut être saisi dans la note de fin
+Correction :
+- bouton `+ Ajouter une série` sous chaque exercice de musculation ;
+- une série ajoutée reprend la charge et le nombre de reps de la dernière ligne pour éviter de tout retaper ;
+- le RPE de la nouvelle série repart à 7 et reste modifiable ;
+- même possibilité ajoutée au gainage.
 
-Commit :
-`UI7 v19 - tapis lignes compactes`
+Le prévu reste affiché, mais le réalisé peut donc contenir plus de séries que le programme.
+
+Commit : `UI7 v20 - ajout serie libre`

@@ -338,7 +338,8 @@ function liveFields(e){
         <input data-li="${i}" data-lf="1" value="${a[1]}">
         <select data-li="${i}" data-lf="2">${[5,6,7,8,9,10].map(r=>`<option ${+a[2]===r?'selected':''}>${r}</option>`).join("")}</select>
         <button class="set-ok ${ok.includes(i)?'checked':''}" data-setok="${i}">${ok.includes(i)?'✓':'○'}</button>
-      </div>`).join("")}`;
+      </div>`).join("")}
+      <button class="add-set-line" id="addSetLine">+ Ajouter une série</button>`;
   }
   if(e.type==="duration"){
     return `<div class="series-head"><span>Série</span><span>Temps</span><span>Unité</span><span>RPE</span><span></span></div>
@@ -348,7 +349,8 @@ function liveFields(e){
         <input value="s" disabled>
         <select data-di="${i}" data-df="1">${[5,6,7,8,9,10].map(r=>`<option ${+a[1]===r?'selected':''}>${r}</option>`).join("")}</select>
         <button class="set-ok ${ok.includes(i)?'checked':''}" data-setok="${i}">${ok.includes(i)?'✓':'○'}</button>
-      </div>`).join("")}`;
+      </div>`).join("")}
+      <button class="add-set-line" id="addDurationSet">+ Ajouter une série</button>`;
   }
   return `<div class="mobility-live">
     <label>Durée prévue<input id="mobilityDuration" inputmode="numeric" value="${e.mobility.durationMin}"><span>min</span></label>
@@ -420,6 +422,18 @@ function bindLive(){
    render("live-workout");
  }));
 
+ const addSet=document.querySelector("#addSetLine");
+ if(addSet)addSet.addEventListener("click",()=>{
+   const e=LIVE[LS.x], last=e.s[e.s.length-1]||["",10,7];
+   e.s.push([last[0],last[1],7]);
+   render("live-workout");
+ });
+ const addDuration=document.querySelector("#addDurationSet");
+ if(addDuration)addDuration.addEventListener("click",()=>{
+   const e=LIVE[LS.x], last=e.d[e.d.length-1]||[40,7];
+   e.d.push([last[0],7]);
+   render("live-workout");
+ });
  document.querySelectorAll("[data-setok]").forEach(b=>b.addEventListener("click",()=>{
    LS.ok[LS.x]=LS.ok[LS.x]||[];
    let i=+b.dataset.setok;
