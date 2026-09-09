@@ -63,7 +63,7 @@ function workoutDetail(){
        <div class="chev">›</div>
      </div>`).join("")}</div>
    <div class="note-card card"><strong>Prévu ≠ réalisé.</strong><br>Tu pourras changer une charge, faire moins ou plus de reps, remplacer ou ajouter un exercice pendant la séance. L’historique enregistrera ce que tu as réellement fait.</div>
-   <div class="detail-actions"><button class="secondary">Adapter la séance</button><button class="primary compact">▶ Démarrer</button></div>
+   <div class="detail-actions"><button class="secondary">Adapter la séance</button><button class="primary compact" data-route="live-workout">▶ Démarrer</button></div>
  </section>`;
 }
 
@@ -301,7 +301,14 @@ function render(route){
  placeholder("Plus","Profil, paramètres, sauvegarde et export.");
  document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=(route==="workout-muscu-a"||route==="live-workout"||route==="live-complete")?"sessions":(route==="sessions"||route==="new"||route.startsWith("builder-")||route.startsWith("exercise-")||route==="catalog")?"sessions":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
  document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.route)));
- bindCatalog(); bindBuilder(); bindLive(); window.scrollTo(0,0);
+ bindCatalog(); bindBuilder(); bindLive();
+  document.querySelectorAll('[data-route="live-workout"], .start-workout').forEach(el=>{
+    if(!el.dataset.startBound){
+      el.dataset.startBound="1";
+      el.addEventListener("click",(ev)=>{ev.preventDefault(); navigate("live-workout");});
+    }
+  });
+  window.scrollTo(0,0);
 }
 function navigate(route){location.hash=route}
 window.addEventListener("hashchange",()=>render(location.hash.slice(1)||"today"));
