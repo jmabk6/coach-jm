@@ -1,17 +1,9 @@
-# Coach JM — Étape 11 v27 — reprise forcée
+# Coach JM — Étape 11 v28 — retour séance live
 
-Correction du vrai bug :
-- le package v26 contenait encore l'ancien `navigate(route){ location.hash=route }`;
-- v27 intercepte réellement le bouton **Séance** ;
-- si une séance est active : **Séance → séance en cours** ;
-- sécurité supplémentaire : même si `#sessions` est ouvert directement, `render()` redirige vers la séance active.
-
-Test :
-1. démarrer une séance ;
-2. valider au moins une donnée ;
-3. aller sur Aujourd'hui ;
-4. toucher Séance ;
-5. retour immédiat au même exercice.
+Correctif :
+- la flèche retour d'une séance en cours n'est plus codée en dur vers Muscu A ;
+- si la séance active est Muscu D, retour vers le détail de Muscu D ;
+- si la séance active est Muscu A, retour vers le détail de Muscu A.
 
 Commit conseillé :
-`Etape 11 v27 - reprise forcee seance`
+`Etape 11 v28 - corrige retour seance active`
