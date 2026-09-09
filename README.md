@@ -1,18 +1,12 @@
-# Coach JM v61 — drag visuel réel
+# Coach JM v62 — drag avec échange de cases
 
-v60 sélectionnait et relâchait correctement, mais le bloc ne suivait pas visiblement le doigt.
+Principe :
+- le bloc que tu prends suit le doigt ;
+- quand tu arrives sur une autre case, cette case devient la destination ;
+- au relâchement :
+  - la séance déplacée prend la place de la séance cible ;
+  - la séance cible prend la place de la séance d'origine ;
+- c'est donc un échange strict 1 pour 1, jamais une insertion ;
+- les séances réalisées restent non déplaçables.
 
-v61 :
-- au touchstart sur les 3 barres, le bloc ORIGINAL est déplacé temporairement dans `body`;
-- il passe en `position: fixed`;
-- un placeholder invisible conserve sa place d'origine;
-- `left/top` suivent directement les coordonnées du doigt;
-- au relâchement, le bloc est remis dans son emplacement DOM puis la semaine est rerendue;
-- aucun clone visuel.
-
-Test :
-toucher les 3 barres -> cadre rouge;
-bouger le doigt -> le cadre doit physiquement suivre le doigt;
-relâcher -> échange avec le jour le plus proche et retour normal.
-
-Marqueurs : v61 + JS61.
+Marqueurs : v62 + JS62.
