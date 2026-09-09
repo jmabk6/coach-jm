@@ -1,9 +1,20 @@
-# Coach JM UI7 v22 — terminer vs passer
+# Coach JM UI7 v23 — mobilité détaillée
 
-- Sur musculation/gainage, `Exercice terminé →` est désactivé tant qu'aucune série n'est validée.
-- Dès qu'au moins une série est validée, il devient actif, même si toutes les séries prévues ne sont pas faites.
-- `Passer cet exercice` permet de sauter un exercice sans série réalisée.
-- Le motif est conservé dans la note de séance (prototype : Douleur / Machine occupée / Fatigue / Autre).
-- Tapis et mobilité restent validés par `Exercice terminé →`.
+Mobilité refondue :
+- liste des mouvements prévus ;
+- chaque mouvement affiche son objectif (secondes ou répétitions) ;
+- coche individuelle pour indiquer ce qui a réellement été fait ;
+- `+ Ajouter un mouvement` ;
+- `Mobilité terminée` n'est actif qu'après au moins un mouvement réalisé ;
+- un mouvement non coché reste simplement non réalisé ;
+- la note globale de l'exercice reste disponible.
 
-Commit : `UI7 v22 - terminer vs passer exercice`
+Mouvements préchargés :
+1. Chat / vache — 8 reps
+2. Position de l’enfant — 30 s
+3. Fléchisseur hanche gauche — 30 s
+4. Fléchisseur hanche droit — 30 s
+5. Ischios gauche — 30 s
+6. Ischios droit — 30 s
+
+Commit : `UI7 v23 - mobilite detaillee`

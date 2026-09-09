@@ -142,3 +142,14 @@ body{min-height:100vh}button{font:inherit}.page{padding:24px 18px calc(150px + e
 
 .primary:disabled{opacity:.38;cursor:not-allowed}
 .skip-exercise{width:100%;margin-top:9px;border:0;background:transparent;color:var(--muted);padding:9px;font-weight:700;text-decoration:underline}
+
+/* UI7 v23 — mobilité par mouvements */
+.mobility-live{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.mobility-head,.mobility-row{display:grid;grid-template-columns:1fr 72px 38px;gap:8px;align-items:center}
+.mobility-head{padding:0 8px;color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase}
+.mobility-row{padding:10px 8px;border:1px solid var(--line);border-radius:13px;background:#fff}
+.mobility-row.mobility-done{background:#f3faf6}
+.mobility-target{text-align:center;color:var(--muted);font-weight:700;font-size:13px}
+.mobility-check{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:18px}
+.mobility-check.checked{background:#dceee4;color:#397456;border-color:#c7e1d2}
+.add-mobility{width:100%;margin-top:3px;border:1px dashed #d9b9bd;background:#fffafa;color:var(--rose-dark);border-radius:12px;padding:10px;font-weight:800}

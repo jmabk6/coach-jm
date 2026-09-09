@@ -303,7 +303,16 @@ function makeLiveFromPlan(plan=MUSCU_A){
    if(n==="Chest Press") return {type:"sets",n,i:"🏋️",m:"Pectoraux · triceps",plan:e.meta,ref:"charge à ajuster",s:[[30,10,7],[30,10,8],[30,10,8]]};
    if(n.startsWith("Rowing")) return {type:"sets",n,i:"💪",m:"Dos / ischios",plan:e.meta,ref:"à choisir",s:[["",10,7],["",10,8],["",10,8]]};
    if(n==="Gainage frontal") return {type:"duration",n,i:"🛡️",m:"Tronc",plan:e.meta,ref:"Poids du corps",d:[[40,7],[40,8],[40,8]]};
-   return {type:"mobility",n,i:"🧘",m:"Mobilité · souplesse",plan:e.meta,ref:e.extra,mobility:{durationMin:6,done:false,note:""}};
+   return {type:"mobility",n,i:"🧘",m:"Mobilité · souplesse",plan:e.meta,ref:e.extra,mobility:{
+     movements:[
+       {name:"Chat / vache",target:"8 reps",done:false},
+       {name:"Position de l’enfant",target:"30 s",done:false},
+       {name:"Fléchisseur hanche gauche",target:"30 s",done:false},
+       {name:"Fléchisseur hanche droit",target:"30 s",done:false},
+       {name:"Ischios gauche",target:"30 s",done:false},
+       {name:"Ischios droit",target:"30 s",done:false}
+     ]
+   }};
  });
 }
 let ACTIVE_PLAN=MUSCU_A;
@@ -366,8 +375,13 @@ function liveFields(e){
       <button class="add-set-line" id="addDurationSet" ${allDone?'':'disabled'}>+ Ajouter une série</button>`; 
   }
   return `<div class="mobility-live">
-    <label>Durée prévue<input id="mobilityDuration" inputmode="numeric" value="${e.mobility.durationMin}"><span>min</span></label>
-    <textarea id="mobilityNote" class="live-note" placeholder="Ce que tu as réellement fait…">${e.mobility.note||""}</textarea>
+    <div class="mobility-head"><span>Mouvement</span><span>Prévu</span><span></span></div>
+    ${e.mobility.movements.map((mv,i)=>`<div class="mobility-row ${mv.done?'mobility-done':''}">
+      <div><b>${mv.name}</b></div>
+      <div class="mobility-target">${mv.target}</div>
+      <button class="mobility-check ${mv.done?'checked':''}" data-mobility-check="${i}">${mv.done?'✓':'○'}</button>
+    </div>`).join("")}
+    <button class="add-mobility" id="addMobility">+ Ajouter un mouvement</button>
   </div>`;
 }
 
@@ -391,9 +405,9 @@ function liveView(){
    <textarea class="live-note" id="liveNote" placeholder="Sensations, douleur, difficulté…">${LS.notes[LS.x]||""}</textarea>
    <div class="live-actions"><button class="secondary">Remplacer</button><button class="secondary" data-route="exercise-${slugify(e.n)}">Voir la fiche</button></div>
    ${LS.x<LIVE.length-1?`
-     <button class="primary" id="nextLive" ${(e.type==="sets"||e.type==="duration")&&ok.length===0?'disabled':''}>Exercice terminé →</button>
-     ${(e.type==="sets"||e.type==="duration")&&ok.length===0?`<button class="skip-exercise" id="skipExercise">Passer cet exercice</button>`:''}
-   `:`<button class="primary" id="finishLive" ${(e.type==="sets"||e.type==="duration")&&ok.length===0?'disabled':''}>Terminer la séance ✓</button>`}
+     <button class="primary" id="nextLive" ${(e.type==="sets"||e.type==="duration"||e.type==="mobility")&&ok.length===0?'disabled':''}>${e.type==="mobility"?"Mobilité terminée →":"Exercice terminé →"}</button>
+     ${(e.type==="sets"||e.type==="duration"||e.type==="mobility")&&ok.length===0?`<button class="skip-exercise" id="skipExercise">Passer cet exercice</button>`:''}
+   `:`<button class="primary" id="finishLive" ${(e.type==="sets"||e.type==="duration"||e.type==="mobility")&&ok.length===0?'disabled':''}>${e.type==="mobility"?"Mobilité terminée · Finir la séance ✓":"Terminer la séance ✓"}</button>`}
    <button class="add-live" data-route="catalog">+ Ajouter un exercice</button>
  </section>`;
 }
@@ -473,13 +487,24 @@ function bindLive(){
    let e=LIVE[LS.x];
    if(e.type==="cardio"){
      // Values are already synchronized block by block.
-   }else if(e.type==="mobility"){
-     e.mobility.durationMin=+document.querySelector("#mobilityDuration").value||0;
-     e.mobility.note=document.querySelector("#mobilityNote").value;
    }
    render("live-workout");
  });
 
+ document.querySelectorAll("[data-mobility-check]").forEach(btn=>btn.addEventListener("click",()=>{
+   const e=LIVE[LS.x], i=+btn.dataset.mobilityCheck;
+   e.mobility.movements[i].done=!e.mobility.movements[i].done;
+   LS.ok[LS.x]=e.mobility.movements.some(m=>m.done)?[0]:[];
+   render("live-workout");
+ }));
+ const addMob=document.querySelector("#addMobility");
+ if(addMob)addMob.addEventListener("click",()=>{
+   const name=window.prompt("Nom du mouvement à ajouter");
+   if(!name)return;
+   const target=window.prompt("Durée ou répétitions prévues","30 s")||"";
+   LIVE[LS.x].mobility.movements.push({name,target,done:false});
+   render("live-workout");
+ });
  let n=document.querySelector("#liveNote"); if(n)n.addEventListener("input",()=>LS.notes[LS.x]=n.value);
  let skipEx=document.querySelector("#skipExercise");
  if(skipEx)skipEx.addEventListener("click",()=>{
@@ -491,12 +516,12 @@ function bindLive(){
  let nx=document.querySelector("#nextLive"); if(nx)nx.addEventListener("click",()=>{
    const e=LIVE[LS.x];
    // Cardio/mobility have no separate validation button: finishing the exercise validates the block.
-   if(e.type==="cardio"||e.type==="mobility") LS.ok[LS.x]=[0];
+   if(e.type==="cardio") LS.ok[LS.x]=[0];
    LS.x++; LS.rest=0; render("live-workout");
  });
  let f=document.querySelector("#finishLive"); if(f)f.addEventListener("click",()=>{
    const e=LIVE[LS.x];
-   if(e.type==="cardio"||e.type==="mobility") LS.ok[LS.x]=[0];
+   if(e.type==="cardio") LS.ok[LS.x]=[0];
    render("live-complete");
  });
  let sk=document.querySelector("#skipRest"); if(sk)sk.addEventListener("click",()=>{LS.rest=0;if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=null;render("live-workout")});
