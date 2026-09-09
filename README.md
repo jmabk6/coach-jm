@@ -1,4 +1,13 @@
-# COACH JM V1 — ÉTAPE 9/15 — UI 7
-Séance en cours : prévu/réalisé, charge/reps/RPE, repos 90 s, adaptation Coach JM, notes, exercice suivant et fin de séance.
+# COACH JM — Correctif navigation Séance v2
 
-Commit : `UI 7 - seance en cours`
+Correction réelle du bouton central :
+
+- **Séance** → **Mes séances**
+- choix d'une séance → **Détail de la séance**
+- **Démarrer la séance** → UI7 séance en cours
+- **+ Nouvelle séance** → création d'une séance
+
+Le bouton central ne lance donc plus directement « Créer une séance ».
+
+Commit conseillé :
+`Fix navigation Seance vers Mes seances`

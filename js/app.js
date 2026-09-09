@@ -49,7 +49,7 @@ function programView(){
 function workoutDetail(){
  const w=MUSCU_A;
  return `<section class="page">
-   <div class="detail-top"><button class="backbtn" data-route="program">‹</button><div class="detail-title"><h1>Séance prévue</h1><p>Mardi 8 septembre</p></div></div>
+   <div class="detail-top"><button class="backbtn" data-route="sessions">‹</button><div class="detail-title"><h1>Séance prévue</h1><p>Mardi 8 septembre</p></div></div>
    <div class="card summary">
      <div class="summary-head"><div class="bigemoji">💪</div><div><h2>${w.name}</h2><div class="meta">${w.subtitle}</div></div></div>
      <div class="pills"><span class="pill">⏱ ${w.duration}</span><span class="pill">🏋️ ${w.place}</span><span class="pill">📋 ${w.exercises.length} exercices</span></div>
@@ -178,6 +178,25 @@ const BUILDER_EXERCISES=[
 ];
 let builderState={mode:"custom",name:"Haut du corps — Tirage",type:"Tirage",duration:55,goal:"Renforcer le dos et progresser vers la traction.",selected:["lat-pulldown","rowing-assis","gainage"]};
 
+
+function sessionsView(){
+ const models=[
+  {icon:"🦵",name:"Muscu A — Jambes",meta:"Jambes · gainage · mobilité",route:"workout-muscu-a"},
+  {icon:"💪",name:"Muscu B — Tirage",meta:"Dos · biceps · objectif traction",route:"workout-muscu-a"},
+  {icon:"🏋️",name:"Muscu C — Poussée",meta:"Pectoraux · épaules · triceps",route:"workout-muscu-a"},
+  {icon:"❤️",name:"Cardio — Intervalles",meta:"Tapis · blocs de travail",route:"workout-muscu-a"},
+  {icon:"🧘",name:"Mobilité",meta:"Souplesse · récupération",route:"workout-muscu-a"}
+ ];
+ return `<section class="page">
+  <div class="program-header"><div class="backless"><h1>Mes séances</h1><p>Choisis une séance à voir ou à démarrer.</p></div></div>
+  <div class="template-list">
+   ${models.map(m=>`<div class="card template-row" data-route="${m.route}"><div class="ico">${m.icon}</div><div><h3>${m.name}</h3><p>${m.meta}</p></div><div class="chev">›</div></div>`).join("")}
+  </div>
+  <button class="primary" data-route="new" style="margin-top:18px">+ Nouvelle séance</button>
+  <div class="hint"><b>Une séance modèle n'est pas une séance réalisée.</b> Tu choisis d'abord le modèle, puis tu peux l'adapter et la démarrer.</div>
+ </section>`;
+}
+
 function builderStart(){
  return `<section class="page">
   <div class="builder-head"><div><h1>Créer une séance</h1><p class="builder-sub">Choisis un modèle ou pars de zéro.</p></div></div>
@@ -275,12 +294,12 @@ function render(route){
  route==="today"?todayView():
  route==="program"?programView():
  route==="workout-muscu-a"?workoutDetail():
- route==="new"?builderStart():route==="catalog"?catalogView():
+ route==="sessions"?sessionsView():route==="new"?builderStart():route==="catalog"?catalogView():
  route==="live-workout"?liveView():route==="live-complete"?liveDone():route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
  route.startsWith("exercise-")?genericExerciseDetail(route.replace("exercise-","")):
  route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):
  placeholder("Plus","Profil, paramètres, sauvegarde et export.");
- document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=route==="workout-muscu-a"?"program":(route.startsWith("exercise-")||route.startsWith("builder-")||route==="catalog")?"new":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
+ document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=(route==="workout-muscu-a"||route==="live-workout"||route==="live-complete")?"sessions":(route==="sessions"||route==="new"||route.startsWith("builder-")||route.startsWith("exercise-")||route==="catalog")?"sessions":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
  document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.route)));
  bindCatalog(); bindBuilder(); bindLive(); window.scrollTo(0,0);
 }
