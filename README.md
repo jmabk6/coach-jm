@@ -1,20 +1,16 @@
-# Coach JM v42 — Étape 14/15 : sauvegarde et restauration
+# Coach JM v43 — correctif export sauvegarde iPhone
 
-Ajout dans `Plus > Sauvegarde`.
+Cause du bug v42 :
+- le code appelait `getAllWorkoutSessions()` qui n'existe pas ;
+- il appelait aussi `ACTIVE_SESSION_KEY`, qui n'existe pas dans cette architecture ;
+- les données sont en IndexedDB via `dbGetAll`, `dbGet`, `dbPut`.
 
-Export :
-- crée un fichier JSON ;
-- contient toutes les séances enregistrées ;
-- contient également la séance en cours si elle existe.
+Correction :
+- export des séances directement depuis `workoutSessions` ;
+- export de la séance active depuis `meta / active_session` ;
+- sur iPhone/PWA : ouverture de la feuille de partage iOS avec le fichier JSON ;
+- fallback téléchargement classique sur navigateur ;
+- import corrigé lui aussi pour restaurer directement dans IndexedDB ;
+- en cas d'erreur, le vrai message technique est maintenant affiché.
 
-Import :
-- vérifie qu'il s'agit d'une sauvegarde Coach JM ;
-- demande confirmation ;
-- restaure les séances dans IndexedDB ;
-- restaure la séance en cours dans le stockage local.
-
-But : ne pas dépendre uniquement du stockage Safari de l'iPhone.
-
-Marqueurs : v42 + JS42.
-Commit conseillé :
-`Etape 14 v42 - sauvegarde restauration`
+Marqueurs : v43 + JS43.
