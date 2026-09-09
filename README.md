@@ -1,22 +1,20 @@
-# Coach JM v41 — Étape 13/15 : Conseils Coach JM
+# Coach JM v42 — Étape 14/15 : sauvegarde et restauration
 
-Ajout d'un écran de recommandations basé sur l'historique réel.
+Ajout dans `Plus > Sauvegarde`.
 
-Coach JM regarde notamment :
-- RPE moyen des exercices ;
-- progression de charge et de volume ;
-- évolution cardio ;
-- RPE global de la dernière séance ;
-- énergie ;
-- sommeil ;
-- gêne/douleur signalée.
+Export :
+- crée un fichier JSON ;
+- contient toutes les séances enregistrées ;
+- contient également la séance en cours si elle existe.
 
-Accès :
-- depuis Aujourd'hui ;
-- depuis Plus.
+Import :
+- vérifie qu'il s'agit d'une sauvegarde Coach JM ;
+- demande confirmation ;
+- restaure les séances dans IndexedDB ;
+- restaure la séance en cours dans le stockage local.
 
-Aucune recommandation n'est stockée en dur à partir de données fictives : elle est calculée depuis `workoutSessions`.
+But : ne pas dépendre uniquement du stockage Safari de l'iPhone.
 
-Marqueurs : v41 + JS41.
+Marqueurs : v42 + JS42.
 Commit conseillé :
-`Etape 13 v41 - conseils coach jm`
+`Etape 14 v42 - sauvegarde restauration`
