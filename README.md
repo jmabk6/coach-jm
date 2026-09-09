@@ -1,17 +1,15 @@
-# Coach JM v46 — Finalisation écran Programme
+# Coach JM v47 — Programme final
 
-Modifications :
-- suppression des textes PRÉVU / RÉALISÉ / AUJOURD'HUI dans les cartes ;
-- cartes plus compactes ;
-- pastille verte = réalisée ;
-- pastille rose = aujourd'hui ;
-- pastille rose pâle = prévue ;
-- repos distingué discrètement ;
-- suppression de `Modifier la semaine` ;
-- appui long (~450 ms) + glissement tactile pour déplacer une séance prévue ;
-- dépôt sur un autre jour prévu = échange des deux séances ;
-- une séance réalisée n'est jamais déplaçable ;
-- l'ordre choisi est mémorisé dans localStorage ;
-- `+ Ajouter` et `Historique des séances` restent disponibles.
+Conforme au mockup validé :
+- 7 jours visibles sur un écran compact ;
+- cartes de 58 px de haut ;
+- statut uniquement par pastille ;
+- poignée à 3 traits à droite ;
+- le déplacement démarre uniquement depuis la poignée ;
+- texte non sélectionnable / callout iOS désactivé ;
+- appui court ailleurs sur la carte conserve le comportement normal ;
+- séances réalisées verrouillées ;
+- + Ajouter une séance et Historique visibles sous la semaine ;
+- suppression du bloc explicatif pour gagner de la hauteur.
 
-Marqueurs : v46 + JS46.
+Marqueurs temporaires : v47 + JS47.
