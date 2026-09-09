@@ -1,11 +1,16 @@
-# Coach JM v59 — drag avec un seul bloc
+# Coach JM v60 — drag tactile fiabilisé
 
-Comportement :
-- toucher les 3 barres : le bloc ORIGINAL devient rouge ;
-- garder le doigt : ce même bloc suit le doigt ;
-- aucun clone / deuxième cadre ;
-- aucune destination ne devient rouge ;
-- relâcher : échange avec le jour visé puis retour immédiat au style normal ;
-- annulation : retour immédiat au style normal.
+Cause probable des comportements incohérents :
+- `bindProgramDrag()` ajoutait des listeners globaux à chaque `render()`;
+- ces anciens listeners restaient actifs, donc plusieurs états de drag pouvaient réagir en même temps.
 
-Marqueurs : v59 + JS59.
+Correction :
+- AbortController global : un seul jeu de listeners de drag existe à la fois;
+- touchmove/touchend/touchcancel écoutés sur `window` en capture;
+- le bloc original devient rouge et suit le doigt;
+- aucune copie n'est créée;
+- la destination est calculée par la position verticale du doigt, pas par `elementFromPoint`;
+- le rouge est retiré AVANT le rerender au relâchement;
+- blur/touchcancel nettoient aussi l'état.
+
+Marqueurs : v60 + JS60.
