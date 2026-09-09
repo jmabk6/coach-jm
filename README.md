@@ -1,16 +1,18 @@
-# Coach JM v60 — drag tactile fiabilisé
+# Coach JM v61 — drag visuel réel
 
-Cause probable des comportements incohérents :
-- `bindProgramDrag()` ajoutait des listeners globaux à chaque `render()`;
-- ces anciens listeners restaient actifs, donc plusieurs états de drag pouvaient réagir en même temps.
+v60 sélectionnait et relâchait correctement, mais le bloc ne suivait pas visiblement le doigt.
 
-Correction :
-- AbortController global : un seul jeu de listeners de drag existe à la fois;
-- touchmove/touchend/touchcancel écoutés sur `window` en capture;
-- le bloc original devient rouge et suit le doigt;
-- aucune copie n'est créée;
-- la destination est calculée par la position verticale du doigt, pas par `elementFromPoint`;
-- le rouge est retiré AVANT le rerender au relâchement;
-- blur/touchcancel nettoient aussi l'état.
+v61 :
+- au touchstart sur les 3 barres, le bloc ORIGINAL est déplacé temporairement dans `body`;
+- il passe en `position: fixed`;
+- un placeholder invisible conserve sa place d'origine;
+- `left/top` suivent directement les coordonnées du doigt;
+- au relâchement, le bloc est remis dans son emplacement DOM puis la semaine est rerendue;
+- aucun clone visuel.
 
-Marqueurs : v60 + JS60.
+Test :
+toucher les 3 barres -> cadre rouge;
+bouger le doigt -> le cadre doit physiquement suivre le doigt;
+relâcher -> échange avec le jour le plus proche et retour normal.
+
+Marqueurs : v61 + JS61.
