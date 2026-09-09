@@ -1,16 +1,21 @@
-# Coach JM — Étape 11 v33 — reset cache iPhone
+# Coach JM v34 — assets uniques, zéro cache ambigu
 
-Objectif : forcer Safari/GitHub Pages à charger réellement la nouvelle UI.
+Cette version ne charge plus `./js/app.js` ni `./css/app.css`.
 
-Modifications :
-- désinscription de tous les anciens Service Workers ;
-- suppression de tous les caches Cache Storage au chargement ;
-- suppression de l’enregistrement du service worker dans l’app ;
-- `sw.js` devient auto-nettoyant et se désinscrit ;
-- assets forcés en `app.css?v=33` et `app.js?v=33` ;
-- badge temporaire `v33` visible en bas à droite pour confirmer la bonne version.
+Elle charge :
+- `./coachjm-v34.js`
+- `./coachjm-v34.css`
 
-La PWA hors-ligne est volontairement désactivée pour le moment afin d’éviter les anciennes versions fantômes.
+Donc un ancien `app.js` Safari/service-worker ne peut plus être utilisé.
+
+Deux marqueurs doivent apparaître :
+- `v34` = index.html v34 chargé
+- `JS34` = le vrai JavaScript v34 chargé
+
+Aucun service worker n'est fourni dans ce ZIP.
+
+La fiche Muscu D contenue dans `coachjm-v34.js` est la version à CARTE UNIQUE :
+titre + badges + séance en cours + phase + reprendre + objectif dans le même cadre.
 
 Commit conseillé :
-`Etape 11 v33 - reset cache Safari`
+`v34 assets uniques sans cache`
