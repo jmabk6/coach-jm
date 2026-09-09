@@ -33,6 +33,7 @@ async function restoreActiveSession(){
     ACTIVE_PLAN=saved.planKey==="D"?MUSCU_D:MUSCU_A;
     LIVE=saved.live;
     LS=saved.state;
+    LS.planKey=saved.planKey||LS.planKey||(saved.planKey==="D"?"D":"A");
     LS.restTimer=null;
     activeSessionRestored=true;
     return true;
@@ -463,7 +464,7 @@ function liveView(){
  let e=LIVE[LS.x],ok=LS.ok[LS.x]||[];
  return `<section class="page">
    <div class="live-head">
-    <button class="backbtn" data-route="workout-muscu-a">‹</button>
+    <button class="backbtn" id="liveBack">‹</button>
     <div><h1>${ACTIVE_PLAN.name}</h1><p>Exercice ${LS.x+1} sur ${LIVE.length}</p></div>
     <div class="live-clock" id="liveClock">${ft(LS.t)}</div>
    </div>
@@ -503,9 +504,13 @@ function liveDone(){
 
 let liveRestTimer=null,liveMainTimer=null;
 function bindLive(){
+ const liveBack=document.querySelector("#liveBack");
+ if(liveBack)liveBack.addEventListener("click",()=>{
+   navigate((LS.planKey==="D"||ACTIVE_PLAN===MUSCU_D)?"workout-muscu-d":"workout-muscu-a");
+ });
  document.querySelectorAll("[data-plan]").forEach(btn=>btn.addEventListener("click",()=>{
    ACTIVE_PLAN=btn.dataset.plan==="D"?MUSCU_D:MUSCU_A;
-   LIVE=makeLiveFromPlan(ACTIVE_PLAN); LS={x:0,t:0,ok:{},rest:0,notes:{}}; activeSessionRestored=true; persistActiveSession();
+   LIVE=makeLiveFromPlan(ACTIVE_PLAN); LS={x:0,t:0,ok:{},rest:0,notes:{},planKey:(ACTIVE_PLAN===MUSCU_D?"D":"A")}; activeSessionRestored=true; persistActiveSession();
  }));
  if(document.querySelector("#liveClock")&&!liveMainTimer){let autosaveTicks=0;liveMainTimer=setInterval(()=>{LS.t++;autosaveTicks++;let c=document.querySelector("#liveClock");if(c)c.textContent=ft(LS.t);if(autosaveTicks%10===0)persistActiveSession()},1000);}
 
