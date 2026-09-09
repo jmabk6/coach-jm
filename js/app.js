@@ -10,12 +10,27 @@ const DAYS = [
 ];
 
 const MUSCU_A = {
- name:"Muscu A — Jambes", subtitle:"Jambes · gainage · mobilité", duration:"≈ 55 min", place:"Salle", goal:"Renforcer les jambes, progresser sans douleur au genou et construire une base solide pour tout le reste.",
+ name:"Muscu A — Jambes", subtitle:"Jambes · gainage · mobilité", duration:"≈ 60 min", place:"Salle", goal:"Renforcer les jambes, progresser sans douleur au genou et construire une base solide pour tout le reste.",
  exercises:[
   {name:"Tapis — échauffement", meta:"8 min · allure facile", extra:"Prévu : 5 km/h · pente légère"},
-  {name:"Leg Press horizontale", meta:"3 séries · 10–12 reps · repos 90 s", extra:"Charge prévue : 85 kg", warmup:"Échauffement : 1 série légère"},
+  {name:"Squat", meta:"3 séries · 10–12 reps · repos 90–120 s", extra:"Mouvement jambes principal", warmup:"Échauffement : barre à vide"},
+  {name:"Leg Press horizontale", meta:"3 séries · 10–12 reps · repos 90 s", extra:"Complément jambes · charge à ajuster"},
   {name:"Leg Curl", meta:"3 séries · 10–12 reps · repos 75 s", extra:"Charge prévue : 15 kg"},
   {name:"Gainage frontal", meta:"3 séries · 30–45 s · repos 45 s", extra:"Poids du corps"},
+  {name:"Mobilité hanches / ischios", meta:"5–8 min · fin de séance", extra:"Amplitude confortable, sans forcer"}
+ ]
+};
+
+const MUSCU_D = {
+ name:"Muscu D — Full Body", subtitle:"Corps entier · traction · tronc", duration:"≈ 60–70 min", place:"Salle",
+ goal:"Travailler tout le corps en une séance, développer la force et l’endurance musculaire sans aller systématiquement à l’échec.",
+ exercises:[
+  {name:"Tapis — échauffement", meta:"10–12 min · progressif", extra:"Marche active · pente progressive"},
+  {name:"Squat", meta:"3 séries · 10–12 reps · repos 90–120 s", extra:"Mouvement jambes principal", warmup:"Échauffement : barre à vide"},
+  {name:"Tirage vertical", meta:"3 séries · 8–12 reps · repos 90–120 s", extra:"Objectif traction · charge de travail à ajuster"},
+  {name:"Chest Press", meta:"3 séries · 8–12 reps · repos 90–120 s", extra:"Poussée · garder 1–2 reps en réserve"},
+  {name:"Rowing assis / Leg Curl", meta:"3 séries · 10–12 reps", extra:"À choisir selon la séance et la fatigue"},
+  {name:"Gainage frontal", meta:"3 séries · 30–50 s · repos 60 s", extra:"Tronc · arrêter si la posture se dégrade"},
   {name:"Mobilité hanches / ischios", meta:"5–8 min · fin de séance", extra:"Amplitude confortable, sans forcer"}
  ]
 };
@@ -46,10 +61,11 @@ function programView(){
  <div class="hint"><b>Flexible par conception.</b> Une séance prévue pourra être déplacée, remplacée ou adaptée sans modifier ce qui a déjà été réellement effectué.</div>
  </section>`;
 }
-function workoutDetail(){
- const w=MUSCU_A;
+function workoutDetail(which="A"){
+ const w=which==="D"?MUSCU_D:MUSCU_A;
+ const liveRoute=which==="D"?"live-workout-d":"live-workout";
  return `<section class="page">
-   <div class="detail-top"><button class="backbtn" data-route="sessions">‹</button><div class="detail-title"><h1>Séance prévue</h1><p>Mardi 8 septembre</p></div></div>
+   <div class="detail-top"><button class="backbtn" data-route="sessions">‹</button><div class="detail-title"><h1>Séance prévue</h1><p>${w.name}</p></div></div>
    <div class="card summary">
      <div class="summary-head"><div class="bigemoji">💪</div><div><h2>${w.name}</h2><div class="meta">${w.subtitle}</div></div></div>
      <div class="pills"><span class="pill">⏱ ${w.duration}</span><span class="pill">🏋️ ${w.place}</span><span class="pill">📋 ${w.exercises.length} exercices</span></div>
@@ -63,7 +79,7 @@ function workoutDetail(){
        <div class="chev">›</div>
      </div>`).join("")}</div>
    <div class="note-card card"><strong>Prévu ≠ réalisé.</strong><br>Tu pourras changer une charge, faire moins ou plus de reps, remplacer ou ajouter un exercice pendant la séance. L’historique enregistrera ce que tu as réellement fait.</div>
-   <div class="detail-actions"><button class="secondary">Adapter la séance</button><button class="primary compact" data-route="live-workout">▶ Démarrer</button></div>
+   <div class="detail-actions"><button class="secondary">Adapter la séance</button><button class="primary compact" data-route="${liveRoute}" data-plan="${which}">▶ Démarrer</button></div>
  </section>`;
 }
 
@@ -184,6 +200,7 @@ function sessionsView(){
   {icon:"🦵",name:"Muscu A — Jambes",meta:"Jambes · gainage · mobilité",route:"workout-muscu-a"},
   {icon:"💪",name:"Muscu B — Tirage",meta:"Dos · biceps · objectif traction",route:"workout-muscu-a"},
   {icon:"🏋️",name:"Muscu C — Poussée",meta:"Pectoraux · épaules · triceps",route:"workout-muscu-a"},
+  {icon:"🔄",name:"Muscu D — Full Body",meta:"Corps entier · traction · tronc",route:"workout-muscu-d"},
   {icon:"❤️",name:"Cardio — Intervalles",meta:"Tapis · blocs de travail",route:"workout-muscu-a"},
   {icon:"🧘",name:"Mobilité",meta:"Souplesse · récupération",route:"workout-muscu-a"}
  ];
@@ -271,20 +288,147 @@ function bindBuilder(){
 }
 
 
-const LIVE=[
- {n:"Squat",i:"🏋️",m:"Jambes · fessiers · tronc",p:"3 × 10–12",ref:"barre + 5 kg/côté",s:[["",12,6],["",12,8],["",12,8]]},
- {n:"Tirage vertical",i:"💪",m:"Dos · biceps",p:"3 × 8–12",ref:"35 kg",s:[[30,10,6],[35,10,7],[40,10,10]]},
- {n:"Leg Curl",i:"🦵",m:"Ischio-jambiers",p:"3 × 10–12",ref:"20 kg",s:[[15,12,6],[20,12,8],[20,12,10]]},
- {n:"Chest Press",i:"🏋️",m:"Pectoraux · triceps",p:"3 × 8–12",ref:"30 kg",s:[[30,12,8],[30,12,8],[35,8,10]]},
- {n:"Gainage frontal",i:"🛡️",m:"Tronc",p:"3 séries",ref:"45–50 s",s:[[40,"s",7],[50,"s",9],[45,"s",10]]}
-];
+
+/* UI7 v16 — la séance en cours est créée à partir de la séance prévue MUSCU_A */
+function makeLiveFromPlan(plan=MUSCU_A){
+ return plan.exercises.map(e=>{
+   const n=e.name;
+   if(n.startsWith("Tapis")) return {type:"cardio",n,i:"🚶",m:"Cardio · échauffement",plan:e.meta,ref:e.extra.replace("Prévu : ",""),cardio:{durationMin:n.includes("Tapis")?(plan===MUSCU_D?12:8):8,speed:5,incline:3,hr:"",rpe:""}};
+   if(n==="Squat") return {type:"sets",n,i:"🏋️",m:"Jambes · fessiers · tronc",plan:e.meta,ref:"barre + charge",s:[["",12,7],["",12,8],["",10,8]]};
+   if(n==="Leg Press horizontale") return {type:"sets",n,i:"🦵",m:"Quadriceps · fessiers",plan:e.meta,ref:"charge à ajuster",s:[[85,12,7],[85,12,8],[85,10,8]]};
+   if(n==="Leg Curl") return {type:"sets",n,i:"🦵",m:"Ischio-jambiers",plan:e.meta,ref:"charge à ajuster",s:[[15,12,7],[20,12,8],[20,10,8]]};
+   if(n==="Tirage vertical") return {type:"sets",n,i:"💪",m:"Dos · biceps",plan:e.meta,ref:"charge à ajuster",s:[[35,10,7],[35,10,8],[35,10,8]]};
+   if(n==="Chest Press") return {type:"sets",n,i:"🏋️",m:"Pectoraux · triceps",plan:e.meta,ref:"charge à ajuster",s:[[30,10,7],[30,10,8],[30,10,8]]};
+   if(n.startsWith("Rowing")) return {type:"sets",n,i:"💪",m:"Dos / ischios",plan:e.meta,ref:"à choisir",s:[["",10,7],["",10,8],["",10,8]]};
+   if(n==="Gainage frontal") return {type:"duration",n,i:"🛡️",m:"Tronc",plan:e.meta,ref:"Poids du corps",d:[[40,7],[40,8],[40,8]]};
+   return {type:"mobility",n,i:"🧘",m:"Mobilité · souplesse",plan:e.meta,ref:e.extra,mobility:{durationMin:6,done:false,note:""}};
+ });
+}
+let ACTIVE_PLAN=MUSCU_A;
+let LIVE=makeLiveFromPlan(ACTIVE_PLAN);
 let LS={x:0,t:0,ok:{},rest:0,notes:{}};
+
 function ft(v){let m=Math.floor(v/60),s=v%60;return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
-function liveView(){let e=LIVE[LS.x],ok=LS.ok[LS.x]||[];return `<section class="page"><div class="live-head"><button class="backbtn" data-route="workout-muscu-a">‹</button><div><h1>Full Body</h1><p>Exercice ${LS.x+1} sur ${LIVE.length}</p></div><div class="live-clock" id="liveClock">${ft(LS.t)}</div></div><div class="live-progress">${LIVE.map((_,i)=>`<i class="${i<LS.x?'done':i===LS.x?'active':''}"></i>`).join("")}</div><div class="card live-card"><div class="live-ex-head"><div class="live-icon">${e.i}</div><div><h2>${e.n}</h2><p>${e.m}</p></div></div><div class="live-plan"><span><b>Prévu</b><br>${e.p}</span><span style="text-align:right"><b>${e.ref}</b><br>référence</span></div><div class="series-head"><span>Série</span><span>Charge/temps</span><span>Reps</span><span>RPE</span><span></span></div>${e.s.map((a,i)=>`<div class="series-row"><span class="series-n">${i+1}</span><input data-li="${i}" data-lf="0" value="${a[0]}"><input data-li="${i}" data-lf="1" value="${a[1]}"><select data-li="${i}" data-lf="2">${[5,6,7,8,9,10].map(r=>`<option ${+a[2]===r?'selected':''}>${r}</option>`).join("")}</select><button class="set-ok ${ok.includes(i)?'checked':''}" data-setok="${i}">${ok.includes(i)?'✓':'○'}</button></div>`).join("")}${LS.rest?`<div class="rest"><strong id="restClock">${ft(LS.rest)}</strong><div><b>Repos</b><br><small>avant la prochaine série</small></div><button class="skip" id="skipRest">Passer</button></div>`:''}<div class="coach-adapt"><b>Coach JM</b> · ${coachText(e,ok)}</div></div><div class="section-head"><h2>Note rapide</h2></div><textarea class="live-note" id="liveNote" placeholder="Sensations, douleur, difficulté…">${LS.notes[LS.x]||""}</textarea><div class="live-actions"><button class="secondary">Remplacer</button><button class="secondary" data-route="exercise-${slugify(e.n)}">Voir la fiche</button></div>${LS.x<LIVE.length-1?`<button class="primary" id="nextLive">Exercice terminé →</button>`:`<button class="primary" id="finishLive">Terminer la séance ✓</button>`}<button class="add-live" data-route="catalog">+ Ajouter un exercice</button></section>`}
-function coachText(e,ok){if(!ok.length)return"Valide une série et j’adapte la suivante.";let r=+e.s[ok[ok.length-1]][2];if(r>=10)return"Au taquet : ne monte pas la charge à la série suivante.";if(r>=9)return"Très difficile : garde la charge, ou baisse si la technique se dégrade.";if(r>=8)return"Bonne zone de travail : consolide à cette charge.";return"Tu as de la marge : une petite hausse est possible si la technique reste propre."}
-function liveDone(){return `<section class="page"><div class="card live-done"><div class="check">✅</div><h1>Séance terminée</h1><p>Charges, répétitions, RPE et notes ont été saisis séparément du programme prévu.</p><button class="primary" data-route="program">Voir le bilan</button></div></section>`}
+
+function liveFields(e){
+  const ok=LS.ok[LS.x]||[];
+  if(e.type==="cardio"){
+    return `<div class="cardio-live-grid">
+      <label>Durée<input id="cardioDuration" inputmode="numeric" value="${e.cardio.durationMin}"><span>min</span></label>
+      <label>Vitesse<input id="cardioSpeed" inputmode="decimal" value="${e.cardio.speed}"><span>km/h</span></label>
+      <label>Pente<input id="cardioIncline" inputmode="decimal" value="${e.cardio.incline}"><span>%</span></label>
+      <label>FC fin<input id="cardioHr" inputmode="numeric" value="${e.cardio.hr}" placeholder="—"><span>bpm</span></label>
+      <label>RPE<input id="cardioRpe" inputmode="numeric" value="${e.cardio.rpe}" placeholder="—"><span>/10</span></label>
+    </div>
+    <button class="primary" id="completeBlock" style="margin-top:14px">${ok.includes(0)?"✓ Bloc validé":"Valider le bloc"}</button>`;
+  }
+  if(e.type==="sets"){
+    return `<div class="series-head"><span>Série</span><span>Charge</span><span>Reps</span><span>RPE</span><span></span></div>
+      ${e.s.map((a,i)=>`<div class="series-row">
+        <span class="series-n">${i+1}</span>
+        <input data-li="${i}" data-lf="0" value="${a[0]}">
+        <input data-li="${i}" data-lf="1" value="${a[1]}">
+        <select data-li="${i}" data-lf="2">${[5,6,7,8,9,10].map(r=>`<option ${+a[2]===r?'selected':''}>${r}</option>`).join("")}</select>
+        <button class="set-ok ${ok.includes(i)?'checked':''}" data-setok="${i}">${ok.includes(i)?'✓':'○'}</button>
+      </div>`).join("")}`;
+  }
+  if(e.type==="duration"){
+    return `<div class="series-head"><span>Série</span><span>Temps</span><span>Unité</span><span>RPE</span><span></span></div>
+      ${e.d.map((a,i)=>`<div class="series-row">
+        <span class="series-n">${i+1}</span>
+        <input data-di="${i}" data-df="0" value="${a[0]}">
+        <input value="s" disabled>
+        <select data-di="${i}" data-df="1">${[5,6,7,8,9,10].map(r=>`<option ${+a[1]===r?'selected':''}>${r}</option>`).join("")}</select>
+        <button class="set-ok ${ok.includes(i)?'checked':''}" data-setok="${i}">${ok.includes(i)?'✓':'○'}</button>
+      </div>`).join("")}`;
+  }
+  return `<div class="mobility-live">
+    <label>Durée prévue<input id="mobilityDuration" inputmode="numeric" value="${e.mobility.durationMin}"><span>min</span></label>
+    <textarea id="mobilityNote" class="live-note" placeholder="Ce que tu as réellement fait…">${e.mobility.note||""}</textarea>
+    <button class="primary" id="completeBlock" style="margin-top:12px">${ok.includes(0)?"✓ Mobilité validée":"Valider la mobilité"}</button>
+  </div>`;
+}
+
+function liveView(){
+ let e=LIVE[LS.x],ok=LS.ok[LS.x]||[];
+ return `<section class="page">
+   <div class="live-head">
+    <button class="backbtn" data-route="workout-muscu-a">‹</button>
+    <div><h1>${ACTIVE_PLAN.name}</h1><p>Exercice ${LS.x+1} sur ${LIVE.length}</p></div>
+    <div class="live-clock" id="liveClock">${ft(LS.t)}</div>
+   </div>
+   <div class="live-progress">${LIVE.map((_,i)=>`<i class="${i<LS.x?'done':i===LS.x?'active':''}"></i>`).join("")}</div>
+   <div class="card live-card">
+    <div class="live-ex-head"><div class="live-icon">${e.i}</div><div><h2>${e.n}</h2><p>${e.m}</p></div></div>
+    <div class="live-plan"><span><b>Prévu</b><br>${e.plan}</span><span style="text-align:right"><b>${e.ref}</b><br>référence</span></div>
+    ${liveFields(e)}
+    ${LS.rest?`<div class="rest"><strong id="restClock">${ft(LS.rest)}</strong><div><b>Repos</b><br><small>avant la prochaine série</small></div><button class="skip" id="skipRest">Passer</button></div>`:''}
+    <div class="coach-adapt"><b>Coach JM</b> · ${coachText(e,ok)}</div>
+   </div>
+   <div class="section-head"><h2>Note rapide</h2></div>
+   <textarea class="live-note" id="liveNote" placeholder="Sensations, douleur, difficulté…">${LS.notes[LS.x]||""}</textarea>
+   <div class="live-actions"><button class="secondary">Remplacer</button><button class="secondary" data-route="exercise-${slugify(e.n)}">Voir la fiche</button></div>
+   ${LS.x<LIVE.length-1?`<button class="primary" id="nextLive">Exercice terminé →</button>`:`<button class="primary" id="finishLive">Terminer la séance ✓</button>`}
+   <button class="add-live" data-route="catalog">+ Ajouter un exercice</button>
+ </section>`;
+}
+
+function coachText(e,ok){
+ if(!ok.length)return "Valide ce que tu réalises pour que Coach JM adapte la suite.";
+ if(e.type==="cardio")return "Échauffement enregistré. Garde assez d’énergie pour la musculation.";
+ if(e.type==="mobility")return "Mobilité enregistrée. L’objectif est la régularité, pas de forcer l’amplitude.";
+ let idx=ok[ok.length-1],r=e.type==="sets"?+e.s[idx][2]:+e.d[idx][1];
+ if(r>=10)return "Au taquet : ne monte pas la difficulté à la série suivante.";
+ if(r>=9)return "Très difficile : garde la même difficulté ou baisse si la technique se dégrade.";
+ if(r>=8)return "Bonne zone de travail : consolide à ce niveau.";
+ return "Tu as de la marge : une petite hausse est possible si la technique reste propre.";
+}
+
+function liveDone(){
+ return `<section class="page"><div class="card live-done"><div class="check">✅</div><h1>Séance terminée</h1><p>La séance réalisée reprend exactement les exercices de la séance prévue, avec tes valeurs réelles.</p><button class="primary" data-route="program">Voir le bilan</button></div></section>`;
+}
+
 let liveRestTimer=null,liveMainTimer=null;
-function bindLive(){if(document.querySelector("#liveClock")&&!liveMainTimer)liveMainTimer=setInterval(()=>{LS.t++;let c=document.querySelector("#liveClock");if(c)c.textContent=ft(LS.t)},1000);document.querySelectorAll("[data-lf]").forEach(x=>x.addEventListener("change",()=>LIVE[LS.x].s[+x.dataset.li][+x.dataset.lf]=x.dataset.lf==="2"?+x.value:x.value));document.querySelectorAll("[data-setok]").forEach(b=>b.addEventListener("click",()=>{LS.ok[LS.x]=LS.ok[LS.x]||[];let i=+b.dataset.setok;if(!LS.ok[LS.x].includes(i))LS.ok[LS.x].push(i);LS.rest=90;render("live-workout");startLiveRest()}));let n=document.querySelector("#liveNote");if(n)n.addEventListener("input",()=>LS.notes[LS.x]=n.value);let nx=document.querySelector("#nextLive");if(nx)nx.addEventListener("click",()=>{LS.x++;LS.rest=0;render("live-workout")});let f=document.querySelector("#finishLive");if(f)f.addEventListener("click",()=>render("live-complete"));let sk=document.querySelector("#skipRest");if(sk)sk.addEventListener("click",()=>{LS.rest=0;if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=null;render("live-workout")})}
+function bindLive(){
+ document.querySelectorAll("[data-plan]").forEach(btn=>btn.addEventListener("click",()=>{
+   ACTIVE_PLAN=btn.dataset.plan==="D"?MUSCU_D:MUSCU_A;
+   LIVE=makeLiveFromPlan(ACTIVE_PLAN); LS={x:0,t:0,ok:{},rest:0,notes:{}};
+ }));
+ if(document.querySelector("#liveClock")&&!liveMainTimer)liveMainTimer=setInterval(()=>{LS.t++;let c=document.querySelector("#liveClock");if(c)c.textContent=ft(LS.t)},1000);
+
+ document.querySelectorAll("[data-lf]").forEach(x=>x.addEventListener("change",()=>LIVE[LS.x].s[+x.dataset.li][+x.dataset.lf]=x.dataset.lf==="2"?+x.value:x.value));
+ document.querySelectorAll("[data-df]").forEach(x=>x.addEventListener("change",()=>LIVE[LS.x].d[+x.dataset.di][+x.dataset.df]=+x.value));
+
+ document.querySelectorAll("[data-setok]").forEach(b=>b.addEventListener("click",()=>{
+   LS.ok[LS.x]=LS.ok[LS.x]||[];
+   let i=+b.dataset.setok;
+   if(!LS.ok[LS.x].includes(i))LS.ok[LS.x].push(i);
+   LS.rest=(LIVE[LS.x].n==="Leg Curl"?75:LIVE[LS.x].type==="duration"?45:90);
+   render("live-workout"); startLiveRest();
+ }));
+
+ const block=document.querySelector("#completeBlock");
+ if(block)block.addEventListener("click",()=>{
+   LS.ok[LS.x]=[0];
+   let e=LIVE[LS.x];
+   if(e.type==="cardio"){
+     e.cardio.durationMin=+document.querySelector("#cardioDuration").value||0;
+     e.cardio.speed=+document.querySelector("#cardioSpeed").value||0;
+     e.cardio.incline=+document.querySelector("#cardioIncline").value||0;
+     e.cardio.hr=document.querySelector("#cardioHr").value;
+     e.cardio.rpe=document.querySelector("#cardioRpe").value;
+   }else if(e.type==="mobility"){
+     e.mobility.durationMin=+document.querySelector("#mobilityDuration").value||0;
+     e.mobility.note=document.querySelector("#mobilityNote").value;
+   }
+   render("live-workout");
+ });
+
+ let n=document.querySelector("#liveNote"); if(n)n.addEventListener("input",()=>LS.notes[LS.x]=n.value);
+ let nx=document.querySelector("#nextLive"); if(nx)nx.addEventListener("click",()=>{LS.x++;LS.rest=0;render("live-workout")});
+ let f=document.querySelector("#finishLive"); if(f)f.addEventListener("click",()=>render("live-complete"));
+ let sk=document.querySelector("#skipRest"); if(sk)sk.addEventListener("click",()=>{LS.rest=0;if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=null;render("live-workout")});
+}
 function startLiveRest(){if(liveRestTimer)clearInterval(liveRestTimer);liveRestTimer=setInterval(()=>{if(LS.rest<=0){clearInterval(liveRestTimer);liveRestTimer=null;return}LS.rest--;let c=document.querySelector("#restClock");if(c)c.textContent=ft(LS.rest)},1000)}
 
 function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}
@@ -293,13 +437,13 @@ function render(route){
  app.innerHTML =
  route==="today"?todayView():
  route==="program"?programView():
- route==="workout-muscu-a"?workoutDetail():
+ route==="workout-muscu-a"?workoutDetail("A"):route==="workout-muscu-d"?workoutDetail("D"):
  route==="sessions"?sessionsView():route==="new"?builderStart():route==="catalog"?catalogView():
- route==="live-workout"?liveView():route==="live-complete"?liveDone():route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
+ route==="live-workout"?liveView():route==="live-workout-d"?liveView():route==="live-complete"?liveDone():route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
  route.startsWith("exercise-")?genericExerciseDetail(route.replace("exercise-","")):
  route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):
  placeholder("Plus","Profil, paramètres, sauvegarde et export.");
- document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=(route==="workout-muscu-a"||route==="live-workout"||route==="live-complete")?"sessions":(route==="sessions"||route==="new"||route.startsWith("builder-")||route.startsWith("exercise-")||route==="catalog")?"sessions":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
+ document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=(route==="workout-muscu-a"||route==="workout-muscu-d"||route==="live-workout"||route==="live-workout-d"||route==="live-complete")?"sessions":(route==="sessions"||route==="new"||route.startsWith("builder-")||route.startsWith("exercise-")||route==="catalog")?"sessions":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
  document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.route)));
  bindCatalog(); bindBuilder(); bindLive();
   document.querySelectorAll('[data-route="live-workout"], .start-workout').forEach(el=>{

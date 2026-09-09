@@ -1,13 +1,9 @@
-# COACH JM — Correctif navigation Séance v2
+# COACH JM — UI7 v17
 
-Correction réelle du bouton central :
+- Ajout **Muscu D — Full Body**
+- Muscu A : **Squat devient le mouvement jambes principal**, Leg Press reste en complément
+- UI7 démarre à partir du modèle réellement choisi
+- Muscu A et Muscu D ont leurs propres listes d'exercices
+- Prévu ≠ réalisé reste conservé
 
-- **Séance** → **Mes séances**
-- choix d'une séance → **Détail de la séance**
-- **Démarrer la séance** → UI7 séance en cours
-- **+ Nouvelle séance** → création d'une séance
-
-Le bouton central ne lance donc plus directement « Créer une séance ».
-
-Commit conseillé :
-`Fix navigation Seance vers Mes seances`
+Commit : `Muscu D Full Body + Squat principal`
