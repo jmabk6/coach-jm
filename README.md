@@ -1,14 +1,10 @@
-# Coach JM v50 — Programme finalisé
+# Coach JM v52 — Programme : Ajouter + navigation semaines
 
-Corrections par rapport à v49 :
-- Vendredi devient simplement `Repos`;
-- Repos est un bloc blanc identique aux autres avec une pastille grise;
-- Repos est déplaçable comme les autres blocs non réalisés;
-- seules les séances réalisées restent verrouillées;
-- drag tactile refait avec Pointer Events, uniquement depuis la poignée;
-- déplacement immédiat depuis la poignée, sans appui long et sans sélection de texte;
-- alignements uniformisés : dates, pastilles, titres, sous-titres et poignées;
-- cartes toutes à 58 px;
-- 7 jours + Ajouter + Historique restent compacts.
+Corrections :
+1. `+ Ajouter une séance` ouvre maintenant l'écran de création de séance.
+2. Les flèches gauche/droite changent réellement de semaine.
+3. Le titre de semaine et les dates des 7 jours sont recalculés.
+4. L'ordre déplacé reste mémorisé séparément pour chaque semaine.
+5. La semaine de base reste 7–13 septembre 2026.
 
-Marqueurs temporaires : v50 + JS50.
+Marqueurs temporaires : v52 + JS52.
