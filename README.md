@@ -1,23 +1,16 @@
-# Coach JM v56 — Programme = réel pour les jours passés
+# Coach JM v57 — drag + ouverture des séances prévues
 
-Corrections demandées :
+Drag :
+- doigt posé sur les 3 barres = cadre immédiatement rouge ;
+- un clone du cadre suit le doigt pendant le déplacement ;
+- au relâchement = rouge supprimé immédiatement, même si aucun déplacement n'a eu lieu ;
+- touchcancel nettoie aussi l'état ;
+- le drag ne démarre que depuis les 3 barres.
 
-1. 7 et 8 septembre
-- s'il n'y a aucune séance enregistrée dans l'historique, le jour affiche `Repos`;
-- on ne garde plus un faux planning prévu pour une journée déjà passée.
+Consultation :
+- une séance réalisée ouvre son détail historique ;
+- une séance non réalisée est maintenant cliquable ;
+- clic sur une séance prévue ouvre `Séance prévue` avec son contenu ;
+- la poignée de drag n'ouvre pas la séance.
 
-2. 9 septembre
-- si l'historique contient Muscu D ce jour-là, le Programme affiche Muscu D;
-- le planning Muscu B n'écrase plus le réel.
-
-3. Consultation
-- toute séance réelle affichée dans Programme porte son `historyId`;
-- un clic ouvre directement le détail exact de la séance enregistrée dans Historique;
-- un chevron `›` remplace la poignée de déplacement pour ces séances réalisées.
-
-Règle :
-- passé = réel ou Repos;
-- aujourd'hui = réel si enregistré, sinon planning du jour;
-- futur = planning prévu.
-
-Marqueurs : v56 + JS56.
+Marqueurs : v57 + JS57.
