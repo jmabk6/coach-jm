@@ -1,13 +1,18 @@
-# Coach JM v54 — semaines passées corrigées
+# Coach JM v55 — correction Séance + date réelle
 
-Règle définitive :
-- une semaine passée ne reprend JAMAIS le planning prévu ;
-- chaque jour passé affiche :
-  - la vraie séance si une séance est enregistrée ce jour-là ;
-  - sinon un bloc `Repos` avec pastille grise ;
-- aucun drag dans le passé ;
-- `Ajouter une séance` est réellement désactivé et visuellement grisé ;
-- l'historique reste accessible.
+Deux bugs corrigés :
 
-Test attendu sur 31/08 — 06/09 :
-si aucune séance n'a été enregistrée cette semaine, les 7 jours affichent `Repos`.
+1. Onglet Séance
+- avant : si `activeSessionRestored` était vrai, le clic sur l'onglet Séance était détourné vers `live-workout`;
+- c'est pour cela que Muscu D se rouvrait directement à la phase Mobilité ;
+- maintenant l'onglet Séance ouvre TOUJOURS `Mes séances`;
+- une vraie séance en cours reste accessible depuis sa carte dédiée, pas en détournant l'onglet.
+
+2. Date
+- `Mardi 8 septembre` était codé en dur ;
+- le jour 8 était aussi codé en dur pour le surlignage ;
+- la date est maintenant calculée depuis la date réelle du téléphone/navigateur ;
+- aujourd'hui doit donc afficher `Mercredi 9 septembre`;
+- le surlignage du jour utilise la vraie date ISO.
+
+Marqueurs : v55 + JS55.
