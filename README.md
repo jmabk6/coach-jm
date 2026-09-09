@@ -1,18 +1,23 @@
-# Coach JM v55 — correction Séance + date réelle
+# Coach JM v56 — Programme = réel pour les jours passés
 
-Deux bugs corrigés :
+Corrections demandées :
 
-1. Onglet Séance
-- avant : si `activeSessionRestored` était vrai, le clic sur l'onglet Séance était détourné vers `live-workout`;
-- c'est pour cela que Muscu D se rouvrait directement à la phase Mobilité ;
-- maintenant l'onglet Séance ouvre TOUJOURS `Mes séances`;
-- une vraie séance en cours reste accessible depuis sa carte dédiée, pas en détournant l'onglet.
+1. 7 et 8 septembre
+- s'il n'y a aucune séance enregistrée dans l'historique, le jour affiche `Repos`;
+- on ne garde plus un faux planning prévu pour une journée déjà passée.
 
-2. Date
-- `Mardi 8 septembre` était codé en dur ;
-- le jour 8 était aussi codé en dur pour le surlignage ;
-- la date est maintenant calculée depuis la date réelle du téléphone/navigateur ;
-- aujourd'hui doit donc afficher `Mercredi 9 septembre`;
-- le surlignage du jour utilise la vraie date ISO.
+2. 9 septembre
+- si l'historique contient Muscu D ce jour-là, le Programme affiche Muscu D;
+- le planning Muscu B n'écrase plus le réel.
 
-Marqueurs : v55 + JS55.
+3. Consultation
+- toute séance réelle affichée dans Programme porte son `historyId`;
+- un clic ouvre directement le détail exact de la séance enregistrée dans Historique;
+- un chevron `›` remplace la poignée de déplacement pour ces séances réalisées.
+
+Règle :
+- passé = réel ou Repos;
+- aujourd'hui = réel si enregistré, sinon planning du jour;
+- futur = planning prévu.
+
+Marqueurs : v56 + JS56.
