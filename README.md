@@ -1,14 +1,17 @@
-# Coach JM v38 — correctif Étape 12 Progression
+# Coach JM v39 — Étape 12 : catégories de progression
 
-Cause trouvée :
-- le bouton de navigation du bas utilise la route `progress`;
-- l'écran de progression v37 avait été branché sur `progression`;
-- l'ancienne route `progress` affichait encore le placeholder `Ma progression`.
+Ajout des filtres :
+- Tout
+- Cardio
+- Jambes
+- Tirage
+- Poussée
+- Abdos/Gainage
+- Mobilité
 
-Correction :
-- `progress` affiche maintenant le vrai écran `progressionView()`;
-- `progression` reste accepté comme alias ;
-- retour du détail vers `progress`;
-- suppression de l'ancien placeholder.
+Les exercices enregistrés sont classés automatiquement selon leur type/nom.
+Le filtre ne modifie aucune donnée : il agit uniquement sur l'affichage.
 
-Marqueurs attendus : v38 + JS38.
+Marqueurs : v39 + JS39.
+Commit conseillé :
+`Etape 12 v39 - filtres progression`
