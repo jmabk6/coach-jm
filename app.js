@@ -135,22 +135,46 @@ function programView(){
 function workoutDetail(which="A"){
  const w=which==="D"?MUSCU_D:MUSCU_A;
  const liveRoute=which==="D"?"live-workout-d":"live-workout";
+ const hasActive=activeSessionRestored && (LS.planKey===which || (which==="D"&&ACTIVE_PLAN===MUSCU_D) || (which==="A"&&ACTIVE_PLAN===MUSCU_A));
+ const currentExercise=hasActive && LIVE[LS.x] ? LIVE[LS.x] : null;
+
  return `<section class="page">
-   <div class="detail-top"><button class="backbtn" data-route="sessions">‹</button><div class="detail-title"><h1>Séance prévue</h1><p>${w.name}</p></div></div>
-   <div class="card summary">
+   <div class="detail-top">
+     <button class="backbtn" data-route="sessions">‹</button>
+     <div class="detail-title"><h1>Séance prévue</h1><p>${w.name}</p></div>
+   </div>
+
+   <div class="card summary workout-unified">
      <div class="summary-head"><div class="bigemoji">💪</div><div><h2>${w.name}</h2><div class="meta">${w.subtitle}</div></div></div>
      <div class="pills"><span class="pill">⏱ ${w.duration}</span><span class="pill">🏋️ ${w.place}</span><span class="pill">📋 ${w.exercises.length} exercices</span></div>
+
+     ${hasActive?`<div class="inline-active-phase" data-route="${liveRoute}">
+       <div class="inline-active-head"><span class="live-dot"></span><b>SÉANCE EN COURS</b><span>${ft(LS.t)}</span></div>
+       <div class="inline-active-main">
+         <div class="active-phase-icon">${currentExercise?.i||"▶️"}</div>
+         <div><div class="active-phase-label">PHASE ${LS.x+1}/${LIVE.length}</div><h3>${currentExercise?.n||w.name}</h3><p>${currentExercise?.m||""}</p></div>
+         <div class="chev">›</div>
+       </div>
+       <div class="inline-resume">Reprendre exactement ici ›</div>
+     </div>`:""}
+
      <div class="goalbox"><strong>🎯 Objectif de la séance</strong><p>${w.goal}</p></div>
    </div>
+
    <div class="section-head"><h2>Exercices prévus</h2><button class="linkbtn">Modifier</button></div>
    <div class="exercise-list">${w.exercises.map((e,i)=>`
-     <div class="card exercise">
+     <div class="card exercise ${hasActive && i===LS.x?'exercise-current':''}">
        <div class="num">${i+1}</div>
-       <div><div class="exercise-name">${e.name}</div><div class="exercise-meta">${e.meta}</div><div class="exercise-extra">${e.extra}</div>${e.warmup?`<span class="warmup">${e.warmup}</span>`:''}</div>
+       <div><div class="exercise-name">${e.name}</div><div class="exercise-meta">${e.meta}</div><div class="exercise-extra">${e.extra}</div>${e.warmup?`<span class="warmup">${e.warmup}</span>`:''}${hasActive && i===LS.x?`<span class="current-badge">En cours</span>`:""}</div>
        <div class="chev">›</div>
      </div>`).join("")}</div>
-   <div class="note-card card"><strong>Prévu ≠ réalisé.</strong><br>Tu pourras changer une charge, faire moins ou plus de reps, remplacer ou ajouter un exercice pendant la séance. L’historique enregistrera ce que tu as réellement fait.</div>
-   <div class="detail-actions"><button class="secondary">Adapter la séance</button><button class="primary compact" data-route="${liveRoute}" data-plan="${which}">▶ Démarrer</button></div>
+
+   <div class="note-card card"><strong>Prévu ≠ réalisé.</strong><br>Le programme reste visible pendant la séance, mais la phase active reprend exactement là où tu l’as laissée.</div>
+
+   <div class="detail-actions">
+      <button class="secondary">Adapter la séance</button>
+      ${hasActive?`<button class="primary compact" data-route="${liveRoute}">▶ Reprendre</button>`:`<button class="primary compact" data-route="${liveRoute}" data-plan="${which}">▶ Démarrer</button>`}
+   </div>
  </section>`;
 }
 
@@ -506,7 +530,8 @@ let liveRestTimer=null,liveMainTimer=null;
 function bindLive(){
  const liveBack=document.querySelector("#liveBack");
  if(liveBack)liveBack.addEventListener("click",()=>{
-   navigate((LS.planKey==="D"||ACTIVE_PLAN===MUSCU_D)?"workout-muscu-d":"workout-muscu-a");
+   const key=LS.planKey || (ACTIVE_PLAN===MUSCU_D?"D":"A");
+   navigate(key==="D"?"workout-muscu-d":"workout-muscu-a");
  });
  document.querySelectorAll("[data-plan]").forEach(btn=>btn.addEventListener("click",()=>{
    ACTIVE_PLAN=btn.dataset.plan==="D"?MUSCU_D:MUSCU_A;
@@ -733,7 +758,6 @@ function historyView(){
 
 function placeholder(title,text){return `<section class="page"><div class="topline"><h1 class="brand">Coach JM</h1><div class="avatar">JM</div></div><div class="card placeholder"><h2>${title}</h2><p>${text}</p></div></section>`}
 function render(route){
- if(route==="sessions" && activeSessionRestored) route="live-workout";
  const app=document.querySelector("#app");
  app.innerHTML =
  route==="today"?todayView():
@@ -745,7 +769,13 @@ function render(route){
  route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):
  placeholder("Plus","Profil, paramètres, sauvegarde et export.");
  document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=(route==="workout-summary"||route==="history")?"program":(route==="workout-muscu-a"||route==="workout-muscu-d"||route==="live-workout"||route==="live-workout-d"||route==="live-complete")?"sessions":(route==="sessions"||route==="new"||route.startsWith("builder-")||route.startsWith("exercise-")||route==="catalog")?"sessions":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
- document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.route)));
+ document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>{
+   if(el.classList.contains("nav-main") && el.dataset.route==="sessions" && activeSessionRestored){
+     navigate("live-workout");
+     return;
+   }
+   navigate(el.dataset.route);
+ }));
  bindCatalog(); bindBuilder(); bindLive(); bindSummary();
   document.querySelectorAll('[data-route="live-workout"], .start-workout').forEach(el=>{
     if(!el.dataset.startBound){
@@ -755,13 +785,7 @@ function render(route){
   });
   window.scrollTo(0,0);
 }
-function navigate(route){
-  if(route==="sessions" && activeSessionRestored){
-    location.hash="live-workout";
-    return;
-  }
-  location.hash=route;
-}
+function navigate(route){ location.hash=route; }
 window.addEventListener("hashchange",()=>render(location.hash.slice(1)||"today"));
 async function initCoachJM(){
   await restoreActiveSession();

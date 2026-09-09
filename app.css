@@ -160,3 +160,27 @@ body{min-height:100vh}button{font:inherit}.page{padding:24px 18px calc(150px + e
 .history-open{width:100%;margin-top:10px}.history-list{display:flex;flex-direction:column;gap:10px}.history-row{padding:15px;display:flex;justify-content:space-between;align-items:center;gap:12px}.history-meta{display:flex;flex-direction:column;gap:5px;align-items:flex-end;color:var(--muted);font-size:12px}
 
 .session-resume{margin:4px 0 16px}
+
+/* Étape 11 v30 — détail prévu + phase live */
+.active-phase{padding:15px;margin:4px 0 17px;border:2px solid #e7b8bf;background:#fff7f8;cursor:pointer}
+.active-phase-top{display:flex;align-items:center;gap:7px;color:var(--rose-dark);font-size:12px}
+.active-phase-top span:last-child{margin-left:auto;color:var(--muted);font-weight:700}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--rose);box-shadow:0 0 0 4px #f7dfe2}
+.active-phase-main{display:grid;grid-template-columns:48px 1fr 22px;gap:11px;align-items:center;margin-top:12px}
+.active-phase-icon{width:48px;height:48px;border-radius:14px;background:var(--rose-soft);display:grid;place-items:center;font-size:25px}
+.active-phase-label{font-size:10px;color:var(--rose-dark);font-weight:900;letter-spacing:.06em}
+.active-phase-main h2{margin:3px 0 2px;font-size:19px}.active-phase-main p{margin:0;color:var(--muted);font-size:12px}
+.active-phase-cta{margin-top:11px;padding-top:10px;border-top:1px solid #efd8da;color:var(--rose-dark);font-size:13px;font-weight:800;text-align:center}
+.exercise-current{border:2px solid #e7b8bf;background:#fff9f9}
+.current-badge{display:inline-block;margin-top:6px;border-radius:999px;background:var(--rose);color:white;padding:4px 8px;font-size:10px;font-weight:800}
+
+/* v31 — séance prévue et phase en cours fusionnées */
+.workout-unified{overflow:hidden}
+.inline-active-phase{margin:15px 0 13px;padding:13px;border-radius:15px;background:#fff5f6;border:1px solid #ecc9cd;cursor:pointer}
+.inline-active-head{display:flex;align-items:center;gap:7px;color:var(--rose-dark);font-size:11px;font-weight:900;letter-spacing:.03em}
+.inline-active-head span:last-child{margin-left:auto;color:var(--muted);font-size:13px;letter-spacing:0}
+.inline-active-main{display:grid;grid-template-columns:44px 1fr 18px;gap:10px;align-items:center;margin-top:10px}
+.inline-active-main .active-phase-icon{width:44px;height:44px}
+.inline-active-main h3{margin:2px 0;font-size:18px}
+.inline-active-main p{margin:0;color:var(--muted);font-size:12px}
+.inline-resume{margin-top:10px;padding-top:9px;border-top:1px solid #efd8da;text-align:center;color:var(--rose-dark);font-size:12px;font-weight:900}
