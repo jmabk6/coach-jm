@@ -1,12 +1,18 @@
-# Coach JM — Étape 11 v29 — retour dynamique fiable
+# Coach JM — Étape 11 v30 — retour vers séance prévue avec phase en cours
 
-Le précédent correctif n'était pas fiable car le bouton retour restait dépendant du HTML généré.
+Comportement demandé :
 
-v29 :
-- le bouton retour live n'a plus de `data-route` codé en dur ;
-- son clic est géré en JavaScript au moment où l'écran est affiché ;
-- la séance mémorise explicitement `planKey = A ou D` ;
-- Muscu D revient donc vers `workout-muscu-d`, même après reprise/restauration.
+1. Muscu D est en cours.
+2. La flèche ← de l'écran live ouvre **Séance prévue — Muscu D**.
+3. En haut de cette fiche apparaît un bloc **Séance en cours** avec :
+   - phase/exercice actuel ;
+   - position dans la séance ;
+   - chrono ;
+   - bouton implicite `Reprendre exactement ici`.
+4. L'exercice actuel est aussi marqué `En cours` dans la liste prévue.
+5. Un clic sur le bloc ou sur `▶ Reprendre` revient exactement à la phase live en cours.
+
+Le bouton central `Séance` continue, lui, à reprendre directement la séance live lorsqu'une séance est active.
 
 Commit conseillé :
-`Etape 11 v29 - retour dynamique plan actif`
+`Etape 11 v30 - detail prevu avec phase en cours`
