@@ -1,11 +1,13 @@
-# Coach JM v53 — semaines précédentes
+# Coach JM v54 — semaines passées corrigées
 
-- Les semaines passées affichent uniquement les séances réellement enregistrées.
-- Aucun bloc prévu n'est montré dans le passé.
-- Les jours sans séance réelle affichent `Aucune séance réalisée`.
-- `Ajouter une séance` est désactivé pour les semaines passées.
-- Aucun déplacement n'est possible dans le passé.
-- Les séances réelles passées restent ouvrables depuis leur historique.
-- Semaine actuelle et semaines futures inchangées.
+Règle définitive :
+- une semaine passée ne reprend JAMAIS le planning prévu ;
+- chaque jour passé affiche :
+  - la vraie séance si une séance est enregistrée ce jour-là ;
+  - sinon un bloc `Repos` avec pastille grise ;
+- aucun drag dans le passé ;
+- `Ajouter une séance` est réellement désactivé et visuellement grisé ;
+- l'historique reste accessible.
 
-Marqueurs : v53 + JS53.
+Test attendu sur 31/08 — 06/09 :
+si aucune séance n'a été enregistrée cette semaine, les 7 jours affichent `Repos`.
