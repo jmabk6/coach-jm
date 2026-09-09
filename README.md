@@ -1,16 +1,12 @@
-# Coach JM v43 — correctif export sauvegarde iPhone
+# Coach JM v44 — Finalisation écran 1 Aujourd'hui
 
-Cause du bug v42 :
-- le code appelait `getAllWorkoutSessions()` qui n'existe pas ;
-- il appelait aussi `ACTIVE_SESSION_KEY`, qui n'existe pas dans cette architecture ;
-- les données sont en IndexedDB via `dbGetAll`, `dbGet`, `dbPut`.
+Corrections validées :
+- si une séance est en cours, le titre devient `On continue ?`;
+- la carte de séance prévue Muscu A disparaît pendant une séance en cours;
+- la seule action principale devient `Reprendre` la séance active;
+- la carte en cours affiche la phase actuelle;
+- `Point de départ` reste seulement tant qu'aucune séance n'est enregistrée;
+- dès qu'un historique existe, il devient `Mes premières données` avec accès Progression;
+- Ma semaine et Mes 3 objectifs restent inchangés.
 
-Correction :
-- export des séances directement depuis `workoutSessions` ;
-- export de la séance active depuis `meta / active_session` ;
-- sur iPhone/PWA : ouverture de la feuille de partage iOS avec le fichier JSON ;
-- fallback téléchargement classique sur navigateur ;
-- import corrigé lui aussi pour restaurer directement dans IndexedDB ;
-- en cas d'erreur, le vrai message technique est maintenant affiché.
-
-Marqueurs : v43 + JS43.
+Marqueurs temporaires : v44 + JS44.
