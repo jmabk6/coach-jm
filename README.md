@@ -1,10 +1,11 @@
-# Coach JM v52 — Programme : Ajouter + navigation semaines
+# Coach JM v53 — semaines précédentes
 
-Corrections :
-1. `+ Ajouter une séance` ouvre maintenant l'écran de création de séance.
-2. Les flèches gauche/droite changent réellement de semaine.
-3. Le titre de semaine et les dates des 7 jours sont recalculés.
-4. L'ordre déplacé reste mémorisé séparément pour chaque semaine.
-5. La semaine de base reste 7–13 septembre 2026.
+- Les semaines passées affichent uniquement les séances réellement enregistrées.
+- Aucun bloc prévu n'est montré dans le passé.
+- Les jours sans séance réelle affichent `Aucune séance réalisée`.
+- `Ajouter une séance` est désactivé pour les semaines passées.
+- Aucun déplacement n'est possible dans le passé.
+- Les séances réelles passées restent ouvrables depuis leur historique.
+- Semaine actuelle et semaines futures inchangées.
 
-Marqueurs temporaires : v52 + JS52.
+Marqueurs : v53 + JS53.
