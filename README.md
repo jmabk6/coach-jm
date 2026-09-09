@@ -1,16 +1,30 @@
-# Coach JM v36 — Étape 11 suite : historique exploitable
+# Coach JM v37 — Étape 12/15 : Progression
 
-Ajouts :
-- sauvegarde forcée avant toute navigation hors d'une séance active ;
-- historique réellement alimenté par IndexedDB ;
-- chaque séance enregistrée est maintenant ouvrable ;
-- détail d'une ancienne séance : durée, exercices, séries/charges/RPE, cardio, mobilité, notes et ressenti ;
-- l'historique indique clairement `sauvegarde locale`.
+Premier écran de progression construit à partir des séances réellement sauvegardées.
 
-Marqueurs attendus : `v36` + `JS36`.
+## Musculation
+Pour chaque exercice :
+- meilleure charge de la dernière séance ;
+- reps réalisées à cette charge ;
+- volume total charge × reps ;
+- RPE moyen ;
+- évolution depuis la première séance ;
+- historique séance par séance.
 
-Important :
-Les données restent locales à cet iPhone/navigateur. La prochaine protection à prévoir sera export/import afin qu'une suppression des données Safari ne puisse pas détruire l'historique.
+## Cardio
+- vitesse maximale ;
+- pente maximale ;
+- durée totale ;
+- fréquence cardiaque moyenne si renseignée ;
+- évolution de la vitesse max.
 
+## Gainage / durée
+- meilleure durée ;
+- durée totale ;
+- évolution.
+
+Aucune donnée fictive n'est injectée : l'écran se construit uniquement depuis `workoutSessions`.
+
+Marqueurs : v37 + JS37.
 Commit conseillé :
-`Etape 11 v36 - historique detaille`
+`Etape 12 v37 - progression`

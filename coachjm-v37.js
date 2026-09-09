@@ -1,4 +1,4 @@
-import { dbPut, dbGet, dbDelete, dbGetAll } from "./db/db.js";
+import { dbPut, dbGet, dbDelete, dbGetAll } from "./js/db/db.js";
 
 
 const ACTIVE_SESSION_ID="active_session";
@@ -770,13 +770,164 @@ function fmtDateFr(iso){
 }
 function historyView(){
  return `<section class="page">
-  <div class="detail-top"><button class="backbtn" data-route="program">‹</button><div class="detail-title"><h1>Historique</h1><p>${historyCache.length} séance${historyCache.length>1?"s":""} enregistrée${historyCache.length>1?"s":""}</p></div></div>
+  <div class="detail-top"><button class="backbtn" data-route="program">‹</button><div class="detail-title"><h1>Historique</h1><p>${historyCache.length} séance${historyCache.length>1?"s":""} enregistrée${historyCache.length>1?"s":""} · sauvegarde locale</p></div></div>
   ${historyCache.length?`<div class="history-list">${historyCache.map(s=>`
-    <div class="card history-row">
+    <div class="card history-row" data-history-id="${s.id}">
       <div><b>${s.templateName}</b><div class="small">${fmtDateFr(s.endedAt)} · ${ft(s.elapsedSeconds||0)}</div></div>
-      <div class="history-meta"><span>RPE ${s.feedback?.globalRpe??"—"}</span><span>${s.exercises?.length||0} ex.</span></div>
+      <div class="history-meta"><span>RPE ${s.feedback?.globalRpe??"—"}</span><span>${s.exercises?.length||0} ex.</span><span class="chev">›</span></div>
     </div>`).join("")}</div>`:
     `<div class="card placeholder"><h2>Aucune séance enregistrée</h2><p>Ta première séance sauvegardée apparaîtra ici.</p></div>`}
+ </section>`;
+}
+
+
+let selectedHistoryId=null;
+function historyDetailView(){
+ const s=historyCache.find(x=>x.id===selectedHistoryId);
+ if(!s)return `<section class="page"><div class="detail-top"><button class="backbtn" data-route="history">‹</button><div class="detail-title"><h1>Séance introuvable</h1></div></div></section>`;
+ const done=s.completed||{}, notes=s.notes||{}, ex=s.exercises||[];
+ const exDone=ex.filter((e,i)=>{
+   if(e.type==="mobility")return e.mobility?.movements?.some(m=>m.done);
+   return (done[i]||[]).length>0;
+ }).length;
+ return `<section class="page">
+   <div class="detail-top"><button class="backbtn" data-route="history">‹</button><div class="detail-title"><h1>${s.templateName}</h1><p>${fmtDateFr(s.endedAt)}</p></div></div>
+   <div class="card summary">
+     <div class="summary-head"><div class="bigemoji">✓</div><div><h2>Séance enregistrée</h2><div class="meta">${ft(s.elapsedSeconds||0)} · ${exDone}/${ex.length} exercices</div></div></div>
+     <div class="metrics-row">
+       <div class="metric"><b>${s.feedback?.globalRpe??"—"}</b><span>RPE global</span></div>
+       <div class="metric"><b>${s.feedback?.energy??"—"}/5</b><span>Énergie</span></div>
+       <div class="metric"><b>${s.feedback?.sleepQuality??"—"}/5</b><span>Sommeil</span></div>
+     </div>
+   </div>
+   <div class="section-head"><h2>Exercices réalisés</h2></div>
+   <div class="summary-ex-list">
+   ${ex.map((e,i)=>{
+      const ok=done[i]||[];
+      let detail="";
+      if(e.type==="sets") detail=ok.map(si=>`${e.s[si][0]} kg × ${e.s[si][1]} · RPE ${e.s[si][2]}`).join(" · ");
+      else if(e.type==="duration") detail=ok.map(si=>`${e.d[si][0]} s · RPE ${e.d[si][1]}`).join(" · ");
+      else if(e.type==="cardio") detail=(e.cardio?.blocks||[]).map(b=>`${b.duration} min · ${b.speed} km/h · ${b.incline}%${b.hr?` · ${b.hr} bpm`:""}`).join(" / ");
+      else if(e.type==="mobility") detail=(e.mobility?.movements||[]).filter(m=>m.done).map(m=>`${m.name} · ${m.target}`).join(" · ");
+      const realized=e.type==="mobility"?(e.mobility?.movements||[]).filter(m=>m.done).length:ok.length;
+      return `<div class="card summary-ex"><div class="summary-ex-top"><div><b>${e.i||""} ${e.n}</b><div class="small">${e.plan||""}</div></div><span class="status-pill ${realized?'done-pill':'skip-pill'}">${realized?"Réalisé":"Passé"}</span></div>${detail?`<div class="summary-ex-detail">${detail}</div>`:""}${notes[i]?`<div class="summary-note">${notes[i]}</div>`:""}</div>`;
+   }).join("")}
+   </div>
+   <div class="section-head"><h2>Ressenti</h2></div>
+   <div class="card feedback-card">
+      <div class="history-feedback"><span>Énergie <b>${s.feedback?.energy??"—"}/5</b></span><span>Motivation <b>${s.feedback?.motivation??"—"}/5</b></span><span>RPE <b>${s.feedback?.globalRpe??"—"}</b></span><span>Sommeil <b>${s.feedback?.sleepQuality??"—"}/5</b></span></div>
+      ${s.feedback?.discomfort?`<div class="summary-note">⚠️ Gêne ou douleur signalée</div>`:""}
+      ${s.feedback?.note?`<div class="summary-note">${s.feedback.note}</div>`:""}
+   </div>
+ </section>`;
+}
+
+
+function normalizeName(s){return (s||"").trim().toLowerCase();}
+function completedSessionsAsc(){
+ return [...historyCache].sort((a,b)=>new Date(a.endedAt)-new Date(b.endedAt));
+}
+function strengthPoint(session,e,i){
+ const ok=(session.completed||{})[i]||[];
+ const sets=ok.map(si=>e.s?.[si]).filter(Boolean);
+ if(!sets.length)return null;
+ const volume=sets.reduce((sum,x)=>sum+(+x[0]||0)*(+x[1]||0),0);
+ const maxLoad=Math.max(...sets.map(x=>+x[0]||0));
+ const repsAtMax=sets.filter(x=>(+x[0]||0)===maxLoad).reduce((m,x)=>Math.max(m,+x[1]||0),0);
+ const avgRpe=sets.reduce((s,x)=>s+(+x[2]||0),0)/sets.length;
+ return {date:session.endedAt,sessionId:session.id,volume,maxLoad,repsAtMax,avgRpe,sets:sets.length};
+}
+function cardioPoint(session,e){
+ const b=(e.cardio?.blocks||[]).filter(x=>(+x.duration||0)>0);
+ if(!b.length)return null;
+ const total=b.reduce((s,x)=>s+(+x.duration||0),0);
+ const maxSpeed=Math.max(...b.map(x=>+x.speed||0));
+ const maxIncline=Math.max(...b.map(x=>+x.incline||0));
+ const hrs=b.map(x=>+x.hr||0).filter(Boolean);
+ const avgHr=hrs.length?Math.round(hrs.reduce((a,c)=>a+c,0)/hrs.length):null;
+ return {date:session.endedAt,sessionId:session.id,total,maxSpeed,maxIncline,avgHr};
+}
+function durationPoint(session,e,i){
+ const ok=(session.completed||{})[i]||[];
+ const vals=ok.map(si=>e.d?.[si]).filter(Boolean);
+ if(!vals.length)return null;
+ return {date:session.endedAt,sessionId:session.id,best:Math.max(...vals.map(x=>+x[0]||0)),total:vals.reduce((s,x)=>s+(+x[0]||0),0)};
+}
+function buildProgress(){
+ const map=new Map();
+ completedSessionsAsc().forEach(s=>(s.exercises||[]).forEach((e,i)=>{
+   const key=normalizeName(e.n);
+   if(!key)return;
+   if(!map.has(key))map.set(key,{name:e.n,icon:e.i||"🏋️",type:e.type,points:[]});
+   let p=null;
+   if(e.type==="sets")p=strengthPoint(s,e,i);
+   else if(e.type==="cardio")p=cardioPoint(s,e);
+   else if(e.type==="duration")p=durationPoint(s,e,i);
+   if(p)map.get(key).points.push(p);
+ }));
+ return [...map.values()].filter(x=>x.points.length);
+}
+function pctChange(a,b){
+ if(!a||a===0)return null;
+ return Math.round(((b-a)/a)*100);
+}
+function deltaText(item){
+ const p=item.points;if(p.length<2)return "1 séance enregistrée";
+ const a=p[0],b=p[p.length-1];
+ if(item.type==="sets"){
+   const d=pctChange(a.volume,b.volume);
+   const load=b.maxLoad-a.maxLoad;
+   if(load>0)return `+${load} kg sur la meilleure charge`;
+   if(d!==null&&d!==0)return `${d>0?"+":""}${d}% de volume`;
+   return "Performance stable";
+ }
+ if(item.type==="cardio"){
+   const d=(b.maxSpeed-a.maxSpeed).toFixed(1);
+   return +d===0?"Vitesse max stable":`${+d>0?"+":""}${d} km/h en vitesse max`;
+ }
+ if(item.type==="duration"){
+   const d=b.best-a.best; return d===0?"Durée stable":`${d>0?"+":""}${d} s sur la meilleure série`;
+ }
+ return `${p.length} séances`;
+}
+function sparkBars(item){
+ const vals=item.points.slice(-8).map(p=>item.type==="sets"?p.volume:item.type==="cardio"?p.maxSpeed:p.best);
+ const max=Math.max(...vals,1);
+ return `<div class="spark">${vals.map((v,i)=>`<span style="height:${Math.max(12,Math.round(v/max*100))}%" title="${v}"></span>`).join("")}</div>`;
+}
+let selectedProgressName=null;
+function progressionView(){
+ const items=buildProgress();
+ return `<section class="page">
+  <div class="program-header"><div class="backless"><h1>Progression</h1><p>Ce qui change réellement au fil de tes séances.</p></div></div>
+  ${!items.length?`<div class="card placeholder"><h2>Pas encore assez de données</h2><p>Termine une séance pour commencer le suivi.</p></div>`:
+  `<div class="progress-intro card"><b>${historyCache.length} séance${historyCache.length>1?"s":""} analysée${historyCache.length>1?"s":""}</b><span>Calculé uniquement à partir de tes séances enregistrées.</span></div>
+   <div class="progress-list">${items.map(item=>{
+      const last=item.points[item.points.length-1];
+      const main=item.type==="sets"?`${last.maxLoad} kg × ${last.repsAtMax}`:item.type==="cardio"?`${last.maxSpeed} km/h · ${last.maxIncline}%`: `${last.best} s`;
+      return `<div class="card progress-card" data-progress-name="${encodeURIComponent(item.name)}">
+        <div class="progress-card-head"><div><span class="progress-icon">${item.icon}</span><b>${item.name}</b></div><span>${item.points.length} séance${item.points.length>1?"s":""} ›</span></div>
+        <div class="progress-main"><div><strong>${main}</strong><span>Dernière performance</span></div>${sparkBars(item)}</div>
+        <div class="progress-delta">${deltaText(item)}</div>
+      </div>`;
+   }).join("")}</div>`}
+ </section>`;
+}
+function progressionDetailView(){
+ const item=buildProgress().find(x=>x.name===selectedProgressName);
+ if(!item)return `<section class="page"><div class="detail-top"><button class="backbtn" data-route="progression">‹</button><div class="detail-title"><h1>Progression</h1></div></div></section>`;
+ return `<section class="page">
+  <div class="detail-top"><button class="backbtn" data-route="progression">‹</button><div class="detail-title"><h1>${item.icon} ${item.name}</h1><p>${item.points.length} performance${item.points.length>1?"s":""} enregistrée${item.points.length>1?"s":""}</p></div></div>
+  <div class="card progress-hero">
+    <div class="eyebrow">ÉVOLUTION</div><h2>${deltaText(item)}</h2>${sparkBars(item)}
+  </div>
+  <div class="section-head"><h2>Historique</h2></div>
+  <div class="progress-table">
+   ${[...item.points].reverse().map(p=>`<div class="card progress-row">
+     <div><b>${fmtDateFr(p.date)}</b><span>${item.type==="sets"?`${p.sets} séries · RPE moy. ${p.avgRpe.toFixed(1)}`:item.type==="cardio"?`${p.total} min${p.avgHr?` · ${p.avgHr} bpm`:""}`:`${p.total} s au total`}</span></div>
+     <div class="progress-values">${item.type==="sets"?`<b>${p.maxLoad} kg × ${p.repsAtMax}</b><span>${Math.round(p.volume)} kg volume</span>`:item.type==="cardio"?`<b>${p.maxSpeed} km/h</b><span>pente ${p.maxIncline}%</span>`:`<b>${p.best} s</b><span>meilleure série</span>`}</div>
+   </div>`).join("")}
+  </div>
  </section>`;
 }
 
@@ -788,12 +939,13 @@ function render(route){
  route==="program"?programView():
  route==="workout-muscu-a"?workoutDetail("A"):route==="workout-muscu-d"?workoutDetail("D"):
  route==="sessions"?sessionsView():route==="new"?builderStart():route==="catalog"?catalogView():
- route==="live-workout"?liveView():route==="live-workout-d"?liveView():route==="live-complete"?liveDone():route==="workout-summary"?workoutSummary():route==="history"?historyView():route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
+ route==="live-workout"?liveView():route==="live-workout-d"?liveView():route==="live-complete"?liveDone():route==="workout-summary"?workoutSummary():route==="history"?historyView():route==="history-detail"?historyDetailView():route==="progression"?progressionView():route==="progression-detail"?progressionDetailView():route==="builder-info"?builderInfo():route==="builder-template"?builderInfo():route==="builder-exercises"?builderExercises():route==="builder-recap"?builderRecap():route==="exercise-chest-press"?chestPressDetail():
  route.startsWith("exercise-")?genericExerciseDetail(route.replace("exercise-","")):
  route==="progress"?placeholder("Ma progression","Le mockup 47 sera branché sur les données réelles."):
  placeholder("Plus","Profil, paramètres, sauvegarde et export.");
  document.querySelectorAll(".nav-item").forEach(b=>{const activeRoute=(route==="workout-summary"||route==="history")?"program":(route==="workout-muscu-a"||route==="workout-muscu-d"||route==="live-workout"||route==="live-workout-d"||route==="live-complete")?"sessions":(route==="sessions"||route==="new"||route.startsWith("builder-")||route.startsWith("exercise-")||route==="catalog")?"sessions":route;b.classList.toggle("active",b.dataset.route===activeRoute)});
- document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",()=>{
+ document.querySelectorAll("[data-route]").forEach(el=>el.addEventListener("click",async ()=>{
+   if(activeSessionRestored) await persistActiveSession();
    if(el.classList.contains("nav-main") && el.dataset.route==="sessions" && activeSessionRestored){
      navigate("live-workout");
      return;
@@ -801,6 +953,14 @@ function render(route){
    navigate(el.dataset.route);
  }));
  bindCatalog(); bindBuilder(); bindLive(); bindSummary();
+ document.querySelectorAll("[data-history-id]").forEach(el=>el.addEventListener("click",()=>{
+   selectedHistoryId=el.dataset.historyId;
+   navigate("history-detail");
+ }));
+ document.querySelectorAll("[data-progress-name]").forEach(el=>el.addEventListener("click",()=>{
+   selectedProgressName=decodeURIComponent(el.dataset.progressName);
+   navigate("progression-detail");
+ }));
   document.querySelectorAll('[data-route="live-workout"], .start-workout').forEach(el=>{
     if(!el.dataset.startBound){
       el.dataset.startBound="1";
@@ -818,3 +978,10 @@ async function initCoachJM(){
 }
 initCoachJM();
 
+
+document.addEventListener("DOMContentLoaded",()=>{
+  const mark=document.createElement("div");
+  mark.className="js-version-badge";
+  mark.textContent="JS37";
+  document.body.appendChild(mark);
+});
