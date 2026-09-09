@@ -293,7 +293,9 @@ function bindBuilder(){
 function makeLiveFromPlan(plan=MUSCU_A){
  return plan.exercises.map(e=>{
    const n=e.name;
-   if(n.startsWith("Tapis")) return {type:"cardio",n,i:"🚶",m:"Cardio · échauffement",plan:e.meta,ref:e.extra.replace("Prévu : ",""),cardio:{durationMin:n.includes("Tapis")?(plan===MUSCU_D?12:8):8,speed:5,incline:3,hr:"",rpe:""}};
+   if(n.startsWith("Tapis")) return {type:"cardio",n,i:"🚶",m:"Cardio · échauffement",plan:e.meta,ref:e.extra.replace("Prévu : ",""),cardio:{blocks: plan===MUSCU_D
+ ? [{duration:3,speed:4.5,incline:0,hr:""},{duration:4,speed:5,incline:5,hr:""},{duration:3,speed:5,incline:8,hr:""},{duration:2,speed:4.5,incline:0,hr:""}]
+ : [{duration:3,speed:4.5,incline:0,hr:""},{duration:3,speed:5,incline:3,hr:""}]}};
    if(n==="Squat") return {type:"sets",n,i:"🏋️",m:"Jambes · fessiers · tronc",plan:e.meta,ref:"barre + charge",s:[["",12,7],["",12,8],["",10,8]]};
    if(n==="Leg Press horizontale") return {type:"sets",n,i:"🦵",m:"Quadriceps · fessiers",plan:e.meta,ref:"charge à ajuster",s:[[85,12,7],[85,12,8],[85,10,8]]};
    if(n==="Leg Curl") return {type:"sets",n,i:"🦵",m:"Ischio-jambiers",plan:e.meta,ref:"charge à ajuster",s:[[15,12,7],[20,12,8],[20,10,8]]};
@@ -313,14 +315,20 @@ function ft(v){let m=Math.floor(v/60),s=v%60;return String(m).padStart(2,"0")+":
 function liveFields(e){
   const ok=LS.ok[LS.x]||[];
   if(e.type==="cardio"){
-    return `<div class="cardio-live-grid">
-      <label>Durée<input id="cardioDuration" inputmode="numeric" value="${e.cardio.durationMin}"><span>min</span></label>
-      <label>Vitesse<input id="cardioSpeed" inputmode="decimal" value="${e.cardio.speed}"><span>km/h</span></label>
-      <label>Pente<input id="cardioIncline" inputmode="decimal" value="${e.cardio.incline}"><span>%</span></label>
-      <label>FC fin<input id="cardioHr" inputmode="numeric" value="${e.cardio.hr}" placeholder="—"><span>bpm</span></label>
-      <label>RPE<input id="cardioRpe" inputmode="numeric" value="${e.cardio.rpe}" placeholder="—"><span>/10</span></label>
-    </div>
-    <button class="primary" id="completeBlock" style="margin-top:14px">${ok.includes(0)?"✓ Bloc validé":"Valider le bloc"}</button>`;
+    const total=e.cardio.blocks.reduce((sum,b)=>sum+(+b.duration||0),0);
+    return `<div class="treadmill-summary"><b>${total} min prévues</b><span>${e.cardio.blocks.length} lignes</span></div>
+      <div class="treadmill-table">
+        <div class="treadmill-head"><span>Durée</span><span>Vitesse</span><span>Pente</span><span>BPM</span><span></span></div>
+        ${e.cardio.blocks.map((b,i)=>`<div class="treadmill-row">
+          <div class="tm-input"><input data-bi="${i}" data-bf="duration" inputmode="numeric" value="${b.duration}"><small>min</small></div>
+          <div class="tm-input"><input data-bi="${i}" data-bf="speed" inputmode="decimal" value="${b.speed}"><small>km/h</small></div>
+          <div class="tm-input"><input data-bi="${i}" data-bf="incline" inputmode="decimal" value="${b.incline}"><small>%</small></div>
+          <div class="tm-input"><input data-bi="${i}" data-bf="hr" inputmode="numeric" value="${b.hr}" placeholder="—"><small>bpm</small></div>
+          <button class="remove-line" data-remove-block="${i}" ${e.cardio.blocks.length===1?'disabled':''}>×</button>
+        </div>`).join("")}
+      </div>
+      <button class="add-treadmill-line" id="addTreadmillBlock">+ Ajouter une ligne</button>
+      <button class="primary" id="completeBlock" style="margin-top:10px">${ok.includes(0)?"✓ Échauffement validé":"Valider l’échauffement"}</button>`;
   }
   if(e.type==="sets"){
     return `<div class="series-head"><span>Série</span><span>Charge</span><span>Reps</span><span>RPE</span><span></span></div>
@@ -375,7 +383,7 @@ function liveView(){
 
 function coachText(e,ok){
  if(!ok.length)return "Valide ce que tu réalises pour que Coach JM adapte la suite.";
- if(e.type==="cardio")return "Échauffement enregistré. Garde assez d’énergie pour la musculation.";
+ if(e.type==="cardio")return "Échauffement enregistré. Ton ressenti global peut être ajouté dans la note de fin.";
  if(e.type==="mobility")return "Mobilité enregistrée. L’objectif est la régularité, pas de forcer l’amplitude.";
  let idx=ok[ok.length-1],r=e.type==="sets"?+e.s[idx][2]:+e.d[idx][1];
  if(r>=10)return "Au taquet : ne monte pas la difficulté à la série suivante.";
@@ -398,6 +406,19 @@ function bindLive(){
 
  document.querySelectorAll("[data-lf]").forEach(x=>x.addEventListener("change",()=>LIVE[LS.x].s[+x.dataset.li][+x.dataset.lf]=x.dataset.lf==="2"?+x.value:x.value));
  document.querySelectorAll("[data-df]").forEach(x=>x.addEventListener("change",()=>LIVE[LS.x].d[+x.dataset.di][+x.dataset.df]=+x.value));
+ document.querySelectorAll("[data-bf]").forEach(x=>x.addEventListener("change",()=>{
+   const b=LIVE[LS.x].cardio.blocks[+x.dataset.bi], f=x.dataset.bf;
+   b[f]=(f==="hr")?x.value:(+x.value||0);
+ }));
+ const addBlock=document.querySelector("#addTreadmillBlock");
+ if(addBlock)addBlock.addEventListener("click",()=>{
+   LIVE[LS.x].cardio.blocks.push({duration:2,speed:5,incline:0,hr:""});
+   render("live-workout");
+ });
+ document.querySelectorAll("[data-remove-block]").forEach(b=>b.addEventListener("click",()=>{
+   if(LIVE[LS.x].cardio.blocks.length>1)LIVE[LS.x].cardio.blocks.splice(+b.dataset.removeBlock,1);
+   render("live-workout");
+ }));
 
  document.querySelectorAll("[data-setok]").forEach(b=>b.addEventListener("click",()=>{
    LS.ok[LS.x]=LS.ok[LS.x]||[];
@@ -412,11 +433,7 @@ function bindLive(){
    LS.ok[LS.x]=[0];
    let e=LIVE[LS.x];
    if(e.type==="cardio"){
-     e.cardio.durationMin=+document.querySelector("#cardioDuration").value||0;
-     e.cardio.speed=+document.querySelector("#cardioSpeed").value||0;
-     e.cardio.incline=+document.querySelector("#cardioIncline").value||0;
-     e.cardio.hr=document.querySelector("#cardioHr").value;
-     e.cardio.rpe=document.querySelector("#cardioRpe").value;
+     // Values are already synchronized block by block.
    }else if(e.type==="mobility"){
      e.mobility.durationMin=+document.querySelector("#mobilityDuration").value||0;
      e.mobility.note=document.querySelector("#mobilityNote").value;

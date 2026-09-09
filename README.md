@@ -1,9 +1,11 @@
-# COACH JM — UI7 v17
+# Coach JM UI7 v19 — Tapis en lignes compactes
 
-- Ajout **Muscu D — Full Body**
-- Muscu A : **Squat devient le mouvement jambes principal**, Leg Press reste en complément
-- UI7 démarre à partir du modèle réellement choisi
-- Muscu A et Muscu D ont leurs propres listes d'exercices
-- Prévu ≠ réalisé reste conservé
+Correction demandée :
+- une ligne = Durée | Vitesse | Pente | BPM
+- pas de RPE sur chaque ligne
+- bouton `+ Ajouter une ligne`
+- une seule validation à la fin du bloc tapis
+- le ressenti peut être saisi dans la note de fin
 
-Commit : `Muscu D Full Body + Squat principal`
+Commit :
+`UI7 v19 - tapis lignes compactes`
