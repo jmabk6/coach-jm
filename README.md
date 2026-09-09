@@ -1,14 +1,16 @@
-# Coach JM v35 — correctif page blanche
+# Coach JM v36 — Étape 11 suite : historique exploitable
 
-Cause trouvée :
-- v34 déplaçait `app.js` à la racine sous le nom `coachjm-v34.js`;
-- mais son import restait `./db/db.js`;
-- depuis la racine, ce chemin est faux ;
-- le module JavaScript ne se chargeait donc pas, d'où la page blanche.
+Ajouts :
+- sauvegarde forcée avant toute navigation hors d'une séance active ;
+- historique réellement alimenté par IndexedDB ;
+- chaque séance enregistrée est maintenant ouvrable ;
+- détail d'une ancienne séance : durée, exercices, séries/charges/RPE, cardio, mobilité, notes et ressenti ;
+- l'historique indique clairement `sauvegarde locale`.
 
-Correction :
-- import corrigé vers `./js/db/db.js`;
-- nouveaux assets `coachjm-v35.js` et `coachjm-v35.css`;
-- marqueurs attendus : `v35` et `JS35`.
+Marqueurs attendus : `v36` + `JS36`.
 
-Aucun changement fonctionnel supplémentaire.
+Important :
+Les données restent locales à cet iPhone/navigateur. La prochaine protection à prévoir sera export/import afin qu'une suppression des données Safari ne puisse pas détruire l'historique.
+
+Commit conseillé :
+`Etape 11 v36 - historique detaille`
