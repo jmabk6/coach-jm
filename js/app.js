@@ -390,7 +390,10 @@ function liveView(){
    <div class="section-head"><h2>Note rapide</h2></div>
    <textarea class="live-note" id="liveNote" placeholder="Sensations, douleur, difficulté…">${LS.notes[LS.x]||""}</textarea>
    <div class="live-actions"><button class="secondary">Remplacer</button><button class="secondary" data-route="exercise-${slugify(e.n)}">Voir la fiche</button></div>
-   ${LS.x<LIVE.length-1?`<button class="primary" id="nextLive">Exercice terminé →</button>`:`<button class="primary" id="finishLive">Terminer la séance ✓</button>`}
+   ${LS.x<LIVE.length-1?`
+     <button class="primary" id="nextLive" ${(e.type==="sets"||e.type==="duration")&&ok.length===0?'disabled':''}>Exercice terminé →</button>
+     ${(e.type==="sets"||e.type==="duration")&&ok.length===0?`<button class="skip-exercise" id="skipExercise">Passer cet exercice</button>`:''}
+   `:`<button class="primary" id="finishLive" ${(e.type==="sets"||e.type==="duration")&&ok.length===0?'disabled':''}>Terminer la séance ✓</button>`}
    <button class="add-live" data-route="catalog">+ Ajouter un exercice</button>
  </section>`;
 }
@@ -478,6 +481,13 @@ function bindLive(){
  });
 
  let n=document.querySelector("#liveNote"); if(n)n.addEventListener("input",()=>LS.notes[LS.x]=n.value);
+ let skipEx=document.querySelector("#skipExercise");
+ if(skipEx)skipEx.addEventListener("click",()=>{
+   const reason=window.prompt("Pourquoi passes-tu cet exercice ?\n\nDouleur · Machine occupée · Fatigue · Autre","Machine occupée");
+   if(reason===null)return;
+   LS.notes[LS.x]=`Exercice passé — ${reason}`;
+   LS.x++; LS.rest=0; render("live-workout");
+ });
  let nx=document.querySelector("#nextLive"); if(nx)nx.addEventListener("click",()=>{
    const e=LIVE[LS.x];
    // Cardio/mobility have no separate validation button: finishing the exercise validates the block.

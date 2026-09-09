@@ -1,12 +1,9 @@
-# Coach JM UI7 v21 — saisie séquentielle
+# Coach JM UI7 v22 — terminer vs passer
 
-Modifications :
-- suppression de `Valider l’échauffement` : `Exercice terminé →` valide le tapis et passe au suivant ;
-- même principe pour la mobilité ;
-- en musculation, seule la première série non validée est saisissable ;
-- après ✓, la série devient verte et verrouillée, le repos démarre et la suivante se déverrouille ;
-- toucher la coche verte permet de rouvrir la série pour correction ;
-- `+ Ajouter une série` n’est disponible qu’après validation de toutes les séries affichées ;
-- même fonctionnement séquentiel pour le gainage.
+- Sur musculation/gainage, `Exercice terminé →` est désactivé tant qu'aucune série n'est validée.
+- Dès qu'au moins une série est validée, il devient actif, même si toutes les séries prévues ne sont pas faites.
+- `Passer cet exercice` permet de sauter un exercice sans série réalisée.
+- Le motif est conservé dans la note de séance (prototype : Douleur / Machine occupée / Fatigue / Autre).
+- Tapis et mobilité restent validés par `Exercice terminé →`.
 
-Commit : `UI7 v21 - saisie sequentielle`
+Commit : `UI7 v22 - terminer vs passer exercice`

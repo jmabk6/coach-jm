@@ -139,3 +139,6 @@ body{min-height:100vh}button{font:inherit}.page{padding:24px 18px calc(150px + e
 .series-row input:disabled,.series-row select:disabled{background:transparent;color:inherit;-webkit-text-fill-color:inherit;opacity:1}
 .set-ok:disabled{opacity:.35}
 .add-set-line:disabled{opacity:.38;cursor:not-allowed}
+
+.primary:disabled{opacity:.38;cursor:not-allowed}
+.skip-exercise{width:100%;margin-top:9px;border:0;background:transparent;color:var(--muted);padding:9px;font-weight:700;text-decoration:underline}
