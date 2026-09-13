@@ -1,13 +1,6 @@
-import { createHashRouter } from "react-router-dom";
+﻿import { createHashRouter } from "react-router-dom";
 import { AppShell } from "./AppShell";
-
-function Screen({ title }: { title: string }) {
-  return (
-    <section>
-      <h1>{title}</h1>
-    </section>
-  );
-}
+import { Screen } from "./Screen";
 
 export const router = createHashRouter([
   {
