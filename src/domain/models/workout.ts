@@ -368,7 +368,6 @@ export interface PerformedGroupRoundChild {
   load?: Load;
   reps?: number;
   durationSec?: number;
-  distanceKm?: number;
 
   /**
    * Pour durée/côté ou reps/côté.
@@ -376,7 +375,6 @@ export interface PerformedGroupRoundChild {
   sideValues?: PerformedSideValue[];
 
   rpe?: number;
-  bpm?: number;
 
   note?: string;
 
