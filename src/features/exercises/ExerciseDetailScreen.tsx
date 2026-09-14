@@ -154,10 +154,25 @@ export function ExerciseDetailScreen() {
       return [];
     }
 
-    return state.allExercises
+    const pinnedIds = new Set(
+      state.exercise.pinnedAlternativeExerciseIds ?? [],
+    );
+
+    const pinned = state.allExercises
       .filter(
         (candidate) =>
           candidate.id !== state.exercise.id &&
+          pinnedIds.has(candidate.id),
+      )
+      .sort((a, b) =>
+        a.name.localeCompare(b.name, "fr"),
+      );
+
+    const automatic = state.allExercises
+      .filter(
+        (candidate) =>
+          candidate.id !== state.exercise.id &&
+          !pinnedIds.has(candidate.id) &&
           candidate.zone === state.exercise.zone &&
           candidate.movement === state.exercise.movement &&
           candidate.equipment !== state.exercise.equipment,
@@ -165,6 +180,8 @@ export function ExerciseDetailScreen() {
       .sort((a, b) =>
         a.name.localeCompare(b.name, "fr"),
       );
+
+    return [...pinned, ...automatic];
   }, [state]);
 
   const compatibleMetrics = useMemo(() => {

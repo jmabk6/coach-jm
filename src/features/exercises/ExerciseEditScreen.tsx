@@ -10,6 +10,7 @@ import type {
 } from "../../domain";
 import {
   archiveExercise,
+  getActiveExercises,
   getExercise,
   saveExercise,
 } from "../../db/repositories/exerciseRepository";
@@ -117,6 +118,7 @@ function updateExercise(
   description: string,
   musclesText: string,
   advice: string,
+  pinnedAlternativeIds: string[],
 ): Exercise {
   const base = {
     id: current.id,
@@ -163,10 +165,10 @@ function updateExercise(
         }
       : {}),
 
-    ...(current.pinnedAlternativeExerciseIds !== undefined
+    ...(pinnedAlternativeIds.length > 0
       ? {
           pinnedAlternativeExerciseIds:
-            current.pinnedAlternativeExerciseIds,
+            pinnedAlternativeIds,
         }
       : {}),
   };
@@ -299,6 +301,14 @@ export function ExerciseEditScreen() {
   const [archiving, setArchiving] =
     useState(false);
 
+  const [availableExercises, setAvailableExercises] =
+    useState<Exercise[]>([]);
+
+  const [
+    pinnedAlternativeIds,
+    setPinnedAlternativeIds,
+  ] = useState<string[]>([]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -310,8 +320,11 @@ export function ExerciseEditScreen() {
       }
 
       try {
-        const loaded =
-          await getExercise(exerciseId);
+        const [loaded, activeExercises] =
+          await Promise.all([
+            getExercise(exerciseId),
+            getActiveExercises(),
+          ]);
 
         if (cancelled) {
           return;
@@ -361,6 +374,17 @@ export function ExerciseEditScreen() {
 
         setAdvice(
           loaded.advice ?? "",
+        );
+
+        setAvailableExercises(
+          activeExercises.filter(
+            (candidate) =>
+              candidate.id !== loaded.id,
+          ),
+        );
+
+        setPinnedAlternativeIds(
+          loaded.pinnedAlternativeExerciseIds ?? [],
         );
 
         setLoading(false);
@@ -445,6 +469,7 @@ export function ExerciseEditScreen() {
         description,
         musclesText,
         advice,
+        pinnedAlternativeIds,
       );
 
       await saveExercise(updated);
@@ -461,6 +486,18 @@ export function ExerciseEditScreen() {
 
       setSaving(false);
     }
+  }
+
+  function togglePinnedAlternative(
+    alternativeId: string,
+  ) {
+    setPinnedAlternativeIds((current) =>
+      current.includes(alternativeId)
+        ? current.filter(
+            (id) => id !== alternativeId,
+          )
+        : [...current, alternativeId],
+    );
   }
 
   async function handleArchive() {
@@ -820,6 +857,53 @@ export function ExerciseEditScreen() {
           </label>
         </section>
 
+        <section className="exercise-create__manual-alternatives">
+          <h2>Alternatives manuelles</h2>
+
+          <p>
+            Épingle un exercice pour qu'il apparaisse toujours
+            dans les alternatives de cette fiche.
+          </p>
+
+          {availableExercises.length === 0 ? (
+            <p>Aucun autre exercice disponible.</p>
+          ) : (
+            <div className="exercise-create__alternative-list">
+              {availableExercises
+                .slice()
+                .sort((a, b) =>
+                  a.name.localeCompare(b.name, "fr"),
+                )
+                .map((candidate) => (
+                  <label
+                    key={candidate.id}
+                    className="exercise-create__alternative-option"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={pinnedAlternativeIds.includes(
+                        candidate.id,
+                      )}
+                      onChange={() =>
+                        togglePinnedAlternative(
+                          candidate.id,
+                        )
+                      }
+                    />
+
+                    <span>
+                      <strong>{candidate.name}</strong>
+                      <small>
+                        {candidate.zone} ·{" "}
+                        {candidate.movement} ·{" "}
+                        {candidate.equipment}
+                      </small>
+                    </span>
+                  </label>
+                ))}
+            </div>
+          )}
+        </section>
         {error && (
           <p
             className="exercise-create__error"
