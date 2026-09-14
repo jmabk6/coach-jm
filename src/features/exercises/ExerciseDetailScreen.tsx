@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   CartesianGrid,
   Line,
@@ -79,6 +79,14 @@ function formatDate(date: string): string {
 export function ExerciseDetailScreen() {
   const navigate = useNavigate();
   const { exerciseId } = useParams<{ exerciseId: string }>();
+  const [searchParams] = useSearchParams();
+
+  const selectionMode =
+    searchParams.get("mode") === "select";
+
+  const exercisesBackTarget = selectionMode
+    ? `/exercises?${searchParams.toString()}`
+    : "/exercises";
 
   const [state, setState] = useState<LoadState>({
     status: "loading",
@@ -222,7 +230,7 @@ export function ExerciseDetailScreen() {
         <button
           type="button"
           className="exercise-detail__back"
-          onClick={() => navigate("/exercises")}
+          onClick={() => navigate(exercisesBackTarget)}
         >
           ← Exercices
         </button>
@@ -239,7 +247,7 @@ export function ExerciseDetailScreen() {
         <button
           type="button"
           className="exercise-detail__back"
-          onClick={() => navigate("/exercises")}
+          onClick={() => navigate(exercisesBackTarget)}
         >
           ← Exercices
         </button>
@@ -292,7 +300,7 @@ export function ExerciseDetailScreen() {
       <button
         type="button"
         className="exercise-detail__back"
-        onClick={() => navigate("/exercises")}
+        onClick={() => navigate(exercisesBackTarget)}
       >
         ← Exercices
       </button>
@@ -571,9 +579,12 @@ export function ExerciseDetailScreen() {
                 type="button"
                 className="exercise-detail__alternative"
                 onClick={() =>
-                  navigate(
-                    `/exercises/${alternative.id}`,
-                  )
+                  navigate({
+                    pathname: `/exercises/${alternative.id}`,
+                    search: selectionMode
+                      ? searchParams.toString()
+                      : "",
+                  })
                 }
               >
                 <span>

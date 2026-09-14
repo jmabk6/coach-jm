@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Exercise } from "../../domain";
 import { getActiveExercises } from "../../db/repositories/exerciseRepository";
 import "./ExercisesScreen.css";
@@ -146,6 +146,17 @@ function sortExercises(
 
 export function ExercisesScreen() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const selectionMode =
+    searchParams.get("mode") === "select";
+
+  const [
+    selectedExerciseIds,
+    setSelectedExerciseIds,
+  ] = useState<string[]>(
+    () => searchParams.getAll("selected"),
+  );
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
@@ -202,6 +213,34 @@ export function ExercisesScreen() {
 
     return sortExercises(matches, sortMode);
   }, [filters, search, sortMode, state]);
+
+  function toggleExerciseSelection(exerciseId: string) {
+    setSelectedExerciseIds((current) => {
+      const next = current.includes(exerciseId)
+        ? current.filter((id) => id !== exerciseId)
+        : [...current, exerciseId];
+
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("selected");
+
+      next.forEach((id) => {
+        nextParams.append("selected", id);
+      });
+
+      setSearchParams(nextParams, {
+        replace: true,
+      });
+
+      return next;
+    });
+  }
+
+  function openExerciseInfo(exerciseId: string) {
+    navigate({
+      pathname: `/exercises/${exerciseId}`,
+      search: searchParams.toString(),
+    });
+  }
 
   function toggleFilter(family: FilterFamily, value: string) {
     setFilters((current) => {
@@ -281,20 +320,37 @@ export function ExercisesScreen() {
   }, [search, state]);
 
   return (
-    <section className="exercises-screen">
+    <section
+      className={`exercises-screen ${
+        selectionMode
+          ? "exercises-screen--selection"
+          : ""
+      }`}
+    >
       <header className="exercises-screen__header">
         <div>
-          <h1>Exercices</h1>
-          <p>Bibliothèque d'exercices</p>
+          <h1>
+            {selectionMode
+              ? "Choisir des exercices"
+              : "Exercices"}
+          </h1>
+
+          <p>
+            {selectionMode
+              ? "Sélectionne les exercices à ajouter"
+              : "Bibliothèque d'exercices"}
+          </p>
         </div>
 
-        <button
-          type="button"
-          className="exercises-screen__new-button"
-          onClick={() => navigate("/exercises/new")}
-        >
-          Nouvel exercice
-        </button>
+        {!selectionMode && (
+          <button
+            type="button"
+            className="exercises-screen__new-button"
+            onClick={() => navigate("/exercises/new")}
+          >
+            Nouvel exercice
+          </button>
+        )}
       </header>
 
       <div className="exercises-screen__tools">
@@ -456,47 +512,162 @@ export function ExercisesScreen() {
             </p>
 
             <div className="exercise-list">
-              {filteredExercises.map((exercise) => (
-                <button
-                  key={exercise.id}
-                  type="button"
-                  className="exercise-list__item"
-                  onClick={() => navigate(`/exercises/${exercise.id}`)}
-                >
-                  <span className="exercise-list__media" aria-hidden="true">
-                    {exercise.media?.photoUrl ? (
-                      <img
-                        src={exercise.media.photoUrl}
-                        alt=""
-                        className="exercise-list__image"
-                      />
-                    ) : (
-                      <span className="exercise-list__placeholder">
-                        {exercise.name.slice(0, 1).toUpperCase()}
+              {filteredExercises.map((exercise) => {
+                const selected =
+                  selectedExerciseIds.includes(exercise.id);
+                if (selectionMode) {
+                  return (
+                    <div
+                      key={exercise.id}
+                      className={`exercise-list__item exercise-list__item--selectable ${
+                        selected
+                          ? "exercise-list__item--selected"
+                          : ""
+                      }`}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={selected}
+                      onClick={() =>
+                        toggleExerciseSelection(exercise.id)
+                      }
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "Enter" ||
+                          event.key === " "
+                        ) {
+                          event.preventDefault();
+                          toggleExerciseSelection(exercise.id);
+                        }
+                      }}
+                    >
+                      <span
+                        className="exercise-list__checkbox"
+                        aria-hidden="true"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          readOnly
+                          tabIndex={-1}
+                        />
                       </span>
-                    )}
-                  </span>
 
-                  <span className="exercise-list__content">
-                    <span className="exercise-list__name">
-                      {exercise.name}
+                      <span
+                        className="exercise-list__media"
+                        aria-hidden="true"
+                      >
+                        {exercise.media?.photoUrl ? (
+                          <img
+                            src={exercise.media.photoUrl}
+                            alt=""
+                            className="exercise-list__image"
+                          />
+                        ) : (
+                          <span className="exercise-list__placeholder">
+                            {exercise.name
+                              .slice(0, 1)
+                              .toUpperCase()}
+                          </span>
+                        )}
+                      </span>
+
+                      <span className="exercise-list__content">
+                        <span className="exercise-list__name">
+                          {exercise.name}
+                        </span>
+
+                        <span className="exercise-list__meta">
+                          {exercise.zone} ·{" "}
+                          {exercise.movement} ·{" "}
+                          {exercise.equipment}
+                        </span>
+                      </span>
+
+                      <button
+                        type="button"
+                        className="exercise-list__info"
+                        aria-label={`Informations sur ${exercise.name}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openExerciseInfo(exercise.id);
+                        }}
+                      >
+                        i
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={exercise.id}
+                    type="button"
+                    className="exercise-list__item"
+                    onClick={() =>
+                      navigate(`/exercises/${exercise.id}`)
+                    }
+                  >
+                    <span
+                      className="exercise-list__media"
+                      aria-hidden="true"
+                    >
+                      {exercise.media?.photoUrl ? (
+                        <img
+                          src={exercise.media.photoUrl}
+                          alt=""
+                          className="exercise-list__image"
+                        />
+                      ) : (
+                        <span className="exercise-list__placeholder">
+                          {exercise.name
+                            .slice(0, 1)
+                            .toUpperCase()}
+                        </span>
+                      )}
                     </span>
 
-                    <span className="exercise-list__meta">
-                      {exercise.zone} · {exercise.movement} ·{" "}
-                      {exercise.equipment}
-                    </span>
-                  </span>
+                    <span className="exercise-list__content">
+                      <span className="exercise-list__name">
+                        {exercise.name}
+                      </span>
 
-                  <span className="exercise-list__chevron" aria-hidden="true">
-                    ›
-                  </span>
-                </button>
-              ))}
+                      <span className="exercise-list__meta">
+                        {exercise.zone} ·{" "}
+                        {exercise.movement} ·{" "}
+                        {exercise.equipment}
+                      </span>
+                    </span>
+
+                    <span
+                      className="exercise-list__chevron"
+                      aria-hidden="true"
+                    >
+                      ›
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </>
         )}
 
+      {selectionMode && (
+        <div className="exercise-selection-bar">
+          <span>
+            <strong>{selectedExerciseIds.length}</strong>{" "}
+            {selectedExerciseIds.length === 1
+              ? "exercice sélectionné"
+              : "exercices sélectionnés"}
+          </span>
+
+          <button
+            type="button"
+            disabled={selectedExerciseIds.length === 0}
+          >
+            Ajouter
+          </button>
+        </div>
+      )}
       {filtersOpen && (
         <div
           className="filter-overlay"

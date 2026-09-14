@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CalendarDays, Ellipsis, Sun, BarChart3 } from "lucide-react";
 import "./AppShell.css";
 
@@ -10,27 +10,35 @@ const tabs = [
 ];
 
 export function AppShell() {
+  const location = useLocation();
+
+  const selectionMode =
+    location.pathname.startsWith("/exercises") &&
+    new URLSearchParams(location.search).get("mode") === "select";
+
   return (
     <div className="app-shell">
       <main className="app-content">
         <Outlet />
       </main>
 
-      <nav className="tab-bar" aria-label="Navigation principale">
-        {tabs.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === "/"}
-            className={({ isActive }) =>
-              `tab-bar__item ${isActive ? "tab-bar__item--active" : ""}`
-            }
-          >
-            <Icon size={22} strokeWidth={2} />
-            <span>{label}</span>
-          </NavLink>
-        ))}
-      </nav>
+      {!selectionMode && (
+        <nav className="tab-bar" aria-label="Navigation principale">
+          {tabs.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === "/"}
+              className={({ isActive }) =>
+                `tab-bar__item ${isActive ? "tab-bar__item--active" : ""}`
+              }
+            >
+              <Icon size={22} strokeWidth={2} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }

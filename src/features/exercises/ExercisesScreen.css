@@ -1,4 +1,4 @@
-﻿.exercises-screen {
+.exercises-screen {
   max-width: 720px;
   margin: 0 auto;
 }
@@ -448,4 +448,79 @@
   color: var(--color-text-soft, #98a2b3);
   font-size: 28px;
   font-weight: 300;
+}
+
+.exercises-screen--selection {
+  padding-bottom: 96px;
+}
+
+.exercise-list__item--selectable {
+  grid-template-columns: auto 64px minmax(0, 1fr) 44px;
+}
+
+.exercise-list__checkbox {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  min-width: 28px;
+}
+
+.exercise-list__checkbox input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+.exercise-list__item--selected {
+  background: #f4f7ff;
+}
+
+.exercise-selection-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 30;
+  width: min(100%, 640px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-top: 1px solid #e4e7ec;
+  background: white;
+  box-shadow: 0 -8px 24px rgba(16, 24, 40, 0.08);
+}
+
+.exercise-selection-bar button {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 10px;
+  background: #175cd3;
+  color: white;
+  font: inherit;
+  font-weight: 700;
+}
+
+.exercise-selection-bar button:disabled {
+  opacity: 0.45;
+}
+.exercise-list__info {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.exercise-list__info:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
