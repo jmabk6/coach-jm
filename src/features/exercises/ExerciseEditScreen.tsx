@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import type {
   Equipment,
   Exercise,
+  ExerciseCategory,
   ExerciseLocation,
   MeasurementType,
   Movement,
@@ -15,6 +16,13 @@ import {
   saveExercise,
 } from "../../db/repositories/exerciseRepository";
 import "./ExerciseCreateScreen.css";
+
+const categories: ExerciseCategory[] = [
+  "Musculation",
+  "Cardio",
+  "Mobilité",
+  "Test mobilité",
+];
 
 const zones: MuscleZone[] = [
   "Jambes",
@@ -84,8 +92,52 @@ const measurementOptions: Array<{
     value: "distance",
     label: "Distance seule",
   },
+  {
+    value: "distance_cm",
+    label: "Distance en cm",
+  },
+  {
+    value: "distance_cm_per_side",
+    label: "Distance en cm par côté",
+  },
 ];
 
+const measurementTypesByCategory: Record<
+  ExerciseCategory,
+  MeasurementType[]
+> = {
+  Musculation: [
+    "load_reps",
+    "reps",
+    "duration",
+    "duration_per_side",
+    "reps_per_side",
+  ],
+  Cardio: [
+    "duration_speed_incline",
+    "duration_distance",
+  ],
+  Mobilité: [
+    "reps",
+    "duration",
+    "duration_per_side",
+    "reps_per_side",
+  ],
+  "Test mobilité": [
+    "distance_cm",
+    "distance_cm_per_side",
+  ],
+};
+
+const defaultMeasurementByCategory: Record<
+  ExerciseCategory,
+  MeasurementType
+> = {
+  Musculation: "load_reps",
+  Cardio: "duration_speed_incline",
+  Mobilité: "duration",
+  "Test mobilité": "distance_cm",
+};
 type DurationDistanceMode =
   | "steps"
   | "simple";
@@ -106,6 +158,7 @@ function getDurationDistanceMode(
 function updateExercise(
   current: Exercise,
   name: string,
+  category: ExerciseCategory,
   zone: MuscleZone,
   movement: Movement,
   equipment: Equipment,
@@ -120,12 +173,9 @@ function updateExercise(
   advice: string,
   pinnedAlternativeIds: string[],
 ): Exercise {
-  const base = {
+  const commonBase = {
     id: current.id,
     name,
-    zone,
-    movement,
-    equipment,
     location,
     status: current.status,
     createdAt: current.createdAt,
@@ -172,6 +222,26 @@ function updateExercise(
         }
       : {}),
   };
+
+  const base =
+    category === "Musculation"
+      ? {
+          ...commonBase,
+          category,
+          zone,
+          movement,
+          equipment,
+        }
+      : category === "Cardio"
+        ? {
+            ...commonBase,
+            category,
+            equipment,
+          }
+        : {
+            ...commonBase,
+            category,
+          };
 
   switch (measurementType) {
     case "load_reps":
@@ -228,6 +298,8 @@ function updateExercise(
       };
 
     case "distance":
+    case "distance_cm":
+    case "distance_cm_per_side":
       return {
         ...base,
         mode: "simple",
@@ -249,6 +321,9 @@ export function ExerciseEditScreen() {
 
   const [name, setName] =
     useState("");
+
+  const [category, setCategory] =
+    useState<ExerciseCategory>("Musculation");
 
   const [zone, setZone] =
     useState<MuscleZone>("Jambes");
@@ -341,9 +416,16 @@ export function ExerciseEditScreen() {
 
         setExercise(loaded);
         setName(loaded.name);
-        setZone(loaded.zone);
-        setMovement(loaded.movement);
-        setEquipment(loaded.equipment);
+        setCategory(loaded.category);
+
+        if (loaded.category === "Musculation") {
+          setZone(loaded.zone);
+          setMovement(loaded.movement);
+          setEquipment(loaded.equipment);
+        } else if (loaded.category === "Cardio") {
+          setEquipment(loaded.equipment);
+        }
+
         setLocation(loaded.location);
         setMeasurementType(
           loaded.measurementType,
@@ -425,6 +507,8 @@ export function ExerciseEditScreen() {
           : "Mesure simple";
 
       case "distance":
+      case "distance_cm":
+      case "distance_cm_per_side":
         return "Mesure simple";
     }
   }, [
@@ -433,6 +517,16 @@ export function ExerciseEditScreen() {
   ]);
 
   const trimmedName = name.trim();
+
+  const availableMeasurementOptions = useMemo(
+    () =>
+      measurementOptions.filter((option) =>
+        measurementTypesByCategory[category].includes(
+          option.value,
+        ),
+      ),
+    [category],
+  );
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
@@ -457,6 +551,7 @@ export function ExerciseEditScreen() {
       const updated = updateExercise(
         exercise,
         trimmedName,
+        category,
         zone,
         movement,
         equipment,
@@ -605,85 +700,109 @@ export function ExerciseEditScreen() {
           />
         </label>
 
+        <label className="exercise-create__field">
+          <span>Catégorie</span>
+          <select
+            value={category}
+            onChange={(event) => {
+              const nextCategory =
+                event.target.value as ExerciseCategory;
+
+              setCategory(nextCategory);
+              setMeasurementType(
+                defaultMeasurementByCategory[nextCategory],
+              );
+            }}
+          >
+            {categories.map((value) => (
+              <option
+                key={value}
+                value={value}
+              >
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <div className="exercise-create__grid">
-          <label className="exercise-create__field">
-            <span>Zone</span>
-
-            <select
-              value={zone}
-              onChange={(event) =>
-                setZone(
-                  event.target
-                    .value as MuscleZone,
-                )
-              }
-            >
-              {zones.map((value) => (
-                <option
-                  key={value}
-                  value={value}
+          {category === "Musculation" && (
+            <>
+              <label className="exercise-create__field">
+                <span>Zone</span>
+                <select
+                  value={zone}
+                  onChange={(event) =>
+                    setZone(
+                      event.target.value as MuscleZone,
+                    )
+                  }
                 >
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
+                  {zones.map((value) => (
+                    <option
+                      key={value}
+                      value={value}
+                    >
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-          <label className="exercise-create__field">
-            <span>Mouvement</span>
-
-            <select
-              value={movement}
-              onChange={(event) =>
-                setMovement(
-                  event.target
-                    .value as Movement,
-                )
-              }
-            >
-              {movements.map((value) => (
-                <option
-                  key={value}
-                  value={value}
+              <label className="exercise-create__field">
+                <span>Mouvement</span>
+                <select
+                  value={movement}
+                  onChange={(event) =>
+                    setMovement(
+                      event.target.value as Movement,
+                    )
+                  }
                 >
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
+                  {movements.map((value) => (
+                    <option
+                      key={value}
+                      value={value}
+                    >
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
 
-          <label className="exercise-create__field">
-            <span>Équipement</span>
-
-            <select
-              value={equipment}
-              onChange={(event) =>
-                setEquipment(
-                  event.target
-                    .value as Equipment,
-                )
-              }
-            >
-              {equipments.map((value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
+          {(category === "Musculation" ||
+            category === "Cardio") && (
+            <label className="exercise-create__field">
+              <span>Équipement</span>
+              <select
+                value={equipment}
+                onChange={(event) =>
+                  setEquipment(
+                    event.target.value as Equipment,
+                  )
+                }
+              >
+                {equipments.map((value) => (
+                  <option
+                    key={value}
+                    value={value}
+                  >
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <label className="exercise-create__field">
             <span>Lieu</span>
-
             <select
               value={location}
               onChange={(event) =>
                 setLocation(
-                  event.target
-                    .value as ExerciseLocation,
+                  event.target.value as ExerciseLocation,
                 )
               }
             >
@@ -698,7 +817,6 @@ export function ExerciseEditScreen() {
             </select>
           </label>
         </div>
-
         <label className="exercise-create__field">
           <span>Type de mesure</span>
 
@@ -711,7 +829,7 @@ export function ExerciseEditScreen() {
               )
             }
           >
-            {measurementOptions.map(
+            {availableMeasurementOptions.map(
               (option) => (
                 <option
                   key={option.value}
@@ -894,9 +1012,11 @@ export function ExerciseEditScreen() {
                     <span>
                       <strong>{candidate.name}</strong>
                       <small>
-                        {candidate.zone} ·{" "}
-                        {candidate.movement} ·{" "}
-                        {candidate.equipment}
+                        {candidate.category === "Musculation"
+                          ? `${candidate.zone} · ${candidate.movement} · ${candidate.equipment}`
+                          : candidate.category === "Cardio"
+                            ? `${candidate.category} · ${candidate.equipment} · ${candidate.location}`
+                            : `${candidate.category} · ${candidate.location}`}
                       </small>
                     </span>
                   </label>

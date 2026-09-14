@@ -209,7 +209,9 @@ export function calculateZonesSummary(
           continue;
         }
 
-        volumeByZone[exercise.zone] += loadKg * series.reps;
+        if (exercise.category === "Musculation") {
+          volumeByZone[exercise.zone] += loadKg * series.reps;
+        }
       }
 
       continue;
@@ -237,7 +239,9 @@ export function calculateZonesSummary(
             continue;
           }
 
-          volumeByZone[exercise.zone] += loadKg * child.reps;
+          if (exercise.category === "Musculation") {
+            volumeByZone[exercise.zone] += loadKg * child.reps;
+          }
         }
       }
     }
@@ -367,10 +371,11 @@ export function isMetricCompatible(
     case "duration":
     case "duration_per_side":
       return metric === "max_duration";
-
     case "duration_speed_incline":
     case "duration_distance":
     case "distance":
+    case "distance_cm":
+    case "distance_cm_per_side":
       return false;
   }
 }

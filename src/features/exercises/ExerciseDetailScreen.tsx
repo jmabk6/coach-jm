@@ -45,6 +45,7 @@ const metricLabels: Record<
   volume: "Volume",
   reps: "Répétitions",
   durationMax: "Durée max",
+  distanceCm: "Distance",
 };
 
 function formatMetricValue(
@@ -63,6 +64,9 @@ function formatMetricValue(
 
     case "durationMax":
       return `${Math.round(value)} s`;
+
+    case "distanceCm":
+      return `${Math.round(value * 10) / 10} cm`;
   }
 }
 
@@ -181,6 +185,8 @@ export function ExerciseDetailScreen() {
         (candidate) =>
           candidate.id !== state.exercise.id &&
           !pinnedIds.has(candidate.id) &&
+          state.exercise.category === "Musculation" &&
+          candidate.category === "Musculation" &&
           candidate.zone === state.exercise.zone &&
           candidate.movement === state.exercise.movement &&
           candidate.equipment !== state.exercise.equipment,
@@ -321,9 +327,24 @@ export function ExerciseDetailScreen() {
         </div>
 
         <div className="exercise-detail__tags">
-          <span>{exercise.zone}</span>
-          <span>{exercise.movement}</span>
-          <span>{exercise.equipment}</span>
+          {exercise.category === "Musculation" ? (
+            <>
+              <span>{exercise.zone}</span>
+              <span>{exercise.movement}</span>
+              <span>{exercise.equipment}</span>
+            </>
+          ) : exercise.category === "Cardio" ? (
+            <>
+              <span>{exercise.category}</span>
+              <span>{exercise.equipment}</span>
+              <span>{exercise.location}</span>
+            </>
+          ) : (
+            <>
+              <span>{exercise.category}</span>
+              <span>{exercise.location}</span>
+            </>
+          )}
         </div>
       </header>
 
@@ -592,8 +613,10 @@ export function ExerciseDetailScreen() {
                     {alternative.name}
                   </strong>
                   <small>
-                    {alternative.equipment} ·{" "}
-                    {alternative.location}
+                    {alternative.category === "Musculation" ||
+                    alternative.category === "Cardio"
+                      ? `${alternative.equipment} · ${alternative.location}`
+                      : `${alternative.category} · ${alternative.location}`}
                   </small>
                 </span>
 

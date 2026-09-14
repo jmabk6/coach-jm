@@ -440,4 +440,172 @@ describe("exercisePerformance", () => {
     expect(summary?.firstValue).toBe(25);
     expect(summary?.progressionPercent).toBe(40);
   });
+
+  it("gère une mesure simple en centimètres", () => {
+    const exercise = {
+      id: "doigts-sol",
+      name: "Doigts-sol",
+      category: "Test mobilité",
+      location: "Maison",
+      mode: "simple",
+      measurementType: "distance_cm",
+      status: "active",
+      createdAt: "2026-09-01T08:00:00.000Z",
+      updatedAt: "2026-09-01T08:00:00.000Z",
+    } as Exercise;
+
+    const workout = makeWorkout({
+      blocks: [
+        {
+          id: "block-distance",
+          kind: "exercise",
+          position: 0,
+          addedDuringWorkout: false,
+          exerciseId: exercise.id,
+          status: "performed",
+          snapshotInstructions: {
+            shape: "distance_cm",
+          },
+          simpleMeasurement: {
+            distanceCm: 7.5,
+            completedAt: "2026-09-01T18:10:00.000Z",
+          },
+        },
+      ],
+    });
+
+    const history =
+      buildExercisePerformanceHistory(
+        exercise,
+        [workout],
+      );
+
+    expect(history).toHaveLength(1);
+    expect(history[0]?.distanceCm).toBe(7.5);
+    expect(
+      getCompatiblePerformanceMetrics(exercise),
+    ).toEqual(["distanceCm"]);
+    expect(
+      getDefaultPerformanceMetric(exercise),
+    ).toBe("distanceCm");
+  });
+
+  it("retient le côté le moins bon pour une mesure en cm par côté", () => {
+    const exercise = {
+      id: "papillon",
+      name: "Papillon",
+      category: "Test mobilité",
+      location: "Maison",
+      mode: "simple",
+      measurementType: "distance_cm_per_side",
+      status: "active",
+      createdAt: "2026-09-01T08:00:00.000Z",
+      updatedAt: "2026-09-01T08:00:00.000Z",
+    } as Exercise;
+
+    const workout = makeWorkout({
+      blocks: [
+        {
+          id: "block-butterfly",
+          kind: "exercise",
+          position: 0,
+          addedDuringWorkout: false,
+          exerciseId: exercise.id,
+          status: "performed",
+          snapshotInstructions: {
+            shape: "distance_cm_per_side",
+          },
+          simpleMeasurement: {
+            sideValues: [
+              {
+                side: "left",
+                distanceCm: 8,
+              },
+              {
+                side: "right",
+                distanceCm: 11,
+              },
+            ],
+            completedAt: "2026-09-01T18:10:00.000Z",
+          },
+        },
+      ],
+    });
+
+    const history =
+      buildExercisePerformanceHistory(
+        exercise,
+        [workout],
+      );
+
+    expect(history).toHaveLength(1);
+    expect(history[0]?.distanceCm).toBe(11);
+  });
+
+  it("considère la plus petite distance en cm comme la meilleure", () => {
+    const history = [
+      {
+        workoutId: "w3",
+        date: "2026-09-13",
+        startedAt: "2026-09-13T18:00:00.000Z",
+        series: [],
+        distanceCm: 4,
+      },
+      {
+        workoutId: "w2",
+        date: "2026-09-07",
+        startedAt: "2026-09-07T18:00:00.000Z",
+        series: [],
+        distanceCm: 6,
+      },
+      {
+        workoutId: "w1",
+        date: "2026-09-01",
+        startedAt: "2026-09-01T18:00:00.000Z",
+        series: [],
+        distanceCm: 8,
+      },
+    ];
+
+    const summary =
+      buildExercisePerformanceSummary(
+        history,
+        "distanceCm",
+      );
+
+    expect(summary?.latestValue).toBe(4);
+    expect(summary?.bestValue).toBe(4);
+    expect(summary?.firstValue).toBe(8);
+    expect(summary?.progressionPercent).toBe(50);
+  });
+
+  it("gère une amélioration en cm qui passe sous zéro", () => {
+    const history = [
+      {
+        workoutId: "w2",
+        date: "2026-09-13",
+        startedAt: "2026-09-13T18:00:00.000Z",
+        series: [],
+        distanceCm: -2,
+      },
+      {
+        workoutId: "w1",
+        date: "2026-09-01",
+        startedAt: "2026-09-01T18:00:00.000Z",
+        series: [],
+        distanceCm: 8,
+      },
+    ];
+
+    const summary =
+      buildExercisePerformanceSummary(
+        history,
+        "distanceCm",
+      );
+
+    expect(summary?.latestValue).toBe(-2);
+    expect(summary?.bestValue).toBe(-2);
+    expect(summary?.firstValue).toBe(8);
+    expect(summary?.progressionPercent).toBe(125);
+  });
 });

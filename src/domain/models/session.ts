@@ -1,4 +1,4 @@
-﻿import type { Id } from "./exercise";
+import type { Id } from "./exercise";
 
 export type SessionCategory =
   | "Musculation"
@@ -154,7 +154,9 @@ export type InstructionShape =
   | "duration"
   | "steps"
   | "duration_distance"
-  | "distance";
+  | "distance"
+  | "distance_cm"
+  | "distance_cm_per_side";
 
 /* -------------------------------------------------------------------------- */
 /* Consignes d'un exercice autonome                                           */
@@ -169,7 +171,9 @@ export type ExerciseInstructions =
   | DurationShapeInstructions
   | StepsInstructions
   | DurationDistanceSimpleInstructions
-  | DistanceInstructions;
+  | DistanceInstructions
+  | DistanceCmInstructions
+  | DistanceCmPerSideInstructions;
 
 /**
  * Forme utilisée pour :
@@ -276,6 +280,28 @@ export interface DistanceInstructions {
   shape: "distance";
 
   distanceKm?: number;
+
+  technicalCue?: string;
+}
+/**
+ * Mesure simple en centimètres.
+ */
+export interface DistanceCmInstructions {
+  shape: "distance_cm";
+
+  distanceCm?: number;
+
+  technicalCue?: string;
+}
+
+/**
+ * Mesure simple en centimètres par côté.
+ */
+export interface DistanceCmPerSideInstructions {
+  shape: "distance_cm_per_side";
+
+  leftCm?: number;
+  rightCm?: number;
 
   technicalCue?: string;
 }

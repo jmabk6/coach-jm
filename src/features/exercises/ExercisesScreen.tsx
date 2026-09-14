@@ -9,10 +9,16 @@ type LoadState =
   | { status: "success"; exercises: Exercise[] }
   | { status: "error"; message: string };
 
-type FilterFamily = "zone" | "movement" | "equipment" | "location";
+type FilterFamily =
+  | "category"
+  | "zone"
+  | "movement"
+  | "equipment"
+  | "location";
 type SortMode = "recent" | "name-asc" | "name-desc";
 
 interface FilterState {
+  category: string[];
   zone: string[];
   movement: string[];
   equipment: string[];
@@ -20,6 +26,7 @@ interface FilterState {
 }
 
 const emptyFilters: FilterState = {
+  category: [],
   zone: [],
   movement: [],
   equipment: [],
@@ -31,6 +38,16 @@ const filterGroups: Array<{
   label: string;
   options: string[];
 }> = [
+  {
+    key: "category",
+    label: "Catégorie",
+    options: [
+      "Musculation",
+      "Cardio",
+      "Mobilité",
+      "Test mobilité",
+    ],
+  },
   {
     key: "zone",
     label: "Zone",
@@ -85,26 +102,40 @@ function matchesExercise(
   const searchableText = normalizeSearchValue(
     [
       exercise.name,
+      exercise.category,
       exercise.zone,
       exercise.movement,
       exercise.equipment,
-    ].join(" "),
+      exercise.location,
+    ]
+      .filter(
+        (value): value is string =>
+          typeof value === "string",
+      )
+      .join(" "),
   );
 
   const matchesSearch =
     query.length === 0 || searchableText.includes(query);
 
+  const matchesCategory =
+    filters.category.length === 0 ||
+    filters.category.includes(exercise.category);
+
   const matchesZone =
     filters.zone.length === 0 ||
-    filters.zone.includes(exercise.zone);
+    (exercise.zone !== undefined &&
+      filters.zone.includes(exercise.zone));
 
   const matchesMovement =
     filters.movement.length === 0 ||
-    filters.movement.includes(exercise.movement);
+    (exercise.movement !== undefined &&
+      filters.movement.includes(exercise.movement));
 
   const matchesEquipment =
     filters.equipment.length === 0 ||
-    filters.equipment.includes(exercise.equipment);
+    (exercise.equipment !== undefined &&
+      filters.equipment.includes(exercise.equipment));
 
   const matchesLocation =
     filters.location.length === 0 ||
@@ -112,6 +143,7 @@ function matchesExercise(
 
   return (
     matchesSearch &&
+    matchesCategory &&
     matchesZone &&
     matchesMovement &&
     matchesEquipment &&
@@ -119,6 +151,28 @@ function matchesExercise(
   );
 }
 
+function getExerciseMeta(exercise: Exercise): string {
+  if (exercise.category === "Musculation") {
+    return [
+      exercise.zone,
+      exercise.movement,
+      exercise.equipment,
+    ].join(" · ");
+  }
+
+  if (exercise.category === "Cardio") {
+    return [
+      exercise.category,
+      exercise.equipment,
+      exercise.location,
+    ].join(" · ");
+  }
+
+  return [
+    exercise.category,
+    exercise.location,
+  ].join(" · ");
+}
 function sortExercises(
   exercises: Exercise[],
   sortMode: SortMode,
@@ -213,6 +267,7 @@ const selectedExerciseIds = useMemo(
   }, []);
 
   const activeFilterCount =
+    filters.category.length +
     filters.zone.length +
     filters.movement.length +
     filters.equipment.length +
@@ -706,9 +761,7 @@ const selectedExerciseIds = useMemo(
                         </span>
 
                         <span className="exercise-list__meta">
-                          {exercise.zone} ·{" "}
-                          {exercise.movement} ·{" "}
-                          {exercise.equipment}
+                          {getExerciseMeta(exercise)}
                         </span>
 
                         {alreadyAdded && (
@@ -767,9 +820,7 @@ const selectedExerciseIds = useMemo(
                       </span>
 
                       <span className="exercise-list__meta">
-                        {exercise.zone} ·{" "}
-                        {exercise.movement} ·{" "}
-                        {exercise.equipment}
+                        {getExerciseMeta(exercise)}
                       </span>
                     </span>
 

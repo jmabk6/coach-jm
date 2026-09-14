@@ -61,7 +61,9 @@ function createExerciseBlock(
 
   if (
     block.instructions.shape === "duration_distance" ||
-    block.instructions.shape === "distance"
+    block.instructions.shape === "distance" ||
+    block.instructions.shape === "distance_cm" ||
+    block.instructions.shape === "distance_cm_per_side"
   ) {
     base.simpleMeasurement = {};
   }

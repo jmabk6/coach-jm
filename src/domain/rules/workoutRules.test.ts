@@ -289,6 +289,7 @@ describe("calculateSessionDuration", () => {
       {
         id: "squat",
         name: "Squat",
+        category: "Musculation",
         zone: "Jambes",
         movement: "Squat",
         equipment: "Barre",
@@ -302,6 +303,7 @@ describe("calculateSessionDuration", () => {
       {
         id: "rowing",
         name: "Rowing",
+        category: "Musculation",
         zone: "Dos",
         movement: "Tirage",
         equipment: "Poulie",

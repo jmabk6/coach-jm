@@ -16,6 +16,7 @@ export async function seedValidationData(
     {
       id: "squat",
       name: "Squat",
+      category: "Musculation",
       zone: "Jambes",
       movement: "Squat",
       equipment: "Barre",
@@ -29,6 +30,7 @@ export async function seedValidationData(
     {
       id: "tirage-vertical",
       name: "Tirage vertical",
+      category: "Musculation",
       zone: "Dos",
       movement: "Tirage",
       equipment: "Poulie",
@@ -42,6 +44,7 @@ export async function seedValidationData(
     {
       id: "planche",
       name: "Planche",
+      category: "Musculation",
       zone: "Core",
       movement: "Gainage",
       equipment: "Poids du corps",
@@ -55,8 +58,7 @@ export async function seedValidationData(
     {
       id: "tapis",
       name: "Tapis",
-      zone: "Jambes",
-      movement: "Charnière",
+      category: "Cardio",
       equipment: "Machine",
       location: "Salle",
       mode: "steps",

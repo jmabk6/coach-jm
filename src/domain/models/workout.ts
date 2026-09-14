@@ -1,4 +1,4 @@
-﻿import type { Id, Load } from "./exercise";
+import type { Id, Load } from "./exercise";
 import type {
   ExerciseInstructions,
   GroupChildInstructions,
@@ -220,6 +220,7 @@ export interface PerformedSideValue {
    */
   reps?: number;
   durationSec?: number;
+  distanceCm?: number;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -317,6 +318,18 @@ export interface PerformedCardioStep {
 export interface PerformedSimpleMeasurement {
   durationSec?: number;
   distanceKm?: number;
+  /**
+   * Mesure physique en centimètres.
+   * Peut être négative si le protocole autorise
+   * un dépassement du point zéro.
+   */
+  distanceCm?: number;
+
+  /**
+   * Mesures en centimètres par côté.
+   */
+  sideValues?: PerformedSideValue[];
+
 
   /**
    * Possible pour durée + distance.

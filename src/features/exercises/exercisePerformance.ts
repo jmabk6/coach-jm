@@ -17,6 +17,7 @@ export interface ExercisePerformanceEntry {
   volumeKg?: number;
   repsMax?: number;
   durationMaxSec?: number;
+  distanceCm?: number;
 }
 
 export interface PerformedSeriesLike {
@@ -95,6 +96,42 @@ function getSeriesDurationSec(
   return Math.min(...durations);
 }
 
+function getExerciseDistanceCmFromWorkout(
+  workout: WorkoutSession,
+  exerciseId: string,
+): number | undefined {
+  for (const block of workout.blocks) {
+    if (
+      block.kind !== "exercise" ||
+      block.exerciseId !== exerciseId ||
+      block.status !== "performed" ||
+      !block.simpleMeasurement
+    ) {
+      continue;
+    }
+
+    if (block.simpleMeasurement.distanceCm !== undefined) {
+      return block.simpleMeasurement.distanceCm;
+    }
+
+    const sideDistances = (block.simpleMeasurement.sideValues ?? [])
+      .map((value) => value.distanceCm)
+      .filter(
+        (value): value is number =>
+          value !== undefined,
+      );
+
+    if (sideDistances.length > 0) {
+      // Pour les tests de mobilité en cm :
+      // plus bas = meilleur.
+      // On retient donc le côté le moins bon,
+      // c'est-à-dire la valeur numérique la plus haute.
+      return Math.max(...sideDistances);
+    }
+  }
+
+  return undefined;
+}
 function getExerciseSeriesFromWorkout(
   workout: WorkoutSession,
   exerciseId: string,
@@ -237,11 +274,21 @@ export function buildExercisePerformanceHistory(
         workout,
         exercise.id,
       ),
+      distanceCm: getExerciseDistanceCmFromWorkout(
+        workout,
+        exercise.id,
+      ),
     }))
-    .filter(({ series }) => series.length > 0)
-    .map(({ workout, series }) =>
-      calculatePerformanceEntry(workout, series),
+    .filter(
+      ({ series, distanceCm }) =>
+        series.length > 0 || distanceCm !== undefined,
     )
+    .map(({ workout, series, distanceCm }) => ({
+      ...calculatePerformanceEntry(workout, series),
+      ...(distanceCm !== undefined
+        ? { distanceCm }
+        : {}),
+    }))
     .sort((a, b) =>
       b.startedAt.localeCompare(a.startedAt),
     );
@@ -253,7 +300,8 @@ export type ExercisePerformanceMetric =
   | "chargeMax"
   | "volume"
   | "reps"
-  | "durationMax";
+  | "durationMax"
+  | "distanceCm";
 
 export interface ExercisePerformanceSummary {
   metric: ExercisePerformanceMetric;
@@ -279,6 +327,10 @@ export function getCompatiblePerformanceMetrics(
     case "duration":
     case "duration_per_side":
       return ["durationMax"];
+
+    case "distance_cm":
+    case "distance_cm_per_side":
+      return ["distanceCm"];
 
     default:
       return [];
@@ -307,6 +359,9 @@ export function getPerformanceMetricValue(
 
     case "durationMax":
       return entry.durationMaxSec;
+
+    case "distanceCm":
+      return entry.distanceCm;
   }
 }
 
@@ -344,15 +399,20 @@ export function buildExercisePerformanceSummary(
     return undefined;
   }
 
-  const best = comparable.reduce((currentBest, item) =>
-    item.value > currentBest.value
-      ? item
-      : currentBest,
-  );
+  const best = comparable.reduce((currentBest, item) => {
+    const isBetter =
+      metric === "distanceCm"
+        ? item.value < currentBest.value
+        : item.value > currentBest.value;
+
+    return isBetter ? item : currentBest;
+  });
 
   const progressionPercent =
-    first.value > 0
-      ? ((latest.value - first.value) / first.value) * 100
+    first.value !== 0
+      ? metric === "distanceCm"
+        ? ((first.value - latest.value) / Math.abs(first.value)) * 100
+        : ((latest.value - first.value) / first.value) * 100
       : undefined;
 
   return {
