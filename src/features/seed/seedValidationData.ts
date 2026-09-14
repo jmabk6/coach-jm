@@ -1,10 +1,12 @@
 import { saveExercise } from "../../db/repositories/exerciseRepository";
 import { saveWeeklyProgram } from "../../db/repositories/programRepository";
+import { saveWorkout } from "../../db/repositories/workoutRepository";
 import { saveSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
 import type {
   Exercise,
   SessionTemplate,
   WeeklyProgram,
+  WorkoutSession,
 } from "../../domain";
 
 export async function seedValidationData(
@@ -199,4 +201,230 @@ export async function seedValidationData(
   };
 
   await saveWeeklyProgram(program);
+
+  const squatWorkouts: WorkoutSession[] = [
+    {
+      id: "validation-squat-2026-09-01",
+      source: "free",
+      status: "completed",
+      date: "2026-09-01",
+      startedAt: "2026-09-01T18:00:00.000Z",
+      completedAt: "2026-09-01T18:45:00.000Z",
+      lastActionAt: "2026-09-01T18:45:00.000Z",
+      activeDurationSec: 2700,
+      blocks: [
+        {
+          id: "validation-squat-2026-09-01-block",
+          kind: "exercise",
+          position: 0,
+          addedDuringWorkout: false,
+          exerciseId: "squat",
+          status: "performed",
+          snapshotInstructions: {
+            shape: "reps",
+            sets: 3,
+            reps: {
+              min: 8,
+              max: 12,
+            },
+            targetRpe: {
+              min: 6,
+              max: 8,
+            },
+            restBetweenSetsSec: 90,
+          },
+          series: [
+            {
+              id: "validation-squat-2026-09-01-s1",
+              position: 0,
+              status: "completed",
+              load: {
+                kind: "total",
+                kg: 20,
+              },
+              reps: 12,
+              rpe: 6,
+              completedAt: "2026-09-01T18:10:00.000Z",
+            },
+            {
+              id: "validation-squat-2026-09-01-s2",
+              position: 1,
+              status: "completed",
+              load: {
+                kind: "total",
+                kg: 25,
+              },
+              reps: 10,
+              rpe: 7,
+              completedAt: "2026-09-01T18:15:00.000Z",
+            },
+            {
+              id: "validation-squat-2026-09-01-s3",
+              position: 2,
+              status: "completed",
+              load: {
+                kind: "total",
+                kg: 25,
+              },
+              reps: 10,
+              rpe: 8,
+              completedAt: "2026-09-01T18:20:00.000Z",
+            },
+          ],
+        },
+      ],
+      createdAt: "2026-09-01T18:00:00.000Z",
+      updatedAt: "2026-09-01T18:45:00.000Z",
+    },
+    {
+      id: "validation-squat-2026-09-07",
+      source: "free",
+      status: "completed",
+      date: "2026-09-07",
+      startedAt: "2026-09-07T18:00:00.000Z",
+      completedAt: "2026-09-07T18:45:00.000Z",
+      lastActionAt: "2026-09-07T18:45:00.000Z",
+      activeDurationSec: 2700,
+      blocks: [
+        {
+          id: "validation-squat-2026-09-07-block",
+          kind: "exercise",
+          position: 0,
+          addedDuringWorkout: false,
+          exerciseId: "squat",
+          status: "performed",
+          snapshotInstructions: {
+            shape: "reps",
+            sets: 3,
+            reps: {
+              min: 8,
+              max: 12,
+            },
+            targetRpe: {
+              min: 6,
+              max: 8,
+            },
+            restBetweenSetsSec: 90,
+          },
+          series: [
+            {
+              id: "validation-squat-2026-09-07-s1",
+              position: 0,
+              status: "completed",
+              load: {
+                kind: "total",
+                kg: 25,
+              },
+              reps: 12,
+              rpe: 6,
+              completedAt: "2026-09-07T18:10:00.000Z",
+            },
+            {
+              id: "validation-squat-2026-09-07-s2",
+              position: 1,
+              status: "completed",
+              load: {
+                kind: "total",
+                kg: 30,
+              },
+              reps: 10,
+              rpe: 7,
+              completedAt: "2026-09-07T18:15:00.000Z",
+            },
+            {
+              id: "validation-squat-2026-09-07-s3",
+              position: 2,
+              status: "completed",
+              load: {
+                kind: "total",
+                kg: 30,
+              },
+              reps: 8,
+              rpe: 8,
+              completedAt: "2026-09-07T18:20:00.000Z",
+            },
+          ],
+        },
+      ],
+      createdAt: "2026-09-07T18:00:00.000Z",
+      updatedAt: "2026-09-07T18:45:00.000Z",
+    },
+    {
+      id: "validation-squat-2026-09-13",
+      source: "free",
+      status: "completed",
+      date: "2026-09-13",
+      startedAt: "2026-09-13T18:00:00.000Z",
+      completedAt: "2026-09-13T18:45:00.000Z",
+      lastActionAt: "2026-09-13T18:45:00.000Z",
+      activeDurationSec: 2700,
+      blocks: [
+        {
+          id: "validation-squat-2026-09-13-block",
+          kind: "exercise",
+          position: 0,
+          addedDuringWorkout: false,
+          exerciseId: "squat",
+          status: "performed",
+          snapshotInstructions: {
+            shape: "reps",
+            sets: 3,
+            reps: {
+              min: 8,
+              max: 12,
+            },
+            targetRpe: {
+              min: 6,
+              max: 8,
+            },
+            restBetweenSetsSec: 90,
+          },
+          series: [
+            {
+              id: "validation-squat-2026-09-13-s1",
+              position: 0,
+              status: "completed",
+              load: {
+                kind: "total",
+                kg: 30,
+              },
+              reps: 12,
+              rpe: 6,
+              completedAt: "2026-09-13T18:10:00.000Z",
+            },
+            {
+              id: "validation-squat-2026-09-13-s2",
+              position: 1,
+              status: "completed",
+              load: {
+                kind: "total",
+                kg: 35,
+              },
+              reps: 10,
+              rpe: 7,
+              completedAt: "2026-09-13T18:15:00.000Z",
+            },
+            {
+              id: "validation-squat-2026-09-13-s3",
+              position: 2,
+              status: "completed",
+              load: {
+                kind: "total",
+                kg: 35,
+              },
+              reps: 8,
+              rpe: 8,
+              completedAt: "2026-09-13T18:20:00.000Z",
+            },
+          ],
+        },
+      ],
+      createdAt: "2026-09-13T18:00:00.000Z",
+      updatedAt: "2026-09-13T18:45:00.000Z",
+    },
+  ];
+
+  for (const workout of squatWorkouts) {
+    await saveWorkout(workout);
+  }
 }

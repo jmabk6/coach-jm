@@ -4,10 +4,12 @@ const {
   saveExercise,
   saveSessionTemplate,
   saveWeeklyProgram,
+  saveWorkout,
 } = vi.hoisted(() => ({
   saveExercise: vi.fn(),
   saveSessionTemplate: vi.fn(),
   saveWeeklyProgram: vi.fn(),
+  saveWorkout: vi.fn(),
 }));
 
 vi.mock("../../db/repositories/exerciseRepository", () => ({
@@ -22,6 +24,10 @@ vi.mock("../../db/repositories/programRepository", () => ({
   saveWeeklyProgram,
 }));
 
+vi.mock("../../db/repositories/workoutRepository", () => ({
+  saveWorkout,
+}));
+
 import { seedValidationData } from "./seedValidationData";
 
 describe("seedValidationData", () => {
@@ -29,7 +35,7 @@ describe("seedValidationData", () => {
     vi.clearAllMocks();
   });
 
-  it("crée les exercices, Muscu A et la règle hebdomadaire de validation", async () => {
+  it("crée les exercices, Muscu A, le programme et les workouts de validation", async () => {
     const now = "2026-09-14T08:00:00.000Z";
 
     await seedValidationData(now);
@@ -90,7 +96,11 @@ describe("seedValidationData", () => {
     const template =
       saveSessionTemplate.mock.calls[0]?.[0];
 
-    expect(template.blocks.map((block: { kind: string }) => block.kind)).toEqual([
+    expect(
+      template.blocks.map(
+        (block: { kind: string }) => block.kind,
+      ),
+    ).toEqual([
       "note",
       "exercise",
       "group",
@@ -120,5 +130,34 @@ describe("seedValidationData", () => {
       { weekday: "saturday" },
       { weekday: "sunday" },
     ]);
+
+    expect(saveWorkout).toHaveBeenCalledTimes(3);
+
+    expect(saveWorkout).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        id: "validation-squat-2026-09-01",
+        status: "completed",
+        date: "2026-09-01",
+      }),
+    );
+
+    expect(saveWorkout).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        id: "validation-squat-2026-09-07",
+        status: "completed",
+        date: "2026-09-07",
+      }),
+    );
+
+    expect(saveWorkout).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        id: "validation-squat-2026-09-13",
+        status: "completed",
+        date: "2026-09-13",
+      }),
+    );
   });
 });

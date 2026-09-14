@@ -1,0 +1,228 @@
+.exercise-detail {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.exercise-detail__back {
+  min-height: 40px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent, #2563eb);
+  font: inherit;
+  font-weight: 600;
+}
+
+.exercise-detail__header {
+  margin-bottom: 18px;
+}
+
+.exercise-detail__header h1 {
+  margin: 0 0 12px;
+  font-size: 2rem;
+}
+
+.exercise-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exercise-detail__tags span {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  padding: 0 11px;
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 999px;
+  background: white;
+  font-size: 13px;
+}
+
+.exercise-detail__media {
+  margin-bottom: 26px;
+}
+
+.exercise-detail__media img,
+.exercise-detail__media-placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+}
+
+.exercise-detail__media img {
+  display: block;
+  object-fit: cover;
+}
+
+.exercise-detail__media-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #eef1f5;
+  color: var(--color-text-soft, #667085);
+}
+
+.exercise-detail__media-placeholder span {
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.exercise-detail__section {
+  margin-bottom: 26px;
+}
+
+.exercise-detail__section h2 {
+  margin: 0 0 12px;
+  font-size: 1.2rem;
+}
+
+.exercise-detail__empty-performance {
+  padding: 16px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 12px;
+  background: white;
+}
+
+.exercise-detail__empty-performance p {
+  margin: 6px 0 0;
+  color: var(--color-text-soft, #667085);
+}
+
+.exercise-detail__muted {
+  color: var(--color-text-soft, #667085);
+}
+
+.exercise-detail__alternatives {
+  display: grid;
+}
+
+.exercise-detail__alternative {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-border, #e5e5e5);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+
+.exercise-detail__alternative span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.exercise-detail__alternative small {
+  color: var(--color-text-soft, #667085);
+}
+
+.exercise-detail__alternative span:last-child {
+  color: var(--color-text-soft, #98a2b3);
+  font-size: 28px;
+}
+
+.exercise-detail__accordions {
+  border-top: 1px solid var(--color-border, #e5e5e5);
+}
+
+.exercise-detail__accordions details {
+  border-bottom: 1px solid var(--color-border, #e5e5e5);
+}
+
+.exercise-detail__accordions summary {
+  padding: 16px 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.exercise-detail__accordions p,
+.exercise-detail__accordions ul {
+  margin: 0;
+  padding: 0 0 16px;
+  color: var(--color-text-soft, #667085);
+}
+
+.exercise-detail__accordions ul {
+  padding-left: 20px;
+}
+
+.exercise-detail__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.exercise-detail__section-heading h2 {
+  margin: 0;
+}
+
+.exercise-detail__metric-select {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 9px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+
+.exercise-detail__performance-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.exercise-detail__performance-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 12px;
+  background: white;
+}
+
+.exercise-detail__performance-card small,
+.exercise-detail__performance-card span {
+  color: var(--color-text-soft, #667085);
+}
+
+.exercise-detail__performance-card strong {
+  font-size: 1.25rem;
+}
+
+@media (max-width: 600px) {
+  .exercise-detail__performance-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .exercise-detail__section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+.exercise-detail__chart {
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px 8px 4px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 12px;
+  background: white;
+  color: var(--color-text, #1f2937);
+  overflow: hidden;
+}
+
+.exercise-detail__chart .recharts-text {
+  font-size: 12px;
+}

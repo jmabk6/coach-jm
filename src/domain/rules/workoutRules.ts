@@ -153,7 +153,7 @@ const MUSCLE_ZONES: MuscleZone[] = [
   "Core",
 ];
 
-function getLoadKg(load: PerformedSeries["load"]): number | undefined {
+export function getLoadKg(load: PerformedSeries["load"]): number | undefined {
   if (!load) {
     return undefined;
   }
