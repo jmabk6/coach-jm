@@ -203,6 +203,146 @@ describe("exercisePerformance", () => {
     expect(entry?.repsMax).toBe(9);
   });
 
+  it("utilise le côté le plus faible pour la durée par côté", () => {
+    const durationExercise = {
+      id: "duration-unilateral",
+      name: "Gainage latéral",
+      zone: "Core",
+      movement: "Gainage",
+      equipment: "Poids du corps",
+      location: "Salle",
+      mode: "series",
+      measurementType: "duration_per_side",
+      status: "active",
+      createdAt: "2026-09-01T08:00:00.000Z",
+      updatedAt: "2026-09-01T08:00:00.000Z",
+    } as Exercise;
+
+    const workout = makeWorkout({
+      blocks: [
+        {
+          id: "block-duration",
+          kind: "exercise",
+          position: 0,
+          addedDuringWorkout: false,
+          exerciseId: "duration-unilateral",
+          status: "performed",
+          snapshotInstructions: {
+            shape: "duration",
+            sets: 1,
+            durationSec: 45,
+            targetRpe: {
+              min: 6,
+              max: 8,
+            },
+            restBetweenSetsSec: 60,
+          },
+          series: [
+            {
+              id: "series-duration",
+              position: 0,
+              status: "completed",
+              sideValues: [
+                {
+                  side: "left",
+                  durationSec: 45,
+                },
+                {
+                  side: "right",
+                  durationSec: 32,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const entry =
+      buildExercisePerformanceHistory(
+        durationExercise,
+        [workout],
+      )[0];
+
+    expect(entry?.durationMaxSec).toBe(32);
+  });
+
+  it("attribue une réalisation de groupe à l'exercice réellement effectué", () => {
+    const substitutedExercise = {
+      ...squat,
+      id: "substitute",
+      name: "Squat substitution",
+    } as Exercise;
+
+    const workout = makeWorkout({
+      blocks: [
+        {
+          id: "group-1",
+          kind: "group",
+          position: 0,
+          addedDuringWorkout: false,
+          status: "performed",
+          plannedRounds: 1,
+          plannedRestBetweenRoundsSec: 60,
+          children: [
+            {
+              id: "group-child-1",
+              position: 0,
+              exerciseId: "squat",
+              snapshotInstructions: {
+                shape: "reps",
+                reps: {
+                  min: 8,
+                  max: 12,
+                },
+                targetRpe: {
+                  min: 6,
+                  max: 8,
+                },
+              },
+            },
+          ],
+          rounds: [
+            {
+              id: "round-1",
+              roundNumber: 1,
+              status: "completed",
+              children: [
+                {
+                  id: "round-child-1",
+                  groupChildId: "group-child-1",
+                  exerciseId: "substitute",
+                  load: {
+                    kind: "total",
+                    kg: 40,
+                  },
+                  reps: 10,
+                  completedAt: "2026-09-01T18:20:00.000Z",
+                },
+              ],
+              completedAt: "2026-09-01T18:21:00.000Z",
+            },
+          ],
+        } as WorkoutSession["blocks"][number],
+      ],
+    });
+
+    const substituteEntry =
+      buildExercisePerformanceHistory(
+        substitutedExercise,
+        [workout],
+      )[0];
+
+    const originalEntry =
+      buildExercisePerformanceHistory(
+        squat,
+        [workout],
+      )[0];
+
+    expect(substituteEntry?.chargeMaxKg).toBe(40);
+    expect(substituteEntry?.repsMax).toBe(10);
+    expect(originalEntry).toBeUndefined();
+  });
   it("n'utilise pas les workouts non terminés", () => {
     const workout = makeWorkout({
       status: "in_progress",
