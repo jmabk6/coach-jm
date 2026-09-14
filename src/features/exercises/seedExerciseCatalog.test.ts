@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Exercise } from "../../domain";
 import { exerciseCatalog } from "./exerciseCatalog";
 
 const {
@@ -47,34 +48,75 @@ describe("seedExerciseCatalog", () => {
     );
   });
 
-  it("ne remplace jamais un exercice déjà existant", async () => {
-    const existingSquat = {
-      ...exerciseCatalog.find(
-        (exercise) => exercise.id === "squat",
-      )!,
+  it("complète les métadonnées absentes d'un exercice existant", async () => {
+    const catalogSquat = exerciseCatalog.find(
+      (exercise) => exercise.id === "squat",
+    )!;
+
+    const existingSquat: Exercise = {
+      ...catalogSquat,
       name: "Mon squat personnalisé",
+    };
+
+    delete existingSquat.technique;
+    delete existingSquat.description;
+    delete existingSquat.advice;
+    delete existingSquat.muscles;
+
+    getExercise.mockImplementation(
+      async (id: string) =>
+        id === "squat"
+          ? existingSquat
+          : exerciseCatalog.find(
+              (exercise) => exercise.id === id,
+            ),
+    );
+
+    await seedExerciseCatalog();
+
+    expect(saveExercise).toHaveBeenCalledTimes(1);
+
+    expect(saveExercise).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "squat",
+        name: "Mon squat personnalisé",
+        technique: catalogSquat.technique,
+        description: catalogSquat.description,
+        advice: catalogSquat.advice,
+        muscles: catalogSquat.muscles,
+      }),
+    );
+  });
+
+  it("ne remplace jamais les métadonnées déjà personnalisées", async () => {
+    const catalogSquat = exerciseCatalog.find(
+      (exercise) => exercise.id === "squat",
+    )!;
+
+    const existingSquat: Exercise = {
+      ...catalogSquat,
+      name: "Mon squat personnalisé",
+      technique: "Ma technique",
+      description: "",
+      advice: "Mon conseil",
+      muscles: ["Mes muscles"],
     };
 
     getExercise.mockImplementation(
       async (id: string) =>
         id === "squat"
           ? existingSquat
-          : undefined,
+          : exerciseCatalog.find(
+              (exercise) => exercise.id === id,
+            ),
     );
 
     await seedExerciseCatalog();
 
-    expect(getExercise).toHaveBeenCalledTimes(42);
-    expect(saveExercise).toHaveBeenCalledTimes(41);
-
-    expect(saveExercise).not.toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "squat",
-      }),
-    );
+    expect(saveExercise).not.toHaveBeenCalled();
   });
 
-  it("n'écrit rien lorsque tout le catalogue existe déjà", async () => {
+  it("n'écrit rien lorsque tout le catalogue est déjà à jour", async () => {
     getExercise.mockImplementation(
       async (id: string) =>
         exerciseCatalog.find(
