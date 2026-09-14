@@ -1,0 +1,482 @@
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type {
+  Equipment,
+  Exercise,
+  ExerciseLocation,
+  MeasurementType,
+  Movement,
+  MuscleZone,
+} from "../../domain";
+import { saveExercise } from "../../db/repositories/exerciseRepository";
+import "./ExerciseCreateScreen.css";
+
+const zones: MuscleZone[] = [
+  "Jambes",
+  "Dos",
+  "Pecs",
+  "Épaules",
+  "Bras",
+  "Core",
+];
+
+const movements: Movement[] = [
+  "Tirage",
+  "Poussée",
+  "Squat",
+  "Charnière",
+  "Isolation",
+  "Gainage",
+];
+
+const equipments: Equipment[] = [
+  "Machine",
+  "Poulie",
+  "Barre",
+  "Haltères",
+  "Poids du corps",
+  "Élastique",
+];
+
+const locations: ExerciseLocation[] = [
+  "Salle",
+  "Maison",
+];
+
+const measurementOptions: Array<{
+  value: MeasurementType;
+  label: string;
+}> = [
+  {
+    value: "load_reps",
+    label: "Charge + répétitions",
+  },
+  {
+    value: "reps",
+    label: "Répétitions",
+  },
+  {
+    value: "duration",
+    label: "Durée",
+  },
+  {
+    value: "duration_per_side",
+    label: "Durée par côté",
+  },
+  {
+    value: "reps_per_side",
+    label: "Répétitions par côté",
+  },
+  {
+    value: "duration_speed_incline",
+    label: "Durée + vitesse + pente",
+  },
+  {
+    value: "duration_distance",
+    label: "Durée + distance",
+  },
+  {
+    value: "distance",
+    label: "Distance seule",
+  },
+];
+
+type DurationDistanceMode =
+  | "steps"
+  | "simple";
+
+function buildExercise(
+  id: string,
+  name: string,
+  zone: MuscleZone,
+  movement: Movement,
+  equipment: Equipment,
+  location: ExerciseLocation,
+  measurementType: MeasurementType,
+  durationDistanceMode: DurationDistanceMode,
+): Exercise {
+  const now = new Date().toISOString();
+
+  const base = {
+    id,
+    name,
+    zone,
+    movement,
+    equipment,
+    location,
+    status: "active" as const,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  switch (measurementType) {
+    case "load_reps":
+      return {
+        ...base,
+        mode: "series",
+        measurementType,
+      };
+
+    case "reps":
+      return {
+        ...base,
+        mode: "series",
+        measurementType,
+      };
+
+    case "duration":
+      return {
+        ...base,
+        mode: "series",
+        measurementType,
+      };
+
+    case "duration_per_side":
+      return {
+        ...base,
+        mode: "series",
+        measurementType,
+      };
+
+    case "reps_per_side":
+      return {
+        ...base,
+        mode: "series",
+        measurementType,
+      };
+
+    case "duration_speed_incline":
+      return {
+        ...base,
+        mode: "steps",
+        measurementType,
+      };
+
+    case "duration_distance":
+      return {
+        ...base,
+        mode: durationDistanceMode,
+        measurementType,
+        speedDisplay: "speed_kmh",
+      };
+
+    case "distance":
+      return {
+        ...base,
+        mode: "simple",
+        measurementType,
+      };
+  }
+}
+
+export function ExerciseCreateScreen() {
+  const navigate = useNavigate();
+
+  const [name, setName] = useState("");
+  const [zone, setZone] =
+    useState<MuscleZone>("Jambes");
+  const [movement, setMovement] =
+    useState<Movement>("Squat");
+  const [equipment, setEquipment] =
+    useState<Equipment>("Barre");
+  const [location, setLocation] =
+    useState<ExerciseLocation>("Salle");
+  const [measurementType, setMeasurementType] =
+    useState<MeasurementType>("load_reps");
+  const [
+    durationDistanceMode,
+    setDurationDistanceMode,
+  ] = useState<DurationDistanceMode>("steps");
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] =
+    useState<string | undefined>();
+
+  const trimmedName = name.trim();
+
+  const inferredMode = useMemo(() => {
+    switch (measurementType) {
+      case "load_reps":
+      case "reps":
+      case "duration":
+      case "duration_per_side":
+      case "reps_per_side":
+        return "Séries";
+
+      case "duration_speed_incline":
+        return "Paliers";
+
+      case "duration_distance":
+        return durationDistanceMode === "steps"
+          ? "Paliers"
+          : "Mesure simple";
+
+      case "distance":
+        return "Mesure simple";
+    }
+  }, [
+    measurementType,
+    durationDistanceMode,
+  ]);
+
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    if (!trimmedName) {
+      setError("Le nom de l'exercice est obligatoire.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(undefined);
+
+      const exercise = buildExercise(
+        crypto.randomUUID(),
+        trimmedName,
+        zone,
+        movement,
+        equipment,
+        location,
+        measurementType,
+        durationDistanceMode,
+      );
+
+      await saveExercise(exercise);
+
+      navigate(`/exercises/${exercise.id}`);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Impossible d'enregistrer l'exercice.",
+      );
+      setSaving(false);
+    }
+  }
+
+  return (
+    <main className="exercise-create">
+      <button
+        type="button"
+        className="exercise-create__back"
+        onClick={() => navigate("/exercises")}
+      >
+        ← Exercices
+      </button>
+
+      <header className="exercise-create__header">
+        <h1>Nouvel exercice</h1>
+        <p>
+          Ajoutez un exercice à votre bibliothèque.
+        </p>
+      </header>
+
+      <form
+        className="exercise-create__form"
+        onSubmit={handleSubmit}
+      >
+        <label className="exercise-create__field">
+          <span>Nom</span>
+          <input
+            type="text"
+            value={name}
+            onChange={(event) =>
+              setName(event.target.value)
+            }
+            placeholder="Ex. Développé couché"
+            autoFocus
+          />
+        </label>
+
+        <div className="exercise-create__grid">
+          <label className="exercise-create__field">
+            <span>Zone</span>
+            <select
+              value={zone}
+              onChange={(event) =>
+                setZone(
+                  event.target.value as MuscleZone,
+                )
+              }
+            >
+              {zones.map((value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="exercise-create__field">
+            <span>Mouvement</span>
+            <select
+              value={movement}
+              onChange={(event) =>
+                setMovement(
+                  event.target.value as Movement,
+                )
+              }
+            >
+              {movements.map((value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="exercise-create__field">
+            <span>Équipement</span>
+            <select
+              value={equipment}
+              onChange={(event) =>
+                setEquipment(
+                  event.target.value as Equipment,
+                )
+              }
+            >
+              {equipments.map((value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="exercise-create__field">
+            <span>Lieu</span>
+            <select
+              value={location}
+              onChange={(event) =>
+                setLocation(
+                  event.target
+                    .value as ExerciseLocation,
+                )
+              }
+            >
+              {locations.map((value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="exercise-create__field">
+          <span>Type de mesure</span>
+          <select
+            value={measurementType}
+            onChange={(event) =>
+              setMeasurementType(
+                event.target
+                  .value as MeasurementType,
+              )
+            }
+          >
+            {measurementOptions.map(
+              (option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              ),
+            )}
+          </select>
+        </label>
+
+        {measurementType ===
+          "duration_distance" && (
+          <fieldset className="exercise-create__mode-choice">
+            <legend>
+              Mode de réalisation
+            </legend>
+
+            <label>
+              <input
+                type="radio"
+                name="duration-distance-mode"
+                value="steps"
+                checked={
+                  durationDistanceMode ===
+                  "steps"
+                }
+                onChange={() =>
+                  setDurationDistanceMode(
+                    "steps",
+                  )
+                }
+              />
+              Paliers
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                name="duration-distance-mode"
+                value="simple"
+                checked={
+                  durationDistanceMode ===
+                  "simple"
+                }
+                onChange={() =>
+                  setDurationDistanceMode(
+                    "simple",
+                  )
+                }
+              />
+              Mesure simple
+            </label>
+          </fieldset>
+        )}
+
+        <div className="exercise-create__mode">
+          <span>Mode de réalisation</span>
+          <strong>{inferredMode}</strong>
+          <small>
+            Déduit automatiquement du type
+            de mesure.
+          </small>
+        </div>
+
+        {error && (
+          <p
+            className="exercise-create__error"
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          className="exercise-create__submit"
+          disabled={
+            saving || trimmedName.length === 0
+          }
+        >
+          {saving
+            ? "Enregistrement..."
+            : "Créer l'exercice"}
+        </button>
+      </form>
+    </main>
+  );
+}

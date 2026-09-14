@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Exercise } from "../../domain";
 import { getActiveExercises } from "../../db/repositories/exerciseRepository";
@@ -291,7 +291,7 @@ export function ExercisesScreen() {
         <button
           type="button"
           className="exercises-screen__new-button"
-          disabled
+          onClick={() => navigate("/exercises/new")}
         >
           Nouvel exercice
         </button>

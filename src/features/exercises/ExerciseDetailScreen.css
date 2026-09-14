@@ -226,3 +226,26 @@
 .exercise-detail__chart .recharts-text {
   font-size: 12px;
 }
+.exercise-detail__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.exercise-detail__title-row h1 {
+  margin: 0;
+}
+
+.exercise-detail__edit-button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}

@@ -281,7 +281,19 @@ export function ExerciseDetailScreen() {
       </button>
 
       <header className="exercise-detail__header">
-        <h1>{exercise.name}</h1>
+        <div className="exercise-detail__title-row">
+          <h1>{exercise.name}</h1>
+
+          <button
+            type="button"
+            className="exercise-detail__edit-button"
+            onClick={() =>
+              navigate(`/exercises/${exercise.id}/edit`)
+            }
+          >
+            Modifier
+          </button>
+        </div>
 
         <div className="exercise-detail__tags">
           <span>{exercise.zone}</span>
