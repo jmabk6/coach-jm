@@ -44,6 +44,10 @@ const equipments: Equipment[] = [
   "Haltères",
   "Poids du corps",
   "Élastique",
+  "Tapis",
+  "Vélo",
+  "Vélo elliptique",
+  "Rameur",
 ];
 
 const locations: ExerciseLocation[] = [
@@ -262,6 +266,12 @@ export function ExerciseCreateScreen() {
     setDurationDistanceMode,
   ] = useState<DurationDistanceMode>("steps");
 
+  const [measurementLabelValue, setMeasurementLabelValue] =
+    useState("");
+  const [measurementLabelLeft, setMeasurementLabelLeft] =
+    useState("");
+  const [measurementLabelRight, setMeasurementLabelRight] =
+    useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] =
     useState<string | undefined>();
@@ -331,9 +341,45 @@ export function ExerciseCreateScreen() {
         durationDistanceMode,
       );
 
-      await saveExercise(exercise);
+      const measurementLabels =
+        measurementType === "distance_cm"
+          ? {
+              ...(measurementLabelValue.trim()
+                ? {
+                    value:
+                      measurementLabelValue.trim(),
+                  }
+                : {}),
+            }
+          : measurementType ===
+              "distance_cm_per_side"
+            ? {
+                ...(measurementLabelLeft.trim()
+                  ? {
+                      left:
+                        measurementLabelLeft.trim(),
+                    }
+                  : {}),
+                ...(measurementLabelRight.trim()
+                  ? {
+                      right:
+                        measurementLabelRight.trim(),
+                    }
+                  : {}),
+              }
+            : undefined;
 
-      navigate(`/exercises/${exercise.id}`);
+      const exerciseToSave: Exercise = {
+        ...exercise,
+        ...(measurementLabels &&
+        Object.keys(measurementLabels).length > 0
+          ? { measurementLabels }
+          : {}),
+      };
+
+      await saveExercise(exerciseToSave);
+
+      navigate(`/exercises/${exerciseToSave.id}`);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -519,6 +565,54 @@ export function ExerciseCreateScreen() {
           </select>
         </label>
 
+        {measurementType === "distance_cm" && (
+          <label className="exercise-create__field">
+            <span>Libellé de la mesure</span>
+            <input
+              type="text"
+              value={measurementLabelValue}
+              onChange={(event) =>
+                setMeasurementLabelValue(
+                  event.target.value,
+                )
+              }
+              placeholder="Ex. Distance doigts-sol"
+            />
+          </label>
+        )}
+
+        {measurementType ===
+          "distance_cm_per_side" && (
+          <div className="exercise-create__grid">
+            <label className="exercise-create__field">
+              <span>Libellé gauche</span>
+              <input
+                type="text"
+                value={measurementLabelLeft}
+                onChange={(event) =>
+                  setMeasurementLabelLeft(
+                    event.target.value,
+                  )
+                }
+                placeholder="Ex. Genou gauche"
+              />
+            </label>
+
+            <label className="exercise-create__field">
+              <span>Libellé droit</span>
+              <input
+                type="text"
+                value={measurementLabelRight}
+                onChange={(event) =>
+                  setMeasurementLabelRight(
+                    event.target.value,
+                  )
+                }
+                placeholder="Ex. Genou droit"
+              />
+            </label>
+          </div>
+        )}
         {measurementType ===
           "duration_distance" && (
           <fieldset className="exercise-create__mode-choice">

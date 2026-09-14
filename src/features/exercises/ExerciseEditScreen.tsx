@@ -49,6 +49,10 @@ const equipments: Equipment[] = [
   "Haltères",
   "Poids du corps",
   "Élastique",
+  "Tapis",
+  "Vélo",
+  "Vélo elliptique",
+  "Rameur",
 ];
 
 const locations: ExerciseLocation[] = [
@@ -172,6 +176,9 @@ function updateExercise(
   musclesText: string,
   advice: string,
   pinnedAlternativeIds: string[],
+  measurementLabelValue: string,
+  measurementLabelLeft: string,
+  measurementLabelRight: string,
 ): Exercise {
   const commonBase = {
     id: current.id,
@@ -215,6 +222,33 @@ function updateExercise(
         }
       : {}),
 
+    ...(measurementType === "distance_cm" &&
+    measurementLabelValue.trim()
+      ? {
+          measurementLabels: {
+            value: measurementLabelValue.trim(),
+          },
+        }
+      : measurementType === "distance_cm_per_side" &&
+          (measurementLabelLeft.trim() ||
+            measurementLabelRight.trim())
+        ? {
+            measurementLabels: {
+              ...(measurementLabelLeft.trim()
+                ? {
+                    left:
+                      measurementLabelLeft.trim(),
+                  }
+                : {}),
+              ...(measurementLabelRight.trim()
+                ? {
+                    right:
+                      measurementLabelRight.trim(),
+                  }
+                : {}),
+            },
+          }
+        : {}),
     ...(pinnedAlternativeIds.length > 0
       ? {
           pinnedAlternativeExerciseIds:
@@ -349,6 +383,12 @@ export function ExerciseEditScreen() {
   ] =
     useState<DurationDistanceMode>("steps");
 
+  const [measurementLabelValue, setMeasurementLabelValue] =
+    useState("");
+  const [measurementLabelLeft, setMeasurementLabelLeft] =
+    useState("");
+  const [measurementLabelRight, setMeasurementLabelRight] =
+    useState("");
   const [saving, setSaving] =
     useState(false);
 
@@ -432,6 +472,15 @@ export function ExerciseEditScreen() {
         );
         setDurationDistanceMode(
           getDurationDistanceMode(loaded),
+        );
+        setMeasurementLabelValue(
+          loaded.measurementLabels?.value ?? "",
+        );
+        setMeasurementLabelLeft(
+          loaded.measurementLabels?.left ?? "",
+        );
+        setMeasurementLabelRight(
+          loaded.measurementLabels?.right ?? "",
         );
 
         setPhotoUrl(
@@ -565,6 +614,9 @@ export function ExerciseEditScreen() {
         musclesText,
         advice,
         pinnedAlternativeIds,
+        measurementLabelValue,
+        measurementLabelLeft,
+        measurementLabelRight,
       );
 
       await saveExercise(updated);
@@ -842,6 +894,54 @@ export function ExerciseEditScreen() {
           </select>
         </label>
 
+        {measurementType === "distance_cm" && (
+          <label className="exercise-create__field">
+            <span>Libellé de la mesure</span>
+            <input
+              type="text"
+              value={measurementLabelValue}
+              onChange={(event) =>
+                setMeasurementLabelValue(
+                  event.target.value,
+                )
+              }
+              placeholder="Ex. Distance doigts-sol"
+            />
+          </label>
+        )}
+
+        {measurementType ===
+          "distance_cm_per_side" && (
+          <div className="exercise-create__grid">
+            <label className="exercise-create__field">
+              <span>Libellé gauche</span>
+              <input
+                type="text"
+                value={measurementLabelLeft}
+                onChange={(event) =>
+                  setMeasurementLabelLeft(
+                    event.target.value,
+                  )
+                }
+                placeholder="Ex. Genou gauche"
+              />
+            </label>
+
+            <label className="exercise-create__field">
+              <span>Libellé droit</span>
+              <input
+                type="text"
+                value={measurementLabelRight}
+                onChange={(event) =>
+                  setMeasurementLabelRight(
+                    event.target.value,
+                  )
+                }
+                placeholder="Ex. Genou droit"
+              />
+            </label>
+          </div>
+        )}
         {measurementType ===
           "duration_distance" && (
           <fieldset className="exercise-create__mode-choice">

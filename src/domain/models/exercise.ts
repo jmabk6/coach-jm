@@ -28,7 +28,11 @@ export type Equipment =
   | "Barre"
   | "Haltères"
   | "Poids du corps"
-  | "Élastique";
+  | "Élastique"
+  | "Tapis"
+  | "Vélo"
+  | "Vélo elliptique"
+  | "Rameur";
 
 export type ExerciseLocation =
   | "Salle"
@@ -70,6 +74,24 @@ export type ExerciseStatus =
   | "active"
   | "archived";
 
+export interface ExerciseMeasurementLabels {
+  /**
+   * Libellé d'une mesure simple.
+   * Exemple : "Distance doigts-sol".
+   */
+  value?: string;
+
+  /**
+   * Libellés des deux valeurs lorsque la mesure
+   * est enregistrée par côté ou configuration.
+   *
+   * Exemples :
+   * - "Genou gauche" / "Genou droit"
+   * - "Bras gauche en haut" / "Bras droit en haut"
+   */
+  left?: string;
+  right?: string;
+}
 export interface ExerciseMedia {
   photoUrl?: string;
   videoUrl?: string;
@@ -125,6 +147,8 @@ interface ExerciseBase {
   location: ExerciseLocation;
 
   media?: ExerciseMedia;
+
+  measurementLabels?: ExerciseMeasurementLabels;
 
   technique?: string;
   description?: string;
