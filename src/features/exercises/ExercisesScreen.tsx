@@ -160,18 +160,18 @@ export function ExercisesScreen() {
     hideAlreadyAdded,
     setHideAlreadyAdded,
   ] = useState(true);
-
-  const [
-    selectedExerciseIds,
-    setSelectedExerciseIds,
-  ] = useState<string[]>(
-        () =>
+const selectedExerciseIds = useMemo(
+    () =>
       searchParams
         .getAll("selected")
         .filter(
           (id) =>
             !alreadyAddedExerciseIds.includes(id),
         ),
+    [
+      alreadyAddedExerciseIds,
+      searchParams,
+    ],
   );
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [search, setSearch] = useState("");
@@ -254,23 +254,22 @@ export function ExercisesScreen() {
     if (alreadyAddedExerciseIds.includes(exerciseId)) {
       return;
     }
-    setSelectedExerciseIds((current) => {
-      const next = current.includes(exerciseId)
-        ? current.filter((id) => id !== exerciseId)
-        : [...current, exerciseId];
 
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.delete("selected");
+    const next = selectedExerciseIds.includes(exerciseId)
+      ? selectedExerciseIds.filter(
+          (id) => id !== exerciseId,
+        )
+      : [...selectedExerciseIds, exerciseId];
 
-      next.forEach((id) => {
-        nextParams.append("selected", id);
-      });
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("selected");
 
-      setSearchParams(nextParams, {
-        replace: true,
-      });
+    next.forEach((id) => {
+      nextParams.append("selected", id);
+    });
 
-      return next;
+    setSearchParams(nextParams, {
+      replace: true,
     });
   }
 
@@ -331,8 +330,18 @@ export function ExercisesScreen() {
         ),
       };
 
-      const resultingCount = state.exercises.filter((exercise) =>
-        matchesExercise(exercise, search, nextFilters),
+      const resultingCount = state.exercises.filter(
+        (exercise) =>
+          !(
+            selectionMode &&
+            hideAlreadyAdded &&
+            alreadyAddedExerciseIds.includes(exercise.id)
+          ) &&
+          matchesExercise(
+            exercise,
+            search,
+            nextFilters,
+          ),
       ).length;
 
       return {
@@ -342,9 +351,12 @@ export function ExercisesScreen() {
     });
   }, [
     activeFilterPills,
+    alreadyAddedExerciseIds,
     filteredExercises.length,
     filters,
+    hideAlreadyAdded,
     search,
+    selectionMode,
     state,
   ]);
 
@@ -353,10 +365,46 @@ export function ExercisesScreen() {
       return 0;
     }
 
-    return state.exercises.filter((exercise) =>
-      matchesExercise(exercise, search, emptyFilters),
+    return state.exercises.filter(
+      (exercise) =>
+        !(
+          selectionMode &&
+          hideAlreadyAdded &&
+          alreadyAddedExerciseIds.includes(exercise.id)
+        ) &&
+        matchesExercise(
+          exercise,
+          search,
+          emptyFilters,
+        ),
     ).length;
-  }, [search, state]);
+  }, [
+    alreadyAddedExerciseIds,
+    hideAlreadyAdded,
+    search,
+    selectionMode,
+    state,
+  ]);
+
+  const matchingExercises =
+    state.status === "success"
+      ? state.exercises.filter((exercise) =>
+          matchesExercise(
+            exercise,
+            search,
+            filters,
+          ),
+        )
+      : [];
+
+  const allMatchingExercisesHidden =
+    selectionMode &&
+    hideAlreadyAdded &&
+    filteredExercises.length === 0 &&
+    matchingExercises.length > 0 &&
+    matchingExercises.every((exercise) =>
+      alreadyAddedExerciseIds.includes(exercise.id),
+    );
 
   return (
     <section
@@ -485,12 +533,22 @@ export function ExercisesScreen() {
         state.exercises.length > 0 &&
         filteredExercises.length === 0 && (
           <div className="exercises-screen__empty">
-            <h2>Aucun résultat</h2>
+            <h2>
+              {allMatchingExercisesHidden
+                ? "Tous les exercices sont déjà ajoutés"
+                : "Aucun résultat"}
+            </h2>
+
             <p>
-              Aucun exercice ne correspond aux filtres sélectionnés.
+              {allMatchingExercisesHidden
+                ? "Tous les exercices correspondant à ta recherche sont déjà présents dans la séance."
+                : search.trim().length > 0 && activeFilterCount === 0
+                  ? "Aucun exercice ne correspond à ta recherche."
+                  : "Aucun exercice ne correspond aux filtres sélectionnés."}
             </p>
 
-            {removalSuggestions.length > 0 && (
+            {!allMatchingExercisesHidden &&
+              removalSuggestions.length > 0 && (
               <div className="empty-suggestions">
                 <p className="empty-suggestions__title">
                   Essaie de retirer :
