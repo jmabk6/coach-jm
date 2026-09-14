@@ -151,11 +151,27 @@ export function ExercisesScreen() {
   const selectionMode =
     searchParams.get("mode") === "select";
 
+  const alreadyAddedExerciseIds = useMemo(
+    () => searchParams.getAll("alreadyAdded"),
+    [searchParams],
+  );
+
+  const [
+    hideAlreadyAdded,
+    setHideAlreadyAdded,
+  ] = useState(true);
+
   const [
     selectedExerciseIds,
     setSelectedExerciseIds,
   ] = useState<string[]>(
-    () => searchParams.getAll("selected"),
+        () =>
+      searchParams
+        .getAll("selected")
+        .filter(
+          (id) =>
+            !alreadyAddedExerciseIds.includes(id),
+        ),
   );
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [search, setSearch] = useState("");
@@ -207,14 +223,37 @@ export function ExercisesScreen() {
       return [];
     }
 
-    const matches = state.exercises.filter((exercise) =>
-      matchesExercise(exercise, search, filters),
-    );
+    const matches = state.exercises.filter((exercise) => {
+      if (
+        selectionMode &&
+        hideAlreadyAdded &&
+        alreadyAddedExerciseIds.includes(exercise.id)
+      ) {
+        return false;
+      }
+
+      return matchesExercise(
+        exercise,
+        search,
+        filters,
+      );
+    });
 
     return sortExercises(matches, sortMode);
-  }, [filters, search, sortMode, state]);
+  }, [
+    alreadyAddedExerciseIds,
+    filters,
+    hideAlreadyAdded,
+    search,
+    selectionMode,
+    sortMode,
+    state,
+  ]);
 
   function toggleExerciseSelection(exerciseId: string) {
+    if (alreadyAddedExerciseIds.includes(exerciseId)) {
+      return;
+    }
     setSelectedExerciseIds((current) => {
       const next = current.includes(exerciseId)
         ? current.filter((id) => id !== exerciseId)
@@ -500,6 +539,27 @@ export function ExercisesScreen() {
             )}
           </div>
         )}
+      {selectionMode &&
+        state.status === "success" &&
+        alreadyAddedExerciseIds.length > 0 && (
+          <label className="already-added-control">
+            <input
+              type="checkbox"
+              checked={hideAlreadyAdded}
+              onChange={(event) =>
+                setHideAlreadyAdded(event.target.checked)
+              }
+            />
+
+            <span>
+              Masquer les exercices déjà ajoutés
+            </span>
+
+            <strong>
+              {alreadyAddedExerciseIds.length}
+            </strong>
+          </label>
+        )}
 
       {state.status === "success" &&
         filteredExercises.length > 0 && (
@@ -513,27 +573,37 @@ export function ExercisesScreen() {
 
             <div className="exercise-list">
               {filteredExercises.map((exercise) => {
+                const alreadyAdded =
+                  alreadyAddedExerciseIds.includes(exercise.id);
+
                 const selected =
+                  !alreadyAdded &&
                   selectedExerciseIds.includes(exercise.id);
                 if (selectionMode) {
                   return (
                     <div
                       key={exercise.id}
                       className={`exercise-list__item exercise-list__item--selectable ${
-                        selected
-                          ? "exercise-list__item--selected"
-                          : ""
+                        alreadyAdded
+                          ? "exercise-list__item--already-added"
+                          : selected
+                            ? "exercise-list__item--selected"
+                            : ""
                       }`}
                       role="button"
-                      tabIndex={0}
+                      tabIndex={alreadyAdded ? -1 : 0}
                       aria-pressed={selected}
-                      onClick={() =>
-                        toggleExerciseSelection(exercise.id)
-                      }
+                      aria-disabled={alreadyAdded}
+                      onClick={() => {
+                        if (!alreadyAdded) {
+                          toggleExerciseSelection(exercise.id);
+                        }
+                      }}
                       onKeyDown={(event) => {
                         if (
-                          event.key === "Enter" ||
-                          event.key === " "
+                          !alreadyAdded &&
+                          (event.key === "Enter" ||
+                            event.key === " ")
                         ) {
                           event.preventDefault();
                           toggleExerciseSelection(exercise.id);
@@ -547,6 +617,7 @@ export function ExercisesScreen() {
                         <input
                           type="checkbox"
                           checked={selected}
+                          disabled={alreadyAdded}
                           readOnly
                           tabIndex={-1}
                         />
@@ -581,6 +652,12 @@ export function ExercisesScreen() {
                           {exercise.movement} ·{" "}
                           {exercise.equipment}
                         </span>
+
+                        {alreadyAdded && (
+                          <span className="exercise-list__already-added-label">
+                            Déjà ajouté
+                          </span>
+                        )}
                       </span>
 
                       <button

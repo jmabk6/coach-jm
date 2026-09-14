@@ -524,3 +524,54 @@
 .exercise-list__info:hover {
   background: rgba(0, 0, 0, 0.05);
 }
+.already-added-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  min-height: 44px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.already-added-control input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.already-added-control span {
+  flex: 1;
+}
+
+.already-added-control strong {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 14px;
+  background: #eef2f6;
+  font-size: 13px;
+}
+.exercise-list__item--already-added {
+  cursor: default;
+  background: #f8f9fb;
+}
+
+.exercise-list__item--already-added
+  .exercise-list__checkbox {
+  opacity: 0.5;
+}
+
+.exercise-list__already-added-label {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #eef2f6;
+  font-size: 12px;
+  font-weight: 600;
+}
