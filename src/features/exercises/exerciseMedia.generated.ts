@@ -5,6 +5,22 @@
  */
 
 export const exerciseMedia = {
+  "chest-press": {
+    thumbnail: "media/exercises/pecs/chest-press-thumb.50f7e9e7.webp",
+    photo: "media/exercises/pecs/chest-press.483b83d8.webp",
+  },
+  "developpe-couche-barre": {
+    thumbnail: "media/exercises/pecs/developpe-couche-barre-thumb.1d462f70.webp",
+    photo: "media/exercises/pecs/developpe-couche-barre.f4a2be6e.webp",
+  },
+  "developpe-incline-halteres": {
+    thumbnail: "media/exercises/pecs/developpe-incline-halteres-thumb.8dc887c8.webp",
+    photo: "media/exercises/pecs/developpe-incline-halteres.846a06ee.webp",
+  },
+  "ecarte-poulie": {
+    thumbnail: "media/exercises/pecs/ecarte-poulie-thumb.182d48aa.webp",
+    photo: "media/exercises/pecs/ecarte-poulie.8e64ecf5.webp",
+  },
   "hip-thrust": {
     thumbnail: "media/exercises/jambes/hip-thrust-thumb.eaf0ebbb.webp",
     photo: "media/exercises/jambes/hip-thrust.557e638b.webp",

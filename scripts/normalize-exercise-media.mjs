@@ -67,6 +67,11 @@ const HASH_LENGTH = 8;
 const EDGE_TOUCH_RATIO = 0.01;
 const TEXT_BAND_MAX_RATIO = 0.12;
 const TEXT_BAND_GAP_RATIO = 0.01;
+/**
+ * Une bande détachée en haut ou en bas, fine et représentant moins de cette part
+ * des pixels du dessin, est un résidu (légende, trait, filigrane) : elle est retirée.
+ */
+const STRAY_BAND_MAX_AREA_RATIO = 0.03;
 const MAX_UPSCALE = 1.5;
 
 const SOURCE_EXTENSIONS = new Set([".webp", ".png", ".jpg", ".jpeg"]);
@@ -136,15 +141,68 @@ function analyze(data, width, height, channels) {
     }
   }
 
+  const rowFill = new Uint32Array(height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!background[y * width + x]) rowFill[y]++;
+    }
+  }
+
+  const findBands = () => {
+    const bands = [];
+    let start = null;
+    for (let y = 0; y <= height; y++) {
+      const filled = y < height && rowFill[y] > 0;
+      if (filled && start === null) start = y;
+      if (!filled && start !== null) {
+        bands.push([start, y - 1]);
+        start = null;
+      }
+    }
+    return bands;
+  };
+
+  /* Retrait des bandes parasites détachées en haut ou en bas. */
+  const removedBands = [];
+  let bands = findBands();
+  const totalContent = rowFill.reduce((sum, v) => sum + v, 0);
+  const isStray = (band, gap) => {
+    const bandHeight = (band[1] - band[0] + 1) / height;
+    let pixels = 0;
+    for (let y = band[0]; y <= band[1]; y++) pixels += rowFill[y];
+    return (
+      bandHeight < TEXT_BAND_MAX_RATIO &&
+      gap / height >= TEXT_BAND_GAP_RATIO &&
+      pixels / totalContent < STRAY_BAND_MAX_AREA_RATIO
+    );
+  };
+  const eraseBand = (band, side) => {
+    for (let y = band[0]; y <= band[1]; y++) {
+      for (let x = 0; x < width; x++) background[y * width + x] = 1;
+      rowFill[y] = 0;
+    }
+    removedBands.push(side);
+  };
+  while (bands.length >= 2 && isStray(bands[0], bands[1][0] - bands[0][1])) {
+    eraseBand(bands[0], "haut");
+    bands = findBands();
+  }
+  while (
+    bands.length >= 2 &&
+    isStray(bands[bands.length - 1], bands[bands.length - 1][0] - bands[bands.length - 2][1])
+  ) {
+    eraseBand(bands[bands.length - 1], "bas");
+    bands = findBands();
+  }
+
   let x0 = width;
   let y0 = height;
   let x1 = -1;
   let y1 = -1;
-  const rowFill = new Uint32Array(height);
   for (let y = 0; y < height; y++) {
+    if (rowFill[y] === 0) continue;
     for (let x = 0; x < width; x++) {
       if (background[y * width + x]) continue;
-      rowFill[y]++;
       if (x < x0) x0 = x;
       if (x > x1) x1 = x;
       if (y < y0) y0 = y;
@@ -154,22 +212,12 @@ function analyze(data, width, height, channels) {
 
   if (x1 < 0) return { empty: true };
 
-  const bands = [];
-  let start = null;
-  for (let y = y0; y <= y1 + 1; y++) {
-    const filled = y <= y1 && rowFill[y] > 0;
-    if (filled && start === null) start = y;
-    if (!filled && start !== null) {
-      bands.push([start, y - 1]);
-      start = null;
-    }
-  }
-
   return {
     empty: false,
     background,
     bbox: { x0, y0, x1, y1, width: x1 - x0 + 1, height: y1 - y0 + 1 },
     bands,
+    removedBands,
   };
 }
 
@@ -190,6 +238,10 @@ function qualityWarnings(analysis, width, height) {
     warnings.push(
       `dessin coupé à la source (touche le bord : ${touching.join(", ")})`,
     );
+  }
+
+  for (const side of analysis.removedBands) {
+    warnings.push(`bande parasite retirée en ${side} (légende ou trait résiduel)`);
   }
 
   if (bands.length >= 2) {
