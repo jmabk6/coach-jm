@@ -1,4 +1,5 @@
 import type { Exercise } from "../../domain";
+import { officialExerciseMedia } from "./exerciseMedia";
 
 const createdAt = "2026-09-14T00:00:00.000Z";
 
@@ -16,6 +17,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "load_reps",
+    media: officialExerciseMedia("squat"),
     technique: "Place la barre de façon stable sur le haut du dos. Garde le tronc gainé, descends en contrôlant avec les genoux dans l'axe des pieds, puis remonte en poussant dans le sol.",
     description: "Exercice polyarticulaire de référence pour renforcer les jambes et les fessiers.",
     advice: "Choisis une amplitude que tu contrôles sans perdre la position du dos. Augmente la charge seulement si la technique reste propre.",
@@ -34,6 +36,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "load_reps",
+    media: officialExerciseMedia("presse-cuisses"),
     technique: "Place les pieds à largeur confortable sur la plateforme. Descends le chariot de façon contrôlée sans décoller le bassin, puis repousse en gardant les genoux dans l'axe.",
     description: "Mouvement guidé pour travailler principalement les quadriceps et les fessiers avec une grande stabilité.",
     advice: "Ne verrouille pas brutalement les genoux en haut et évite de descendre plus bas que ce que ton bassin peut contrôler.",
@@ -52,6 +55,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "load_reps",
+    media: officialExerciseMedia("leg-curl-assis"),
     technique: "Régle la machine pour aligner correctement les genoux avec l'axe de rotation. Ramène les talons vers l'arrière en contrôlant le mouvement, puis reviens lentement.",
     description: "Exercice d'isolation des ischio-jambiers en position assise.",
     advice: "Évite l'élan et garde le bassin plaqué contre le dossier pendant toute la série.",
@@ -70,6 +74,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "load_reps",
+    media: officialExerciseMedia("hip-thrust"),
     technique: "Appuie le haut du dos sur un banc stable. Pousse les hanches vers le haut jusqu'à aligner épaules, hanches et genoux, puis redescends sous contrôle.",
     description: "Exercice centré sur l'extension de hanche et le renforcement des fessiers.",
     advice: "Évite de cambrer excessivement en haut. Cherche surtout la contraction des fessiers et garde le menton légèrement rentré.",
@@ -88,6 +93,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "load_reps",
+    media: officialExerciseMedia("souleve-terre-roumain"),
     technique: "Garde la barre près des jambes, fléchis légèrement les genoux et pousse les hanches vers l'arrière en maintenant le dos neutre. Remonte en ramenant les hanches vers l'avant.",
     description: "Exercice de charnière de hanche ciblant fortement la chaîne postérieure.",
     advice: "La descente s'arrête dès que tu ne peux plus reculer les hanches sans arrondir le dos. La charge vient après la qualité du mouvement.",

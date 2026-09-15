@@ -9,6 +9,13 @@ export default defineConfig({
     VitePWA({
       registerType: "prompt",
       includeAssets: ["favicon.svg"],
+      workbox: {
+        /* Les vignettes d'exercices sont précachées ; les photos de fiche restent en ligne. */
+        globPatterns: [
+          "**/*.{js,css,html,ico,png,svg}",
+          "**/*-thumb.*.webp",
+        ],
+      },
       manifest: {
         name: "Coach JM",
         short_name: "Coach JM",

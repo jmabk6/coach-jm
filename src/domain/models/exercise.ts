@@ -93,6 +93,7 @@ export interface ExerciseMeasurementLabels {
   right?: string;
 }
 export interface ExerciseMedia {
+  thumbnailUrl?: string;
   photoUrl?: string;
   videoUrl?: string;
 }

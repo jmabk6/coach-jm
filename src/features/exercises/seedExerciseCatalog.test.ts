@@ -3,9 +3,13 @@ import type { Exercise } from "../../domain";
 import { exerciseCatalog } from "./exerciseCatalog";
 
 const {
+  archiveExercise,
+  getAllExercises,
   getExercise,
   saveExercise,
 } = vi.hoisted(() => ({
+  archiveExercise: vi.fn(),
+  getAllExercises: vi.fn(),
   getExercise: vi.fn(),
   saveExercise: vi.fn(),
 }));
@@ -13,6 +17,8 @@ const {
 vi.mock(
   "../../db/repositories/exerciseRepository",
   () => ({
+    archiveExercise,
+    getAllExercises,
     getExercise,
     saveExercise,
   }),
@@ -23,6 +29,7 @@ import { seedExerciseCatalog } from "./seedExerciseCatalog";
 describe("seedExerciseCatalog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getAllExercises.mockResolvedValue([]);
   });
 
   it("ajoute tous les exercices absents", async () => {
@@ -127,6 +134,68 @@ describe("seedExerciseCatalog", () => {
     await seedExerciseCatalog();
 
     expect(getExercise).toHaveBeenCalledTimes(42);
+    expect(saveExercise).not.toHaveBeenCalled();
+  });
+
+  it("remet les médias officiels à jour lorsque le catalogue change d'image", async () => {
+    const catalogSquat = exerciseCatalog.find(
+      (exercise) => exercise.id === "squat",
+    )!;
+
+    const existingSquat: Exercise = {
+      ...catalogSquat,
+      name: "Mon squat personnalisé",
+      media: {
+        thumbnailUrl: "/coach-jm/media/exercises/jambes/squat-thumb-v4.webp",
+        photoUrl: catalogSquat.media!.photoUrl!,
+        videoUrl: "https://example.test/ma-video.mp4",
+      },
+    };
+
+    getExercise.mockImplementation(
+      async (id: string) =>
+        id === "squat"
+          ? existingSquat
+          : exerciseCatalog.find(
+              (exercise) => exercise.id === id,
+            ),
+    );
+
+    await seedExerciseCatalog();
+
+    expect(saveExercise).toHaveBeenCalledTimes(1);
+
+    expect(saveExercise).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "squat",
+        name: "Mon squat personnalisé",
+        media: {
+          thumbnailUrl: catalogSquat.media!.thumbnailUrl,
+          photoUrl: catalogSquat.media!.photoUrl,
+          videoUrl: "https://example.test/ma-video.mp4",
+        },
+      }),
+    );
+  });
+
+  it("archive les anciens exercices sans catégorie qui ne sont pas dans le catalogue", async () => {
+    getAllExercises.mockResolvedValue([
+      { id: "ancien-exercice", status: "active" },
+      { id: "ancien-archive", status: "archived" },
+      { id: "squat", status: "active" },
+    ]);
+
+    getExercise.mockImplementation(
+      async (id: string) =>
+        exerciseCatalog.find(
+          (exercise) => exercise.id === id,
+        ),
+    );
+
+    await seedExerciseCatalog();
+
+    expect(archiveExercise).toHaveBeenCalledTimes(1);
+    expect(archiveExercise).toHaveBeenCalledWith("ancien-exercice");
     expect(saveExercise).not.toHaveBeenCalled();
   });
 });

@@ -740,18 +740,14 @@ const selectedExerciseIds = useMemo(
                         className="exercise-list__media"
                         aria-hidden="true"
                       >
-                        {exercise.media?.photoUrl ? (
+                        {(exercise.media?.thumbnailUrl ?? exercise.media?.photoUrl) ? (
                           <img
-                            src={exercise.media.photoUrl}
+                            src={exercise.media.thumbnailUrl ?? exercise.media.photoUrl}
                             alt=""
                             className="exercise-list__image"
                           />
                         ) : (
-                          <span className="exercise-list__placeholder">
-                            {exercise.name
-                              .slice(0, 1)
-                              .toUpperCase()}
-                          </span>
+                          <span className="exercise-list__placeholder" aria-hidden="true" />
                         )}
                       </span>
 
@@ -799,18 +795,14 @@ const selectedExerciseIds = useMemo(
                       className="exercise-list__media"
                       aria-hidden="true"
                     >
-                      {exercise.media?.photoUrl ? (
+                      {(exercise.media?.thumbnailUrl ?? exercise.media?.photoUrl) ? (
                         <img
-                          src={exercise.media.photoUrl}
+                          src={exercise.media.thumbnailUrl ?? exercise.media.photoUrl}
                           alt=""
                           className="exercise-list__image"
                         />
                       ) : (
-                        <span className="exercise-list__placeholder">
-                          {exercise.name
-                            .slice(0, 1)
-                            .toUpperCase()}
-                        </span>
+                        <span className="exercise-list__placeholder" aria-hidden="true" />
                       )}
                     </span>
 
