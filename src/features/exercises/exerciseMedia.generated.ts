@@ -8,6 +8,11 @@ export const exerciseMedia = {
   "chest-press": {
     thumbnail: "media/exercises/pecs/chest-press-thumb.1066a109.webp",
     photo: "media/exercises/pecs/chest-press.2efeeed2.webp",
+    frames: [
+      "media/exercises/pecs/chest-press-frame1.9b868ac0.webp",
+      "media/exercises/pecs/chest-press-frame2.0cf837a8.webp",
+      "media/exercises/pecs/chest-press-frame3.281391b0.webp",
+    ],
   },
   "crunch-poulie": {
     thumbnail: "media/exercises/core/crunch-poulie-thumb.3a3656e4.webp",
@@ -28,6 +33,11 @@ export const exerciseMedia = {
   "developpe-couche-barre": {
     thumbnail: "media/exercises/pecs/developpe-couche-barre-thumb.90a53724.webp",
     photo: "media/exercises/pecs/developpe-couche-barre.f90dfc66.webp",
+    frames: [
+      "media/exercises/pecs/developpe-couche-barre-frame1.ddaabc05.webp",
+      "media/exercises/pecs/developpe-couche-barre-frame2.95c34697.webp",
+      "media/exercises/pecs/developpe-couche-barre-frame3.4f524cbc.webp",
+    ],
   },
   "developpe-epaules-machine": {
     thumbnail: "media/exercises/epaules/developpe-epaules-machine-thumb.4f369723.webp",
@@ -36,6 +46,11 @@ export const exerciseMedia = {
   "developpe-incline-halteres": {
     thumbnail: "media/exercises/pecs/developpe-incline-halteres-thumb.1662c64c.webp",
     photo: "media/exercises/pecs/developpe-incline-halteres.d2c2e7a0.webp",
+    frames: [
+      "media/exercises/pecs/developpe-incline-halteres-frame1.481104f5.webp",
+      "media/exercises/pecs/developpe-incline-halteres-frame2.b18283c6.webp",
+      "media/exercises/pecs/developpe-incline-halteres-frame3.33ce9127.webp",
+    ],
   },
   "developpe-militaire-halteres": {
     thumbnail: "media/exercises/epaules/developpe-militaire-halteres-thumb.4aa7411e.webp",
@@ -48,6 +63,11 @@ export const exerciseMedia = {
   "ecarte-poulie": {
     thumbnail: "media/exercises/pecs/ecarte-poulie-thumb.00d1d5e3.webp",
     photo: "media/exercises/pecs/ecarte-poulie.95385256.webp",
+    frames: [
+      "media/exercises/pecs/ecarte-poulie-frame1.301fe3f2.webp",
+      "media/exercises/pecs/ecarte-poulie-frame2.0027a6ae.webp",
+      "media/exercises/pecs/ecarte-poulie-frame3.394a76d4.webp",
+    ],
   },
   "elevations-laterales-halteres": {
     thumbnail: "media/exercises/epaules/elevations-laterales-halteres-thumb.8dca2ca3.webp",
@@ -130,6 +150,11 @@ export const exerciseMedia = {
   "pompes": {
     thumbnail: "media/exercises/pecs/pompes-thumb.6bca7d5b.webp",
     photo: "media/exercises/pecs/pompes.31bd4181.webp",
+    frames: [
+      "media/exercises/pecs/pompes-frame1.15b1aaec.webp",
+      "media/exercises/pecs/pompes-frame2.dcaacb1e.webp",
+      "media/exercises/pecs/pompes-frame3.aac6648c.webp",
+    ],
   },
   "presse-cuisses": {
     thumbnail: "media/exercises/jambes/presse-cuisses-thumb.bd0c00c2.webp",
