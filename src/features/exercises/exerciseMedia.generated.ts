@@ -42,6 +42,11 @@ export const exerciseMedia = {
   "developpe-epaules-machine": {
     thumbnail: "media/exercises/epaules/developpe-epaules-machine-thumb.4f369723.webp",
     photo: "media/exercises/epaules/developpe-epaules-machine.d1350d88.webp",
+    frames: [
+      "media/exercises/epaules/developpe-epaules-machine-frame1.4131ed8a.webp",
+      "media/exercises/epaules/developpe-epaules-machine-frame2.1e76cb3b.webp",
+      "media/exercises/epaules/developpe-epaules-machine-frame3.2e012051.webp",
+    ],
   },
   "developpe-incline-halteres": {
     thumbnail: "media/exercises/pecs/developpe-incline-halteres-thumb.1662c64c.webp",
@@ -55,6 +60,11 @@ export const exerciseMedia = {
   "developpe-militaire-halteres": {
     thumbnail: "media/exercises/epaules/developpe-militaire-halteres-thumb.4aa7411e.webp",
     photo: "media/exercises/epaules/developpe-militaire-halteres.5a60a1a4.webp",
+    frames: [
+      "media/exercises/epaules/developpe-militaire-halteres-frame1.2b54a7bb.webp",
+      "media/exercises/epaules/developpe-militaire-halteres-frame2.85ee9f39.webp",
+      "media/exercises/epaules/developpe-militaire-halteres-frame3.fb2fbeab.webp",
+    ],
   },
   "dips-assistes": {
     thumbnail: "media/exercises/bras/dips-assistes-thumb.b38ac1bd.webp",
@@ -72,6 +82,11 @@ export const exerciseMedia = {
   "elevations-laterales-halteres": {
     thumbnail: "media/exercises/epaules/elevations-laterales-halteres-thumb.8dca2ca3.webp",
     photo: "media/exercises/epaules/elevations-laterales-halteres.01937867.webp",
+    frames: [
+      "media/exercises/epaules/elevations-laterales-halteres-frame1.cd604488.webp",
+      "media/exercises/epaules/elevations-laterales-halteres-frame2.d51c950b.webp",
+      "media/exercises/epaules/elevations-laterales-halteres-frame3.6c88dcfd.webp",
+    ],
   },
   "extension-triceps-dessus-tete": {
     thumbnail: "media/exercises/bras/extension-triceps-dessus-tete-thumb.195fea48.webp",
@@ -84,6 +99,11 @@ export const exerciseMedia = {
   "face-pull": {
     thumbnail: "media/exercises/epaules/face-pull-thumb.cc343ec9.webp",
     photo: "media/exercises/epaules/face-pull.4dc6b461.webp",
+    frames: [
+      "media/exercises/epaules/face-pull-frame1.a39bb1c7.webp",
+      "media/exercises/epaules/face-pull-frame2.9d36e984.webp",
+      "media/exercises/epaules/face-pull-frame3.7c734ec1.webp",
+    ],
   },
   "hip-thrust": {
     thumbnail: "media/exercises/jambes/hip-thrust-thumb.e27b684a.webp",
