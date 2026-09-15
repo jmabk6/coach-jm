@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "prompt",
+      /* Pas encore d'interface de mise à jour : la nouvelle version s'active au lancement suivant. */
+      registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       workbox: {
         /* Les vignettes d'exercices sont précachées ; les photos de fiche restent en ligne. */
