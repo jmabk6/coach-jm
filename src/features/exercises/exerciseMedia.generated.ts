@@ -148,6 +148,11 @@ export const exerciseMedia = {
   "squat": {
     thumbnail: "media/exercises/jambes/squat-thumb.0ea66019.webp",
     photo: "media/exercises/jambes/squat.188e7558.webp",
+    frames: [
+      "media/exercises/jambes/squat-frame1.bc7d3363.webp",
+      "media/exercises/jambes/squat-frame2.557d6b4e.webp",
+      "media/exercises/jambes/squat-frame3.5ee0aa52.webp",
+    ],
   },
   "tapis": {
     thumbnail: "media/exercises/cardio/tapis-thumb.c268f271.webp",

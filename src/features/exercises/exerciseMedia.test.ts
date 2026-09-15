@@ -37,6 +37,7 @@ describe("médias officiels des exercices", () => {
       for (const url of [
         exercise.media?.thumbnailUrl,
         exercise.media?.photoUrl,
+        ...(exercise.media?.animationFrameUrls ?? []),
       ]) {
         expect(url).toBeDefined();
         expect(

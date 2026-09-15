@@ -76,10 +76,14 @@ export async function seedExerciseCatalog(): Promise<void> {
     }
 
     const officialMedia = exercise.media;
+    const sameFrames =
+      JSON.stringify(existing.media?.animationFrameUrls ?? null) ===
+      JSON.stringify(officialMedia?.animationFrameUrls ?? null);
     const mediaOutdated =
       officialMedia !== undefined &&
       (existing.media?.thumbnailUrl !== officialMedia.thumbnailUrl ||
-        existing.media?.photoUrl !== officialMedia.photoUrl);
+        existing.media?.photoUrl !== officialMedia.photoUrl ||
+        !sameFrames);
 
     const needsCatalogUpgrade =
       (existing.technique === undefined &&
@@ -95,6 +99,17 @@ export async function seedExerciseCatalog(): Promise<void> {
     if (!needsCatalogUpgrade) {
       continue;
     }
+
+    const existingMediaWithoutStaleFrames =
+      officialMedia !== undefined &&
+      officialMedia.animationFrameUrls === undefined &&
+      existing.media?.animationFrameUrls !== undefined
+        ? Object.fromEntries(
+            Object.entries(existing.media).filter(
+              ([key]) => key !== "animationFrameUrls",
+            ),
+          )
+        : existing.media;
 
     const upgraded = {
       ...existing,
@@ -122,12 +137,15 @@ export async function seedExerciseCatalog(): Promise<void> {
       ...(mediaOutdated && officialMedia !== undefined
         ? {
             media: {
-              ...existing.media,
+              ...existingMediaWithoutStaleFrames,
               ...(officialMedia.thumbnailUrl !== undefined
                 ? { thumbnailUrl: officialMedia.thumbnailUrl }
                 : {}),
               ...(officialMedia.photoUrl !== undefined
                 ? { photoUrl: officialMedia.photoUrl }
+                : {}),
+              ...(officialMedia.animationFrameUrls !== undefined
+                ? { animationFrameUrls: officialMedia.animationFrameUrls }
                 : {}),
             },
           }

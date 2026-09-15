@@ -24,6 +24,7 @@ import {
   type ExercisePerformanceEntry,
   type ExercisePerformanceMetric,
 } from "./exercisePerformance";
+import { ExerciseDemonstration } from "./ExerciseDemonstration";
 import "./ExerciseDetailScreen.css";
 
 type LoadState =
@@ -356,21 +357,7 @@ export function ExerciseDetailScreen() {
       </header>
 
       <section className="exercise-detail__media">
-        {exercise.media?.photoUrl ? (
-          <img
-            src={exercise.media.photoUrl}
-            alt={exercise.name}
-          />
-        ) : (
-          <div className="exercise-detail__media-placeholder">
-            <span>
-              {exercise.name
-                .slice(0, 1)
-                .toUpperCase()}
-            </span>
-            <small>Photo / démonstration</small>
-          </div>
-        )}
+        <ExerciseDemonstration exercise={exercise} />
       </section>
 
       {hasPerformance && (

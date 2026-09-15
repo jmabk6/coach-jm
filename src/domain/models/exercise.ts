@@ -95,6 +95,11 @@ export interface ExerciseMeasurementLabels {
 export interface ExerciseMedia {
   thumbnailUrl?: string;
   photoUrl?: string;
+  /**
+   * Poses successives du mouvement (même cadre), jouées en boucle
+   * aller-retour dans la fiche. Facultatif : la photo reste le repli.
+   */
+  animationFrameUrls?: string[];
   videoUrl?: string;
 }
 

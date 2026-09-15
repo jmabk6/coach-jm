@@ -172,6 +172,7 @@ describe("seedExerciseCatalog", () => {
         media: {
           thumbnailUrl: catalogSquat.media!.thumbnailUrl,
           photoUrl: catalogSquat.media!.photoUrl,
+          animationFrameUrls: catalogSquat.media!.animationFrameUrls,
           videoUrl: "https://example.test/ma-video.mp4",
         },
       }),

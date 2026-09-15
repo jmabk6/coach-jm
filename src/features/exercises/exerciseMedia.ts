@@ -15,10 +15,18 @@ import {
 export function officialExerciseMedia(
   id: ExerciseMediaId,
 ): ExerciseMedia {
-  const entry = exerciseMedia[id];
+  const entry: {
+    readonly thumbnail: string;
+    readonly photo: string;
+    readonly frames?: readonly string[];
+  } = exerciseMedia[id];
+  const base = import.meta.env.BASE_URL;
 
   return {
-    thumbnailUrl: `${import.meta.env.BASE_URL}${entry.thumbnail}`,
-    photoUrl: `${import.meta.env.BASE_URL}${entry.photo}`,
+    thumbnailUrl: `${base}${entry.thumbnail}`,
+    photoUrl: `${base}${entry.photo}`,
+    ...(entry.frames !== undefined
+      ? { animationFrameUrls: entry.frames.map((frame) => `${base}${frame}`) }
+      : {}),
   };
 }

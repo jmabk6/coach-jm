@@ -44,35 +44,6 @@
   margin-bottom: 26px;
 }
 
-.exercise-detail__media img,
-.exercise-detail__media-placeholder {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 14px;
-}
-
-.exercise-detail__media img {
-  display: block;
-  object-fit: contain;
-  /* Les illustrations officielles sont transparentes : la couleur vient d'ici. */
-  background: #f5f6f7;
-}
-
-.exercise-detail__media-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #eef1f5;
-  color: var(--color-text-soft, #667085);
-}
-
-.exercise-detail__media-placeholder span {
-  font-size: 3rem;
-  font-weight: 700;
-}
-
 .exercise-detail__section {
   margin-bottom: 26px;
 }

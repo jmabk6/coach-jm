@@ -2,8 +2,10 @@
  * Normalisation des illustrations d'exercices.
  *
  * Entrée  : media-src/exercises/<zone>/<exerciseId>.(webp|png|jpg)
+ *           media-src/exercises/<zone>/<exerciseId>.frames.(png|webp)  planche de poses (facultative)
  * Sortie  : public/media/exercises/<zone>/<exerciseId>-thumb.<hash>.webp  (vignette 5:4)
  *           public/media/exercises/<zone>/<exerciseId>.<hash>.webp        (photo 16:9)
+ *           public/media/exercises/<zone>/<exerciseId>-frame<n>.<hash>.webp (poses 16:9, cadre commun)
  *           src/features/exercises/exerciseMedia.generated.ts             (manifeste id -> chemins)
  *
  * Règle appliquée à chaque image, sans réglage individuel :
@@ -48,6 +50,19 @@ const VARIANTS = [
   { key: "thumbnail", suffix: "-thumb", width: 400, height: 320, margin: 0.03 },
   { key: "photo", suffix: "", width: 1200, height: 675, margin: 0.04 },
 ];
+
+/**
+ * Poses d'animation : une planche de N panneaux séparés par des gouttières
+ * blanches, même personnage et même angle. Les panneaux sont découpés aux
+ * gouttières, puis TOUTES les poses sont cadrées et mises à l'échelle avec le
+ * même rectangle (union des dessins) : le personnage ne saute pas d'une pose
+ * à l'autre.
+ */
+const FRAMES_SUFFIX = ".frames";
+const FRAME_VARIANT = { suffix: "-frame", width: 1200, height: 675, margin: 0.04 };
+/** Colonne de gouttière : moyenne du canal le plus sombre au-dessus de ce seuil. */
+const GUTTER_MIN_LIGHTNESS = 245;
+const GUTTER_MIN_WIDTH = 4;
 
 /**
  * Le fond est reconnu par propagation depuis les bords de l'image :
@@ -376,14 +391,112 @@ async function listSources() {
     for (const file of files) {
       const ext = path.extname(file).toLowerCase();
       if (!SOURCE_EXTENSIONS.has(ext)) continue;
+      const base = path.basename(file, ext);
+      const isFrames = base.endsWith(FRAMES_SUFFIX);
       sources.push({
         zone: zone.name,
-        id: path.basename(file, ext),
+        id: isFrames ? base.slice(0, -FRAMES_SUFFIX.length) : base,
         file: path.join(SRC_DIR, zone.name, file),
+        isFrames,
       });
     }
   }
   return sources.sort((a, b) => a.id.localeCompare(b.id, "fr"));
+}
+
+/** Limites [x0, x1] des panneaux d'une planche, séparés par des colonnes blanches. */
+function detectPanels(data, width, height, channels) {
+  const isGutterColumn = (x) => {
+    let sum = 0;
+    for (let y = 0; y < height; y++) {
+      const i = (y * width + x) * channels;
+      sum += Math.min(data[i], data[i + 1], data[i + 2]);
+    }
+    return sum / height >= GUTTER_MIN_LIGHTNESS;
+  };
+  const panels = [];
+  let start = null;
+  let gutter = 0;
+  for (let x = 0; x <= width; x++) {
+    const inPanel = x < width && !isGutterColumn(x);
+    if (inPanel) {
+      if (start === null) start = x;
+      gutter = 0;
+    } else if (start !== null) {
+      gutter++;
+      if (gutter >= GUTTER_MIN_WIDTH || x === width) {
+        panels.push([start, x - gutter]);
+        start = null;
+        gutter = 0;
+      }
+    }
+  }
+  return panels.filter(([a, b]) => (b - a + 1) / width >= 0.1);
+}
+
+/**
+ * Produit les poses d'un exercice depuis sa planche. Retourne les noms de
+ * fichiers écrits, dans l'ordre des panneaux.
+ */
+async function renderFrames(source, outZoneDir, produced) {
+  const { data, info } = await sharp(source.file)
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+
+  const panelBounds = detectPanels(data, width, height, channels);
+  if (panelBounds.length < 2) {
+    throw new Error(
+      `${source.zone}/${source.id} : ${panelBounds.length} panneau détecté sur la planche de poses (gouttières blanches attendues)`,
+    );
+  }
+
+  /* Analyse de chaque panneau dans son propre repère. */
+  const panels = [];
+  for (const [x0, x1] of panelBounds) {
+    const pw = x1 - x0 + 1;
+    const raw = await sharp(data, { raw: { width, height, channels } })
+      .extract({ left: x0, top: 0, width: pw, height })
+      .raw()
+      .toBuffer();
+    const analysis = analyze(raw, pw, height, channels);
+    if (analysis.empty) throw new Error(`${source.zone}/${source.id} : panneau vide`);
+    panels.push({ raw, width: pw, analysis });
+  }
+
+  /* Cadre commun = union des dessins, en coordonnées de panneau. */
+  const union = panels.reduce(
+    (acc, p) => ({
+      x0: Math.min(acc.x0, p.analysis.bbox.x0),
+      y0: Math.min(acc.y0, p.analysis.bbox.y0),
+      x1: Math.max(acc.x1, p.analysis.bbox.x1),
+      y1: Math.max(acc.y1, p.analysis.bbox.y1),
+    }),
+    { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity },
+  );
+  const minPanelWidth = Math.min(...panels.map((p) => p.width));
+  const bbox = {
+    x0: union.x0,
+    y0: union.y0,
+    x1: Math.min(union.x1, minPanelWidth - 1),
+    y1: union.y1,
+  };
+  bbox.width = bbox.x1 - bbox.x0 + 1;
+  bbox.height = bbox.y1 - bbox.y0 + 1;
+
+  const files = [];
+  for (let i = 0; i < panels.length; i++) {
+    const p = panels[i];
+    const rgba = keyOutBackground(p.raw, p.width, height, channels, p.analysis.background);
+    const rendered = await renderVariant(rgba, p.width, height, bbox, FRAME_VARIANT);
+    const hash = createHash("sha1").update(rendered.buffer).digest("hex").slice(0, HASH_LENGTH);
+    const fileName = `${source.id}${FRAME_VARIANT.suffix}${i + 1}.${hash}.webp`;
+    await writeFile(path.join(outZoneDir, fileName), rendered.buffer);
+    produced.add(fileName);
+    files.push(fileName);
+  }
+  return { files, panelCount: panels.length, bbox };
 }
 
 function formatPercent(value) {
@@ -404,6 +517,7 @@ async function main() {
   let hasErrors = false;
 
   for (const source of sources) {
+    if (source.isFrames) continue;
     const label = `${source.zone}/${source.id}`;
 
     if (!catalogIds.has(source.id)) {
@@ -495,6 +609,29 @@ async function main() {
     for (const warning of warnings) console.log(`    ↳ ${warning}`);
   }
 
+  /* Planches de poses : après les images fixes, car une pose sans exercice illustré n'a pas de sens. */
+  for (const source of sources.filter((s) => s.isFrames)) {
+    const label = `${source.zone}/${source.id}`;
+    if (!manifest[source.id]) {
+      console.error(`✗ ${label} : planche de poses sans illustration fixe pour cet exercice.`);
+      hasErrors = true;
+      continue;
+    }
+    try {
+      const outZoneDir = path.join(OUT_DIR, source.zone);
+      const produced = producedByZone.get(source.zone) ?? new Set();
+      producedByZone.set(source.zone, produced);
+      const { files, panelCount, bbox } = await renderFrames(source, outZoneDir, produced);
+      manifest[source.id].frames = files.map((f) => `${PUBLIC_PREFIX}/${source.zone}/${f}`);
+      console.log(
+        `✓ ${label} — ${panelCount} poses, cadre commun ${bbox.width}×${bbox.height}`,
+      );
+    } catch (error) {
+      console.error(`✗ ${error.message}`);
+      hasErrors = true;
+    }
+  }
+
   const ids = Object.keys(manifest).sort((a, b) => a.localeCompare(b, "fr"));
   const lines = [
     "/**",
@@ -508,6 +645,13 @@ async function main() {
       `  "${id}": {`,
       `    thumbnail: "${manifest[id].thumbnail}",`,
       `    photo: "${manifest[id].photo}",`,
+      ...(manifest[id].frames
+        ? [
+            "    frames: [",
+            ...manifest[id].frames.map((f) => `      "${f}",`),
+            "    ],",
+          ]
+        : []),
       "  },",
     ]),
     "} as const;",
