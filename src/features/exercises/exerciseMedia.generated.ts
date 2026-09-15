@@ -13,13 +13,29 @@ export const exerciseMedia = {
     thumbnail: "media/exercises/pecs/developpe-couche-barre-thumb.1d462f70.webp",
     photo: "media/exercises/pecs/developpe-couche-barre.f4a2be6e.webp",
   },
+  "developpe-epaules-machine": {
+    thumbnail: "media/exercises/epaules/developpe-epaules-machine-thumb.1f421151.webp",
+    photo: "media/exercises/epaules/developpe-epaules-machine.d1350d88.webp",
+  },
   "developpe-incline-halteres": {
     thumbnail: "media/exercises/pecs/developpe-incline-halteres-thumb.8dc887c8.webp",
     photo: "media/exercises/pecs/developpe-incline-halteres.846a06ee.webp",
   },
+  "developpe-militaire-halteres": {
+    thumbnail: "media/exercises/epaules/developpe-militaire-halteres-thumb.e64c8c0d.webp",
+    photo: "media/exercises/epaules/developpe-militaire-halteres.5a60a1a4.webp",
+  },
   "ecarte-poulie": {
     thumbnail: "media/exercises/pecs/ecarte-poulie-thumb.182d48aa.webp",
     photo: "media/exercises/pecs/ecarte-poulie.8e64ecf5.webp",
+  },
+  "elevations-laterales-halteres": {
+    thumbnail: "media/exercises/epaules/elevations-laterales-halteres-thumb.ea57594a.webp",
+    photo: "media/exercises/epaules/elevations-laterales-halteres.18833c87.webp",
+  },
+  "face-pull": {
+    thumbnail: "media/exercises/epaules/face-pull-thumb.4a0ef1a9.webp",
+    photo: "media/exercises/epaules/face-pull.65ca425e.webp",
   },
   "hip-thrust": {
     thumbnail: "media/exercises/jambes/hip-thrust-thumb.eaf0ebbb.webp",
