@@ -45,7 +45,7 @@ const MANIFEST_FILE = path.join(
 );
 
 const VARIANTS = [
-  { key: "thumbnail", suffix: "-thumb", width: 400, height: 320, margin: 0.06 },
+  { key: "thumbnail", suffix: "-thumb", width: 400, height: 320, margin: 0.03 },
   { key: "photo", suffix: "", width: 1200, height: 675, margin: 0.04 },
 ];
 
@@ -75,6 +75,24 @@ const STRAY_BAND_MAX_AREA_RATIO = 0.03;
 const MAX_UPSCALE = 1.5;
 
 const SOURCE_EXTENSIONS = new Set([".webp", ".png", ".jpg", ".jpeg"]);
+
+/**
+ * Les lots livrés en 1600×900 exactement ont été produits en étirant des
+ * originaux 1536×1024 (3:2) vers du 16:9 : +19 % en largeur, roues ovales,
+ * personnages élargis. Ces sources sont ramenées à leurs proportions 3:2
+ * avant analyse. Une source native (autre taille) n'est jamais modifiée.
+ */
+const STRETCHED_SOURCE = {
+  width: 1600,
+  height: 900,
+  restoredHeight: 1067,
+  /** Sources 1600×900 issues d'un 16:9 natif (non étirées) : à ne pas corriger. */
+  nativeIds: new Set([
+    "developpe-epaules-machine",
+    "developpe-militaire-halteres",
+    "mobilite-cheville-genou-mur",
+  ]),
+};
 
 async function readCatalogIds() {
   const source = await readFile(CATALOG_FILE, "utf8");
@@ -396,8 +414,19 @@ async function main() {
       continue;
     }
 
-    const { data, info } = await sharp(source.file)
-      .removeAlpha()
+    let image = sharp(source.file).removeAlpha();
+    const meta = await image.metadata();
+    const restoredProportions =
+      meta.width === STRETCHED_SOURCE.width &&
+      meta.height === STRETCHED_SOURCE.height &&
+      !STRETCHED_SOURCE.nativeIds.has(source.id);
+    if (restoredProportions) {
+      image = image.resize(STRETCHED_SOURCE.width, STRETCHED_SOURCE.restoredHeight, {
+        fit: "fill",
+        kernel: "lanczos3",
+      });
+    }
+    const { data, info } = await image
       .raw()
       .toBuffer({ resolveWithObject: true });
 
@@ -409,6 +438,9 @@ async function main() {
     }
 
     const warnings = qualityWarnings(analysis, info.width, info.height);
+    if (restoredProportions) {
+      warnings.push("proportions 3:2 rétablies (source 1600×900 étirée)");
+    }
     const rgba = keyOutBackground(
       data,
       info.width,
