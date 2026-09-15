@@ -143,6 +143,11 @@ export const exerciseMedia = {
   "pullover-poulie": {
     thumbnail: "media/exercises/dos/pullover-poulie-thumb.0262b061.webp",
     photo: "media/exercises/dos/pullover-poulie.fdb2e9d6.webp",
+    frames: [
+      "media/exercises/dos/pullover-poulie-frame1.65d8286e.webp",
+      "media/exercises/dos/pullover-poulie-frame2.f89d6bdf.webp",
+      "media/exercises/dos/pullover-poulie-frame3.50a08437.webp",
+    ],
   },
   "rameur": {
     thumbnail: "media/exercises/cardio/rameur-thumb.490ce936.webp",
@@ -151,10 +156,20 @@ export const exerciseMedia = {
   "rowing-haltere-unilateral": {
     thumbnail: "media/exercises/dos/rowing-haltere-unilateral-thumb.e4b3b3fd.webp",
     photo: "media/exercises/dos/rowing-haltere-unilateral.bb1f68dd.webp",
+    frames: [
+      "media/exercises/dos/rowing-haltere-unilateral-frame1.22737b35.webp",
+      "media/exercises/dos/rowing-haltere-unilateral-frame2.ba16bd5c.webp",
+      "media/exercises/dos/rowing-haltere-unilateral-frame3.01a36712.webp",
+    ],
   },
   "rowing-poulie-basse": {
     thumbnail: "media/exercises/dos/rowing-poulie-basse-thumb.ac0d2a65.webp",
     photo: "media/exercises/dos/rowing-poulie-basse.b4b60d06.webp",
+    frames: [
+      "media/exercises/dos/rowing-poulie-basse-frame1.a24e7553.webp",
+      "media/exercises/dos/rowing-poulie-basse-frame2.b23b27c3.webp",
+      "media/exercises/dos/rowing-poulie-basse-frame3.5e9eddda.webp",
+    ],
   },
   "souleve-terre-roumain": {
     thumbnail: "media/exercises/jambes/souleve-terre-roumain-thumb.765eb4d7.webp",
@@ -193,10 +208,20 @@ export const exerciseMedia = {
   "tirage-vertical": {
     thumbnail: "media/exercises/dos/tirage-vertical-thumb.403b1272.webp",
     photo: "media/exercises/dos/tirage-vertical.04ee8a8e.webp",
+    frames: [
+      "media/exercises/dos/tirage-vertical-frame1.df9b8930.webp",
+      "media/exercises/dos/tirage-vertical-frame2.12ef7396.webp",
+      "media/exercises/dos/tirage-vertical-frame3.84b22cd1.webp",
+    ],
   },
   "traction-assistee": {
     thumbnail: "media/exercises/dos/traction-assistee-thumb.17c76686.webp",
     photo: "media/exercises/dos/traction-assistee.fa78542a.webp",
+    frames: [
+      "media/exercises/dos/traction-assistee-frame1.0cde1df9.webp",
+      "media/exercises/dos/traction-assistee-frame2.6c7ed397.webp",
+      "media/exercises/dos/traction-assistee-frame3.9a13b4b9.webp",
+    ],
   },
   "velo": {
     thumbnail: "media/exercises/cardio/velo-thumb.4bc66c78.webp",
