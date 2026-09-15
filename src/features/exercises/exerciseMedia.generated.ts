@@ -215,6 +215,11 @@ export const exerciseMedia = {
   "mobilite-rotation-golf": {
     thumbnail: "media/exercises/mobilite/mobilite-rotation-golf-thumb.810c65e1.webp",
     photo: "media/exercises/mobilite/mobilite-rotation-golf.f0e9a41d.webp",
+    frames: [
+      "media/exercises/mobilite/mobilite-rotation-golf-frame1.77bb5ee6.webp",
+      "media/exercises/mobilite/mobilite-rotation-golf-frame2.dee351f7.webp",
+      "media/exercises/mobilite/mobilite-rotation-golf-frame3.43c2abc6.webp",
+    ],
   },
   "mobilite-rotation-thoracique": {
     thumbnail: "media/exercises/mobilite/mobilite-rotation-thoracique-thumb.68c4879e.webp",
