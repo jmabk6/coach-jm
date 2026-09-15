@@ -100,9 +100,9 @@ export const exerciseMedia = {
     thumbnail: "media/exercises/epaules/face-pull-thumb.cc343ec9.webp",
     photo: "media/exercises/epaules/face-pull.4dc6b461.webp",
     frames: [
-      "media/exercises/epaules/face-pull-frame1.5198ad8c.webp",
-      "media/exercises/epaules/face-pull-frame2.db089d4b.webp",
-      "media/exercises/epaules/face-pull-frame3.20abfb66.webp",
+      "media/exercises/epaules/face-pull-frame1.8888120d.webp",
+      "media/exercises/epaules/face-pull-frame2.5e4ee3d3.webp",
+      "media/exercises/epaules/face-pull-frame3.1ac65f0e.webp",
     ],
   },
   "hip-thrust": {
