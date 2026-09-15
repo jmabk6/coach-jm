@@ -37,8 +37,8 @@ describe("seedExerciseCatalog", () => {
 
     await seedExerciseCatalog();
 
-    expect(getExercise).toHaveBeenCalledTimes(42);
-    expect(saveExercise).toHaveBeenCalledTimes(42);
+    expect(getExercise).toHaveBeenCalledTimes(44);
+    expect(saveExercise).toHaveBeenCalledTimes(44);
 
     expect(saveExercise).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -133,7 +133,7 @@ describe("seedExerciseCatalog", () => {
 
     await seedExerciseCatalog();
 
-    expect(getExercise).toHaveBeenCalledTimes(42);
+    expect(getExercise).toHaveBeenCalledTimes(44);
     expect(saveExercise).not.toHaveBeenCalled();
   });
 

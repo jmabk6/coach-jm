@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { exerciseCatalog } from "./exerciseCatalog";
 
 describe("exerciseCatalog", () => {
-  it("contient les 42 exercices officiels", () => {
-    expect(exerciseCatalog).toHaveLength(42);
+  it("contient les 44 exercices officiels", () => {
+    expect(exerciseCatalog).toHaveLength(44);
   });
 
   it("utilise uniquement des identifiants uniques", () => {
@@ -25,7 +25,7 @@ describe("exerciseCatalog", () => {
     }, {});
 
     expect(counts).toEqual({
-      Musculation: 27,
+      Musculation: 29,
       Cardio: 4,
       Mobilité: 8,
       "Test mobilité": 3,

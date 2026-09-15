@@ -41,6 +41,10 @@ export const exerciseMedia = {
     thumbnail: "media/exercises/epaules/developpe-militaire-halteres-thumb.4aa7411e.webp",
     photo: "media/exercises/epaules/developpe-militaire-halteres.5a60a1a4.webp",
   },
+  "dips-assistes": {
+    thumbnail: "media/exercises/bras/dips-assistes-thumb.b38ac1bd.webp",
+    photo: "media/exercises/bras/dips-assistes.96ce6b40.webp",
+  },
   "ecarte-poulie": {
     thumbnail: "media/exercises/pecs/ecarte-poulie-thumb.00d1d5e3.webp",
     photo: "media/exercises/pecs/ecarte-poulie.95385256.webp",
@@ -112,6 +116,10 @@ export const exerciseMedia = {
   "planche-laterale": {
     thumbnail: "media/exercises/core/planche-laterale-thumb.79b9c175.webp",
     photo: "media/exercises/core/planche-laterale.0c5d2c10.webp",
+  },
+  "pompes": {
+    thumbnail: "media/exercises/pecs/pompes-thumb.6bca7d5b.webp",
+    photo: "media/exercises/pecs/pompes.31bd4181.webp",
   },
   "presse-cuisses": {
     thumbnail: "media/exercises/jambes/presse-cuisses-thumb.bd0c00c2.webp",
