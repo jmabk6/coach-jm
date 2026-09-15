@@ -21,10 +21,20 @@ export const exerciseMedia = {
   "curl-halteres": {
     thumbnail: "media/exercises/bras/curl-halteres-thumb.ff8243bc.webp",
     photo: "media/exercises/bras/curl-halteres.a024e126.webp",
+    frames: [
+      "media/exercises/bras/curl-halteres-frame1.e689995b.webp",
+      "media/exercises/bras/curl-halteres-frame2.3dbd34c9.webp",
+      "media/exercises/bras/curl-halteres-frame3.f258fd34.webp",
+    ],
   },
   "curl-marteau-halteres": {
     thumbnail: "media/exercises/bras/curl-marteau-halteres-thumb.9220b8f3.webp",
     photo: "media/exercises/bras/curl-marteau-halteres.32707ba9.webp",
+    frames: [
+      "media/exercises/bras/curl-marteau-halteres-frame1.79af09a7.webp",
+      "media/exercises/bras/curl-marteau-halteres-frame2.bec14f6f.webp",
+      "media/exercises/bras/curl-marteau-halteres-frame3.557b26b7.webp",
+    ],
   },
   "dead-bug": {
     thumbnail: "media/exercises/core/dead-bug-thumb.380a357c.webp",
@@ -95,6 +105,11 @@ export const exerciseMedia = {
   "extension-triceps-poulie": {
     thumbnail: "media/exercises/bras/extension-triceps-poulie-thumb.84ad2b40.webp",
     photo: "media/exercises/bras/extension-triceps-poulie.80b61784.webp",
+    frames: [
+      "media/exercises/bras/extension-triceps-poulie-frame1.4f1d0530.webp",
+      "media/exercises/bras/extension-triceps-poulie-frame2.a2f9f4d8.webp",
+      "media/exercises/bras/extension-triceps-poulie-frame3.ea905464.webp",
+    ],
   },
   "face-pull": {
     thumbnail: "media/exercises/epaules/face-pull-thumb.cc343ec9.webp",
