@@ -82,22 +82,6 @@
   font-size: 1.2rem;
 }
 
-.exercise-detail__empty-performance {
-  padding: 16px;
-  border: 1px solid var(--color-border, #e5e5e5);
-  border-radius: 12px;
-  background: white;
-}
-
-.exercise-detail__empty-performance p {
-  margin: 6px 0 0;
-  color: var(--color-text-soft, #667085);
-}
-
-.exercise-detail__muted {
-  color: var(--color-text-soft, #667085);
-}
-
 .exercise-detail__alternatives {
   display: grid;
 }
@@ -115,6 +99,11 @@
   color: inherit;
   text-align: left;
   font: inherit;
+}
+
+/* Le bloc des rubriques qui suit porte déjà son filet haut : pas de double trait. */
+.exercise-detail__alternative:last-child {
+  border-bottom: 0;
 }
 
 .exercise-detail__alternative span:first-child {

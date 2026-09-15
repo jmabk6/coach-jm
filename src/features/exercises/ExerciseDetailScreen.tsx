@@ -301,6 +301,13 @@ export function ExerciseDetailScreen() {
   const hasPerformance =
     performanceSummary !== undefined;
 
+  /* Une rubrique vide n'est pas affichée : pas de placeholders dans la fiche. */
+  const hasPedagogy =
+    Boolean(exercise.technique) ||
+    Boolean(exercise.description) ||
+    Boolean(exercise.advice) ||
+    (exercise.muscles !== undefined && exercise.muscles.length > 0);
+
   return (
     <section className="exercise-detail">
       <button
@@ -366,47 +373,36 @@ export function ExerciseDetailScreen() {
         )}
       </section>
 
-      <section className="exercise-detail__section">
-        <div className="exercise-detail__section-heading">
-          <h2>Mes performances</h2>
+      {hasPerformance && (
+        <section className="exercise-detail__section">
+          <div className="exercise-detail__section-heading">
+            <h2>Mes performances</h2>
 
-          {compatibleMetrics.length > 1 &&
-            selectedMetric && (
-              <select
-                className="exercise-detail__metric-select"
-                value={selectedMetric}
-                onChange={(event) =>
-                  setSelectedMetric(
-                    event.target
-                      .value as ExercisePerformanceMetric,
-                  )
-                }
-                aria-label="Métrique de performance"
-              >
-                {compatibleMetrics.map((metric) => (
-                  <option
-                    key={metric}
-                    value={metric}
-                  >
-                    {metricLabels[metric]}
-                  </option>
-                ))}
-              </select>
-            )}
-        </div>
-
-        {!hasPerformance ? (
-          <div className="exercise-detail__empty-performance">
-            <strong>
-              Pas encore de performance enregistrée
-            </strong>
-            <p>
-              Tes performances apparaîtront ici après
-              tes premières réalisations de cet
-              exercice.
-            </p>
+            {compatibleMetrics.length > 1 &&
+              selectedMetric && (
+                <select
+                  className="exercise-detail__metric-select"
+                  value={selectedMetric}
+                  onChange={(event) =>
+                    setSelectedMetric(
+                      event.target
+                        .value as ExercisePerformanceMetric,
+                    )
+                  }
+                  aria-label="Métrique de performance"
+                >
+                  {compatibleMetrics.map((metric) => (
+                    <option
+                      key={metric}
+                      value={metric}
+                    >
+                      {metricLabels[metric]}
+                    </option>
+                  ))}
+                </select>
+              )}
           </div>
-        ) : (
+
           <div className="exercise-detail__performance-cards">
             <article className="exercise-detail__performance-card">
               <small>Dernière séance</small>
@@ -471,62 +467,61 @@ export function ExerciseDetailScreen() {
               </span>
             </article>
           </div>
-        )}
 
-        {hasPerformance &&
-          selectedMetric &&
-          chartData.length > 0 && (
-            <div className="exercise-detail__chart">
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart
-                  data={chartData}
-                  margin={{
-                    top: 12,
-                    right: 12,
-                    bottom: 4,
-                    left: 0,
-                  }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                  />
+          {selectedMetric &&
+            chartData.length > 0 && (
+              <div className="exercise-detail__chart">
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart
+                    data={chartData}
+                    margin={{
+                      top: 12,
+                      right: 12,
+                      bottom: 4,
+                      left: 0,
+                    }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                    />
 
-                  <XAxis
-                    dataKey="label"
-                    tickLine={false}
-                    axisLine={false}
-                  />
+                    <XAxis
+                      dataKey="label"
+                      tickLine={false}
+                      axisLine={false}
+                    />
 
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    width={42}
-                  />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
 
-                  <Tooltip
-                    formatter={(value) => [
-                      formatMetricValue(
-                        Number(value),
-                        selectedMetric,
-                      ),
-                      metricLabels[selectedMetric],
-                    ]}
-                  />
+                    <Tooltip
+                      formatter={(value) => [
+                        formatMetricValue(
+                          Number(value),
+                          selectedMetric,
+                        ),
+                        metricLabels[selectedMetric],
+                      ]}
+                    />
 
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-      </section>
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+        </section>
+      )}
 
       {hasPerformance && selectedMetric && (
         <section className="exercise-detail__section">
@@ -584,15 +579,10 @@ export function ExerciseDetailScreen() {
         </section>
       )}
 
-      <section className="exercise-detail__section">
-        <h2>Alternatives</h2>
+      {alternatives.length > 0 && (
+        <section className="exercise-detail__section">
+          <h2>Alternatives</h2>
 
-        {alternatives.length === 0 ? (
-          <p className="exercise-detail__muted">
-            Aucune alternative disponible pour le
-            moment.
-          </p>
-        ) : (
           <div className="exercise-detail__alternatives">
             {alternatives.map((alternative) => (
               <button
@@ -624,59 +614,44 @@ export function ExerciseDetailScreen() {
               </button>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      <section className="exercise-detail__accordions">
-        <details open>
-          <summary>Technique</summary>
-          <p>
-            {exercise.technique ||
-              "Aucune information renseignée pour le moment."}
-          </p>
-        </details>
-
-        <details open>
-          <summary>Description</summary>
-          <p>
-            {exercise.description ||
-              "Aucune description renseignée pour le moment."}
-          </p>
-        </details>
-
-        <details open>
-          <summary>
-            Muscles sollicités
-          </summary>
-
-          {exercise.muscles &&
-          exercise.muscles.length > 0 ? (
-            <ul>
-              {exercise.muscles.map(
-                (muscle) => (
-                  <li key={muscle}>
-                    {muscle}
-                  </li>
-                ),
-              )}
-            </ul>
-          ) : (
-            <p>
-              Aucun muscle renseigné pour le moment.
-            </p>
+      {hasPedagogy && (
+        <section className="exercise-detail__accordions">
+          {exercise.technique && (
+            <details open>
+              <summary>Technique</summary>
+              <p>{exercise.technique}</p>
+            </details>
           )}
-        </details>
 
-        <details open>
-          <summary>
-            Conseils / À éviter
-          </summary>
-          <p>
-            {exercise.advice ||
-              "Aucun conseil renseigné pour le moment."}
-          </p>
-        </details>
-      </section>
+          {exercise.description && (
+            <details open>
+              <summary>Description</summary>
+              <p>{exercise.description}</p>
+            </details>
+          )}
+
+          {exercise.muscles && exercise.muscles.length > 0 && (
+            <details open>
+              <summary>Muscles sollicités</summary>
+              <ul>
+                {exercise.muscles.map((muscle) => (
+                  <li key={muscle}>{muscle}</li>
+                ))}
+              </ul>
+            </details>
+          )}
+
+          {exercise.advice && (
+            <details open>
+              <summary>Conseils / À éviter</summary>
+              <p>{exercise.advice}</p>
+            </details>
+          )}
+        </section>
+      )}
     </section>
   );
 }
