@@ -79,6 +79,11 @@ export const exerciseMedia = {
   "dips-assistes": {
     thumbnail: "media/exercises/bras/dips-assistes-thumb.b38ac1bd.webp",
     photo: "media/exercises/bras/dips-assistes.96ce6b40.webp",
+    frames: [
+      "media/exercises/bras/dips-assistes-frame1.5ea8075d.webp",
+      "media/exercises/bras/dips-assistes-frame2.6dfd9602.webp",
+      "media/exercises/bras/dips-assistes-frame3.eb379369.webp",
+    ],
   },
   "ecarte-poulie": {
     thumbnail: "media/exercises/pecs/ecarte-poulie-thumb.00d1d5e3.webp",
@@ -101,6 +106,11 @@ export const exerciseMedia = {
   "extension-triceps-dessus-tete": {
     thumbnail: "media/exercises/bras/extension-triceps-dessus-tete-thumb.195fea48.webp",
     photo: "media/exercises/bras/extension-triceps-dessus-tete.39b48057.webp",
+    frames: [
+      "media/exercises/bras/extension-triceps-dessus-tete-frame1.76d03c3a.webp",
+      "media/exercises/bras/extension-triceps-dessus-tete-frame2.a9320ea7.webp",
+      "media/exercises/bras/extension-triceps-dessus-tete-frame3.4cf1a363.webp",
+    ],
   },
   "extension-triceps-poulie": {
     thumbnail: "media/exercises/bras/extension-triceps-poulie-thumb.84ad2b40.webp",
