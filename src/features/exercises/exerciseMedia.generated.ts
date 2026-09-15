@@ -161,6 +161,11 @@ export const exerciseMedia = {
   "mobilite-chat-vache": {
     thumbnail: "media/exercises/mobilite/mobilite-chat-vache-thumb.c61f603a.webp",
     photo: "media/exercises/mobilite/mobilite-chat-vache.c7312d63.webp",
+    frames: [
+      "media/exercises/mobilite/mobilite-chat-vache-frame1.371b4837.webp",
+      "media/exercises/mobilite/mobilite-chat-vache-frame2.e068e0e0.webp",
+      "media/exercises/mobilite/mobilite-chat-vache-frame3.85274bf7.webp",
+    ],
   },
   "mobilite-cheville-genou-mur": {
     thumbnail: "media/exercises/mobilite/mobilite-cheville-genou-mur-thumb.6dbe3389.webp",
@@ -169,14 +174,29 @@ export const exerciseMedia = {
   "mobilite-figure-4": {
     thumbnail: "media/exercises/mobilite/mobilite-figure-4-thumb.89e28cb8.webp",
     photo: "media/exercises/mobilite/mobilite-figure-4.9984c928.webp",
+    frames: [
+      "media/exercises/mobilite/mobilite-figure-4-frame1.37178c82.webp",
+      "media/exercises/mobilite/mobilite-figure-4-frame2.e9b3afa0.webp",
+      "media/exercises/mobilite/mobilite-figure-4-frame3.66ad612a.webp",
+    ],
   },
   "mobilite-flechisseur-hanche": {
     thumbnail: "media/exercises/mobilite/mobilite-flechisseur-hanche-thumb.25f8303e.webp",
     photo: "media/exercises/mobilite/mobilite-flechisseur-hanche.bd600a05.webp",
+    frames: [
+      "media/exercises/mobilite/mobilite-flechisseur-hanche-frame1.90b2c4aa.webp",
+      "media/exercises/mobilite/mobilite-flechisseur-hanche-frame2.6e98d3d9.webp",
+      "media/exercises/mobilite/mobilite-flechisseur-hanche-frame3.c705d61c.webp",
+    ],
   },
   "mobilite-ischio-jambiers": {
     thumbnail: "media/exercises/mobilite/mobilite-ischio-jambiers-thumb.3e52c1ac.webp",
     photo: "media/exercises/mobilite/mobilite-ischio-jambiers.44a15613.webp",
+    frames: [
+      "media/exercises/mobilite/mobilite-ischio-jambiers-frame1.6b007abe.webp",
+      "media/exercises/mobilite/mobilite-ischio-jambiers-frame2.53e61be8.webp",
+      "media/exercises/mobilite/mobilite-ischio-jambiers-frame3.14e4b579.webp",
+    ],
   },
   "mobilite-ouverture-epaules-mur": {
     thumbnail: "media/exercises/mobilite/mobilite-ouverture-epaules-mur-thumb.70789423.webp",
@@ -189,6 +209,11 @@ export const exerciseMedia = {
   "mobilite-rotation-thoracique": {
     thumbnail: "media/exercises/mobilite/mobilite-rotation-thoracique-thumb.68c4879e.webp",
     photo: "media/exercises/mobilite/mobilite-rotation-thoracique.d43ce945.webp",
+    frames: [
+      "media/exercises/mobilite/mobilite-rotation-thoracique-frame1.5e78c53d.webp",
+      "media/exercises/mobilite/mobilite-rotation-thoracique-frame2.c4f17817.webp",
+      "media/exercises/mobilite/mobilite-rotation-thoracique-frame3.44dd654b.webp",
+    ],
   },
   "pallof-press": {
     thumbnail: "media/exercises/core/pallof-press-thumb.d8add18d.webp",
