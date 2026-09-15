@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import {
   CartesianGrid,
   Line,
@@ -85,13 +90,16 @@ export function ExerciseDetailScreen() {
   const navigate = useNavigate();
   const { exerciseId } = useParams<{ exerciseId: string }>();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   const selectionMode =
     searchParams.get("mode") === "select";
 
-  const exercisesBackTarget = selectionMode
-    ? `/exercises?${searchParams.toString()}`
-    : "/exercises";
+  /* Retour vers la liste telle qu'on l'a quittée (filtres, recherche, tri). */
+  const cameFrom = (location.state as { from?: string } | null)?.from;
+  const exercisesBackTarget =
+    cameFrom ??
+    (selectionMode ? `/exercises?${searchParams.toString()}` : "/exercises");
 
   const [state, setState] = useState<LoadState>({
     status: "loading",
@@ -577,12 +585,16 @@ export function ExerciseDetailScreen() {
                 type="button"
                 className="exercise-detail__alternative"
                 onClick={() =>
-                  navigate({
-                    pathname: `/exercises/${alternative.id}`,
-                    search: selectionMode
-                      ? searchParams.toString()
-                      : "",
-                  })
+                  navigate(
+                    {
+                      pathname: `/exercises/${alternative.id}`,
+                      search: selectionMode
+                        ? searchParams.toString()
+                        : "",
+                    },
+                    /* La fiche de l'alternative revient elle aussi à la liste d'origine. */
+                    { state: location.state },
+                  )
                 }
               >
                 <span>

@@ -228,10 +228,51 @@ const selectedExerciseIds = useMemo(
     ],
   );
   const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [sortMode, setSortMode] = useState<SortMode>("recent");
+
+  /* Recherche, filtres et tri vivent dans l'URL : ils survivent à l'ouverture
+     d'une fiche et au retour, et une liste filtrée peut être rouverte telle quelle. */
+  const search = searchParams.get("q") ?? "";
+  const sortMode = (searchParams.get("sort") as SortMode | null) ?? "recent";
+  const filters = useMemo<FilterState>(
+    () => ({
+      category: searchParams.getAll("category"),
+      zone: searchParams.getAll("zone"),
+      movement: searchParams.getAll("movement"),
+      equipment: searchParams.getAll("equipment"),
+      location: searchParams.getAll("location"),
+    }),
+    [searchParams],
+  );
+
+  function updateParams(mutate: (params: URLSearchParams) => void) {
+    const nextParams = new URLSearchParams(searchParams);
+    mutate(nextParams);
+    setSearchParams(nextParams, { replace: true });
+  }
+
+  function setSearch(value: string) {
+    updateParams((params) => {
+      if (value.trim() === "") params.delete("q");
+      else params.set("q", value);
+    });
+  }
+
+  function setSortMode(value: SortMode) {
+    updateParams((params) => {
+      if (value === "recent") params.delete("sort");
+      else params.set("sort", value);
+    });
+  }
+
+  function setFilters(next: FilterState) {
+    updateParams((params) => {
+      for (const group of filterGroups) {
+        params.delete(group.key);
+        next[group.key].forEach((value) => params.append(group.key, value));
+      }
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -329,31 +370,32 @@ const selectedExerciseIds = useMemo(
   }
 
   function openExerciseInfo(exerciseId: string) {
-    navigate({
-      pathname: `/exercises/${exerciseId}`,
-      search: searchParams.toString(),
-    });
+    navigate(
+      {
+        pathname: `/exercises/${exerciseId}`,
+        search: searchParams.toString(),
+      },
+      { state: { from: `/exercises?${searchParams.toString()}` } },
+    );
   }
 
   function toggleFilter(family: FilterFamily, value: string) {
-    setFilters((current) => {
-      const currentValues = current[family];
-      const alreadySelected = currentValues.includes(value);
+    const currentValues = filters[family];
+    const alreadySelected = currentValues.includes(value);
 
-      return {
-        ...current,
-        [family]: alreadySelected
-          ? currentValues.filter((item) => item !== value)
-          : [...currentValues, value],
-      };
+    setFilters({
+      ...filters,
+      [family]: alreadySelected
+        ? currentValues.filter((item) => item !== value)
+        : [...currentValues, value],
     });
   }
 
   function removeFilter(family: FilterFamily, value: string) {
-    setFilters((current) => ({
-      ...current,
-      [family]: current[family].filter((item) => item !== value),
-    }));
+    setFilters({
+      ...filters,
+      [family]: filters[family].filter((item) => item !== value),
+    });
   }
 
   function clearFilters() {
@@ -788,7 +830,9 @@ const selectedExerciseIds = useMemo(
                     type="button"
                     className="exercise-list__item"
                     onClick={() =>
-                      navigate(`/exercises/${exercise.id}`)
+                      navigate(`/exercises/${exercise.id}`, {
+                        state: { from: `/exercises?${searchParams.toString()}` },
+                      })
                     }
                   >
                     <span

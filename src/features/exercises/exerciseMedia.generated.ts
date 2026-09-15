@@ -68,10 +68,20 @@ export const exerciseMedia = {
   "hip-thrust": {
     thumbnail: "media/exercises/jambes/hip-thrust-thumb.e27b684a.webp",
     photo: "media/exercises/jambes/hip-thrust.98c913dd.webp",
+    frames: [
+      "media/exercises/jambes/hip-thrust-frame1.2ef233b2.webp",
+      "media/exercises/jambes/hip-thrust-frame2.aeba1731.webp",
+      "media/exercises/jambes/hip-thrust-frame3.ded61e5b.webp",
+    ],
   },
   "leg-curl-assis": {
     thumbnail: "media/exercises/jambes/leg-curl-assis-thumb.2842d354.webp",
     photo: "media/exercises/jambes/leg-curl-assis.33696a7f.webp",
+    frames: [
+      "media/exercises/jambes/leg-curl-assis-frame1.abd828a2.webp",
+      "media/exercises/jambes/leg-curl-assis-frame2.b6ddff1a.webp",
+      "media/exercises/jambes/leg-curl-assis-frame3.67aae6db.webp",
+    ],
   },
   "mobilite-chat-vache": {
     thumbnail: "media/exercises/mobilite/mobilite-chat-vache-thumb.c61f603a.webp",
@@ -124,6 +134,11 @@ export const exerciseMedia = {
   "presse-cuisses": {
     thumbnail: "media/exercises/jambes/presse-cuisses-thumb.bd0c00c2.webp",
     photo: "media/exercises/jambes/presse-cuisses.2a2e336f.webp",
+    frames: [
+      "media/exercises/jambes/presse-cuisses-frame1.66f463d6.webp",
+      "media/exercises/jambes/presse-cuisses-frame2.66c7c0bd.webp",
+      "media/exercises/jambes/presse-cuisses-frame3.69966cd2.webp",
+    ],
   },
   "pullover-poulie": {
     thumbnail: "media/exercises/dos/pullover-poulie-thumb.0262b061.webp",
@@ -144,6 +159,11 @@ export const exerciseMedia = {
   "souleve-terre-roumain": {
     thumbnail: "media/exercises/jambes/souleve-terre-roumain-thumb.765eb4d7.webp",
     photo: "media/exercises/jambes/souleve-terre-roumain.5ad6bfaf.webp",
+    frames: [
+      "media/exercises/jambes/souleve-terre-roumain-frame1.4608b730.webp",
+      "media/exercises/jambes/souleve-terre-roumain-frame2.c39c0add.webp",
+      "media/exercises/jambes/souleve-terre-roumain-frame3.92f49a03.webp",
+    ],
   },
   "squat": {
     thumbnail: "media/exercises/jambes/squat-thumb.0ea66019.webp",
