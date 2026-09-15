@@ -17,6 +17,18 @@ export const exerciseMedia = {
     thumbnail: "media/exercises/jambes/presse-cuisses-thumb.7a7fa803.webp",
     photo: "media/exercises/jambes/presse-cuisses.36691872.webp",
   },
+  "pullover-poulie": {
+    thumbnail: "media/exercises/dos/pullover-poulie-thumb.709fe758.webp",
+    photo: "media/exercises/dos/pullover-poulie.2a65fc01.webp",
+  },
+  "rowing-haltere-unilateral": {
+    thumbnail: "media/exercises/dos/rowing-haltere-unilateral-thumb.134b0721.webp",
+    photo: "media/exercises/dos/rowing-haltere-unilateral.fb3b788e.webp",
+  },
+  "rowing-poulie-basse": {
+    thumbnail: "media/exercises/dos/rowing-poulie-basse-thumb.a306bb4a.webp",
+    photo: "media/exercises/dos/rowing-poulie-basse.972aed2a.webp",
+  },
   "souleve-terre-roumain": {
     thumbnail: "media/exercises/jambes/souleve-terre-roumain-thumb.7d195d99.webp",
     photo: "media/exercises/jambes/souleve-terre-roumain.d1e6ff49.webp",
@@ -24,6 +36,14 @@ export const exerciseMedia = {
   "squat": {
     thumbnail: "media/exercises/jambes/squat-thumb.8a7fe7ec.webp",
     photo: "media/exercises/jambes/squat.4f953e27.webp",
+  },
+  "tirage-vertical": {
+    thumbnail: "media/exercises/dos/tirage-vertical-thumb.9ef335b7.webp",
+    photo: "media/exercises/dos/tirage-vertical.7c7ecd5d.webp",
+  },
+  "traction-assistee": {
+    thumbnail: "media/exercises/dos/traction-assistee-thumb.0820f022.webp",
+    photo: "media/exercises/dos/traction-assistee.ddbccf67.webp",
   },
 } as const;
 
