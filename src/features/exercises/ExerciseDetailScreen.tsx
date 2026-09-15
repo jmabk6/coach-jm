@@ -628,7 +628,7 @@ export function ExerciseDetailScreen() {
       </section>
 
       <section className="exercise-detail__accordions">
-        <details>
+        <details open>
           <summary>Technique</summary>
           <p>
             {exercise.technique ||
@@ -636,7 +636,7 @@ export function ExerciseDetailScreen() {
           </p>
         </details>
 
-        <details>
+        <details open>
           <summary>Description</summary>
           <p>
             {exercise.description ||
@@ -644,7 +644,7 @@ export function ExerciseDetailScreen() {
           </p>
         </details>
 
-        <details>
+        <details open>
           <summary>
             Muscles sollicités
           </summary>
@@ -667,7 +667,7 @@ export function ExerciseDetailScreen() {
           )}
         </details>
 
-        <details>
+        <details open>
           <summary>
             Conseils / À éviter
           </summary>
