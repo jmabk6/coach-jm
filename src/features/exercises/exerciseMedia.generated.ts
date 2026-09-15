@@ -17,6 +17,11 @@ export const exerciseMedia = {
   "crunch-poulie": {
     thumbnail: "media/exercises/core/crunch-poulie-thumb.3a3656e4.webp",
     photo: "media/exercises/core/crunch-poulie.5e16208a.webp",
+    frames: [
+      "media/exercises/core/crunch-poulie-frame1.e69627cd.webp",
+      "media/exercises/core/crunch-poulie-frame2.40781f7b.webp",
+      "media/exercises/core/crunch-poulie-frame3.81ff2b60.webp",
+    ],
   },
   "curl-halteres": {
     thumbnail: "media/exercises/bras/curl-halteres-thumb.ff8243bc.webp",
@@ -39,6 +44,11 @@ export const exerciseMedia = {
   "dead-bug": {
     thumbnail: "media/exercises/core/dead-bug-thumb.380a357c.webp",
     photo: "media/exercises/core/dead-bug.c3612f0e.webp",
+    frames: [
+      "media/exercises/core/dead-bug-frame1.31cc8172.webp",
+      "media/exercises/core/dead-bug-frame2.f8b6e2cf.webp",
+      "media/exercises/core/dead-bug-frame3.9eea95ff.webp",
+    ],
   },
   "developpe-couche-barre": {
     thumbnail: "media/exercises/pecs/developpe-couche-barre-thumb.90a53724.webp",
@@ -183,14 +193,29 @@ export const exerciseMedia = {
   "pallof-press": {
     thumbnail: "media/exercises/core/pallof-press-thumb.d8add18d.webp",
     photo: "media/exercises/core/pallof-press.203dbe73.webp",
+    frames: [
+      "media/exercises/core/pallof-press-frame1.8f29ab2f.webp",
+      "media/exercises/core/pallof-press-frame2.a5ce2fda.webp",
+      "media/exercises/core/pallof-press-frame3.c94ef336.webp",
+    ],
   },
   "planche": {
     thumbnail: "media/exercises/core/planche-thumb.c2920d46.webp",
     photo: "media/exercises/core/planche.a1f38b83.webp",
+    frames: [
+      "media/exercises/core/planche-frame1.2cf28c55.webp",
+      "media/exercises/core/planche-frame2.6dcd0a8d.webp",
+      "media/exercises/core/planche-frame3.865a07ac.webp",
+    ],
   },
   "planche-laterale": {
     thumbnail: "media/exercises/core/planche-laterale-thumb.79b9c175.webp",
     photo: "media/exercises/core/planche-laterale.0c5d2c10.webp",
+    frames: [
+      "media/exercises/core/planche-laterale-frame1.4d136af5.webp",
+      "media/exercises/core/planche-laterale-frame2.812e869b.webp",
+      "media/exercises/core/planche-laterale-frame3.0f58c36a.webp",
+    ],
   },
   "pompes": {
     thumbnail: "media/exercises/pecs/pompes-thumb.6bca7d5b.webp",
