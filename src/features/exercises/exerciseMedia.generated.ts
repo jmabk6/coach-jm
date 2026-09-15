@@ -170,6 +170,11 @@ export const exerciseMedia = {
   "mobilite-cheville-genou-mur": {
     thumbnail: "media/exercises/mobilite/mobilite-cheville-genou-mur-thumb.6dbe3389.webp",
     photo: "media/exercises/mobilite/mobilite-cheville-genou-mur.ff69f842.webp",
+    frames: [
+      "media/exercises/mobilite/mobilite-cheville-genou-mur-frame1.8991b68d.webp",
+      "media/exercises/mobilite/mobilite-cheville-genou-mur-frame2.bc3d4e74.webp",
+      "media/exercises/mobilite/mobilite-cheville-genou-mur-frame3.cc7a4228.webp",
+    ],
   },
   "mobilite-figure-4": {
     thumbnail: "media/exercises/mobilite/mobilite-figure-4-thumb.89e28cb8.webp",
