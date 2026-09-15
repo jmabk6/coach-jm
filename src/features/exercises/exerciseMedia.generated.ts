@@ -206,6 +206,11 @@ export const exerciseMedia = {
   "mobilite-ouverture-epaules-mur": {
     thumbnail: "media/exercises/mobilite/mobilite-ouverture-epaules-mur-thumb.70789423.webp",
     photo: "media/exercises/mobilite/mobilite-ouverture-epaules-mur.35bfca42.webp",
+    frames: [
+      "media/exercises/mobilite/mobilite-ouverture-epaules-mur-frame1.c7339823.webp",
+      "media/exercises/mobilite/mobilite-ouverture-epaules-mur-frame2.5ec2a284.webp",
+      "media/exercises/mobilite/mobilite-ouverture-epaules-mur-frame3.3bf7cc94.webp",
+    ],
   },
   "mobilite-rotation-golf": {
     thumbnail: "media/exercises/mobilite/mobilite-rotation-golf-thumb.810c65e1.webp",
