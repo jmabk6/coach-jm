@@ -5,6 +5,7 @@ import { ExercisesScreen } from "../features/exercises/ExercisesScreen";
 import { ExerciseDetailScreen } from "../features/exercises/ExerciseDetailScreen";
 import { ExerciseCreateScreen } from "../features/exercises/ExerciseCreateScreen";
 import { ExerciseEditScreen } from "../features/exercises/ExerciseEditScreen";
+import { PlusScreen } from "../features/plus/PlusScreen";
 
 export const router = createHashRouter([
   {
@@ -14,7 +15,7 @@ export const router = createHashRouter([
       { index: true, element: <Screen title="Aujourd'hui" /> },
       { path: "programme", element: <Screen title="Programme" /> },
       { path: "progression", element: <Screen title="Progression" /> },
-      { path: "plus", element: <Screen title="Plus" /> },
+      { path: "plus", element: <PlusScreen /> },
       { path: "exercises", element: <ExercisesScreen /> },
       {
         path: "exercises/new",
