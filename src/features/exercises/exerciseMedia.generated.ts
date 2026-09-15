@@ -194,9 +194,9 @@ export const exerciseMedia = {
     thumbnail: "media/exercises/core/pallof-press-thumb.d8add18d.webp",
     photo: "media/exercises/core/pallof-press.203dbe73.webp",
     frames: [
-      "media/exercises/core/pallof-press-frame1.8f29ab2f.webp",
-      "media/exercises/core/pallof-press-frame2.a5ce2fda.webp",
-      "media/exercises/core/pallof-press-frame3.c94ef336.webp",
+      "media/exercises/core/pallof-press-frame1.c9cdf222.webp",
+      "media/exercises/core/pallof-press-frame2.e7aa5a20.webp",
+      "media/exercises/core/pallof-press-frame3.76bcbdfa.webp",
     ],
   },
   "planche": {
