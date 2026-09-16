@@ -12,9 +12,11 @@ const tabs = [
 export function AppShell() {
   const location = useLocation();
 
+  /* Flux modaux (§18) : bibliothèque en mode sélection, sélection de briques. */
+  const params = new URLSearchParams(location.search);
   const selectionMode =
-    location.pathname.startsWith("/exercises") &&
-    new URLSearchParams(location.search).get("mode") === "select";
+    (location.pathname.startsWith("/exercises") && params.get("mode") === "select") ||
+    (location.pathname.startsWith("/sessions/") && params.get("select") === "1");
 
   return (
     <div className="app-shell">

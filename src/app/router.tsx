@@ -12,6 +12,7 @@ import { SessionEditScreen } from "../features/sessions/SessionEditScreen";
 import { SessionDetailScreen } from "../features/sessions/SessionDetailScreen";
 import { SessionNoteScreen } from "../features/sessions/SessionNoteScreen";
 import { BlockEditScreen } from "../features/sessions/BlockEditScreen";
+import { GroupEditScreen } from "../features/sessions/GroupEditScreen";
 
 export const router = createHashRouter([
   {
@@ -32,8 +33,8 @@ export const router = createHashRouter([
         element: <BlockEditScreen />,
       },
       {
-        path: "sessions/:sessionId/groups/:blockId",
-        element: <Screen title="Modifier le groupe" />,
+        path: "sessions/:sessionId/groups/:groupId",
+        element: <GroupEditScreen />,
       },
       {
         path: "sessions/:sessionId/groups/:groupId/children/:childId",

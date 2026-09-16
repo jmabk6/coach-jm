@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Dumbbell, EllipsisVertical, FileText, Plus } from "lucide-react";
+import { Dumbbell, EllipsisVertical, FileText, Link2, Plus, X } from "lucide-react";
 import type { SessionBlock } from "../../domain";
 import { calculateBlockNumbering } from "../../domain/rules/sessionTemplateRules";
 import { archiveSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
@@ -12,6 +12,9 @@ import {
 } from "./SessionBlockCards";
 import {
   appendExerciseBlocks,
+  areBlocksConsecutive,
+  createGroupFromBlocks,
+  isGroupCandidate,
   listExerciseIds,
   removeBlock,
 } from "./sessionTemplateEdits";
@@ -30,6 +33,12 @@ export function SessionDetailScreen() {
   const { state, save } = useSessionTemplate(sessionId);
   const [menuOpen, setMenuOpen] = useState(false);
   const [blockMenu, setBlockMenu] = useState<SessionBlock>();
+  const [selectionNotice, setSelectionNotice] = useState<string>();
+
+  /* Mode sélection (§7) dans l'URL : `select=1` masque la barre d'onglets,
+     `picked=<id>` porte les briques cochées dans l'ordre du geste. */
+  const selecting = searchParams.get("select") === "1";
+  const pickedIds = useMemo(() => searchParams.getAll("picked"), [searchParams]);
 
   const pendingAddIds = useMemo(() => searchParams.getAll("add"), [searchParams]);
   const addingRef = useRef(false);
@@ -92,6 +101,69 @@ export function SessionDetailScreen() {
     navigate(`/exercises?${params.toString()}`);
   }
 
+  function updateSelection(mutate: (params: URLSearchParams) => void) {
+    const next = new URLSearchParams(searchParams);
+    mutate(next);
+    setSearchParams(next, { replace: true });
+  }
+
+  function startSelection() {
+    setMenuOpen(false);
+    updateSelection((params) => {
+      params.set("select", "1");
+      params.delete("picked");
+    });
+  }
+
+  function stopSelection() {
+    updateSelection((params) => {
+      params.delete("select");
+      params.delete("picked");
+    });
+  }
+
+  function togglePicked(blockId: string) {
+    updateSelection((params) => {
+      const current = params.getAll("picked");
+      params.delete("picked");
+      (current.includes(blockId)
+        ? current.filter((id) => id !== blockId)
+        : [...current, blockId]
+      ).forEach((id) => params.append("picked", id));
+    });
+  }
+
+  /* Le bouton reste actif : une sélection invalide s'explique au tap (§7). */
+  async function handleCreateGroup() {
+    if (pickedIds.length < 2) {
+      setSelectionNotice(
+        "Sélectionnez au moins deux briques pour créer un groupe.",
+      );
+      return;
+    }
+
+    if (!areBlocksConsecutive(template.blocks, pickedIds)) {
+      setSelectionNotice(
+        "Les briques doivent être consécutives. Déplacez-les ou modifiez votre sélection pour créer le groupe.",
+      );
+      return;
+    }
+
+    await save(
+      createGroupFromBlocks(template, pickedIds, exerciseById, () => crypto.randomUUID()),
+    );
+    stopSelection();
+  }
+
+  const candidateCount = template.blocks.filter((block) =>
+    isGroupCandidate(block, exerciseById),
+  ).length;
+
+  const pickedPositions = pickedIds
+    .map((id) => numbering[id])
+    .filter((value): value is string => Boolean(value))
+    .sort((a, b) => Number(a) - Number(b));
+
   async function handleRemove(block: SessionBlock) {
     setBlockMenu(undefined);
     await save(removeBlock(template, block.id));
@@ -146,18 +218,34 @@ export function SessionDetailScreen() {
   return (
     <section className="session-detail">
       <header className="session-detail__nav">
-        <Link to="/sessions" className="session-detail__back">
-          ‹ Séances
-        </Link>
+        {selecting ? (
+          <span className="session-detail__back session-detail__back--muted">
+            Sélection
+          </span>
+        ) : (
+          <Link to="/sessions" className="session-detail__back">
+            ‹ Séances
+          </Link>
+        )}
         <h1>{template.name}</h1>
-        <button
-          type="button"
-          className="session-detail__menu"
-          aria-label="Actions sur la séance"
-          onClick={() => setMenuOpen(true)}
-        >
-          <EllipsisVertical size={22} strokeWidth={2} aria-hidden="true" />
-        </button>
+        {selecting ? (
+          <button
+            type="button"
+            className="session-detail__menu session-detail__cancel"
+            onClick={stopSelection}
+          >
+            Annuler
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="session-detail__menu"
+            aria-label="Actions sur la séance"
+            onClick={() => setMenuOpen(true)}
+          >
+            <EllipsisVertical size={22} strokeWidth={2} aria-hidden="true" />
+          </button>
+        )}
       </header>
 
       {blocks.length === 0 ? (
@@ -185,6 +273,7 @@ export function SessionDetailScreen() {
                   <NoteBlockCard
                     key={block.id}
                     block={block}
+                    selecting={selecting}
                     onOpen={() =>
                       navigate(`/sessions/${template.id}/notes/${block.id}`)
                     }
@@ -201,6 +290,7 @@ export function SessionDetailScreen() {
                     number={numbering[block.id] ?? ""}
                     numbering={numbering}
                     exerciseById={exerciseById}
+                    selecting={selecting}
                     onOpen={() =>
                       navigate(`/sessions/${template.id}/groups/${block.id}`)
                     }
@@ -220,6 +310,15 @@ export function SessionDetailScreen() {
                   block={block}
                   number={numbering[block.id] ?? ""}
                   exercise={exerciseById.get(block.exerciseId)}
+                  {...(selecting
+                    ? {
+                        selection: {
+                          checked: pickedIds.includes(block.id),
+                          disabled: !isGroupCandidate(block, exerciseById),
+                          onToggle: () => togglePicked(block.id),
+                        },
+                      }
+                    : {})}
                   onOpen={() =>
                     navigate(`/sessions/${template.id}/blocks/${block.id}`)
                   }
@@ -229,12 +328,64 @@ export function SessionDetailScreen() {
             })}
           </ul>
 
-          <AddActions
-            templateId={template.id}
-            onAddExercise={openLibrary}
-            compact
-          />
+          {!selecting && (
+            <AddActions
+              templateId={template.id}
+              onAddExercise={openLibrary}
+              compact
+            />
+          )}
         </>
+      )}
+
+      {selecting && (
+        <div className="selection-bar">
+          <span className="selection-bar__count">{pickedIds.length}</span>
+          <span className="selection-bar__text">
+            <strong>
+              {pickedIds.length === 1
+                ? "1 brique sélectionnée"
+                : `${pickedIds.length} briques sélectionnées`}
+            </strong>
+            {pickedPositions.length > 0 && (
+              <small>
+                {pickedPositions.length === 1
+                  ? `position ${pickedPositions[0]}`
+                  : `positions ${pickedPositions.slice(0, -1).join(", ")} et ${pickedPositions[pickedPositions.length - 1]}`}
+              </small>
+            )}
+          </span>
+          <button
+            type="button"
+            className="selection-bar__create"
+            onClick={() => void handleCreateGroup()}
+          >
+            <Link2 size={18} strokeWidth={2} aria-hidden="true" />
+            Créer un groupe
+          </button>
+          <button
+            type="button"
+            className="selection-bar__cancel"
+            onClick={stopSelection}
+            aria-label="Annuler la sélection"
+          >
+            <X size={18} strokeWidth={2} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {selectionNotice && (
+        <BottomSheet
+          title={
+            pickedIds.length < 2
+              ? "Sélection insuffisante"
+              : "Les briques doivent être consécutives"
+          }
+          message={selectionNotice}
+          dismissLabel="OK"
+          onDismiss={() => setSelectionNotice(undefined)}
+          actions={[]}
+        />
       )}
 
       {menuOpen && (
@@ -242,6 +393,15 @@ export function SessionDetailScreen() {
           title={template.name}
           onDismiss={() => setMenuOpen(false)}
           actions={[
+            ...(candidateCount >= 2
+              ? [
+                  {
+                    label: "Créer un groupe",
+                    hint: "Cochez des briques consécutives, puis groupez-les",
+                    onSelect: startSelection,
+                  },
+                ]
+              : []),
             {
               label: "Modifier le nom ou la catégorie",
               onSelect: () => navigate(`/sessions/${template.id}/edit`),
