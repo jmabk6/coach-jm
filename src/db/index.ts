@@ -1,4 +1,4 @@
-﻿export { db, CoachJmDatabase } from "./database";
+export { db, CoachJmDatabase } from "./database";
 
 export {
   getAllExercises,
@@ -27,6 +27,9 @@ export {
   getPlannedSessionsBetween,
   savePlannedSession,
   savePlannedSessions,
+  getPlannedSessionsFromIncludingRemoved,
+  deletePlannedSessions,
+  updatePlannedSession,
   updatePlannedSessionStatus,
   removePlannedSession,
 } from "./repositories/programRepository";

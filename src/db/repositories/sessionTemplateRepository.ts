@@ -1,5 +1,7 @@
-﻿import { db } from "../database";
+import { db } from "../database";
 import type { Id, SessionTemplate } from "../../domain";
+import { removeTemplateFromWeeklyProgram } from "../../domain/rules/programRules";
+import { WEEKLY_PROGRAM_ID } from "./programRepository";
 
 /**
  * Tous les modèles, actifs et archivés,
@@ -45,6 +47,9 @@ export async function saveSessionTemplate(
  *
  * Un modèle ayant déjà servi ne doit pas être supprimé,
  * afin que les anciennes réalisations gardent leur référence.
+ *
+ * Un modèle archivé quitte la règle hebdomadaire : il ne génère plus
+ * de séances. Les instances déjà générées restent en place (§9).
  */
 export async function archiveSessionTemplate(
   id: Id,
@@ -55,10 +60,28 @@ export async function archiveSessionTemplate(
     throw new Error("Modèle de séance introuvable");
   }
 
-  await db.sessionTemplates.update(id, {
-    status: "archived",
-    updatedAt: new Date().toISOString(),
-  });
+  const now = new Date().toISOString();
+
+  await db.transaction(
+    "rw",
+    db.sessionTemplates,
+    db.weeklyPrograms,
+    async () => {
+      await db.sessionTemplates.update(id, {
+        status: "archived",
+        updatedAt: now,
+      });
+
+      const program = await db.weeklyPrograms.get(WEEKLY_PROGRAM_ID);
+
+      if (program) {
+        await db.weeklyPrograms.put({
+          ...removeTemplateFromWeeklyProgram(program, id, now),
+          id: WEEKLY_PROGRAM_ID,
+        });
+      }
+    },
+  );
 }
 
 /**

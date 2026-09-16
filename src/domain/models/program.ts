@@ -1,4 +1,4 @@
-﻿import type { Id } from "./exercise";
+import type { Id } from "./exercise";
 
 export type Weekday =
   | "monday"
@@ -70,6 +70,15 @@ export interface PlannedSession {
    * ne modifie jamais la règle hebdomadaire.
    */
   sourceWeekday?: Weekday;
+
+  /**
+   * Date pour laquelle la règle a créé l'instance.
+   *
+   * Reste figée quand l'instance est déplacée : c'est elle
+   * qui empêche la génération de recréer la séance
+   * à sa date d'origine.
+   */
+  sourceDate?: string;
 
   /**
    * Origine de l'instance.

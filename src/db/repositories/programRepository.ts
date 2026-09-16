@@ -1,4 +1,4 @@
-﻿import { db } from "../database";
+import { db } from "../database";
 import type {
   Id,
   PlannedSession,
@@ -107,6 +107,55 @@ export async function savePlannedSessions(
   plannedSessions: PlannedSession[],
 ): Promise<void> {
   await db.plannedSessions.bulkPut(plannedSessions);
+}
+
+/**
+ * Toutes les occurrences à partir d'une date, retirées comprises.
+ *
+ * Sert à la resynchronisation des semaines futures quand la règle change.
+ */
+export async function getPlannedSessionsFromIncludingRemoved(
+  startDate: string,
+): Promise<PlannedSession[]> {
+  return db.plannedSessions
+    .where("date")
+    .aboveOrEqual(startDate)
+    .toArray();
+}
+
+/**
+ * Suppression physique, réservée aux instances intactes que la règle
+ * ne veut plus : elles n'ont jamais porté de décision de l'utilisateur,
+ * rien n'a besoin d'être conservé.
+ */
+export async function deletePlannedSessions(ids: Id[]): Promise<void> {
+  await db.plannedSessions.bulkDelete(ids);
+}
+
+/**
+ * Mise à jour partielle d'une occurrence visible.
+ */
+export async function updatePlannedSession(
+  id: Id,
+  changes: Omit<
+    Partial<PlannedSession>,
+    "id" | "createdAt" | "updatedAt" | "source" | "sourceWeekday" | "sourceDate"
+  >,
+): Promise<void> {
+  const plannedSession = await db.plannedSessions.get(id);
+
+  if (!plannedSession) {
+    throw new Error("Séance planifiée introuvable");
+  }
+
+  if (plannedSession.removedAt) {
+    throw new Error("Cette séance a été retirée du Programme");
+  }
+
+  await db.plannedSessions.update(id, {
+    ...changes,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export async function updatePlannedSessionStatus(
