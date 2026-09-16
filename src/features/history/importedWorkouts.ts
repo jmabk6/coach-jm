@@ -1,5 +1,4 @@
 import type {
-  Exercise,
   ExerciseInstructions,
   Id,
   Load,
@@ -20,6 +19,9 @@ import type {
  * des durées mesurées et de 1 min 30 par série (repos compris).
  *
  * Identifiants fixes : réimporter réécrit les mêmes séances, sans doublon.
+ * Les quatre exercices absents du catalogue à l'origine (curl EZ, position
+ * de l'enfant, rotation du dos allongé, marche) y ont été ajoutés depuis,
+ * sous leurs identifiants `import-*`.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -55,65 +57,7 @@ interface WorkoutSpec {
   blocks: BlockSpec[];
 }
 
-/* -------------------------------------------------------------------------- */
-/* Exercices absents du catalogue officiel                                    */
-/* -------------------------------------------------------------------------- */
-
 const IMPORT_TIMESTAMP = "2026-09-16T12:00:00.000Z";
-
-export const importedExercises: Exercise[] = [
-  {
-    id: "import-curl-biceps-ez",
-    name: "Curl biceps barre EZ",
-    category: "Musculation",
-    zone: "Bras",
-    movement: "Isolation",
-    equipment: "Barre",
-    location: "Salle",
-    mode: "series",
-    measurementType: "load_reps",
-    status: "active",
-    createdAt: IMPORT_TIMESTAMP,
-    updatedAt: IMPORT_TIMESTAMP,
-  },
-  {
-    id: "import-position-enfant",
-    name: "Position de l'enfant",
-    category: "Mobilité",
-    location: "Maison",
-    mode: "series",
-    measurementType: "duration",
-    description: "Fesses vers les talons, bras devant, respiration lente.",
-    status: "active",
-    createdAt: IMPORT_TIMESTAMP,
-    updatedAt: IMPORT_TIMESTAMP,
-  },
-  {
-    id: "import-rotation-dos-allonge",
-    name: "Rotation du dos allongé",
-    category: "Mobilité",
-    location: "Maison",
-    mode: "series",
-    measurementType: "duration_per_side",
-    description:
-      "Sur le dos, genoux pliés, laisse doucement tomber les deux genoux d'un côté puis de l'autre, sans forcer.",
-    status: "active",
-    createdAt: IMPORT_TIMESTAMP,
-    updatedAt: IMPORT_TIMESTAMP,
-  },
-  {
-    id: "import-marche",
-    name: "Marche",
-    category: "Cardio",
-    equipment: "Poids du corps",
-    location: "Maison",
-    mode: "simple",
-    measurementType: "distance",
-    status: "active",
-    createdAt: IMPORT_TIMESTAMP,
-    updatedAt: IMPORT_TIMESTAMP,
-  },
-];
 
 /* -------------------------------------------------------------------------- */
 /* Les séances                                                                */

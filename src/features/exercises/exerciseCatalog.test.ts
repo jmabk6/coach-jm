@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { exerciseCatalog } from "./exerciseCatalog";
 
 describe("exerciseCatalog", () => {
-  it("contient les 44 exercices officiels", () => {
-    expect(exerciseCatalog).toHaveLength(44);
+  it("contient les 48 exercices officiels", () => {
+    expect(exerciseCatalog).toHaveLength(48);
   });
 
   it("utilise uniquement des identifiants uniques", () => {
@@ -25,9 +25,9 @@ describe("exerciseCatalog", () => {
     }, {});
 
     expect(counts).toEqual({
-      Musculation: 29,
-      Cardio: 4,
-      Mobilité: 8,
+      Musculation: 30,
+      Cardio: 5,
+      Mobilité: 10,
       "Test mobilité": 3,
     });
   });
@@ -55,6 +55,7 @@ describe("exerciseCatalog", () => {
       "Vélo",
       "Vélo elliptique",
       "Rameur",
+      "Poids du corps",
     ]);
   });
 

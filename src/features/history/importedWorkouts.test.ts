@@ -12,11 +12,7 @@ import {
   getDefaultPerformanceMetric,
 } from "../exercises/exercisePerformance";
 import { importSeptember2026History } from "./importHistory";
-import {
-  buildImportedWorkouts,
-  importedExercises,
-  importedWorkoutSpecs,
-} from "./importedWorkouts";
+import { buildImportedWorkouts, importedWorkoutSpecs } from "./importedWorkouts";
 
 describe("historique importé de septembre 2026", () => {
   beforeEach(async () => {
@@ -54,11 +50,8 @@ describe("historique importé de septembre 2026", () => {
     }
   });
 
-  it("référence uniquement des exercices existants", async () => {
-    const known = new Set([
-      ...(await getAllExercises()).map((e) => e.id),
-      ...importedExercises.map((e) => e.id),
-    ]);
+  it("référence uniquement des exercices du catalogue officiel", async () => {
+    const known = new Set((await getAllExercises()).map((e) => e.id));
 
     for (const spec of importedWorkoutSpecs) {
       for (const block of spec.blocks) {
@@ -69,11 +62,7 @@ describe("historique importé de septembre 2026", () => {
 
   it("alimente les fiches : charge max et volume de la presse, BPM du tapis", async () => {
     const first = await importSeptember2026History();
-    expect(first).toEqual({
-      workoutsCreated: 9,
-      workoutsUpdated: 0,
-      exercisesCreated: 4,
-    });
+    expect(first).toEqual({ workoutsCreated: 9, workoutsUpdated: 0 });
 
     const exercises = await getAllExercises();
     const presse = exercises.find((e) => e.id === "presse-cuisses");
@@ -100,11 +89,7 @@ describe("historique importé de septembre 2026", () => {
 
     /* Réimporter ne crée rien de plus. */
     const second = await importSeptember2026History();
-    expect(second).toEqual({
-      workoutsCreated: 0,
-      workoutsUpdated: 9,
-      exercisesCreated: 0,
-    });
+    expect(second).toEqual({ workoutsCreated: 0, workoutsUpdated: 9 });
     expect((await getCompletedWorkouts()).length).toBe(9);
   });
 });

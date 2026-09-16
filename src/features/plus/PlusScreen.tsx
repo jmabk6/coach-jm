@@ -129,7 +129,7 @@ export function PlusScreen() {
       {importState.status === "confirm" && (
         <BottomSheet
           title="Importer mes séances de septembre 2026 ?"
-          message="9 séances réalisées (tapis, musculation, gainage, mobilité, marche) rejoignent l'historique et alimentent les fiches exercices. Quatre exercices sont ajoutés à la bibliothèque : Curl biceps barre EZ, Position de l'enfant, Rotation du dos allongé, Marche."
+          message="9 séances réalisées (tapis, musculation, gainage, mobilité, marche) rejoignent l'historique et alimentent les fiches exercices."
           actions={[
             {
               label: "Importer",
@@ -155,12 +155,6 @@ function formatResult(result: ImportHistoryResult): string {
   if (result.workoutsUpdated > 0) {
     parts.push(`${result.workoutsUpdated} séance${result.workoutsUpdated > 1 ? "s" : ""} déjà présente${result.workoutsUpdated > 1 ? "s" : ""}, réécrite${result.workoutsUpdated > 1 ? "s" : ""} à l'identique`);
   }
-
-  parts.push(
-    result.exercisesCreated > 0
-      ? `${result.exercisesCreated} exercice${result.exercisesCreated > 1 ? "s" : ""} ajouté${result.exercisesCreated > 1 ? "s" : ""}`
-      : "exercices déjà présents",
-  );
 
   return `Import terminé : ${parts.join(", ")}.`;
 }

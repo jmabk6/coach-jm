@@ -149,6 +149,42 @@ export const exerciseMedia = {
       "media/exercises/jambes/hip-thrust-frame3.ded61e5b.webp",
     ],
   },
+  "import-curl-biceps-ez": {
+    thumbnail: "media/exercises/bras/import-curl-biceps-ez-thumb.d884a19f.webp",
+    photo: "media/exercises/bras/import-curl-biceps-ez.b24523d7.webp",
+    frames: [
+      "media/exercises/bras/import-curl-biceps-ez-frame1.5c18d412.webp",
+      "media/exercises/bras/import-curl-biceps-ez-frame2.b207e0cd.webp",
+      "media/exercises/bras/import-curl-biceps-ez-frame3.22d4f8f0.webp",
+    ],
+  },
+  "import-marche": {
+    thumbnail: "media/exercises/cardio/import-marche-thumb.e7497d81.webp",
+    photo: "media/exercises/cardio/import-marche.3e3bb9d8.webp",
+    frames: [
+      "media/exercises/cardio/import-marche-frame1.7cdc4ca7.webp",
+      "media/exercises/cardio/import-marche-frame2.0bab8c7b.webp",
+      "media/exercises/cardio/import-marche-frame3.64ea05b8.webp",
+    ],
+  },
+  "import-position-enfant": {
+    thumbnail: "media/exercises/mobilite/import-position-enfant-thumb.59bfee7f.webp",
+    photo: "media/exercises/mobilite/import-position-enfant.fe193431.webp",
+    frames: [
+      "media/exercises/mobilite/import-position-enfant-frame1.1943b5eb.webp",
+      "media/exercises/mobilite/import-position-enfant-frame2.c69fb5e3.webp",
+      "media/exercises/mobilite/import-position-enfant-frame3.6d8ee40e.webp",
+    ],
+  },
+  "import-rotation-dos-allonge": {
+    thumbnail: "media/exercises/mobilite/import-rotation-dos-allonge-thumb.61354dde.webp",
+    photo: "media/exercises/mobilite/import-rotation-dos-allonge.24cb8e3f.webp",
+    frames: [
+      "media/exercises/mobilite/import-rotation-dos-allonge-frame1.cc49bc8d.webp",
+      "media/exercises/mobilite/import-rotation-dos-allonge-frame2.34b530f4.webp",
+      "media/exercises/mobilite/import-rotation-dos-allonge-frame3.a268c93c.webp",
+    ],
+  },
   "leg-curl-assis": {
     thumbnail: "media/exercises/jambes/leg-curl-assis-thumb.2842d354.webp",
     photo: "media/exercises/jambes/leg-curl-assis.33696a7f.webp",
