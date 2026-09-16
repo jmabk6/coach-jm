@@ -331,14 +331,29 @@ export const exerciseMedia = {
   "test-apley": {
     thumbnail: "media/exercises/tests/test-apley-thumb.55580821.webp",
     photo: "media/exercises/tests/test-apley.ce362faf.webp",
+    frames: [
+      "media/exercises/tests/test-apley-frame1.7bfb9e14.webp",
+      "media/exercises/tests/test-apley-frame2.9351b438.webp",
+      "media/exercises/tests/test-apley-frame3.3a51543c.webp",
+    ],
   },
   "test-doigts-sol": {
     thumbnail: "media/exercises/tests/test-doigts-sol-thumb.668da5cd.webp",
     photo: "media/exercises/tests/test-doigts-sol.33fbaed6.webp",
+    frames: [
+      "media/exercises/tests/test-doigts-sol-frame1.81c5fad4.webp",
+      "media/exercises/tests/test-doigts-sol-frame2.58348017.webp",
+      "media/exercises/tests/test-doigts-sol-frame3.4c354a22.webp",
+    ],
   },
   "test-papillon": {
     thumbnail: "media/exercises/tests/test-papillon-thumb.c9bb742b.webp",
     photo: "media/exercises/tests/test-papillon.c643c997.webp",
+    frames: [
+      "media/exercises/tests/test-papillon-frame1.ce44b502.webp",
+      "media/exercises/tests/test-papillon-frame2.067fd676.webp",
+      "media/exercises/tests/test-papillon-frame3.02db5bd5.webp",
+    ],
   },
   "tirage-vertical": {
     thumbnail: "media/exercises/dos/tirage-vertical-thumb.403b1272.webp",
