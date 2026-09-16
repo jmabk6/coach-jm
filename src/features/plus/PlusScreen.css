@@ -107,3 +107,10 @@
   background: #fdeaea;
   color: var(--color-danger, #c2413b);
 }
+
+.plus-screen__version {
+  margin: 32px 0 0;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  text-align: center;
+}

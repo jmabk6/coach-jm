@@ -118,6 +118,14 @@ export function PlusScreen() {
         </p>
       )}
 
+      <p className="plus-screen__version">
+        Version du{" "}
+        {new Date(__BUILD_TIME__).toLocaleString("fr-FR", {
+          dateStyle: "short",
+          timeStyle: "short",
+        })}
+      </p>
+
       {importState.status === "confirm" && (
         <BottomSheet
           title="Importer mes séances de septembre 2026 ?"

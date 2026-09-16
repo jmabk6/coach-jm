@@ -1,9 +1,13 @@
-﻿import { defineConfig } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   base: "/coach-jm/",
+  define: {
+    /* Horodatage de build, affiché dans Plus pour savoir quelle version tourne. */
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     VitePWA({
