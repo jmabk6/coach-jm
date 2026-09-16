@@ -278,6 +278,11 @@
   white-space: nowrap;
 }
 
+.program-row__meta--wrap {
+  white-space: normal;
+  line-height: 1.3;
+}
+
 .program-row__menu {
   display: grid;
   place-items: center;

@@ -8,7 +8,7 @@ import {
   Plus,
 } from "lucide-react";
 import { addDays, addMonths, parseISO } from "date-fns";
-import type { Id, PlannedSession, SessionTemplate } from "../../domain";
+import type { Id, PlannedSession, SessionTemplate, WorkoutSession } from "../../domain";
 import {
   formatDayLabel,
   formatFullDate,
@@ -30,9 +30,14 @@ import {
   restorePlannedSession,
   skipPlannedSession,
 } from "./plannedSessionActions";
-import { useProgramData, type ProgramData } from "./useProgramData";
-import { PlannedSessionRow } from "./PlannedSessionRow";
-import { DateSheet, PlannedSessionMenu, TemplateSheet } from "./ProgramSheets";
+import { useProgramData, type ProgramData, type ProgramEntry } from "./useProgramData";
+import { FreeWorkoutRow, PlannedSessionRow } from "./PlannedSessionRow";
+import {
+  DateSheet,
+  FreeWorkoutMenu,
+  PlannedSessionMenu,
+  TemplateSheet,
+} from "./ProgramSheets";
 import "./ProgramScreen.css";
 
 type ProgramView = "week" | "month";
@@ -43,6 +48,7 @@ type ProgramView = "week" | "month";
  */
 type Flow =
   | { kind: "menu"; session: PlannedSession }
+  | { kind: "free-menu"; workout: WorkoutSession }
   | { kind: "move"; session: PlannedSession }
   | { kind: "replace"; session: PlannedSession }
   | { kind: "duplicate"; session: PlannedSession }
@@ -168,6 +174,8 @@ export function ProgramScreen() {
 
   const openMenu = (session: PlannedSession) =>
     setFlow({ kind: "menu", session });
+  const openFreeMenu = (workout: WorkoutSession) =>
+    setFlow({ kind: "free-menu", workout });
   const addOn = (date: string) => setFlow({ kind: "add-template", date });
 
   return (
@@ -225,6 +233,7 @@ export function ProgramScreen() {
             )
           }
           onOpenMenu={openMenu}
+          onOpenFreeMenu={openFreeMenu}
           onAddOn={addOn}
           onAdd={() =>
             setFlow({
@@ -263,6 +272,7 @@ export function ProgramScreen() {
             })
           }
           onOpenMenu={openMenu}
+          onOpenFreeMenu={openFreeMenu}
           onAddOn={addOn}
         />
       )}
@@ -303,8 +313,52 @@ interface WeekViewProps {
   today: string;
   onChangeWeek: (weekStart: string) => void;
   onOpenMenu: (session: PlannedSession) => void;
+  onOpenFreeMenu: (workout: WorkoutSession) => void;
   onAddOn: (date: string) => void;
   onAdd: () => void;
+}
+
+/**
+ * Ligne d'une entrée du planning, identique en Semaine et sous la grille
+ * du Mois.
+ */
+function EntryRow({
+  entry,
+  data,
+  onOpenMenu,
+  onOpenFreeMenu,
+}: {
+  entry: ProgramEntry;
+  data: ProgramData;
+  onOpenMenu: (session: PlannedSession) => void;
+  onOpenFreeMenu: (workout: WorkoutSession) => void;
+}) {
+  if (entry.kind === "free") {
+    return (
+      <FreeWorkoutRow
+        workout={entry.workout}
+        exerciseById={data.exerciseById}
+        onOpenMenu={onOpenFreeMenu}
+      />
+    );
+  }
+
+  return (
+    <PlannedSessionRow
+      session={entry.session}
+      template={data.templateById.get(entry.session.sessionTemplateId)}
+      durationLabel={data.durationLabel(entry.session.sessionTemplateId)}
+      onOpenMenu={onOpenMenu}
+    />
+  );
+}
+
+function entryKey(entry: ProgramEntry): string {
+  return entry.kind === "free" ? `free-${entry.workout.id}` : entry.session.id;
+}
+
+function entryStatus(entry: ProgramEntry): PlannedSession["status"] {
+  return entry.kind === "free" ? "done" : entry.session.status;
 }
 
 function describeWeek(weekStart: string, today: string): string {
@@ -332,6 +386,7 @@ function WeekView({
   today,
   onChangeWeek,
   onOpenMenu,
+  onOpenFreeMenu,
   onAddOn,
   onAdd,
 }: WeekViewProps) {
@@ -390,9 +445,7 @@ function WeekView({
 
       <ol className="program-week">
         {dates.map((date) => {
-          const sessions = data.sessions.filter(
-            (session) => session.date === date,
-          );
+          const entries = data.entries.filter((entry) => entry.date === date);
           const label = formatDayLabel(date);
 
           return (
@@ -408,7 +461,7 @@ function WeekView({
               </span>
 
               <div className="program-day__content">
-                {sessions.length === 0 ? (
+                {entries.length === 0 ? (
                   <div className="program-day__empty">
                     <span>Aucune séance</span>
                     <button
@@ -421,13 +474,13 @@ function WeekView({
                     </button>
                   </div>
                 ) : (
-                  sessions.map((session) => (
-                    <PlannedSessionRow
-                      key={session.id}
-                      session={session}
-                      template={data.templateById.get(session.sessionTemplateId)}
-                      durationLabel={data.durationLabel(session.sessionTemplateId)}
+                  entries.map((entry) => (
+                    <EntryRow
+                      key={entryKey(entry)}
+                      entry={entry}
+                      data={data}
                       onOpenMenu={onOpenMenu}
+                      onOpenFreeMenu={onOpenFreeMenu}
                     />
                   ))
                 )}
@@ -472,6 +525,7 @@ interface MonthViewProps {
   onSelectDate: (date: string) => void;
   onToday: () => void;
   onOpenMenu: (session: PlannedSession) => void;
+  onOpenFreeMenu: (workout: WorkoutSession) => void;
   onAddOn: (date: string) => void;
 }
 
@@ -498,6 +552,7 @@ function MonthView({
   onSelectDate,
   onToday,
   onOpenMenu,
+  onOpenFreeMenu,
   onAddOn,
 }: MonthViewProps) {
   const month = monthStart.slice(0, 7);
@@ -511,15 +566,15 @@ function MonthView({
     dates.push(date);
   }
 
-  const sessionsByDate = new Map<string, PlannedSession[]>();
+  const entriesByDate = new Map<string, ProgramEntry[]>();
 
-  for (const session of data.sessions) {
-    const list = sessionsByDate.get(session.date) ?? [];
-    list.push(session);
-    sessionsByDate.set(session.date, list);
+  for (const entry of data.entries) {
+    const list = entriesByDate.get(entry.date) ?? [];
+    list.push(entry);
+    entriesByDate.set(entry.date, list);
   }
 
-  const selectedSessions = sessionsByDate.get(selectedDate) ?? [];
+  const selectedEntries = entriesByDate.get(selectedDate) ?? [];
 
   return (
     <>
@@ -568,7 +623,7 @@ function MonthView({
 
         <div className="program-month__grid">
           {dates.map((date) => {
-            const sessions = sessionsByDate.get(date) ?? [];
+            const sessions = entriesByDate.get(date) ?? [];
             const outside = date.slice(0, 7) !== month;
             const classes = [
               "program-month__day",
@@ -597,10 +652,10 @@ function MonthView({
                   {Number(date.slice(8, 10))}
                 </span>
                 <span className="program-month__markers">
-                  {sessions.map((session) => (
+                  {sessions.map((entry) => (
                     <span
-                      key={session.id}
-                      className={`program-marker program-marker--${session.status}`}
+                      key={entryKey(entry)}
+                      className={`program-marker program-marker--${entryStatus(entry)}`}
                     />
                   ))}
                 </span>
@@ -622,17 +677,17 @@ function MonthView({
       <section className="program-selected" aria-live="polite">
         <h2>{capitalize(formatFullDate(selectedDate))}</h2>
 
-        {selectedSessions.map((session) => (
-          <PlannedSessionRow
-            key={session.id}
-            session={session}
-            template={data.templateById.get(session.sessionTemplateId)}
-            durationLabel={data.durationLabel(session.sessionTemplateId)}
+        {selectedEntries.map((entry) => (
+          <EntryRow
+            key={entryKey(entry)}
+            entry={entry}
+            data={data}
             onOpenMenu={onOpenMenu}
+            onOpenFreeMenu={onOpenFreeMenu}
           />
         ))}
 
-        {selectedSessions.length === 0 && (
+        {selectedEntries.length === 0 && (
           <p className="program-selected__empty">Aucune séance</p>
         )}
 
@@ -692,6 +747,9 @@ function ProgramFlow({
           onDismiss={onDismiss}
         />
       );
+
+    case "free-menu":
+      return <FreeWorkoutMenu workout={flow.workout} onDismiss={onDismiss} />;
 
     case "move":
       return (

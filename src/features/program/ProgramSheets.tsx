@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Info } from "lucide-react";
-import type { Id, PlannedSession, SessionTemplate } from "../../domain";
+import type { Id, PlannedSession, SessionTemplate, WorkoutSession } from "../../domain";
 import {
   formatFullDate,
   formatPlannedSessionTitle,
@@ -179,6 +179,34 @@ export function PlannedSessionMenu({
         </p>
       )}
     </BottomSheet>
+  );
+}
+
+interface FreeWorkoutMenuProps {
+  workout: WorkoutSession;
+  onDismiss: () => void;
+}
+
+/**
+ * Menu d'une réalisation libre : elle n'est pas une instance, rien ne se
+ * déplace ni ne se retire ; seul le récapitulatif (Étape 7) la concerne.
+ */
+export function FreeWorkoutMenu({ workout, onDismiss }: FreeWorkoutMenuProps) {
+  return (
+    <BottomSheet
+      title={formatPlannedSessionTitle("Séance libre", workout.date)}
+      message="Faite · réalisée hors Programme, la règle hebdomadaire n'est pas concernée"
+      actions={[
+        {
+          label: "Voir le récapitulatif",
+          hint: pendingReason("recap"),
+          disabled: true,
+          onSelect: () => undefined,
+        },
+      ]}
+      dismissLabel="Fermer"
+      onDismiss={onDismiss}
+    />
   );
 }
 

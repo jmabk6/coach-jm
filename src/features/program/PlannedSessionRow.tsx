@@ -1,7 +1,17 @@
 import { EllipsisVertical } from "lucide-react";
-import type { PlannedSession, SessionTemplate } from "../../domain";
+import type {
+  Exercise,
+  Id,
+  PlannedSession,
+  SessionTemplate,
+  WorkoutSession,
+} from "../../domain";
 import { plannedSessionStatusLabels } from "../../domain/rules/programRules";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
+import {
+  formatFreeWorkoutSummary,
+  inferFreeWorkoutCategory,
+} from "./freeWorkouts";
 
 interface PlannedSessionRowProps {
   session: PlannedSession;
@@ -57,6 +67,59 @@ export function PlannedSessionRow({
         className="program-row__menu"
         aria-label={`Actions pour ${name}`}
         onClick={() => onOpenMenu(session)}
+      >
+        <EllipsisVertical size={20} strokeWidth={2} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+interface FreeWorkoutRowProps {
+  workout: WorkoutSession;
+  exerciseById: Map<Id, Exercise>;
+  onOpenMenu: (workout: WorkoutSession) => void;
+}
+
+/**
+ * Une réalisation libre au calendrier : même structure de ligne,
+ * badge `Faite · Libre`, résumé du contenu réellement fait.
+ */
+export function FreeWorkoutRow({
+  workout,
+  exerciseById,
+  onOpenMenu,
+}: FreeWorkoutRowProps) {
+  const category = inferFreeWorkoutCategory(workout, exerciseById);
+
+  return (
+    <div className="program-row">
+      <button
+        type="button"
+        className="program-row__main"
+        onClick={() => onOpenMenu(workout)}
+      >
+        <span
+          className={`program-row__icon session-card__icon--${category}`}
+          aria-hidden="true"
+        >
+          <SessionCategoryIcon category={category} size={22} />
+        </span>
+
+        <span className="program-row__body">
+          <span className="program-row__name">Séance libre</span>
+          <span className="program-row__meta program-row__meta--wrap">
+            {formatFreeWorkoutSummary(workout, exerciseById)}
+          </span>
+        </span>
+
+        <span className="program-badge program-badge--done">Faite · Libre</span>
+      </button>
+
+      <button
+        type="button"
+        className="program-row__menu"
+        aria-label="Actions pour la séance libre"
+        onClick={() => onOpenMenu(workout)}
       >
         <EllipsisVertical size={20} strokeWidth={2} aria-hidden="true" />
       </button>
