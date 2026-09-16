@@ -31,7 +31,8 @@ interface SessionCardProps {
 /**
  * Carte d'un modèle (§5) : icône de catégorie, nom, résumé calculé,
  * badge `Programmée` / `Non programmée` sur sa propre ligne, durée,
- * nombre de réalisations. Le menu `⋯` est un frère du lien, pas un enfant.
+ * nombre de réalisations. Le lien couvre la carte ; le menu `⋯` et le
+ * chevron sont ses frères, chacun dans sa colonne.
  */
 export function SessionCard({
   template,
@@ -76,13 +77,6 @@ export function SessionCard({
             {formatCompletionCount(completedWorkouts.length)}
           </span>
         </span>
-
-        <ChevronRight
-          className="session-card__chevron"
-          size={20}
-          strokeWidth={2}
-          aria-hidden="true"
-        />
       </Link>
 
       <button
@@ -93,6 +87,13 @@ export function SessionCard({
       >
         <EllipsisVertical size={20} strokeWidth={2} aria-hidden="true" />
       </button>
+
+      <ChevronRight
+        className="session-card__chevron"
+        size={20}
+        strokeWidth={2}
+        aria-hidden="true"
+      />
     </li>
   );
 }
