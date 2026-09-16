@@ -306,3 +306,34 @@ export function defaultGroupChildInstructionsFor(
       return { shape: "reps", reps: { min: 8, max: 12 } };
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Libellés                                                                   */
+/* -------------------------------------------------------------------------- */
+
+const measurementTypeLabels: Record<Exercise["measurementType"], string> = {
+  load_reps: "Charge + répétitions",
+  reps: "Répétitions",
+  reps_per_side: "Répétitions par côté",
+  duration: "Durée",
+  duration_per_side: "Durée par côté",
+  duration_speed_incline: "Durée + vitesse + pente",
+  duration_distance: "Durée + distance",
+  distance: "Distance",
+  distance_cm: "Distance en cm",
+  distance_cm_per_side: "Distance en cm par côté",
+};
+
+export function formatMeasurementType(exercise: Exercise): string {
+  return measurementTypeLabels[exercise.measurementType];
+}
+
+const modeLabels: Record<Exercise["mode"], string> = {
+  series: "séries",
+  steps: "paliers",
+  simple: "mesure simple",
+};
+
+export function formatMode(exercise: Exercise): string {
+  return modeLabels[exercise.mode];
+}

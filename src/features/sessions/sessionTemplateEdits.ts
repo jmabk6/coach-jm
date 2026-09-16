@@ -1,6 +1,9 @@
 import type {
   Exercise,
   ExerciseBlock,
+  ExerciseInstructions,
+  GroupBlock,
+  GroupChild,
   Id,
   NoteBlock,
   SessionBlock,
@@ -149,4 +152,170 @@ export function listExerciseIds(blocks: SessionBlock[]): Id[] {
     }
     return [];
   });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Consignes d'une brique                                                     */
+/* -------------------------------------------------------------------------- */
+
+export function updateExerciseBlock(
+  template: SessionTemplate,
+  blockId: Id,
+  changes: Pick<ExerciseBlock, "exerciseId" | "instructions"> & {
+    notes?: string;
+  },
+): SessionTemplate {
+  return withBlocks(
+    template,
+    template.blocks.map((block) => {
+      if (block.id !== blockId || block.kind !== "exercise") {
+        return block;
+      }
+
+      const next: ExerciseBlock = {
+        ...block,
+        exerciseId: changes.exerciseId,
+        instructions: changes.instructions,
+      };
+
+      if (changes.notes) next.notes = changes.notes;
+      else delete next.notes;
+
+      return next;
+    }),
+  );
+}
+
+export function updateGroupChild(
+  template: SessionTemplate,
+  groupId: Id,
+  childId: Id,
+  changes: Pick<GroupChild, "exerciseId" | "instructions"> & {
+    restBeforeSec?: number;
+    notes?: string;
+  },
+): SessionTemplate {
+  return withBlocks(
+    template,
+    template.blocks.map((block) => {
+      if (block.id !== groupId || block.kind !== "group") {
+        return block;
+      }
+
+      return {
+        ...block,
+        children: block.children.map((child) => {
+          if (child.id !== childId) return child;
+
+          const next: GroupChild = {
+            ...child,
+            exerciseId: changes.exerciseId,
+            instructions: changes.instructions,
+          };
+
+          if (changes.restBeforeSec) next.restBeforeSec = changes.restBeforeSec;
+          else delete next.restBeforeSec;
+
+          if (changes.notes) next.notes = changes.notes;
+          else delete next.notes;
+
+          return next;
+        }),
+      };
+    }),
+  );
+}
+
+/**
+ * Un enfant redevient une brique classique, placée juste après son groupe.
+ * Il reprend le nombre de tours en séries et le repos du groupe (§7).
+ */
+export function childToExerciseBlock(
+  group: GroupBlock,
+  child: GroupChild,
+  newId: () => Id,
+): ExerciseBlock {
+  const instructions: ExerciseInstructions =
+    child.instructions.shape === "duration"
+      ? {
+          shape: "duration",
+          sets: group.rounds,
+          durationSec: child.instructions.durationSec,
+          restBetweenSetsSec: group.restBetweenRoundsSec,
+          ...(child.instructions.targetRpe
+            ? { targetRpe: child.instructions.targetRpe }
+            : {}),
+          ...(child.instructions.technicalCue
+            ? { technicalCue: child.instructions.technicalCue }
+            : {}),
+        }
+      : {
+          shape: "reps",
+          sets: group.rounds,
+          reps: child.instructions.reps,
+          restBetweenSetsSec: group.restBetweenRoundsSec,
+          ...(child.instructions.targetRpe
+            ? { targetRpe: child.instructions.targetRpe }
+            : {}),
+          ...(child.instructions.tempo ? { tempo: child.instructions.tempo } : {}),
+          ...(child.instructions.technicalCue
+            ? { technicalCue: child.instructions.technicalCue }
+            : {}),
+        };
+
+  return {
+    id: newId(),
+    kind: "exercise",
+    position: group.position + 0.5,
+    exerciseId: child.exerciseId,
+    instructions,
+    ...(child.notes ? { notes: child.notes } : {}),
+  };
+}
+
+/**
+ * Retire un enfant de son groupe. `keep` le replace dans la séance après le
+ * groupe (« Sortir du groupe ») ; sinon il quitte la séance (« Retirer »).
+ *
+ * Un groupe garde au moins deux exercices : s'il n'en reste qu'un, le groupe
+ * est dissous et l'exercice restant redevient une brique classique (§7).
+ */
+export function removeGroupChild(
+  template: SessionTemplate,
+  groupId: Id,
+  childId: Id,
+  keep: boolean,
+  newId: () => Id,
+): SessionTemplate {
+  const group = template.blocks.find(
+    (block): block is GroupBlock => block.id === groupId && block.kind === "group",
+  );
+  const child = group?.children.find((item) => item.id === childId);
+
+  if (!group || !child) {
+    return template;
+  }
+
+  const remaining = group.children
+    .filter((item) => item.id !== childId)
+    .sort((a, b) => a.position - b.position)
+    .map((item, index) => ({ ...item, position: index }));
+
+  const detached: SessionBlock[] = keep
+    ? [childToExerciseBlock(group, child, newId)]
+    : [];
+
+  const groupOrDissolved: SessionBlock[] =
+    remaining.length >= 2
+      ? [{ ...group, children: remaining }]
+      : remaining.map((item, index) => ({
+          ...childToExerciseBlock(group, item, newId),
+          position: group.position + 0.25 * (index + 1),
+        }));
+
+  return withBlocks(template, [
+    ...template.blocks.filter((block) => block.id !== groupId),
+    ...groupOrDissolved,
+    ...detached,
+  ]);
 }

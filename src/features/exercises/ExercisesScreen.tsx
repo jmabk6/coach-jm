@@ -214,6 +214,9 @@ export function ExercisesScreen() {
      dans l'ordre de sélection (§3 : A puis B) ; `Annuler` y revient sans rien. */
   const returnTo = searchParams.get("returnTo");
 
+  /* `single=1` : un seul exercice à la fois (Changer d'exercice). */
+  const singleSelection = searchParams.get("single") === "1";
+
   function finishSelection(exerciseIds: string[]) {
     if (!returnTo) return;
 
@@ -367,7 +370,9 @@ const selectedExerciseIds = useMemo(
       ? selectedExerciseIds.filter(
           (id) => id !== exerciseId,
         )
-      : [...selectedExerciseIds, exerciseId];
+      : singleSelection
+        ? [exerciseId]
+        : [...selectedExerciseIds, exerciseId];
 
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete("selected");
@@ -527,13 +532,17 @@ const selectedExerciseIds = useMemo(
         <div>
           <h1>
             {selectionMode
-              ? "Choisir des exercices"
+              ? singleSelection
+                ? "Changer d'exercice"
+                : "Choisir des exercices"
               : "Exercices"}
           </h1>
 
           <p>
             {selectionMode
-              ? "Sélectionne les exercices à ajouter"
+              ? singleSelection
+                ? "Sélectionne l'exercice de remplacement"
+                : "Sélectionne les exercices à ajouter"
               : "Bibliothèque d'exercices"}
           </p>
         </div>
@@ -909,7 +918,7 @@ const selectedExerciseIds = useMemo(
             disabled={selectedExerciseIds.length === 0}
             onClick={() => finishSelection(selectedExerciseIds)}
           >
-            Ajouter
+            {singleSelection ? "Remplacer" : "Ajouter"}
           </button>
         </div>
       )}
