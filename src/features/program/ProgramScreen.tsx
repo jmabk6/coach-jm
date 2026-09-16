@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   CalendarCog,
   CalendarDays,
@@ -71,8 +71,16 @@ function capitalize(value: string): string {
  */
 export function ProgramScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [flow, setFlow] = useState<Flow>();
+
+  const openRecap = (workoutId: string) =>
+    navigate(
+      `/workouts/${workoutId}?returnTo=${encodeURIComponent(
+        `${location.pathname}${location.search}`,
+      )}`,
+    );
 
   const view: ProgramView = searchParams.get("view") === "mois" ? "month" : "week";
   const focusDate = searchParams.get("date") ?? today();
@@ -166,8 +174,10 @@ export function ProgramScreen() {
       case "remove":
         void run(() => removePlannedSession(session.id));
         return;
-      case "start":
       case "recap":
+        if (session.workoutId) openRecap(session.workoutId);
+        return;
+      case "start":
         return;
     }
   }
@@ -296,6 +306,7 @@ export function ProgramScreen() {
           onAdd={(date, templateId) =>
             void run(() => addPlannedSession(date, templateId))
           }
+          onOpenRecap={openRecap}
           onDismiss={() => setFlow(undefined)}
         />
       )}
@@ -719,6 +730,7 @@ interface ProgramFlowProps {
   onDuplicate: (session: PlannedSession, date: string) => void;
   onAddDate: (date: string) => void;
   onAdd: (date: string, templateId: Id) => void;
+  onOpenRecap: (workoutId: string) => void;
   onDismiss: () => void;
 }
 
@@ -732,6 +744,7 @@ function ProgramFlow({
   onDuplicate,
   onAddDate,
   onAdd,
+  onOpenRecap,
   onDismiss,
 }: ProgramFlowProps) {
   const templateName = (session: PlannedSession) =>
@@ -749,7 +762,13 @@ function ProgramFlow({
       );
 
     case "free-menu":
-      return <FreeWorkoutMenu workout={flow.workout} onDismiss={onDismiss} />;
+      return (
+        <FreeWorkoutMenu
+          workout={flow.workout}
+          onOpenRecap={(workout) => onOpenRecap(workout.id)}
+          onDismiss={onDismiss}
+        />
+      );
 
     case "move":
       return (

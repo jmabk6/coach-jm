@@ -148,7 +148,10 @@ export function PlannedSessionMenu({
 }: PlannedSessionMenuProps) {
   const actions: SheetAction[] = listPlannedSessionActions(session).map(
     (entry) => {
-      const pending = pendingReason(entry.action);
+      const pending =
+        entry.action === "recap" && session.workoutId
+          ? undefined
+          : pendingReason(entry.action);
       const reason = entry.unavailableReason ?? pending;
 
       return {
@@ -184,6 +187,7 @@ export function PlannedSessionMenu({
 
 interface FreeWorkoutMenuProps {
   workout: WorkoutSession;
+  onOpenRecap: (workout: WorkoutSession) => void;
   onDismiss: () => void;
 }
 
@@ -191,7 +195,11 @@ interface FreeWorkoutMenuProps {
  * Menu d'une réalisation libre : elle n'est pas une instance, rien ne se
  * déplace ni ne se retire ; seul le récapitulatif (Étape 7) la concerne.
  */
-export function FreeWorkoutMenu({ workout, onDismiss }: FreeWorkoutMenuProps) {
+export function FreeWorkoutMenu({
+  workout,
+  onOpenRecap,
+  onDismiss,
+}: FreeWorkoutMenuProps) {
   return (
     <BottomSheet
       title={formatPlannedSessionTitle("Séance libre", workout.date)}
@@ -199,9 +207,8 @@ export function FreeWorkoutMenu({ workout, onDismiss }: FreeWorkoutMenuProps) {
       actions={[
         {
           label: "Voir le récapitulatif",
-          hint: pendingReason("recap"),
-          disabled: true,
-          onSelect: () => undefined,
+          tone: "primary",
+          onSelect: () => onOpenRecap(workout),
         },
       ]}
       dismissLabel="Fermer"
