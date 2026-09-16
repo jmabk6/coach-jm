@@ -55,6 +55,44 @@
   list-style: none;
 }
 
+.block-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+/* La poignée occupe le bord droit de la carte, sur toute sa hauteur */
+
+.block-item--draggable .block-card {
+  padding-right: 40px;
+}
+
+.block-item--dragging {
+  z-index: 2;
+}
+
+.block-item--dragging .block-card {
+  box-shadow: 0 10px 28px rgba(16, 24, 40, 0.2);
+}
+
+.block-item__handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  border: 0;
+  border-left: 1px solid var(--color-border, #e4e7ec);
+  border-radius: 0 var(--radius-md, 14px) var(--radius-md, 14px) 0;
+  background: var(--color-surface-soft, #f2f4f7);
+  color: var(--color-text-soft, #666);
+  cursor: grab;
+  touch-action: none;
+}
+
 .block-card {
   position: relative;
   display: grid;

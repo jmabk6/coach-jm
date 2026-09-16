@@ -51,7 +51,7 @@ export function ExerciseBlockCard({
 }: ExerciseBlockCardProps) {
   if (selection) {
     return (
-      <li
+      <div
         className={`block-card block-card--selectable ${
           selection.checked ? "block-card--checked" : ""
         } ${selection.disabled ? "block-card--unselectable" : ""}`}
@@ -84,12 +84,12 @@ export function ExerciseBlockCard({
             </span>
           </span>
         </div>
-      </li>
+      </div>
     );
   }
 
   return (
-    <li className="block-card">
+    <div className="block-card">
       <button type="button" className="block-card__main" onClick={onOpen}>
         <span className="block-card__number">{number}</span>
         <ExerciseThumb exercise={exercise} />
@@ -109,7 +109,7 @@ export function ExerciseBlockCard({
       </button>
 
       <MenuButton label={exercise?.name ?? "cette brique"} onClick={onOpenMenu} />
-    </li>
+    </div>
   );
 }
 
@@ -123,7 +123,7 @@ interface NoteBlockCardProps {
 export function NoteBlockCard({ block, selecting, onOpen, onOpenMenu }: NoteBlockCardProps) {
   if (selecting) {
     return (
-      <li className="block-card block-card--note block-card--selectable block-card--unselectable">
+      <div className="block-card block-card--note block-card--selectable block-card--unselectable">
         <span className="block-card__check" aria-hidden="true">
           <input type="checkbox" disabled />
         </span>
@@ -139,12 +139,12 @@ export function NoteBlockCard({ block, selecting, onOpen, onOpenMenu }: NoteBloc
             </span>
           </span>
         </div>
-      </li>
+      </div>
     );
   }
 
   return (
-    <li className="block-card block-card--note">
+    <div className="block-card block-card--note">
       <button type="button" className="block-card__main" onClick={onOpen}>
         <span className="block-card__number" aria-hidden="true" />
         <span className="block-card__thumb block-card__thumb--note" aria-hidden="true">
@@ -161,7 +161,7 @@ export function NoteBlockCard({ block, selecting, onOpen, onOpenMenu }: NoteBloc
       </button>
 
       <MenuButton label={block.title ?? "cette note"} onClick={onOpenMenu} />
-    </li>
+    </div>
   );
 }
 
@@ -194,7 +194,7 @@ export function GroupBlockCard({
   const name = formatGroupName(block, number);
 
   return (
-    <li
+    <div
       className={`block-card block-card--group ${
         selecting ? "block-card--selectable block-card--locked" : ""
       }`}
@@ -253,7 +253,7 @@ export function GroupBlockCard({
           );
         })}
       </ul>
-    </li>
+    </div>
   );
 }
 

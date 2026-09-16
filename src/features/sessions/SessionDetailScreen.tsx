@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Dumbbell, EllipsisVertical, FileText, Link2, Plus, X } from "lucide-react";
+import { Dumbbell, EllipsisVertical, FileText, GripVertical, Link2, Plus, X } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { SessionBlock } from "../../domain";
 import { calculateBlockNumbering } from "../../domain/rules/sessionTemplateRules";
 import { archiveSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
@@ -17,6 +32,7 @@ import {
   isGroupCandidate,
   listExerciseIds,
   removeBlock,
+  reorderBlocks,
 } from "./sessionTemplateEdits";
 import { useSessionTemplate } from "./useSessionTemplate";
 import "./SessionDetailScreen.css";
@@ -42,6 +58,10 @@ export function SessionDetailScreen() {
 
   const pendingAddIds = useMemo(() => searchParams.getAll("add"), [searchParams]);
   const addingRef = useRef(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+  );
 
   /* Retour de la bibliothèque : on ajoute A puis B, puis on nettoie l'URL. */
   useEffect(() => {
@@ -164,6 +184,19 @@ export function SessionDetailScreen() {
     .filter((value): value is string => Boolean(value))
     .sort((a, b) => Number(a) - Number(b));
 
+  /* Drag & drop (§6) : la poignée est sur la brique de niveau séance ;
+     un groupe emporte ses enfants, la numérotation se recalcule. */
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const ids = blocks.map((block) => block.id);
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+
+    await save(reorderBlocks(template, arrayMove(ids, from, to)));
+  }
+
   async function handleRemove(block: SessionBlock) {
     setBlockMenu(undefined);
     await save(removeBlock(template, block.id));
@@ -266,12 +299,22 @@ export function SessionDetailScreen() {
         </div>
       ) : (
         <>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={(event) => void handleDragEnd(event)}
+          >
+          <SortableContext
+            items={blocks.map((block) => block.id)}
+            strategy={verticalListSortingStrategy}
+            disabled={selecting}
+          >
           <ul className="block-list">
             {blocks.map((block) => {
+              const card = (() => {
               if (block.kind === "note") {
                 return (
                   <NoteBlockCard
-                    key={block.id}
                     block={block}
                     selecting={selecting}
                     onOpen={() =>
@@ -285,7 +328,6 @@ export function SessionDetailScreen() {
               if (block.kind === "group") {
                 return (
                   <GroupBlockCard
-                    key={block.id}
                     block={block}
                     number={numbering[block.id] ?? ""}
                     numbering={numbering}
@@ -306,7 +348,6 @@ export function SessionDetailScreen() {
 
               return (
                 <ExerciseBlockCard
-                  key={block.id}
                   block={block}
                   number={numbering[block.id] ?? ""}
                   exercise={exerciseById.get(block.exerciseId)}
@@ -325,8 +366,22 @@ export function SessionDetailScreen() {
                   onOpenMenu={() => setBlockMenu(block)}
                 />
               );
+              })();
+
+              return (
+                <SortableBlockItem
+                  key={block.id}
+                  id={block.id}
+                  label={blockMenuTitle(block, exerciseById, numbering)}
+                  draggable={!selecting && blocks.length > 1}
+                >
+                  {card}
+                </SortableBlockItem>
+              );
             })}
           </ul>
+          </SortableContext>
+          </DndContext>
 
           {!selecting && (
             <AddActions
@@ -437,6 +492,45 @@ function blockMenuTitle(
     return block.name?.trim() || `Groupe ${numbering[block.id] ?? ""}`;
   }
   return exerciseById.get(block.exerciseId)?.name ?? "Exercice";
+}
+
+interface SortableBlockItemProps {
+  id: string;
+  label: string;
+  draggable: boolean;
+  children: React.ReactNode;
+}
+
+/**
+ * Élément de liste triable : la carte à gauche, la poignée à droite.
+ * Les enfants d'un groupe n'en ont pas, ils suivent leur groupe (§7).
+ */
+function SortableBlockItem({ id, label, draggable, children }: SortableBlockItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id, disabled: !draggable });
+
+  return (
+    <li
+      ref={setNodeRef}
+      className={`block-item ${draggable ? "block-item--draggable" : ""} ${
+        isDragging ? "block-item--dragging" : ""
+      }`}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
+      {children}
+      {draggable && (
+        <button
+          type="button"
+          className="block-item__handle"
+          aria-label={`Déplacer ${label}`}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical size={20} strokeWidth={2} aria-hidden="true" />
+        </button>
+      )}
+    </li>
+  );
 }
 
 interface AddActionsProps {
