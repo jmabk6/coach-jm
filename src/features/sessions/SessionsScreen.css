@@ -82,31 +82,24 @@
 
 .sessions-screen__chips {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-bottom: 14px;
-  overflow-x: auto;
   padding: 2px 0 6px;
-  scrollbar-width: none;
-}
-
-.sessions-screen__chips::-webkit-scrollbar {
-  display: none;
 }
 
 .sessions-screen__chip-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 /* `Réorganiser` est une action, pas un filtre : séparée et sans fond de puce */
 
 .session-chip--action {
-  margin-left: 4px;
-  padding-left: 12px;
+  margin-left: auto;
   border-color: transparent;
-  border-left: 1px solid var(--color-border, #ddd);
-  border-radius: 0;
   background: transparent;
   color: var(--color-accent, #2f6fed);
   font-weight: 600;

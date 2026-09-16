@@ -387,6 +387,7 @@ export function SessionDetailScreen() {
             <AddActions
               templateId={template.id}
               onAddExercise={openLibrary}
+              {...(candidateCount >= 2 ? { onCreateGroup: startSelection } : {})}
               compact
             />
           )}
@@ -536,10 +537,15 @@ function SortableBlockItem({ id, label, draggable, children }: SortableBlockItem
 interface AddActionsProps {
   templateId: string;
   onAddExercise: () => void;
+  /**
+   * Proposé seulement quand deux briques au moins peuvent être groupées (§17) :
+   * absent de l'état vide, absent tant qu'il n'y a qu'un exercice en séries.
+   */
+  onCreateGroup?: () => void;
   compact?: boolean;
 }
 
-function AddActions({ templateId, onAddExercise, compact }: AddActionsProps) {
+function AddActions({ templateId, onAddExercise, onCreateGroup, compact }: AddActionsProps) {
   const navigate = useNavigate();
 
   return (
@@ -567,6 +573,20 @@ function AddActions({ templateId, onAddExercise, compact }: AddActionsProps) {
           {!compact && <small>Échauffement, consignes, rappel…</small>}
         </span>
       </button>
+
+      {onCreateGroup && (
+        <button
+          type="button"
+          className="session-detail__action session-detail__action--group"
+          onClick={onCreateGroup}
+        >
+          <Link2 size={22} strokeWidth={2} aria-hidden="true" />
+          <span>
+            <strong>Créer un groupe</strong>
+            <small>Cochez des briques consécutives</small>
+          </span>
+        </button>
+      )}
     </div>
   );
 }

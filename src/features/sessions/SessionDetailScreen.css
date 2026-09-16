@@ -275,6 +275,19 @@
   font-size: 0.92rem;
 }
 
+/* Troisième action, pleine largeur sous les deux premières */
+
+.session-detail__action--group {
+  grid-column: 1 / -1;
+  border-color: #d9ccff;
+  background: #f5f1ff;
+  color: #4b2bb0;
+}
+
+.session-detail__actions--compact .session-detail__action--group small {
+  display: inline;
+}
+
 /* État vide */
 
 .session-detail__empty {
