@@ -287,6 +287,11 @@ export const exerciseMedia = {
   "rameur": {
     thumbnail: "media/exercises/cardio/rameur-thumb.490ce936.webp",
     photo: "media/exercises/cardio/rameur.c8259ecd.webp",
+    frames: [
+      "media/exercises/cardio/rameur-frame1.d5d02c5d.webp",
+      "media/exercises/cardio/rameur-frame2.94b54656.webp",
+      "media/exercises/cardio/rameur-frame3.861a8fab.webp",
+    ],
   },
   "rowing-haltere-unilateral": {
     thumbnail: "media/exercises/dos/rowing-haltere-unilateral-thumb.e4b3b3fd.webp",
@@ -327,6 +332,11 @@ export const exerciseMedia = {
   "tapis": {
     thumbnail: "media/exercises/cardio/tapis-thumb.c268f271.webp",
     photo: "media/exercises/cardio/tapis.037552a0.webp",
+    frames: [
+      "media/exercises/cardio/tapis-frame1.012cccf2.webp",
+      "media/exercises/cardio/tapis-frame2.4313d946.webp",
+      "media/exercises/cardio/tapis-frame3.341fcd25.webp",
+    ],
   },
   "test-apley": {
     thumbnail: "media/exercises/tests/test-apley-thumb.55580821.webp",
@@ -376,10 +386,20 @@ export const exerciseMedia = {
   "velo": {
     thumbnail: "media/exercises/cardio/velo-thumb.4bc66c78.webp",
     photo: "media/exercises/cardio/velo.80e282f4.webp",
+    frames: [
+      "media/exercises/cardio/velo-frame1.c49ffc5a.webp",
+      "media/exercises/cardio/velo-frame2.37e5a73c.webp",
+      "media/exercises/cardio/velo-frame3.a02ee02f.webp",
+    ],
   },
   "velo-elliptique": {
     thumbnail: "media/exercises/cardio/velo-elliptique-thumb.c926cd14.webp",
     photo: "media/exercises/cardio/velo-elliptique.b2a116e6.webp",
+    frames: [
+      "media/exercises/cardio/velo-elliptique-frame1.d2312568.webp",
+      "media/exercises/cardio/velo-elliptique-frame2.362b7540.webp",
+      "media/exercises/cardio/velo-elliptique-frame3.d75c2efe.webp",
+    ],
   },
 } as const;
 
