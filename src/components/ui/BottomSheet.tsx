@@ -7,14 +7,18 @@ export interface SheetAction {
    * Conséquence de l'action, affichée en sous-titre (§18) :
    * une action irréversible porte toujours la sienne.
    */
-  hint?: string;
+  hint?: string | undefined;
   tone?: "default" | "primary" | "danger";
+  /**
+   * Action indisponible : grisée avec sa raison dans `hint`, jamais masquée (§9).
+   */
+  disabled?: boolean;
   onSelect: () => void;
 }
 
 interface BottomSheetProps {
   title: string;
-  message?: string;
+  message?: string | undefined;
   actions: SheetAction[];
   /**
    * Libellé de l'action de repli, toujours présente et jamais destructive.
@@ -77,6 +81,7 @@ export function BottomSheet({
               className={`bottom-sheet__action bottom-sheet__action--${
                 action.tone ?? "default"
               }`}
+              disabled={action.disabled}
               onClick={action.onSelect}
             >
               <span className="bottom-sheet__action-label">{action.label}</span>

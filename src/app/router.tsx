@@ -13,6 +13,8 @@ import { SessionDetailScreen } from "../features/sessions/SessionDetailScreen";
 import { SessionNoteScreen } from "../features/sessions/SessionNoteScreen";
 import { BlockEditScreen } from "../features/sessions/BlockEditScreen";
 import { GroupEditScreen } from "../features/sessions/GroupEditScreen";
+import { ProgramScreen } from "../features/program/ProgramScreen";
+import { WeeklyProgramScreen } from "../features/program/WeeklyProgramScreen";
 
 export const router = createHashRouter([
   {
@@ -20,7 +22,8 @@ export const router = createHashRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <Screen title="Aujourd'hui" /> },
-      { path: "programme", element: <Screen title="Programme" /> },
+      { path: "programme", element: <ProgramScreen /> },
+      { path: "programme/programmation", element: <WeeklyProgramScreen /> },
       { path: "progression", element: <Screen title="Progression" /> },
       { path: "plus", element: <PlusScreen /> },
       { path: "sessions", element: <SessionsScreen /> },

@@ -80,6 +80,12 @@
   color: var(--color-danger, #c2413b);
 }
 
+.bottom-sheet__action:disabled {
+  background: var(--color-surface-soft, #f2f4f7);
+  color: var(--color-text-soft, #666);
+  cursor: default;
+}
+
 .bottom-sheet__action--dismiss {
   margin-top: 6px;
   border-color: transparent;

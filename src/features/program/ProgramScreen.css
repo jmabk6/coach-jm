@@ -1,0 +1,617 @@
+.program-screen {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.program-screen__header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.program-screen__header--stack {
+  gap: 2px;
+}
+
+.program-screen__header h1 {
+  margin: 0;
+  font-size: 1.85rem;
+}
+
+.program-screen__subtitle {
+  margin: 0 0 14px;
+  color: var(--color-text-soft, #666);
+  font-size: 0.95rem;
+}
+
+.program-screen__nav {
+  margin-bottom: 12px;
+}
+
+.program-screen__back {
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+}
+
+.program-screen__message {
+  padding: 24px 0;
+  color: var(--color-text-soft, #666);
+}
+
+.program-screen__message--error {
+  color: var(--color-danger, #b00020);
+}
+
+/* Sélecteur Semaine | Mois : deux vues, un même planning (§9) */
+
+.program-screen__views {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--color-surface-soft, #f2f4f7);
+}
+
+.program-screen__view {
+  min-height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-soft, #666);
+  font-weight: 600;
+}
+
+.program-screen__view--active {
+  background: var(--color-accent, #2f6fed);
+  color: white;
+}
+
+/* Navigation ‹ · › */
+
+.program-nav {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.program-nav--month {
+  grid-template-columns: 44px minmax(0, 1fr) 44px auto;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.program-nav__arrow {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+}
+
+.program-nav__current {
+  min-height: 40px;
+  border: 0;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+}
+
+.program-nav__current:disabled {
+  cursor: default;
+}
+
+.program-nav__title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.05rem;
+  text-align: center;
+  color: var(--color-accent, #2f6fed);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.program-nav__today {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Bandeau et encarts */
+
+.program-banner,
+.program-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.program-banner svg,
+.program-notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Vue Semaine : une liste de jours datés */
+
+.program-week {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.program-day {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.program-day__label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.program-day__weekday {
+  font-weight: 700;
+}
+
+.program-day__date {
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.program-day--today .program-day__weekday,
+.program-day--today .program-day__date {
+  color: var(--color-accent, #2f6fed);
+}
+
+.program-day__content {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.program-day__empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+  padding: 8px 8px 8px 16px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-soft, #f2f4f7);
+  color: var(--color-text-soft, #666);
+  font-size: 0.9rem;
+}
+
+.program-day__add {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-surface, white);
+  color: var(--color-accent, #2f6fed);
+  box-shadow: var(--shadow-card, 0 1px 2px rgba(16, 24, 40, 0.06));
+}
+
+/* Ligne d'occurrence : partagée par Semaine et Mois */
+
+.program-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: center;
+  min-height: 60px;
+  padding-right: 2px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface, white);
+  box-shadow: var(--shadow-card, 0 1px 2px rgba(16, 24, 40, 0.06));
+}
+
+.program-row__main {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 2px 8px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.program-row__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm, 10px);
+  background: var(--color-surface-soft, #f2f4f7);
+}
+
+.program-row__body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.program-row__name {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.program-row__meta {
+  overflow: hidden;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.program-row__menu {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-soft, #666);
+}
+
+/* Badges de statut (§9) */
+
+.program-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.program-badge--upcoming {
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+}
+
+.program-badge--in_progress {
+  background: var(--color-accent, #2f6fed);
+  color: white;
+}
+
+.program-badge--done {
+  background: #e6f6ea;
+  color: #1f8a3b;
+}
+
+.program-badge--skipped {
+  background: #fdeaea;
+  color: var(--color-danger, #c2413b);
+}
+
+/* Boutons de bas d'écran */
+
+.program-screen__primary {
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  border: 0;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent, #2f6fed);
+  color: white;
+  font-weight: 700;
+}
+
+.program-screen__rule-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+}
+
+.program-screen__rule-link > span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.program-screen__rule-title {
+  font-weight: 700;
+}
+
+.program-screen__rule-meta {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.program-screen__danger {
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: var(--radius-md, 14px);
+  background: #fdeaea;
+  color: var(--color-danger, #c2413b);
+  font-weight: 700;
+}
+
+.program-screen__danger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.program-screen__footnote {
+  margin: 10px 4px 0;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* Règle hebdomadaire : sept journées, jamais de date */
+
+.program-rule {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.program-rule__day {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border, #e4e7ec);
+}
+
+.program-rule__weekday {
+  font-weight: 600;
+}
+
+.program-rule__slot {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 6px 4px 6px 6px;
+  border: 0;
+  border-radius: var(--radius-md, 14px);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.program-rule__slot:has(.program-rule__none) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.program-rule__none {
+  color: var(--color-text-soft, #666);
+  font-size: 0.9rem;
+}
+
+/* Champ de date dans une feuille */
+
+.program-date-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface, white);
+  font-weight: 600;
+}
+
+.program-date-field input {
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+}
+
+/* Vue Mois : grille lundi → dimanche (§9) */
+
+.program-month {
+  padding: 8px 6px 10px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface, white);
+  box-shadow: var(--shadow-card, 0 1px 2px rgba(16, 24, 40, 0.06));
+}
+
+.program-month__weekdays,
+.program-month__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.program-month__weekdays {
+  margin-bottom: 6px;
+  color: var(--color-text-soft, #666);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.program-month__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  min-height: 52px;
+  padding: 6px 2px 4px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm, 10px);
+  background: transparent;
+  color: var(--color-text, #1f2937);
+  font-weight: 600;
+}
+
+.program-month__day--outside {
+  color: var(--color-text-soft, #666);
+  opacity: 0.55;
+}
+
+.program-month__day--selected {
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+}
+
+/* Aujourd'hui est toujours identifiable, sélectionné ou non */
+
+.program-month__day--today {
+  border-color: var(--color-accent, #2f6fed);
+}
+
+.program-month__number {
+  line-height: 1;
+}
+
+.program-month__markers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  min-height: 10px;
+}
+
+/* Marqueurs : une seule famille de formes, jamais vert = réussite (§9) */
+
+.program-marker {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-sizing: border-box;
+}
+
+.program-marker--done {
+  background: var(--color-accent, #2f6fed);
+}
+
+.program-marker--in_progress {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent, #2f6fed) 50%,
+    transparent 50%
+  );
+  border: 1.5px solid var(--color-accent, #2f6fed);
+}
+
+.program-marker--upcoming {
+  background: #c9d1dc;
+}
+
+.program-marker--skipped {
+  border: 1.5px dashed var(--color-accent, #2f6fed);
+}
+
+.program-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 12px 0 14px;
+  padding: 0 6px;
+  list-style: none;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+}
+
+.program-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Séances de la date sélectionnée : résumées comme ailleurs */
+
+.program-selected {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent-soft, #eaf1ff);
+}
+
+.program-selected h2 {
+  margin: 0 0 4px;
+  color: var(--color-accent, #2f6fed);
+  font-size: 1.05rem;
+}
+
+.program-selected__empty {
+  margin: 0 0 4px;
+  color: var(--color-text-soft, #666);
+  font-size: 0.9rem;
+}
+
+.program-selected__add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px dashed var(--color-accent, #2f6fed);
+  border-radius: var(--radius-md, 14px);
+  background: transparent;
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+  text-align: left;
+}
+
+.program-selected__add span {
+  flex: 1;
+}
