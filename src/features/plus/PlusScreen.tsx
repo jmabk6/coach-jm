@@ -1,12 +1,42 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Dumbbell, ListChecks } from "lucide-react";
+import { DatabaseBackup, Dumbbell, ListChecks } from "lucide-react";
+import { BottomSheet } from "../../components/ui/BottomSheet";
+import {
+  importSeptember2026History,
+  type ImportHistoryResult,
+} from "../history/importHistory";
 import "./PlusScreen.css";
+
+type ImportState =
+  | { status: "idle" }
+  | { status: "confirm" }
+  | { status: "running" }
+  | { status: "done"; result: ImportHistoryResult }
+  | { status: "error"; message: string };
 
 /**
  * Écran Plus : réglages et outils secondaires.
  * Séances et bibliothèque d'exercices s'ouvrent d'ici (§18 : Plus = gestion).
  */
 export function PlusScreen() {
+  const [importState, setImportState] = useState<ImportState>({ status: "idle" });
+
+  async function runImport() {
+    setImportState({ status: "running" });
+
+    try {
+      const result = await importSeptember2026History();
+      setImportState({ status: "done", result });
+    } catch (error) {
+      setImportState({
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "L'import a échoué",
+      });
+    }
+  }
+
   return (
     <section className="plus-screen">
       <header className="plus-screen__header">
@@ -45,6 +75,84 @@ export function PlusScreen() {
           </span>
         </Link>
       </nav>
+
+      <h2 className="plus-screen__section">Données</h2>
+
+      <div className="plus-list">
+        <button
+          type="button"
+          className="plus-list__item plus-list__item--button"
+          disabled={importState.status === "running"}
+          onClick={() => setImportState({ status: "confirm" })}
+        >
+          <span className="plus-list__icon" aria-hidden="true">
+            <DatabaseBackup size={22} strokeWidth={2} />
+          </span>
+          <span className="plus-list__content">
+            <span className="plus-list__title">
+              Importer mes séances de septembre 2026
+            </span>
+            <span className="plus-list__meta">
+              9 séances des feuilles SEMAINE_1 à 3, du 1er au 15 septembre
+            </span>
+          </span>
+          <span className="plus-list__chevron" aria-hidden="true">
+            ›
+          </span>
+        </button>
+      </div>
+
+      {importState.status === "running" && (
+        <p className="plus-screen__status">Import en cours…</p>
+      )}
+
+      {importState.status === "done" && (
+        <p className="plus-screen__status plus-screen__status--ok">
+          {formatResult(importState.result)}
+        </p>
+      )}
+
+      {importState.status === "error" && (
+        <p className="plus-screen__status plus-screen__status--error">
+          {importState.message}
+        </p>
+      )}
+
+      {importState.status === "confirm" && (
+        <BottomSheet
+          title="Importer mes séances de septembre 2026 ?"
+          message="9 séances réalisées (tapis, musculation, gainage, mobilité, marche) rejoignent l'historique et alimentent les fiches exercices. Quatre exercices sont ajoutés à la bibliothèque : Curl biceps barre EZ, Position de l'enfant, Rotation du dos allongé, Marche."
+          actions={[
+            {
+              label: "Importer",
+              hint: "Relancer l'import ne crée pas de doublon et ne supprime rien",
+              tone: "primary",
+              onSelect: () => void runImport(),
+            },
+          ]}
+          onDismiss={() => setImportState({ status: "idle" })}
+        />
+      )}
     </section>
   );
+}
+
+function formatResult(result: ImportHistoryResult): string {
+  const parts: string[] = [];
+
+  if (result.workoutsCreated > 0) {
+    parts.push(`${result.workoutsCreated} séance${result.workoutsCreated > 1 ? "s" : ""} ajoutée${result.workoutsCreated > 1 ? "s" : ""}`);
+  }
+
+  if (result.workoutsUpdated > 0) {
+    parts.push(`${result.workoutsUpdated} séance${result.workoutsUpdated > 1 ? "s" : ""} déjà présente${result.workoutsUpdated > 1 ? "s" : ""}, réécrite${result.workoutsUpdated > 1 ? "s" : ""} à l'identique`);
+  }
+
+  parts.push(
+    result.exercisesCreated > 0
+      ? `${result.exercisesCreated} exercice${result.exercisesCreated > 1 ? "s" : ""} ajouté${result.exercisesCreated > 1 ? "s" : ""}`
+      : "exercices déjà présents",
+  );
+
+  return `Import terminé : ${parts.join(", ")}.`;
 }
