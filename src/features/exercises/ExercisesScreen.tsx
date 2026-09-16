@@ -210,6 +210,18 @@ export function ExercisesScreen() {
     [searchParams],
   );
 
+  /* Écran appelant du mode sélection : `Ajouter` y revient avec `?add=<id>`
+     dans l'ordre de sélection (§3 : A puis B) ; `Annuler` y revient sans rien. */
+  const returnTo = searchParams.get("returnTo");
+
+  function finishSelection(exerciseIds: string[]) {
+    if (!returnTo) return;
+
+    const target = new URL(returnTo, window.location.origin);
+    exerciseIds.forEach((id) => target.searchParams.append("add", id));
+    navigate(`${target.pathname}${target.search}`, { replace: true });
+  }
+
   const [
     hideAlreadyAdded,
     setHideAlreadyAdded,
@@ -533,6 +545,16 @@ const selectedExerciseIds = useMemo(
             onClick={() => navigate("/exercises/new")}
           >
             Nouvel exercice
+          </button>
+        )}
+
+        {selectionMode && returnTo && (
+          <button
+            type="button"
+            className="exercises-screen__cancel-button"
+            onClick={() => finishSelection([])}
+          >
+            Annuler
           </button>
         )}
       </header>
@@ -885,6 +907,7 @@ const selectedExerciseIds = useMemo(
           <button
             type="button"
             disabled={selectedExerciseIds.length === 0}
+            onClick={() => finishSelection(selectedExerciseIds)}
           >
             Ajouter
           </button>

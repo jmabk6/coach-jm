@@ -139,3 +139,23 @@
     padding: 0 14px;
   }
 }
+
+/* Action destructive : en bas, jamais en haut à droite (§8, §18) */
+
+.session-form__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-danger, #c2413b);
+  font-weight: 600;
+}
+
+.session-form__message {
+  padding: 24px 0;
+  color: var(--color-text-soft, #666);
+}

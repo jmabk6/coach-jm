@@ -9,6 +9,8 @@ import { PlusScreen } from "../features/plus/PlusScreen";
 import { SessionsScreen } from "../features/sessions/SessionsScreen";
 import { SessionCreateScreen } from "../features/sessions/SessionCreateScreen";
 import { SessionEditScreen } from "../features/sessions/SessionEditScreen";
+import { SessionDetailScreen } from "../features/sessions/SessionDetailScreen";
+import { SessionNoteScreen } from "../features/sessions/SessionNoteScreen";
 
 export const router = createHashRouter([
   {
@@ -22,7 +24,20 @@ export const router = createHashRouter([
       { path: "sessions", element: <SessionsScreen /> },
       { path: "sessions/new", element: <SessionCreateScreen /> },
       { path: "sessions/:sessionId/edit", element: <SessionEditScreen /> },
-      { path: "sessions/:sessionId", element: <Screen title="Séance" /> },
+      { path: "sessions/:sessionId", element: <SessionDetailScreen /> },
+      { path: "sessions/:sessionId/notes/:blockId", element: <SessionNoteScreen /> },
+      {
+        path: "sessions/:sessionId/blocks/:blockId",
+        element: <Screen title="Modifier l'exercice" />,
+      },
+      {
+        path: "sessions/:sessionId/groups/:blockId",
+        element: <Screen title="Modifier le groupe" />,
+      },
+      {
+        path: "sessions/:sessionId/groups/:blockId/children/:childId",
+        element: <Screen title="Modifier l'exercice" />,
+      },
       { path: "exercises", element: <ExercisesScreen /> },
       {
         path: "exercises/new",

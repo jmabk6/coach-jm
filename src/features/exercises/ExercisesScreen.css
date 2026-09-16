@@ -26,6 +26,15 @@
   padding: 0 16px;
 }
 
+.exercises-screen__cancel-button {
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+}
+
 .exercises-screen__tools {
   display: grid;
   gap: 12px;
