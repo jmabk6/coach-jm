@@ -82,3 +82,33 @@ export async function updateSessionTemplatePositions(
     },
   );
 }
+
+/**
+ * Remet un modèle archivé parmi les actifs.
+ * Il reprend sa place dans l'ordre manuel.
+ */
+export async function restoreSessionTemplate(
+  id: Id,
+): Promise<void> {
+  const sessionTemplate = await db.sessionTemplates.get(id);
+
+  if (!sessionTemplate) {
+    throw new Error("Modèle de séance introuvable");
+  }
+
+  await db.sessionTemplates.update(id, {
+    status: "active",
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * Position d'un nouveau modèle : après le dernier, archives comprises.
+ */
+export async function getNextSessionTemplatePosition(): Promise<number> {
+  const last = await db.sessionTemplates
+    .orderBy("position")
+    .last();
+
+  return last ? last.position + 1 : 0;
+}

@@ -7,6 +7,8 @@ import { ExerciseCreateScreen } from "../features/exercises/ExerciseCreateScreen
 import { ExerciseEditScreen } from "../features/exercises/ExerciseEditScreen";
 import { PlusScreen } from "../features/plus/PlusScreen";
 import { SessionsScreen } from "../features/sessions/SessionsScreen";
+import { SessionCreateScreen } from "../features/sessions/SessionCreateScreen";
+import { SessionEditScreen } from "../features/sessions/SessionEditScreen";
 
 export const router = createHashRouter([
   {
@@ -18,7 +20,8 @@ export const router = createHashRouter([
       { path: "progression", element: <Screen title="Progression" /> },
       { path: "plus", element: <PlusScreen /> },
       { path: "sessions", element: <SessionsScreen /> },
-      { path: "sessions/new", element: <Screen title="Nouvelle séance" /> },
+      { path: "sessions/new", element: <SessionCreateScreen /> },
+      { path: "sessions/:sessionId/edit", element: <SessionEditScreen /> },
       { path: "sessions/:sessionId", element: <Screen title="Séance" /> },
       { path: "exercises", element: <ExercisesScreen /> },
       {

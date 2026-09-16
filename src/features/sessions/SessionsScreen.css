@@ -82,6 +82,7 @@
 
 .sessions-screen__chips {
   display: flex;
+  align-items: center;
   gap: 8px;
   margin-bottom: 14px;
   overflow-x: auto;
@@ -91,6 +92,30 @@
 
 .sessions-screen__chips::-webkit-scrollbar {
   display: none;
+}
+
+.sessions-screen__chip-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* `Réorganiser` est une action, pas un filtre : séparée et sans fond de puce */
+
+.session-chip--action {
+  margin-left: 4px;
+  padding-left: 12px;
+  border-color: transparent;
+  border-left: 1px solid var(--color-border, #ddd);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+}
+
+.session-chip--action:disabled {
+  color: var(--color-text-soft, #666);
+  opacity: 0.6;
+  cursor: default;
 }
 
 .session-chip {
@@ -126,15 +151,62 @@
 }
 
 .session-card {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto 20px;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
+  position: relative;
   border: 1px solid var(--color-border, #e4e7ec);
   border-radius: var(--radius-md, 14px);
   background: var(--color-surface, white);
   box-shadow: var(--shadow-card, 0 1px 2px rgba(16, 24, 40, 0.06));
+}
+
+.session-card__link {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto 20px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 14px;
+}
+
+/* Le menu `⋯` occupe le coin haut droit, hors du lien */
+
+.session-card__menu {
+  position: absolute;
+  top: 6px;
+  right: 30px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-soft, #666);
+}
+
+.session-card--sortable .session-card__link {
+  grid-template-columns: 48px minmax(0, 1fr);
+  padding-right: 60px;
+}
+
+.session-card--dragging {
+  z-index: 2;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.18);
+}
+
+.session-card__handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  border: 0;
+  border-left: 1px solid var(--color-border, #e4e7ec);
+  border-radius: 0 var(--radius-md, 14px) var(--radius-md, 14px) 0;
+  background: var(--color-surface-soft, #f2f4f7);
+  color: var(--color-text-soft, #666);
+  cursor: grab;
+  touch-action: none;
 }
 
 .session-card__icon {
@@ -288,7 +360,7 @@
 }
 
 @media (max-width: 400px) {
-  .session-card {
+  .session-card__link {
     grid-template-columns: 44px minmax(0, 1fr) 20px;
   }
 

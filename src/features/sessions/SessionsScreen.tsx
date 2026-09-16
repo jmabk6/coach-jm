@@ -1,6 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronRight, Info, Plus, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  ArrowUpDown,
+  ChevronRight,
+  Info,
+  Plus,
+  Search,
+} from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import type {
   Exercise,
   Id,
@@ -10,18 +29,16 @@ import type {
   WorkoutSession,
 } from "../../domain";
 import {
-  calculateSessionTemplateDuration,
-  formatCompletionCount,
-  formatSessionTemplateCardioLine,
-  formatSessionTemplateDuration,
-  formatSessionTemplateSummary,
-  isSessionTemplateScheduled,
-  summarizeSessionTemplate,
-} from "../../domain/rules/sessionTemplateRules";
-import { getAllSessionTemplates } from "../../db/repositories/sessionTemplateRepository";
+  archiveSessionTemplate,
+  getAllSessionTemplates,
+  restoreSessionTemplate,
+  updateSessionTemplatePositions,
+} from "../../db/repositories/sessionTemplateRepository";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getCompletedWorkouts } from "../../db/repositories/workoutRepository";
 import { getWeeklyProgram } from "../../db/repositories/programRepository";
+import { BottomSheet } from "../../components/ui/BottomSheet";
+import { SessionCard, SortableSessionCard } from "./SessionCard";
 import { SessionCategoryIcon } from "./sessionCategory";
 import { sessionCategories } from "./sessionCategories";
 import "./SessionsScreen.css";
@@ -61,17 +78,30 @@ function matchesSearch(template: SessionTemplate, search: string): boolean {
  * Écran Séances (spec §5) : liste plate des modèles dans l'ordre manuel,
  * catégorie en icône + étiquette et en filtre, jamais en sections.
  * Recherche et filtre vivent dans l'URL, comme pour la bibliothèque.
+ * `Réorganiser` est une action distincte, indisponible sous filtre.
  */
 export function SessionsScreen() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const [menuTemplate, setMenuTemplate] = useState<SessionTemplate>();
+  const [reordering, setReordering] = useState(false);
 
   const search = searchParams.get("q") ?? "";
   const categoryFilter = searchParams.get(
     "category",
   ) as SessionCategory | null;
   const showArchived = searchParams.get("archived") === "1";
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 4 },
+    }),
+  );
+
+  /* Chaque archivage ou restauration incrémente `version` : l'effet recharge. */
+  const [version, setVersion] = useState(0);
+  const reload = useCallback(() => setVersion((value) => value + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,7 +145,7 @@ export function SessionsScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [version]);
 
   function updateParams(mutate: (params: URLSearchParams) => void) {
     const next = new URLSearchParams(searchParams);
@@ -169,6 +199,44 @@ export function SessionsScreen() {
     return byTemplate;
   }, [state]);
 
+  async function handleArchive(template: SessionTemplate) {
+    setMenuTemplate(undefined);
+    await archiveSessionTemplate(template.id);
+    reload();
+  }
+
+  async function handleRestore(template: SessionTemplate) {
+    setMenuTemplate(undefined);
+    await restoreSessionTemplate(template.id);
+    reload();
+  }
+
+  /* L'ordre manuel est global : les actives sont réordonnées, les archives
+     gardent leur rang derrière elles. */
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id || state.status !== "success") {
+      return;
+    }
+
+    const from = activeTemplates.findIndex((item) => item.id === active.id);
+    const to = activeTemplates.findIndex((item) => item.id === over.id);
+    const reordered = arrayMove(activeTemplates, from, to);
+
+    setState({
+      ...state,
+      templates: [...reordered, ...archivedTemplates].map(
+        (template, index) => ({ ...template, position: index }),
+      ),
+    });
+
+    await updateSessionTemplatePositions([
+      ...reordered.map((template) => template.id),
+      ...archivedTemplates.map((template) => template.id),
+    ]);
+  }
+
   if (state.status === "loading") {
     return (
       <section className="sessions-screen">
@@ -220,6 +288,44 @@ export function SessionsScreen() {
 
   const hasActiveCriteria = Boolean(search) || Boolean(categoryFilter);
 
+  if (reordering) {
+    return (
+      <section className="sessions-screen">
+        <header className="sessions-screen__header">
+          <div>
+            <h1>Réorganiser</h1>
+            <p>Glissez les séances avec leur poignée.</p>
+          </div>
+
+          <button
+            type="button"
+            className="sessions-screen__primary"
+            onClick={() => setReordering(false)}
+          >
+            Terminé
+          </button>
+        </header>
+
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={activeTemplates.map((template) => template.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul className="session-list">
+              {activeTemplates.map((template) => (
+                <SortableSessionCard key={template.id} template={template} />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+      </section>
+    );
+  }
+
   return (
     <section className="sessions-screen">
       <header className="sessions-screen__header">
@@ -260,37 +366,56 @@ export function SessionsScreen() {
         />
       </div>
 
-      <div className="sessions-screen__chips" role="group" aria-label="Catégorie">
-        <button
-          type="button"
-          className={`session-chip ${!categoryFilter ? "session-chip--active" : ""}`}
-          aria-pressed={!categoryFilter}
-          onClick={() => updateParams((params) => params.delete("category"))}
-        >
-          Toutes
-        </button>
+      <div className="sessions-screen__chips">
+        <div role="group" aria-label="Catégorie" className="sessions-screen__chip-group">
+          <button
+            type="button"
+            className={`session-chip ${!categoryFilter ? "session-chip--active" : ""}`}
+            aria-pressed={!categoryFilter}
+            onClick={() => updateParams((params) => params.delete("category"))}
+          >
+            Toutes
+          </button>
 
-        {sessionCategories.map((category) => {
-          const active = categoryFilter === category;
+          {sessionCategories.map((category) => {
+            const active = categoryFilter === category;
 
-          return (
-            <button
-              key={category}
-              type="button"
-              className={`session-chip ${active ? "session-chip--active" : ""}`}
-              aria-pressed={active}
-              onClick={() =>
-                updateParams((params) => {
-                  if (active) params.delete("category");
-                  else params.set("category", category);
-                })
-              }
-            >
-              <SessionCategoryIcon category={category} size={16} />
-              {category}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={category}
+                type="button"
+                className={`session-chip ${active ? "session-chip--active" : ""}`}
+                aria-pressed={active}
+                onClick={() =>
+                  updateParams((params) => {
+                    if (active) params.delete("category");
+                    else params.set("category", category);
+                  })
+                }
+              >
+                <SessionCategoryIcon category={category} size={16} />
+                {category}
+              </button>
+            );
+          })}
+        </div>
+
+        {!showArchived && activeTemplates.length > 1 && (
+          <button
+            type="button"
+            className="session-chip session-chip--action"
+            disabled={hasActiveCriteria}
+            title={
+              hasActiveCriteria
+                ? "Retirez la recherche et le filtre pour réorganiser"
+                : undefined
+            }
+            onClick={() => setReordering(true)}
+          >
+            <ArrowUpDown size={16} strokeWidth={2} aria-hidden="true" />
+            Réorganiser
+          </button>
+        )}
       </div>
 
       {visibleTemplates.length === 0 ? (
@@ -318,75 +443,16 @@ export function SessionsScreen() {
         </div>
       ) : (
         <ul className="session-list">
-          {visibleTemplates.map((template) => {
-            const summary = summarizeSessionTemplate(
-              template.blocks,
-              state.exerciseById,
-            );
-            const completed = completedByTemplate.get(template.id) ?? [];
-            const scheduled = isSessionTemplateScheduled(
-              template.id,
-              state.program,
-            );
-            const cardioLine = formatSessionTemplateCardioLine(summary);
-
-            return (
-              <li key={template.id}>
-                <Link
-                  to={`/sessions/${template.id}`}
-                  className="session-card"
-                >
-                  <span
-                    className={`session-card__icon session-card__icon--${template.category}`}
-                    aria-hidden="true"
-                  >
-                    <SessionCategoryIcon
-                      category={template.category}
-                      size={24}
-                    />
-                  </span>
-
-                  <span className="session-card__body">
-                    <span className="session-card__name">{template.name}</span>
-                    <span className="session-card__summary">
-                      {formatSessionTemplateSummary(
-                        summary,
-                        template.description,
-                      )}
-                    </span>
-                    {cardioLine && (
-                      <span className="session-card__cardio">{cardioLine}</span>
-                    )}
-                  </span>
-
-                  <span className="session-card__aside">
-                    <span
-                      className={`session-badge ${
-                        scheduled ? "session-badge--scheduled" : ""
-                      }`}
-                    >
-                      {scheduled ? "Programmée" : "Non programmée"}
-                    </span>
-                    <span className="session-card__stat">
-                      {formatSessionTemplateDuration(
-                        calculateSessionTemplateDuration(template, completed),
-                      )}
-                    </span>
-                    <span className="session-card__stat">
-                      {formatCompletionCount(completed.length)}
-                    </span>
-                  </span>
-
-                  <ChevronRight
-                    className="session-card__chevron"
-                    size={20}
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  />
-                </Link>
-              </li>
-            );
-          })}
+          {visibleTemplates.map((template) => (
+            <SessionCard
+              key={template.id}
+              template={template}
+              exerciseById={state.exerciseById}
+              completedWorkouts={completedByTemplate.get(template.id) ?? []}
+              program={state.program}
+              onOpenMenu={setMenuTemplate}
+            />
+          ))}
         </ul>
       )}
 
@@ -415,6 +481,40 @@ export function SessionsScreen() {
             la moyenne réelle de vos séances.
           </span>
         </p>
+      )}
+
+      {menuTemplate && (
+        <BottomSheet
+          title={menuTemplate.name}
+          onDismiss={() => setMenuTemplate(undefined)}
+          actions={
+            menuTemplate.status === "archived"
+              ? [
+                  {
+                    label: "Restaurer",
+                    hint: "La séance revient dans la liste active",
+                    onSelect: () => void handleRestore(menuTemplate),
+                  },
+                ]
+              : [
+                  {
+                    label: "Ouvrir la séance",
+                    onSelect: () => navigate(`/sessions/${menuTemplate.id}`),
+                  },
+                  {
+                    label: "Modifier le nom ou la catégorie",
+                    onSelect: () =>
+                      navigate(`/sessions/${menuTemplate.id}/edit`),
+                  },
+                  {
+                    label: "Archiver",
+                    hint: "Retirée de la liste, l'historique est conservé",
+                    tone: "danger",
+                    onSelect: () => void handleArchive(menuTemplate),
+                  },
+                ]
+          }
+        />
       )}
     </section>
   );
