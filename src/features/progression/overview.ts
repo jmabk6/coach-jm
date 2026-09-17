@@ -11,6 +11,7 @@ import type {
 } from "../../domain";
 import { calculateVolume } from "../../domain/rules/workoutRules";
 import { getImportedHistoryStart, isImportedWorkoutId } from "../history/importedWorkouts";
+import { isCardioExercise } from "./exerciseNature";
 import { listCompletedRoundChildren } from "../workout/workoutRecap";
 import { coversPreviousPeriod, isWithin, type DateRange, type Period } from "./period";
 import { roundPercent } from "./rounding";
@@ -76,24 +77,33 @@ export function getFirstCountedDate(workouts: WorkoutSession[]): string | undefi
 /* Nature des briques                                                         */
 /* -------------------------------------------------------------------------- */
 
-type Nature = "series" | "cardio" | "unknown";
+type Nature = "series" | "cardio" | "other";
 
 /**
  * Le périmètre d'une carte est le **mode de l'exercice** (§16), jamais la
- * catégorie de la séance. Un exercice supprimé de la bibliothèque est
+ * catégorie de la séance : mode séries → Renforcement ; paliers ou mesure
+ * simple de durée / distance → Cardio ; un test de mobilité en centimètres
+ * n'est ni l'un ni l'autre. Un exercice supprimé de la bibliothèque est
  * relu d'après ce que la brique contient.
  */
 function natureOf(block: PerformedBlock, exerciseById: Map<Id, Exercise>): Nature {
   if (block.kind === "group") return "series";
-  if (block.kind === "note") return "unknown";
+  if (block.kind === "note") return "other";
 
   const exercise = exerciseById.get(block.exerciseId);
 
-  if (exercise) return exercise.mode === "series" ? "series" : "cardio";
+  if (exercise) {
+    if (exercise.mode === "series") return "series";
+    return isCardioExercise(exercise) ? "cardio" : "other";
+  }
   if (block.series) return "series";
-  if (block.cardioSteps || block.simpleMeasurement) return "cardio";
+  if (block.cardioSteps) return "cardio";
+  if (block.simpleMeasurement) {
+    const measure = block.simpleMeasurement;
+    return measure.durationSec !== undefined || measure.distanceKm !== undefined ? "cardio" : "other";
+  }
 
-  return "unknown";
+  return "other";
 }
 
 interface SeriesWithExercise {

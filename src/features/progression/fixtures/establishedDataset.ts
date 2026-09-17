@@ -214,7 +214,7 @@ export function buildEstablishedDataset(today = "2026-09-10"): EstablishedDatase
               seriesBlock("fx-planche", 2, { sec: 45 + week }),
               tapisBlock([
                 { sec: 300, kmh: 5, incline: 0, bpm: 110 + (week % 3) },
-                { sec: 300, kmh: 5, incline: 5, bpm: 128 - Math.floor(week / 4) },
+                { sec: 300, kmh: 5, incline: 5, bpm: 132 - week },
               ]),
             ],
             48,
