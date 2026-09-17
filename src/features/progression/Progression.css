@@ -1,0 +1,451 @@
+.progression {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* En-tête : titre, période, onglets, objectifs */
+
+.progression__header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.progression__title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.progression__title h1 {
+  margin: 0;
+  font-size: 1.85rem;
+}
+
+.progression__period {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding-top: 6px;
+  text-align: right;
+}
+
+.progression__period select {
+  max-width: 190px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: 999px;
+  background: var(--color-surface, white);
+  color: var(--color-accent, #2f6fed);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.progression__period small {
+  color: var(--color-text-soft, #666);
+  font-size: 0.72rem;
+}
+
+.progression__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progression__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--color-surface-soft, #f2f4f7);
+}
+
+.progression__tab {
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-soft, #666);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.progression__tab--active {
+  background: var(--color-accent, #2f6fed);
+  color: white;
+}
+
+.progression__goals {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  align-self: flex-end;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: 999px;
+  background: var(--color-surface, white);
+  color: var(--color-accent, #2f6fed);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.progression__goals:disabled {
+  color: var(--color-text-soft, #666);
+  opacity: 0.6;
+}
+
+.progression__message {
+  padding: 24px 0;
+  color: var(--color-text-soft, #666);
+}
+
+.progression__message--error {
+  color: var(--color-danger, #c2413b);
+}
+
+/* Cartes de la Vue générale */
+
+.progression-pane {
+  display: grid;
+  gap: 10px;
+}
+
+.progression-card {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface, white);
+}
+
+.progression-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: var(--color-accent, #2f6fed);
+  font-size: 0.95rem;
+}
+
+.progression-card h2 svg {
+  flex-shrink: 0;
+}
+
+.progression-card h3 {
+  margin: 12px 0 6px;
+  color: var(--color-text, #1f2937);
+  font-size: 0.85rem;
+}
+
+.progression-card h3:first-of-type {
+  margin-top: 0;
+}
+
+.progression-card__link {
+  margin-left: auto;
+  color: var(--color-accent, #2f6fed);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.progression-card__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.progression-card__big {
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.progression-card__big small {
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.progression-card__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.progression-card__meta small {
+  color: var(--color-text-soft, #666);
+  font-size: 0.72rem;
+}
+
+.progression-gauge {
+  height: 8px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-surface-soft, #f2f4f7);
+}
+
+.progression-gauge span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-accent, #2f6fed);
+}
+
+.progression-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.progression-card__grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.progression-card__grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.progression-card__grid strong {
+  font-size: 1.15rem;
+  line-height: 1.1;
+}
+
+.progression-card__grid small {
+  color: var(--color-text-soft, #666);
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.progression-card__variation {
+  margin-top: 4px;
+  color: var(--color-text, #1f2937);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.progression-card__variation small {
+  display: block;
+  color: var(--color-text-soft, #666);
+  font-weight: 500;
+}
+
+.progression-empty {
+  margin: 0;
+  color: var(--color-text-soft, #666);
+  font-size: 0.88rem;
+}
+
+/* Répartitions : barres horizontales, un seul axe */
+
+.progression-bars {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.progression-bars li {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 34px 44px;
+  align-items: center;
+  gap: 8px;
+}
+
+.progression-bars__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progression-bars__label small {
+  color: var(--color-text-soft, #666);
+  font-size: 0.7rem;
+}
+
+.progression-bars__track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-surface-soft, #f2f4f7);
+}
+
+.progression-bars__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-accent, #2f6fed);
+}
+
+.progression-bars__count {
+  font-weight: 700;
+  text-align: right;
+}
+
+.progression-bars__percent {
+  color: var(--color-text-soft, #666);
+  text-align: right;
+}
+
+.progression-bars__label--wide {
+  grid-column: 1 / 3;
+}
+
+.progression-bars__total {
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border, #e4e7ec);
+  font-weight: 600;
+}
+
+/* Dernières séances et historique */
+
+.progression-recent,
+.history__list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progression-recent a,
+.history__list a {
+  display: grid;
+  grid-template-columns: 74px 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: inherit;
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.history__list a {
+  grid-template-columns: 74px 28px minmax(0, 1fr) 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface, white);
+}
+
+.progression-recent__date {
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.progression-recent__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm, 10px);
+}
+
+.progression-recent__name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progression-recent__name small {
+  color: var(--color-text-soft, #666);
+  font-weight: 500;
+}
+
+.progression-recent__summary {
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.history__body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.history__body .progression-recent__summary {
+  text-align: left;
+  white-space: normal;
+}
+
+.history__item--empty a {
+  background: var(--color-surface-soft, #f2f4f7);
+}
+
+.history__item--empty em {
+  color: #b45309;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.progression-footnote {
+  margin: 4px 0 0;
+  color: var(--color-text-soft, #666);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* Historique */
+
+.history__nav {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) auto minmax(70px, 1fr);
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.history__nav h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  text-align: center;
+}
+
+.history__back {
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.history__month {
+  margin-bottom: 16px;
+}
+
+.history__month h2 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.history__month-count {
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  font-weight: 500;
+}

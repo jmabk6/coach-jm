@@ -542,8 +542,10 @@ export function describeWorkoutSummary(
 ): string {
   const parts: string[] = [];
 
-  if (workout.activeDurationSec > 0) {
+  if (workout.activeDurationSec >= 60) {
     parts.push(`${Math.round(workout.activeDurationSec / 60)} min`);
+  } else if (workout.activeDurationSec > 0) {
+    parts.push(`${Math.round(workout.activeDurationSec)} s`);
   }
 
   let steps = 0;

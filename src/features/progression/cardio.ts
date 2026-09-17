@@ -50,11 +50,18 @@ export interface CardioRealisation {
   measurement?: PerformedSimpleMeasurement;
 }
 
+/**
+ * Briques réalisées de l'exercice, dans l'ordre de la séance : avec le tri
+ * des réalisations par date puis identifiant, l'ordre de traitement des
+ * paliers ne dépend jamais de l'ordre de lecture en base.
+ */
 function blocksOf(workout: WorkoutSession, exerciseId: Id): PerformedExerciseBlock[] {
-  return workout.blocks.filter(
-    (block): block is PerformedExerciseBlock =>
-      block.kind === "exercise" && block.exerciseId === exerciseId && block.status === "performed",
-  );
+  return workout.blocks
+    .filter(
+      (block): block is PerformedExerciseBlock =>
+        block.kind === "exercise" && block.exerciseId === exerciseId && block.status === "performed",
+    )
+    .sort((a, b) => a.position - b.position);
 }
 
 /**
@@ -73,7 +80,9 @@ export function listCardioRealisations(
 
     const blocks = blocksOf(workout, exerciseId);
     const steps = blocks.flatMap((block) =>
-      (block.cardioSteps ?? []).filter((step) => step.status === "completed"),
+      [...(block.cardioSteps ?? [])]
+        .sort((a, b) => a.position - b.position)
+        .filter((step) => step.status === "completed"),
     );
     const measurement = blocks.find((block) => block.simpleMeasurement)?.simpleMeasurement;
 

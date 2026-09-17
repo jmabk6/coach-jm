@@ -453,3 +453,31 @@ describe("cardio sur le jeu « état établi »", () => {
     expect(report.hasComparison).toBe(true);
   });
 });
+
+/* ------------------------------------------------------------------------ */
+/* Déterminisme                                                             */
+/* ------------------------------------------------------------------------ */
+
+describe("déterminisme du regroupement des paliers", () => {
+  it("donne le même résultat quel que soit l'ordre de lecture des séances et des briques", () => {
+    const dataset = buildEstablishedDataset("2026-09-10");
+    const p12 = resolvePeriod("12w", dataset.today);
+    const reference = groupComparableSteps(listCardioRealisations("fx-tapis", dataset.workouts, p12));
+
+    const shuffled = [...dataset.workouts].reverse().map((workout) => ({
+      ...workout,
+      blocks: [...workout.blocks].reverse(),
+    }));
+    const again = groupComparableSteps(listCardioRealisations("fx-tapis", shuffled, p12));
+
+    const signature = (groups: ReturnType<typeof groupComparableSteps>) =>
+      groups.map((group) => [
+        formatStepGroupLabel(group),
+        group.occurrences.map((item) => `${item.date}:${item.step.id}`),
+        group.percent,
+        group.status,
+      ]);
+
+    expect(signature(again)).toEqual(signature(reference));
+  });
+});
