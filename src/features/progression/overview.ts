@@ -13,6 +13,7 @@ import { calculateVolume } from "../../domain/rules/workoutRules";
 import { getImportedHistoryStart, isImportedWorkoutId } from "../history/importedWorkouts";
 import { listCompletedRoundChildren } from "../workout/workoutRecap";
 import { coversPreviousPeriod, isWithin, type DateRange, type Period } from "./period";
+import { roundPercent } from "./rounding";
 
 /**
  * Vue générale de Progression (§16) — moteur pur, indépendant de l'UI.
@@ -296,7 +297,7 @@ export function variationPercent(
 ): number | undefined {
   if (!covered || previous <= 0) return undefined;
 
-  return Math.round(((current - previous) / previous) * 100);
+  return roundPercent(((current - previous) / previous) * 100);
 }
 
 export interface StrengthTotals {
