@@ -209,7 +209,9 @@ describe("Étape 7 — récapitulatif de bout en bout, sur base réelle", () => 
       bpmKnown: 1,
     });
     /* Repos 1 : 100 s comparable ; repos 2 : coupé par la pause, compté hors moyenne. */
-    expect(head.rest).toMatchObject({ averageSec: 100, comparableCount: 1, totalCount: 2 });
+    /* Aucun « prévu » : les exercices sont ajoutés, leur repos par défaut
+       n'est pas une consigne — le détail du squat n'en montre pas non plus. */
+    expect(head.rest).toEqual({ averageSec: 100, comparableCount: 1, totalCount: 2 });
     expect(head.pauses).toHaveLength(1);
     expect(compareVolumeToPrevious(stored, await getCompletedWorkouts())).toBeUndefined();
 

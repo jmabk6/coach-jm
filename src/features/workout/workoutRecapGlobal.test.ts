@@ -237,6 +237,36 @@ describe("récapitulatif global — cartes de tête (§14)", () => {
     expect(formatSeconds(95)).toBe("1 min 35 s");
   });
 
+  it("garde les repos réels d'un exercice ajouté dans la moyenne réelle, jamais son repos par défaut dans le prévu", () => {
+    const blocks: PerformedBlock[] = [
+      /* Prévu par le modèle : 90 s ; réel 100 s. */
+      exerciseBlock("sq", 0, "squat", [{ kg: 40, reps: 10, rest: 100 }, { kg: 40, reps: 10 }]),
+      /* Ajouté pendant la séance : repos par défaut 90 s dans le snapshot ;
+         réel 60 s comparable, puis 300 s coupé par une pause. */
+      exerciseBlock(
+        "add",
+        1,
+        "pompes",
+        [{ kg: 0, reps: 12, rest: 60 }, { kg: 0, reps: 12, rest: 300, comparable: false }, { kg: 0, reps: 10 }],
+        { addedDuringWorkout: true },
+      ),
+    ];
+    const head = summarizeWorkout(workout("w", "2026-09-10", blocks));
+
+    expect(head.rest).toEqual({
+      averageSec: 80,
+      comparableCount: 2,
+      totalCount: 3,
+      plannedAverageSec: 90,
+    });
+
+    /* Séance libre : tout est ajouté, aucun prévu du tout. */
+    const free = summarizeWorkout(
+      workout("f", "2026-09-10", [{ ...blocks[1]!, position: 0 }], { source: "free" }),
+    );
+    expect(free.rest).toEqual({ averageSec: 60, comparableCount: 1, totalCount: 2 });
+  });
+
   it("n'a pas de repos moyen quand aucun repos n'est comparable", () => {
     const head = summarizeWorkout(
       workout("w", "2026-09-10", [exerciseBlock("sq", 0, "squat", [{ kg: 40, reps: 10, rest: 500, comparable: false }])]),

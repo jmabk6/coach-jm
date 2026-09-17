@@ -171,9 +171,13 @@ export function summarizeRests(blocks: PerformedBlock[]): RestSummary {
 
   for (const block of blocks) {
     if (block.kind === "exercise") {
+      /* Le repos d'un exercice ajouté pendant la séance est un défaut de
+         l'app, pas une consigne du modèle : ses repos réels comptent, son
+         « prévu » n'entre pas dans le repos prévu (décision du 17/09/2026). */
       const plannedRest =
-        block.snapshotInstructions.shape === "reps" ||
-        block.snapshotInstructions.shape === "duration"
+        !block.addedDuringWorkout &&
+        (block.snapshotInstructions.shape === "reps" ||
+          block.snapshotInstructions.shape === "duration")
           ? block.snapshotInstructions.restBetweenSetsSec
           : undefined;
 
@@ -199,7 +203,7 @@ export function summarizeRests(blocks: PerformedBlock[]): RestSummary {
 
         if (round.restComparable !== false) {
           comparable.push(round.actualRestAfterSec);
-          planned.push(block.plannedRestBetweenRoundsSec);
+          if (!block.addedDuringWorkout) planned.push(block.plannedRestBetweenRoundsSec);
         }
       }
     }
