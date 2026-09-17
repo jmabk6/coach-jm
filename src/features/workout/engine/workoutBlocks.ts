@@ -404,8 +404,8 @@ export interface ProposedSeriesValues {
 /**
  * Valeurs proposées pour la prochaine série : celles de la série
  * précédente du même exercice dans cette séance, sinon celles de la
- * dernière fois. Une proposition, jamais une validation : RPE et note ne
- * sont jamais proposés.
+ * dernière fois, sinon la cible prévue. Une proposition, jamais une
+ * validation : RPE et note ne sont jamais proposés.
  */
 export function proposeSeriesValues(
   block: PerformedExerciseBlock,
@@ -417,7 +417,17 @@ export function proposeSeriesValues(
 
   const source = previous ?? lastTime;
 
-  if (!source) return {};
+  if (!source) {
+    /* Rien de fait, rien d'historique : la cible prévue est préremplie
+       (§11), reps hautes de la fourchette ou durée cible. */
+    const instructions = block.snapshotInstructions;
+
+    if (block.addedDuringWorkout) return {};
+    if (instructions.shape === "reps") return { reps: instructions.reps.max };
+    if (instructions.shape === "duration") return { durationSec: instructions.durationSec };
+
+    return {};
+  }
 
   return {
     ...(source.load !== undefined ? { load: structuredClone(source.load) } : {}),

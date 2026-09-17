@@ -1,19 +1,14 @@
 import { Hourglass } from "lucide-react";
 import type { ActiveRest } from "../../domain";
 import { getRestCountdown } from "./engine/workoutTime";
+import { formatMmSs } from "./workoutDisplay";
 
 interface RestBarProps {
   rest: ActiveRest;
   now: string;
   busy: boolean;
+  paused: boolean;
   onSkip: () => void;
-}
-
-function formatMmSs(totalSec: number): string {
-  const minutes = Math.floor(totalSec / 60);
-  const seconds = totalSec % 60;
-
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 /**
@@ -21,9 +16,9 @@ function formatMmSs(totalSec: number): string {
  * depuis l'heure de fin cible à chaque battement, jamais décrémenté.
  * À zéro, `Repos terminé` et le temps réellement écoulé qui continue de
  * courir — la fin réelle est la validation suivante ou `Passer`.
- * La carte pleine (`−30 s` / `+30 s`, bloc `Ensuite`) arrive à l'étape 6.3.
+ * Elle double la carte pleine (`RestCard`) quand on a fait défiler la page.
  */
-export function RestBar({ rest, now, busy, onSkip }: RestBarProps) {
+export function RestBar({ rest, now, busy, paused, onSkip }: RestBarProps) {
   const countdown = getRestCountdown(rest, now);
   const progress =
     countdown.phase === "running"
@@ -45,7 +40,9 @@ export function RestBar({ rest, now, busy, onSkip }: RestBarProps) {
           {countdown.phase === "running" ? (
             <>
               <strong>Repos {formatMmSs(countdown.remainingSec)}</strong>
-              <small>prévu {formatMmSs(rest.plannedDurationSec)}</small>
+              <small>
+                {paused ? "séance en pause · " : ""}prévu {formatMmSs(rest.plannedDurationSec)}
+              </small>
             </>
           ) : (
             <>
@@ -56,7 +53,7 @@ export function RestBar({ rest, now, busy, onSkip }: RestBarProps) {
             </>
           )}
         </span>
-        <button type="button" className="rest-bar__skip" onClick={onSkip} disabled={busy}>
+        <button type="button" className="rest-bar__skip" onClick={onSkip} disabled={busy || paused}>
           Passer
         </button>
       </div>

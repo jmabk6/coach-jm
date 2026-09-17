@@ -2,14 +2,20 @@ import type {
   Exercise,
   Id,
   PerformedBlock,
+  PerformedCardioStep,
   PerformedExerciseBlock,
   PerformedGroupBlock,
+  WorkoutSession,
 } from "../../domain";
 import {
   formatDurationShort,
   formatRange,
 } from "../../domain/rules/blockInstructionRules";
-import { summarizeBlockCompletion } from "./engine/workoutBlocks";
+import {
+  summarizeBlockCompletion,
+  type ProposedSeriesValues,
+} from "./engine/workoutBlocks";
+import { formatLoad, formatStepSettings } from "./workoutRecap";
 
 /**
  * Libellés de l'écran de séance (§11) : numérotation visible, sous-titre
@@ -152,4 +158,113 @@ export function seriesFieldLayout(exercise: Exercise | undefined): SeriesFieldLa
     default:
       return "load_reps";
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Chrono et bloc Ensuite                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `1:05`, `12:07` : le format d'un décompte et d'un repos réel.
+ */
+export function formatMmSs(totalSec: number): string {
+  const safe = Math.max(0, Math.round(totalSec));
+  const minutes = Math.floor(safe / 60);
+  const seconds = safe % 60;
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+export interface NextUp {
+  title: string;
+  detail?: string;
+}
+
+/**
+ * Bloc `Ensuite` de la carte de repos (§12) : ce qui attend à la fin du
+ * repos — la série suivante du même exercice avec ses cibles et les
+ * valeurs proposées, ou le premier pas de la brique suivante. Sur une
+ * brique sans nombre prévu dont toutes les séries sont validées, le
+ * choix revient à l'utilisateur.
+ */
+export function describeNextUp(
+  workout: WorkoutSession,
+  exerciseById: Map<Id, Exercise>,
+  proposed: (block: PerformedExerciseBlock) => ProposedSeriesValues,
+): NextUp | undefined {
+  const rest = workout.activeRest;
+
+  if (!rest || workout.currentBlockId === undefined) return undefined;
+
+  const block = workout.blocks.find((item) => item.id === workout.currentBlockId);
+
+  if (!block || block.kind === "note") return undefined;
+
+  const sameBlock = block.id === rest.afterBlockId;
+  const exerciseName = (id: Id) => exerciseById.get(id)?.name ?? "Exercice";
+
+  if (block.kind === "group") {
+    const round = block.rounds.find((item) => item.status !== "completed");
+
+    return {
+      title: `${block.name?.trim() || "Groupe"} — ${round ? `Tour ${round.roundNumber}` : "tour suivant"}`,
+    };
+  }
+
+  if (block.series) {
+    const ordered = [...block.series].sort((a, b) => a.position - b.position);
+    const pendingIndex = ordered.findIndex((series) => series.status !== "completed");
+
+    if (pendingIndex < 0) {
+      return {
+        title: sameBlock ? "À toi de choisir" : exerciseName(block.exerciseId),
+        detail: "Ajouter une série, ou Terminer l'exercice",
+      };
+    }
+
+    const values = proposed(block);
+    const proposal = formatProposedValues(values);
+    const target = formatSeriesTarget(block);
+
+    const detail = [
+      target && target !== "À saisir" ? target : undefined,
+      proposal ? `proposé ${proposal}` : undefined,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    return {
+      title: sameBlock
+        ? `Série ${pendingIndex + 1}`
+        : `${exerciseName(block.exerciseId)} — Série ${pendingIndex + 1}`,
+      ...(detail ? { detail } : {}),
+    };
+  }
+
+  if (block.cardioSteps) {
+    const step = block.cardioSteps.find((item) => item.status !== "completed");
+
+    return {
+      title: `${exerciseName(block.exerciseId)}${step ? ` — Palier ${step.position + 1}` : ""}`,
+      ...(step ? { detail: formatStepSettingsLine(step) } : {}),
+    };
+  }
+
+  return { title: exerciseName(block.exerciseId) };
+}
+
+function formatProposedValues(values: ProposedSeriesValues): string | undefined {
+  const parts: string[] = [];
+
+  if (values.load) parts.push(formatLoad(values.load));
+  if (values.reps !== undefined) parts.push(values.load ? `× ${values.reps}` : `${values.reps} reps`);
+  if (values.durationSec !== undefined) parts.push(formatDurationShort(values.durationSec));
+
+  return parts.length > 0 ? parts.join(" ") : undefined;
+}
+
+function formatStepSettingsLine(step: PerformedCardioStep): string {
+  const settings = formatStepSettings(step);
+
+  return `${settings.duration} · ${settings.first} · ${settings.second}`;
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Check, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import type {
   Exercise,
@@ -17,6 +17,7 @@ import { SeriesForm } from "./SeriesForm";
 import {
   formatBlockStatus,
   formatExerciseSubtitle,
+  formatMmSs,
   formatPlannedLine,
   formatSeriesTarget,
   formatShortDate,
@@ -31,6 +32,11 @@ interface ExerciseBlockCardProps {
   lastTime: LastPerformance | undefined;
   expanded: boolean;
   busy: boolean;
+  /**
+   * Carte de repos à afficher en tête du contenu quand cette brique est
+   * la brique courante (§12).
+   */
+  restCard?: ReactNode;
   onToggle: () => void;
   onValidateSeries: (seriesId: Id, values: SeriesValues) => void;
   onEditSeries: (seriesId: Id, values: SeriesValues) => void;
@@ -51,6 +57,7 @@ export function ExerciseBlockCard({
   lastTime,
   expanded,
   busy,
+  restCard,
   onToggle,
   onValidateSeries,
   onEditSeries,
@@ -108,6 +115,7 @@ export function ExerciseBlockCard({
 
       {expanded && block.series && (
         <div className="wblock__content">
+          {restCard}
           <ReferenceBlock block={block} lastTime={lastTime} />
 
           <ol className="wseries">
@@ -156,6 +164,7 @@ export function ExerciseBlockCard({
 
       {expanded && block.cardioSteps && (
         <div className="wblock__content">
+          {restCard}
           <ol className="wseries">
             {block.cardioSteps.map((step, index) => {
               const settings = formatStepSettings(step);
@@ -263,6 +272,12 @@ function SeriesRow({
         <span className="wseries__body">
           <span className="wseries__title">{label}</span>
           <span className="wseries__meta">{formatSeriesLine(series)}</span>
+          {series.actualRestAfterSec !== undefined && (
+            <span className="wseries__rest">
+              Repos réel {formatMmSs(series.actualRestAfterSec)}
+              {series.restComparable === false ? " · hors moyenne" : ""}
+            </span>
+          )}
         </span>
         {!editing && (
           <button type="button" className="wseries__edit" onClick={onEdit}>

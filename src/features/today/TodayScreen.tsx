@@ -27,6 +27,7 @@ import { BottomSheet } from "../../components/ui/BottomSheet";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
 import { formatClock } from "../workout/workoutRecap";
 import { currentActiveDurationSec } from "../workout/finishWorkout";
+import { getOpenPause } from "../workout/engine/workoutTime";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import { startWorkout } from "../workout/startWorkout";
 import { inferFreeWorkoutCategory } from "../program/freeWorkouts";
@@ -306,9 +307,14 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
   const category =
     template?.category ?? inferFreeWorkoutCategory(workout, data.exerciseById);
   const running = entry.kind === "in_progress";
-  const badge = `${running ? "En cours" : "Faite"}${
-    entry.supplementary ? " · Supplémentaire" : ""
-  }`;
+  const openPause = running ? getOpenPause(workout) : undefined;
+  const badge = `${
+    openPause
+      ? `En pause depuis ${formatClock(openPause.startedAt)}`
+      : running
+        ? "En cours"
+        : "Faite"
+  }${entry.supplementary ? " · Supplémentaire" : ""}`;
   const progress = calculateExecutionProgress(workout.blocks);
   const activeSec = currentActiveDurationSec(workout, new Date().toISOString());
 
@@ -380,7 +386,7 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
       {running ? (
         <Link to="/seance" className="today__primary">
           <Play size={18} strokeWidth={2.2} aria-hidden="true" />
-          Reprendre la séance
+          {openPause ? "Ouvrir la séance" : "Reprendre la séance"}
         </Link>
       ) : (
         <Link

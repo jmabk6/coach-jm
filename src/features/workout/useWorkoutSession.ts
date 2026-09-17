@@ -115,9 +115,23 @@ export function useClock(enabled: boolean): number {
   useEffect(() => {
     if (!enabled) return;
 
-    const timer = window.setInterval(() => setTick((value) => value + 1), 1000);
+    const bump = () => setTick((value) => value + 1);
+    const timer = window.setInterval(bump, 1000);
 
-    return () => window.clearInterval(timer);
+    /* Au retour au premier plan, l'intervalle a pu être ralenti :
+       on relit l'horloge tout de suite. */
+    const onVisible = () => {
+      if (document.visibilityState === "visible") bump();
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, [enabled]);
 
   return tick;

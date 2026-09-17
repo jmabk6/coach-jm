@@ -3,7 +3,9 @@ import type { WorkoutSession } from "../../domain";
 import { findLastPerformances } from "./lastPerformance";
 import {
   calculatePerformedNumbering,
+  describeNextUp,
   formatExerciseSubtitle,
+  formatMmSs,
   formatPlannedLine,
 } from "./workoutDisplay";
 
@@ -109,5 +111,98 @@ describe("libellés de l'écran de séance", () => {
     expect(formatExerciseSubtitle(block)).toBe("2 séries · Repos 1 min 30");
     expect(formatPlannedLine(block)).toBe("8–10 reps · Repos 1 min 30");
     expect(formatPlannedLine({ ...block, addedDuringWorkout: true })).toBeUndefined();
+  });
+});
+
+describe("carte de repos : chrono et bloc Ensuite", () => {
+  const block = squatOld.blocks[0] as Extract<WorkoutSession["blocks"][number], { kind: "exercise" }>;
+  const exerciseById = new Map([
+    ["squat", { id: "squat", name: "Squat barre" } as never],
+    ["crunch", { id: "crunch", name: "Crunch" } as never],
+  ]);
+  const rest = {
+    id: "r",
+    kind: "between_sets" as const,
+    startedAt: "2026-09-17T10:00:00.000Z",
+    targetEndAt: "2026-09-17T10:01:30.000Z",
+    plannedDurationSec: 90,
+    afterBlockId: "squat-block",
+    afterEntryId: "s1",
+  };
+
+  it("formate un décompte en minutes:secondes, jamais négatif", () => {
+    expect(formatMmSs(0)).toBe("0:00");
+    expect(formatMmSs(65)).toBe("1:05");
+    expect(formatMmSs(727)).toBe("12:07");
+    expect(formatMmSs(-12)).toBe("0:00");
+  });
+
+  it("annonce la série suivante du même exercice avec la cible et la proposition", () => {
+    const running = workout("w", "2026-09-17", [
+      {
+        ...block,
+        id: "squat-block",
+        status: "not_performed",
+        series: [
+          { id: "s1", position: 0, status: "completed", load: { kind: "total", kg: 40 }, reps: 10 },
+          { id: "s2", position: 1, status: "active" },
+        ],
+      },
+    ], "in_progress");
+
+    expect(
+      describeNextUp(
+        { ...running, currentBlockId: "squat-block", activeRest: rest },
+        exerciseById,
+        () => ({ load: { kind: "total", kg: 40 }, reps: 10 }),
+      ),
+    ).toEqual({ title: "Série 2", detail: "8–10 reps · proposé 40 kg × 10" });
+  });
+
+  it("annonce la brique suivante quand l'exercice est terminé", () => {
+    const running = workout("w", "2026-09-17", [
+      { ...block, id: "squat-block", status: "performed" },
+      {
+        ...block,
+        id: "crunch-block",
+        position: 1,
+        exerciseId: "crunch",
+        status: "not_performed",
+        addedDuringWorkout: true,
+        series: [{ id: "c1", position: 0, status: "active" }],
+      },
+    ], "in_progress");
+
+    expect(
+      describeNextUp(
+        { ...running, currentBlockId: "crunch-block", activeRest: rest },
+        exerciseById,
+        () => ({}),
+      ),
+    ).toEqual({ title: "Crunch — Série 1" });
+  });
+
+  it("laisse le choix sur une brique sans nombre prévu entièrement validée", () => {
+    const running = workout("w", "2026-09-17", [
+      {
+        ...block,
+        id: "squat-block",
+        status: "not_performed",
+        addedDuringWorkout: true,
+        series: [{ id: "s1", position: 0, status: "completed", reps: 10 }],
+      },
+    ], "in_progress");
+
+    expect(
+      describeNextUp(
+        { ...running, currentBlockId: "squat-block", activeRest: rest },
+        exerciseById,
+        () => ({}),
+      ),
+    ).toEqual({ title: "À toi de choisir", detail: "Ajouter une série, ou Terminer l'exercice" });
+  });
+
+  it("ne dit rien sans repos en cours", () => {
+    expect(describeNextUp(workout("w", "2026-09-17", []), exerciseById, () => ({}))).toBeUndefined();
   });
 });

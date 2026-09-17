@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, Circle, Info, MinusCircle, Plus } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  Ellipsis,
+  Info,
+  MinusCircle,
+  PauseCircle,
+  Play,
+  Plus,
+} from "lucide-react";
 import type {
   Id,
   PerformedBlock,
@@ -14,16 +23,23 @@ import {
   activateBlock,
   addExerciseBlocks,
   addSeries,
+  adjustRest,
   editSeries,
   finishBlock,
+  pauseWorkout,
+  resumeWorkout,
   skipRest,
   validateSeries,
 } from "./engine/workoutEngine";
+import { proposeSeriesValues } from "./engine/workoutBlocks";
+import { getOpenPause, getRestCountdown } from "./engine/workoutTime";
 import { ExerciseBlockCard } from "./ExerciseBlockCard";
 import { finishWorkout } from "./finishWorkout";
 import { RestBar } from "./RestBar";
+import { RestCard } from "./RestCard";
+import { playRestSignal, primeRestSignal } from "./restSignal";
 import { useClock, useWorkoutSession } from "./useWorkoutSession";
-import { calculatePerformedNumbering } from "./workoutDisplay";
+import { calculatePerformedNumbering, describeNextUp } from "./workoutDisplay";
 import { formatClock } from "./workoutRecap";
 import "./WorkoutScreen.css";
 import "./WorkoutBlocks.css";
@@ -41,11 +57,38 @@ export function WorkoutScreen() {
   const [busy, setBusy] = useState(false);
   const [peekedId, setPeekedId] = useState<Id>();
   const [adding, setAdding] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string>();
 
   const workout = state.status === "ready" ? state.workout : undefined;
   useClock(Boolean(workout?.activeRest));
+
+  /* Signal au premier plan quand le compte à rebours atteint zéro (§12) :
+     on observe le passage `running` → `done` du repos en cours. */
+  const restPhaseRef = useRef<{ id: string; phase: "running" | "done" } | undefined>(undefined);
+  const nowIso = new Date().toISOString();
+  const rest = workout?.activeRest;
+  const restPhase = rest ? getRestCountdown(rest, nowIso).phase : undefined;
+
+  useEffect(() => {
+    if (!rest || !restPhase) {
+      restPhaseRef.current = undefined;
+      return;
+    }
+
+    const previous = restPhaseRef.current;
+    restPhaseRef.current = { id: rest.id, phase: restPhase };
+
+    if (
+      previous?.id === rest.id &&
+      previous.phase === "running" &&
+      restPhase === "done" &&
+      document.visibilityState === "visible"
+    ) {
+      playRestSignal();
+    }
+  }, [rest, restPhase]);
 
   /* Retour de la bibliothèque : `?add=<id>` dans l'ordre de sélection. */
   const pendingAddIds = useMemo(() => searchParams.getAll("add"), [searchParams]);
@@ -69,7 +112,24 @@ export function WorkoutScreen() {
     void apply((current, at) => addExerciseBlocks(current, exercises, at));
   }, [state, pendingAddIds, apply, setSearchParams]);
 
+  /* Une séance qui n'a pas encore de brique courante s'ouvre sur sa
+     première brique exécutable (§11 : la brique active dépliée). */
+  useEffect(() => {
+    if (state.status !== "ready" || state.workout.currentBlockId !== undefined) return;
+
+    const first = [...state.workout.blocks]
+      .sort((a, b) => a.position - b.position)
+      .find((block) => block.kind !== "note" && block.status === "not_performed");
+
+    if (!first) return;
+
+    void apply((current, at) =>
+      current.currentBlockId === undefined ? activateBlock(current, first.id, at) : current,
+    );
+  }, [state, apply]);
+
   async function run(action: Parameters<typeof apply>[0]) {
+    primeRestSignal();
     setBusy(true);
     try {
       await apply(action);
@@ -104,6 +164,30 @@ export function WorkoutScreen() {
   const hasAdded = blocks.some((block) => block.kind !== "note" && block.addedDuringWorkout);
   const currentNumber =
     workout.currentBlockId !== undefined ? numbering[workout.currentBlockId] : undefined;
+  const openPause = getOpenPause(workout);
+  const paused = openPause !== undefined;
+  const locked = busy || paused;
+
+  /* Carte de repos pleine : dans la brique courante si elle est dépliée,
+     sinon au-dessus de la liste. */
+  const restCard = workout.activeRest ? (
+    <RestCard
+      rest={workout.activeRest}
+      now={nowIso}
+      nextUp={describeNextUp(workout, exerciseById, (block) =>
+        proposeSeriesValues(block, lastByExercise.get(block.exerciseId)?.series),
+      )}
+      paused={paused}
+      busy={busy}
+      onAdjust={(delta) => void run((current, at) => adjustRest(current, delta, at))}
+      onSkip={() => void run((current, at) => skipRest(current, at))}
+    />
+  ) : null;
+  const currentBlock = blocks.find((block) => block.id === workout.currentBlockId);
+  const restCardInBlock =
+    currentBlock !== undefined &&
+    currentBlock.kind === "exercise" &&
+    isExpanded(currentBlock);
 
   function openLibrary() {
     setAdding(false);
@@ -159,13 +243,46 @@ export function WorkoutScreen() {
   return (
     <section className={`workout ${workout.activeRest ? "workout--resting" : ""}`}>
       <header className="workout__header">
-        <Link to="/" className="workout__back">‹ Aujourd'hui</Link>
-        <h1 className="workout__title">{name} — En cours</h1>
+        <div className="workout__topline">
+          <Link to="/" className="workout__back">‹ Aujourd'hui</Link>
+          <button
+            type="button"
+            className="workout__menu"
+            aria-label="Actions de la séance"
+            onClick={() => setMenuOpen(true)}
+          >
+            <Ellipsis size={22} strokeWidth={2} aria-hidden="true" />
+          </button>
+        </div>
+        <h1 className="workout__title">
+          {name} — {paused ? "En pause" : "En cours"}
+        </h1>
         <p className="workout__subtitle">
           Débutée à {formatClock(workout.startedAt)}
           {workout.source === "free" && template ? " · Séance supplémentaire" : ""}
         </p>
       </header>
+
+      {openPause && (
+        <div className="workout-pause" role="status">
+          <PauseCircle size={20} strokeWidth={2} aria-hidden="true" />
+          <span className="workout-pause__text">
+            <strong>En pause depuis {formatClock(openPause.startedAt)}</strong>
+            <small>La durée active est suspendue ; rien n'est perdu.</small>
+          </span>
+          <button
+            type="button"
+            className="workout-pause__resume"
+            disabled={busy}
+            onClick={() => void run((current, at) => resumeWorkout(current, at))}
+          >
+            <Play size={16} strokeWidth={2.4} aria-hidden="true" />
+            Reprendre la séance
+          </button>
+        </div>
+      )}
+
+      {restCard && !restCardInBlock && restCard}
 
       {progress.total > 0 && (
         <div className="workout__progress">
@@ -226,7 +343,8 @@ export function WorkoutScreen() {
                 exercise={exerciseById.get(block.exerciseId)}
                 lastTime={lastByExercise.get(block.exerciseId)}
                 expanded={isExpanded(block)}
-                busy={busy}
+                busy={locked}
+                restCard={block.id === currentBlock?.id && restCardInBlock ? restCard : undefined}
                 onToggle={() => toggleBlock(block)}
                 onValidateSeries={(seriesId, values) =>
                   void run((current, at) => validateSeries(current, block.id, seriesId, values, at))
@@ -242,7 +360,7 @@ export function WorkoutScreen() {
         </ol>
       )}
 
-      <button type="button" className="workout__add" onClick={() => setAdding(true)} disabled={busy}>
+      <button type="button" className="workout__add" onClick={() => setAdding(true)} disabled={locked}>
         <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
         Ajouter un exercice
       </button>
@@ -265,9 +383,47 @@ export function WorkoutScreen() {
       {workout.activeRest && (
         <RestBar
           rest={workout.activeRest}
-          now={new Date().toISOString()}
+          now={nowIso}
           busy={busy}
+          paused={paused}
           onSkip={() => void run((current, at) => skipRest(current, at))}
+        />
+      )}
+
+      {menuOpen && (
+        <BottomSheet
+          title={name}
+          message={paused ? "Séance en pause" : "Séance en cours"}
+          actions={[
+            paused
+              ? {
+                  label: "Reprendre la séance",
+                  hint: "La durée active repart de maintenant",
+                  tone: "primary",
+                  onSelect: () => {
+                    setMenuOpen(false);
+                    void run((current, at) => resumeWorkout(current, at));
+                  },
+                }
+              : {
+                  label: "Mettre en pause",
+                  hint: "Suspend la durée active ; un repos en cours continue mais ne comptera pas dans le repos moyen",
+                  onSelect: () => {
+                    setMenuOpen(false);
+                    void run((current, at) => pauseWorkout(current, at));
+                  },
+                },
+            {
+              label: "Terminer la séance",
+              hint: "Les exercices restants seront « non réalisés »",
+              onSelect: () => {
+                setMenuOpen(false);
+                setFinishing(true);
+              },
+            },
+          ]}
+          dismissLabel="Fermer"
+          onDismiss={() => setMenuOpen(false)}
         />
       )}
 
