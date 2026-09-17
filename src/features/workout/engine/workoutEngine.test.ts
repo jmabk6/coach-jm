@@ -16,6 +16,7 @@ import {
   buildResumeSummary,
   completeWorkoutSession,
   editSeries,
+  editStep,
   finishBlock,
   pauseWorkout,
   recordPresence,
@@ -506,6 +507,57 @@ describe("paliers", () => {
     expect(exerciseOf(w, "tapis-block").cardioSteps?.[1]?.settings.durationSec).toBe(200);
     expect(exerciseOf(w, "tapis-block").status).toBe("performed");
     expect(() => updateStep(w, "tapis-block", "p1", { durationSec: 1, speedKmh: 1, inclinePercent: 0 }, at(9))).toThrow();
+  });
+
+  it("Modifier un palier terminé corrige BPM, note et réglages sans toucher au reste", () => {
+    let w = activateBlock(workout([tapisBlock(0)]), "tapis-block", T0);
+    w = validateStep(w, "tapis-block", "p1", {}, at(5));
+
+    const before = w;
+    w = editStep(w, "tapis-block", "p1", { bpm: 118, note: "oublié" }, at(6));
+
+    const p1 = exerciseOf(w, "tapis-block").cardioSteps?.[0];
+    expect(p1).toMatchObject({ status: "completed", bpm: 118, note: "oublié", completedAt: at(5) });
+    expect(p1?.originalSettings).toBeUndefined();
+    expect(w.activeRest).toBeUndefined();
+    expect(w.currentEntryId).toBe("p2");
+    expect(exerciseOf(w, "tapis-block").cardioSteps?.[1]).toEqual(
+      exerciseOf(before, "tapis-block").cardioSteps?.[1],
+    );
+    expect(w.lastActionAt).toBe(at(6));
+  });
+
+  it("corriger les réglages garde la consigne d'origine déjà conservée", () => {
+    let w = activateBlock(workout([tapisBlock(0)]), "tapis-block", T0);
+    w = validateStep(w, "tapis-block", "p1", { settings: { durationSec: 120, speedKmh: 5, inclinePercent: 10 } }, at(5));
+    expect(exerciseOf(w, "tapis-block").cardioSteps?.[0]?.originalSettings).toEqual({
+      durationSec: 300, speedKmh: 5, inclinePercent: 10,
+    });
+
+    w = editStep(w, "tapis-block", "p1", { settings: { durationSec: 150, speedKmh: 5.5, inclinePercent: 10 } }, at(6));
+
+    const p1 = exerciseOf(w, "tapis-block").cardioSteps?.[0];
+    expect(p1?.settings).toEqual({ durationSec: 150, speedKmh: 5.5, inclinePercent: 10 });
+    expect(p1?.originalSettings).toEqual({ durationSec: 300, speedKmh: 5, inclinePercent: 10 });
+  });
+
+  it("un palier corrigé sans adaptation préalable reçoit sa trace", () => {
+    let w = activateBlock(workout([tapisBlock(0)]), "tapis-block", T0);
+    w = validateStep(w, "tapis-block", "p1", {}, at(5));
+    w = editStep(w, "tapis-block", "p1", { settings: { durationSec: 300, speedKmh: 4.5, inclinePercent: 10 } }, at(6));
+
+    expect(exerciseOf(w, "tapis-block").cardioSteps?.[0]?.originalSettings).toEqual({
+      durationSec: 300, speedKmh: 5, inclinePercent: 10,
+    });
+  });
+
+  it("refuse de modifier un palier non validé ou une séance terminée", () => {
+    let w = activateBlock(workout([tapisBlock(0)]), "tapis-block", T0);
+    expect(() => editStep(w, "tapis-block", "p1", { bpm: 100 }, at(1))).toThrow(/validé/);
+
+    w = validateStep(w, "tapis-block", "p1", {}, at(5));
+    const done = completeWorkoutSession(w, at(6));
+    expect(() => editStep(done, "tapis-block", "p1", { bpm: 100 }, at(7))).toThrow(/terminée/);
   });
 
   it("Ajouter un palier reprend les réglages du précédent", () => {

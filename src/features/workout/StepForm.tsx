@@ -11,9 +11,10 @@ interface StepFormProps {
   /**
    * `execute` : palier actif — réglages préremplis, BPM vide, note au
    * tap, validation. `edit` : palier à venir — réglages seuls, `Valider
-   * les nouvelles consignes`.
+   * les nouvelles consignes`. `correct` : palier terminé — tout est
+   * prérempli avec les valeurs réellement enregistrées.
    */
-  mode: "execute" | "edit";
+  mode: "execute" | "edit" | "correct";
   submitLabel: string;
   onSubmit: (values: StepValues) => void;
   onCancel?: () => void;
@@ -43,7 +44,9 @@ export function StepForm({ step, mode, submitLabel, onSubmit, onCancel, busy = f
   const [distance, setDistance] = useState(
     formatNumberInput("distanceKm" in initial ? initial.distanceKm : undefined),
   );
-  const [bpm, setBpm] = useState("");
+  const [bpm, setBpm] = useState(
+    formatNumberInput(mode === "correct" ? step.bpm : undefined),
+  );
   const [noteOpen, setNoteOpen] = useState(Boolean(step.note));
   const [note, setNote] = useState(step.note ?? "");
 
@@ -83,10 +86,10 @@ export function StepForm({ step, mode, submitLabel, onSubmit, onCancel, busy = f
         const values: StepValues = { settings };
         const parsedBpm = parseNumber(bpm);
 
-        if (mode === "execute" && parsedBpm !== undefined) values.bpm = parsedBpm;
+        if (mode !== "edit" && parsedBpm !== undefined) values.bpm = parsedBpm;
 
         const trimmed = note.trim();
-        if (mode === "execute" && trimmed) values.note = trimmed;
+        if (mode !== "edit" && trimmed) values.note = trimmed;
 
         onSubmit(values);
       }}
@@ -101,7 +104,7 @@ export function StepForm({ step, mode, submitLabel, onSubmit, onCancel, busy = f
         ) : (
           <NumberField label="Distance" unit="km" value={distance} onChange={setDistance} step={0.1} min={0} decimal />
         )}
-        {mode === "execute" && (
+        {mode !== "edit" && (
           <NumberField
             label="BPM en fin de palier"
             unit="optionnel"
@@ -126,7 +129,7 @@ export function StepForm({ step, mode, submitLabel, onSubmit, onCancel, busy = f
         </p>
       )}
 
-      {mode === "execute" && (
+      {mode !== "edit" && (
         <>
           {noteOpen ? (
             <label className="series-form__note">

@@ -47,6 +47,7 @@ interface ExerciseBlockCardProps {
   onFinishBlock: () => void;
   onValidateStep: (stepId: Id, values: StepValues) => void;
   onUpdateStep: (stepId: Id, settings: CardioStepSettings) => void;
+  onEditStep: (stepId: Id, values: StepValues) => void;
   onAddStep: () => void;
   /**
    * `Dernière fois comparable` d'un palier : mêmes réglages, pas même rang (§11).
@@ -75,6 +76,7 @@ export function ExerciseBlockCard({
   onFinishBlock,
   onValidateStep,
   onUpdateStep,
+  onEditStep,
   onAddStep,
   lastComparableStep,
 }: ExerciseBlockCardProps) {
@@ -199,6 +201,10 @@ export function ExerciseBlockCard({
                   onSaveEdit={(settings) => {
                     setEditingId(undefined);
                     onUpdateStep(step.id, settings);
+                  }}
+                  onSaveCorrection={(values) => {
+                    setEditingId(undefined);
+                    onEditStep(step.id, values);
                   }}
                 />
               ))}
@@ -426,6 +432,7 @@ interface StepRowProps {
   onCancelEdit: () => void;
   onValidate: (values: StepValues) => void;
   onSaveEdit: (settings: CardioStepSettings) => void;
+  onSaveCorrection: (values: StepValues) => void;
 }
 
 /**
@@ -433,7 +440,17 @@ interface StepRowProps {
  * (saisie), à venir (modifiable avant d'être commencé). Aucun `Prévu /
  * Réalisé` à l'intérieur : la consigne courante fait foi (§11).
  */
-function StepRow({ step, index, editing, busy, onEdit, onCancelEdit, onValidate, onSaveEdit }: StepRowProps) {
+function StepRow({
+  step,
+  index,
+  editing,
+  busy,
+  onEdit,
+  onCancelEdit,
+  onValidate,
+  onSaveEdit,
+  onSaveCorrection,
+}: StepRowProps) {
   const label = `Palier ${index + 1}`;
   const line = formatCardioSettingsLine(step.settings);
   const adapted = step.originalSettings ? (
@@ -444,7 +461,7 @@ function StepRow({ step, index, editing, busy, onEdit, onCancelEdit, onValidate,
 
   if (step.status === "completed") {
     return (
-      <li className="wseries__row wseries__row--done">
+      <li className={`wseries__row wseries__row--done ${editing ? "wseries__row--editing" : ""}`}>
         <span className="wseries__bullet wseries__bullet--done" aria-hidden="true">
           <Check size={14} strokeWidth={3} />
         </span>
@@ -452,11 +469,29 @@ function StepRow({ step, index, editing, busy, onEdit, onCancelEdit, onValidate,
           <span className="wseries__title">{label}</span>
           <span className="wseries__meta">
             {line}
-            {step.bpm !== undefined ? ` · ${step.bpm} bpm` : ""}
+            {step.bpm !== undefined ? ` · ${step.bpm} bpm` : " · BPM non relevé"}
             {step.note ? ` · ${step.note}` : ""}
           </span>
           {adapted}
         </span>
+        {!editing && (
+          <button type="button" className="wseries__edit" onClick={onEdit}>
+            Modifier
+          </button>
+        )}
+        {editing && (
+          <div className="wseries__form">
+            <StepForm
+              key={`correct-${step.id}`}
+              step={step}
+              mode="correct"
+              submitLabel="Enregistrer"
+              onSubmit={onSaveCorrection}
+              onCancel={onCancelEdit}
+              busy={busy}
+            />
+          </div>
+        )}
       </li>
     );
   }

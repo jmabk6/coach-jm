@@ -681,6 +681,55 @@ export function validateStep(
 }
 
 /**
+ * `Modifier` un palier terminé : la seule voie pour corriger une valeur
+ * validée — réglages, BPM, note. Comme pour une série : ni repos, ni
+ * changement de palier actif, ni effet sur les autres paliers. Une
+ * consigne d'origine déjà conservée n'est jamais écrasée ; un palier
+ * corrigé sans trace d'adaptation en reçoit une, la consigne exécutée
+ * ayant différé de la consigne affichée (décision du 17/09/2026).
+ */
+export function editStep(
+  workout: WorkoutSession,
+  blockId: Id,
+  stepId: Id,
+  values: StepValues,
+  now: string,
+): WorkoutSession {
+  assertInProgress(workout);
+
+  const block = findExerciseBlock(workout, blockId);
+  const step = block.cardioSteps?.find((item) => item.id === stepId);
+
+  if (!step || step.status !== "completed") {
+    throw new Error("Seul un palier validé se modifie");
+  }
+
+  const next = withExerciseBlock(workout, blockId, (item) => ({
+    ...item,
+    cardioSteps: (item.cardioSteps ?? []).map((entry) => {
+      if (entry.id !== stepId) return entry;
+
+      const settingsChanged =
+        values.settings !== undefined && !sameSettings(entry.settings, values.settings);
+
+      return {
+        ...entry,
+        ...(settingsChanged && entry.originalSettings === undefined
+          ? { originalSettings: structuredClone(entry.settings) }
+          : {}),
+        ...(settingsChanged && values.settings
+          ? { settings: structuredClone(values.settings) }
+          : {}),
+        ...(values.bpm !== undefined ? { bpm: values.bpm } : {}),
+        ...(values.note !== undefined ? { note: values.note } : {}),
+      };
+    }),
+  }));
+
+  return touch(next, now);
+}
+
+/**
  * `Ajouter un palier` : reprend les réglages du palier précédent (Q3).
  */
 export function addStep(

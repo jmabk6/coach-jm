@@ -26,6 +26,7 @@ import {
   addStep,
   adjustRest,
   editSeries,
+  editStep,
   finishBlock,
   pauseWorkout,
   resumeWorkout,
@@ -363,6 +364,9 @@ export function WorkoutScreen() {
                 }
                 onUpdateStep={(stepId, settings) =>
                   void run((current, at) => updateStep(current, block.id, stepId, settings, at))
+                }
+                onEditStep={(stepId, values) =>
+                  void run((current, at) => editStep(current, block.id, stepId, values, at))
                 }
                 onAddStep={() => void run((current, at) => addStep(current, block.id, at))}
                 lastComparableStep={(settings) =>
