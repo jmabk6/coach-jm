@@ -41,7 +41,7 @@ import {
   proposeSeriesValues,
   summarizeBlockCompletion,
 } from "./workoutBlocks";
-import { shouldShowResumeSheet, summarizeRests } from "./workoutTime";
+import { getRestCountdown, shouldShowResumeSheet, summarizeRests } from "./workoutTime";
 
 /* -------------------------------------------------------------------------- */
 /* Fixtures                                                                   */
@@ -341,9 +341,57 @@ describe("repos", () => {
     w = adjustRest(w, 30, at(12, 10));
     expect(w.activeRest?.targetEndAt).toBe(at(14));
     expect(w.activeRest?.plannedDurationSec).toBe(90);
+    expect(w.activeRest?.adjustmentSec).toBe(30);
 
     w = adjustRest(w, -30, at(13, 50));
     expect(w.activeRest?.targetEndAt).toBe(at(13, 50));
+    expect(w.activeRest?.adjustmentSec).toBe(0);
+  });
+
+  it("+30 s après zéro relance 30 s depuis le geste, sans toucher au repos réel ni au prévu", () => {
+    let w = activateBlock(workout([squatBlock()]), "squat-block", T0);
+    w = validateSeries(w, "squat-block", "s1", { reps: 10 }, at(12), newId);
+
+    /* Fin cible à 13:30, geste à 14:00 : nouveau décompte jusqu'à 14:30. */
+    w = adjustRest(w, 30, at(14));
+    expect(w.activeRest).toMatchObject({
+      startedAt: at(12),
+      targetEndAt: at(14, 30),
+      plannedDurationSec: 90,
+      adjustmentSec: 30,
+    });
+    expect(getRestCountdown(w.activeRest!, at(14, 5))).toMatchObject({ phase: "running", remainingSec: 25 });
+
+    /* Un second +30 s pendant ce décompte prolonge la nouvelle cible. */
+    w = adjustRest(w, 30, at(14, 10));
+    expect(w.activeRest?.targetEndAt).toBe(at(15));
+    expect(w.activeRest?.adjustmentSec).toBe(60);
+
+    /* −30 s après zéro : rien. */
+    const done = adjustRest(w, -30, at(15, 20));
+    expect(done.activeRest).toEqual(w.activeRest);
+
+    /* La fin réelle reste la validation suivante, mesurée depuis 12:00 : un seul repos. */
+    w = validateSeries(w, "squat-block", "s2", { reps: 10 }, at(15, 40), newId);
+    expect(exerciseOf(w, "squat-block").series?.[0]).toMatchObject({
+      actualRestAfterSec: 220,
+      restComparable: true,
+      restAdjustmentSec: 60,
+    });
+    expect(summarizeRests(w.blocks)).toMatchObject({ comparableCount: 1, totalCount: 1, plannedAverageSec: 90 });
+  });
+
+  it("Passer reste possible après un +30 s relancé", () => {
+    let w = activateBlock(workout([squatBlock()]), "squat-block", T0);
+    w = validateSeries(w, "squat-block", "s1", { reps: 10 }, at(12), newId);
+    w = adjustRest(w, 30, at(14));
+    w = skipRest(w, at(14, 12));
+
+    expect(w.activeRest).toBeUndefined();
+    expect(exerciseOf(w, "squat-block").series?.[0]).toMatchObject({
+      actualRestAfterSec: 132,
+      restAdjustmentSec: 30,
+    });
   });
 
   it("une absence ne change rien : ni au repos, ni à la durée active", () => {

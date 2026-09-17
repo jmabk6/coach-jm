@@ -22,6 +22,8 @@ export const REST_ADJUST_STEP_SEC = 30;
  * progression, `−30 s` / `+30 s`, `Passer`, bloc `Ensuite`. À zéro,
  * `Repos terminé` et le temps réel qui continue — la fin réelle est la
  * validation suivante ou `Passer`, jamais le zéro du compte à rebours.
+ * Après zéro, `+30 s` relance un décompte de 30 s depuis le geste sans
+ * remettre le repos réel à zéro ; `−30 s` n'a plus d'objet.
  * Pendant une pause explicite, le repos continue de courir mais ne
  * comptera pas dans le repos moyen ; les commandes attendent la reprise.
  */
@@ -40,7 +42,7 @@ export function RestCard({
     (new Date(rest.targetEndAt).getTime() - new Date(rest.startedAt).getTime()) / 1000,
   ));
   const progress = done ? 1 : Math.min(1, countdown.elapsedSec / targetSec);
-  const adjusted = targetSec !== rest.plannedDurationSec;
+  const adjusted = (rest.adjustmentSec ?? 0) !== 0;
   const locked = busy || paused;
 
   return (
@@ -55,7 +57,9 @@ export function RestCard({
         </span>
         <span className="rest-card__planned">
           prévu {formatMmSs(rest.plannedDurationSec)}
-          {adjusted && !done ? ` · ajusté ${formatMmSs(targetSec)}` : ""}
+          {adjusted
+            ? ` · ajusté ${rest.adjustmentSec! > 0 ? "+" : "−"}${formatMmSs(Math.abs(rest.adjustmentSec!))}`
+            : ""}
         </span>
       </header>
 
@@ -75,7 +79,8 @@ export function RestCard({
         </p>
       ) : done ? (
         <p className="rest-card__note">
-          Le repos réel court jusqu'à la validation suivante, ou jusqu'à `Passer`.
+          Le repos réel court jusqu'à la validation suivante, ou jusqu'à `Passer` ; `+30 s`
+          relance un décompte sans le remettre à zéro.
         </p>
       ) : null}
 
@@ -110,8 +115,8 @@ export function RestCard({
           type="button"
           className="rest-card__adjust"
           onClick={() => onAdjust(REST_ADJUST_STEP_SEC)}
-          disabled={locked || done}
-          aria-label="Prolonger le repos de 30 secondes"
+          disabled={locked}
+          aria-label={done ? "Relancer 30 secondes de repos" : "Prolonger le repos de 30 secondes"}
         >
           <Plus size={16} strokeWidth={2.4} aria-hidden="true" />
           30 s

@@ -294,6 +294,11 @@ export interface PerformedSeries {
    */
   restComparable?: boolean;
 
+  /**
+   * Ajustements `−30 s` / `+30 s` appliqués pendant ce repos.
+   */
+  restAdjustmentSec?: number;
+
   completedAt?: string;
 }
 
@@ -402,6 +407,8 @@ export interface PerformedGroupRound {
    */
   restComparable?: boolean;
 
+  restAdjustmentSec?: number;
+
   completedAt?: string;
 }
 
@@ -497,6 +504,13 @@ export interface ActiveRest {
    * heure cible mais n'est pas comparable (§12).
    */
   overlappedPauseId?: Id;
+
+  /**
+   * Somme des `−30 s` / `+30 s` appliqués à ce repos, en secondes.
+   * La durée prévue reste celle du snapshot ; l'ajustement est
+   * enregistré à part.
+   */
+  adjustmentSec?: number;
 }
 
 

@@ -279,6 +279,10 @@ function closeActiveRest(
 
   const restSec = actualRestSec(rest, endedAt);
   const restComparable = comparable && rest.overlappedPauseId === undefined;
+  const adjustment =
+    rest.adjustmentSec !== undefined && rest.adjustmentSec !== 0
+      ? { restAdjustmentSec: rest.adjustmentSec }
+      : {};
 
   const closed = withBlock(workout, rest.afterBlockId, (block) => {
     if (block.kind === "exercise" && rest.kind === "between_sets") {
@@ -286,7 +290,7 @@ function closeActiveRest(
         ...block,
         series: (block.series ?? []).map((series) =>
           series.id === rest.afterEntryId
-            ? { ...series, actualRestAfterSec: restSec, restComparable }
+            ? { ...series, actualRestAfterSec: restSec, restComparable, ...adjustment }
             : series,
         ),
       };
@@ -297,7 +301,7 @@ function closeActiveRest(
         ...block,
         rounds: block.rounds.map((round) =>
           round.id === rest.afterEntryId
-            ? { ...round, actualRestAfterSec: restSec, restComparable }
+            ? { ...round, actualRestAfterSec: restSec, restComparable, ...adjustment }
             : round,
         ),
       };
@@ -328,7 +332,11 @@ function closeActiveRest(
 
 /**
  * `−30 s` / `+30 s` : uniquement le repos en cours ; jamais en dessous
- * de l'instant présent — pas de décompte négatif.
+ * de l'instant présent — pas de décompte négatif. Après zéro, `+30 s`
+ * relance un décompte de 30 s à partir du geste : le repos réel
+ * continue depuis son début initial, la durée prévue est conservée et
+ * l'ajustement enregistré (décision du 17/09/2026). `−30 s` n'a plus
+ * d'objet après zéro.
  */
 export function adjustRest(
   workout: WorkoutSession,
@@ -343,12 +351,24 @@ export function adjustRest(
     throw new Error("Aucun repos en cours");
   }
 
-  const adjustedMs = new Date(rest.targetEndAt).getTime() + deltaSec * 1000;
-  const targetEndAt = new Date(
-    Math.max(adjustedMs, new Date(now).getTime()),
-  ).toISOString();
+  const nowMs = new Date(now).getTime();
+  const targetMs = new Date(rest.targetEndAt).getTime();
+  const done = targetMs <= nowMs;
 
-  return touch(workout, now, { activeRest: { ...rest, targetEndAt } });
+  if (done && deltaSec <= 0) {
+    return workout;
+  }
+
+  const base = done ? nowMs : targetMs;
+  const targetEndAt = new Date(Math.max(base + deltaSec * 1000, nowMs)).toISOString();
+
+  return touch(workout, now, {
+    activeRest: {
+      ...rest,
+      targetEndAt,
+      adjustmentSec: (rest.adjustmentSec ?? 0) + deltaSec,
+    },
+  });
 }
 
 /**
