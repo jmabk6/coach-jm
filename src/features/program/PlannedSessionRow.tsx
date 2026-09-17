@@ -6,7 +6,11 @@ import type {
   SessionTemplate,
   WorkoutSession,
 } from "../../domain";
-import { plannedSessionStatusLabels } from "../../domain/rules/programRules";
+import { formatLocalDate } from "../../domain/rules/programRules";
+import {
+  displayedPlannedSessionStatusLabels,
+  getDisplayedPlannedSessionStatus,
+} from "../../domain/rules/todayRules";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
 import {
   formatFreeWorkoutSummary,
@@ -33,6 +37,10 @@ export function PlannedSessionRow({
   onOpenMenu,
 }: PlannedSessionRowProps) {
   const name = template?.name ?? "Séance supprimée";
+  const displayedStatus = getDisplayedPlannedSessionStatus(
+    session,
+    formatLocalDate(new Date()),
+  );
 
   return (
     <div className="program-row">
@@ -57,8 +65,8 @@ export function PlannedSessionRow({
           <span className="program-row__meta">{durationLabel}</span>
         </span>
 
-        <span className={`program-badge program-badge--${session.status}`}>
-          {plannedSessionStatusLabels[session.status]}
+        <span className={`program-badge program-badge--${displayedStatus}`}>
+          {displayedPlannedSessionStatusLabels[displayedStatus]}
         </span>
       </button>
 

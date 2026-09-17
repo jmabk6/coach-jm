@@ -3,11 +3,12 @@ import { Info } from "lucide-react";
 import type { Id, PlannedSession, SessionTemplate, WorkoutSession } from "../../domain";
 import {
   formatFullDate,
+  formatLocalDate,
   formatPlannedSessionTitle,
   listPlannedSessionActions,
-  plannedSessionStatusLabels,
   type PlannedSessionAction,
 } from "../../domain/rules/programRules";
+import { formatDisplayedPlannedSessionStatus } from "../../domain/rules/todayRules";
 import { BottomSheet, type SheetAction } from "../../components/ui/BottomSheet";
 
 /* -------------------------------------------------------------------------- */
@@ -167,7 +168,10 @@ export function PlannedSessionMenu({
   return (
     <BottomSheet
       title={formatPlannedSessionTitle(templateName, session.date)}
-      message={plannedSessionStatusLabels[session.status]}
+      message={formatDisplayedPlannedSessionStatus(
+        session,
+        formatLocalDate(new Date()),
+      )}
       actions={actions}
       dismissLabel={session.status === "upcoming" ? "Annuler" : "Fermer"}
       onDismiss={onDismiss}
@@ -218,16 +222,11 @@ export function FreeWorkoutMenu({
 }
 
 /**
- * Le démarrage et le récapitulatif relèvent des Étapes 6 et 7 :
- * les entrées existent déjà, grisées, plutôt qu'absentes.
+ * Le récapitulatif d'une séance faite sans réalisation rattachée n'existe
+ * pas : l'entrée reste visible, grisée avec sa raison.
  */
 function pendingReason(action: PlannedSessionAction): string | undefined {
-  switch (action) {
-    case "start":
-      return "Bientôt : le moteur de séance arrive à l'Étape 6";
-    case "recap":
-      return "Bientôt : le récapitulatif arrive à l'Étape 7";
-    default:
-      return undefined;
-  }
+  return action === "recap"
+    ? "Non disponible (aucune réalisation enregistrée)"
+    : undefined;
 }

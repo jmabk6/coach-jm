@@ -16,13 +16,21 @@ import { GroupEditScreen } from "../features/sessions/GroupEditScreen";
 import { ProgramScreen } from "../features/program/ProgramScreen";
 import { WeeklyProgramScreen } from "../features/program/WeeklyProgramScreen";
 import { WorkoutRecapScreen } from "../features/workout/WorkoutRecapScreen";
+import { WorkoutScreen } from "../features/workout/WorkoutScreen";
+import { TodayScreen } from "../features/today/TodayScreen";
+import { SessionPreviewScreen } from "../features/today/SessionPreviewScreen";
 
 export const router = createHashRouter([
   {
     path: "/",
     element: <AppShell />,
     children: [
-      { index: true, element: <Screen title="Aujourd'hui" /> },
+      { index: true, element: <TodayScreen /> },
+      {
+        path: "aujourdhui/apercu/:plannedSessionId",
+        element: <SessionPreviewScreen />,
+      },
+      { path: "seance", element: <WorkoutScreen /> },
       { path: "programme", element: <ProgramScreen /> },
       { path: "programme/programmation", element: <WeeklyProgramScreen /> },
       { path: "workouts/:workoutId", element: <WorkoutRecapScreen /> },

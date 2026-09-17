@@ -63,3 +63,48 @@ describe("startFreeWorkout", () => {
     expect(saveWorkout).not.toHaveBeenCalled();
   });
 });
+describe("startFreeWorkout depuis un modèle", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getInProgressWorkout.mockResolvedValue(undefined);
+  });
+
+  it("copie les consignes du modèle sans créer d'instance", async () => {
+    const now = "2026-09-14T18:00:00.000Z";
+
+    const result = await startFreeWorkout("2026-09-14", now, {
+      id: "muscu-a",
+      name: "Muscu A",
+      category: "Musculation",
+      status: "active",
+      position: 0,
+      blocks: [
+        {
+          id: "b1",
+          kind: "exercise",
+          position: 0,
+          exerciseId: "squat",
+          instructions: {
+            shape: "reps",
+            sets: 3,
+            reps: { min: 8, max: 10 },
+            restBetweenSetsSec: 120,
+          },
+        },
+      ],
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    expect(result.source).toBe("free");
+    expect(result.sessionTemplateId).toBe("muscu-a");
+    expect(result.plannedSessionId).toBeUndefined();
+    expect(result.blocks).toHaveLength(1);
+    expect(result.blocks[0]).toMatchObject({
+      kind: "exercise",
+      exerciseId: "squat",
+      sourceBlockId: "b1",
+      addedDuringWorkout: false,
+    });
+  });
+});

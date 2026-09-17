@@ -30,6 +30,11 @@ import {
   restorePlannedSession,
   skipPlannedSession,
 } from "./plannedSessionActions";
+import {
+  getDisplayedPlannedSessionStatus,
+  type DisplayedPlannedSessionStatus,
+} from "../../domain/rules/todayRules";
+import { startWorkout } from "../workout/startWorkout";
 import { useProgramData, type ProgramData, type ProgramEntry } from "./useProgramData";
 import { FreeWorkoutRow, PlannedSessionRow } from "./PlannedSessionRow";
 import {
@@ -74,6 +79,7 @@ export function ProgramScreen() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [flow, setFlow] = useState<Flow>();
+  const [actionError, setActionError] = useState<string>();
 
   const openRecap = (workoutId: string) =>
     navigate(
@@ -147,7 +153,16 @@ export function ProgramScreen() {
 
   async function run(action: () => Promise<unknown>) {
     setFlow(undefined);
-    await action();
+    setActionError(undefined);
+
+    try {
+      await action();
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : "Action impossible",
+      );
+    }
+
     reload();
   }
 
@@ -178,12 +193,23 @@ export function ProgramScreen() {
         if (session.workoutId) openRecap(session.workoutId);
         return;
       case "start":
+        if (session.status === "in_progress") {
+          navigate("/seance");
+          return;
+        }
+
+        void run(async () => {
+          await startWorkout(session.id);
+          navigate("/seance");
+        });
         return;
     }
   }
 
-  const openMenu = (session: PlannedSession) =>
+  const openMenu = (session: PlannedSession) => {
+    setActionError(undefined);
     setFlow({ kind: "menu", session });
+  };
   const openFreeMenu = (workout: WorkoutSession) =>
     setFlow({ kind: "free-menu", workout });
   const addOn = (date: string) => setFlow({ kind: "add-template", date });
@@ -218,6 +244,12 @@ export function ProgramScreen() {
           ))}
         </div>
       </header>
+
+      {actionError && (
+        <p className="program-screen__message program-screen__message--error">
+          {actionError}
+        </p>
+      )}
 
       {state.status === "loading" && (
         <p className="program-screen__message">Chargement du Programme…</p>
@@ -368,8 +400,10 @@ function entryKey(entry: ProgramEntry): string {
   return entry.kind === "free" ? `free-${entry.workout.id}` : entry.session.id;
 }
 
-function entryStatus(entry: ProgramEntry): PlannedSession["status"] {
-  return entry.kind === "free" ? "done" : entry.session.status;
+function entryStatus(entry: ProgramEntry): DisplayedPlannedSessionStatus {
+  return entry.kind === "free"
+    ? "done"
+    : getDisplayedPlannedSessionStatus(entry.session, today());
 }
 
 function describeWeek(weekStart: string, today: string): string {
@@ -540,10 +574,11 @@ interface MonthViewProps {
   onAddOn: (date: string) => void;
 }
 
-const legend: { status: PlannedSession["status"]; label: string }[] = [
+const legend: { status: DisplayedPlannedSessionStatus; label: string }[] = [
   { status: "done", label: "Faite" },
   { status: "in_progress", label: "En cours" },
   { status: "upcoming", label: "À venir" },
+  { status: "not_performed", label: "Non réalisée" },
   { status: "skipped", label: "Sautée" },
 ];
 

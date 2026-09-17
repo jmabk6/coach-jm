@@ -326,6 +326,12 @@
   color: var(--color-danger, #c2413b);
 }
 
+/* Date passée sans réalisation : ton neutre, ce n'est pas une décision (§18) */
+.program-badge--not_performed {
+  background: var(--color-surface-soft, #f2f4f7);
+  color: var(--color-text-soft, #666);
+}
+
 /* Boutons de bas d'écran */
 
 .program-screen__primary {
@@ -562,6 +568,10 @@
 
 .program-marker--skipped {
   border: 1.5px dashed var(--color-accent, #2f6fed);
+}
+
+.program-marker--not_performed {
+  border: 1.5px solid #c9d1dc;
 }
 
 .program-legend {
