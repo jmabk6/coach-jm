@@ -26,7 +26,7 @@ import {
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
 import { formatClock } from "../workout/workoutRecap";
-import { elapsedActiveDurationSec } from "../workout/finishWorkout";
+import { currentActiveDurationSec } from "../workout/finishWorkout";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import { startWorkout } from "../workout/startWorkout";
 import { inferFreeWorkoutCategory } from "../program/freeWorkouts";
@@ -310,9 +310,7 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
     entry.supplementary ? " · Supplémentaire" : ""
   }`;
   const progress = calculateExecutionProgress(workout.blocks);
-  const activeSec = running
-    ? elapsedActiveDurationSec(workout, new Date().toISOString())
-    : workout.activeDurationSec;
+  const activeSec = currentActiveDurationSec(workout, new Date().toISOString());
 
   return (
     <section className="today-card">

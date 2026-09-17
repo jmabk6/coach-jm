@@ -1,0 +1,346 @@
+import type {
+  Exercise,
+  ExerciseInstructions,
+  Id,
+  Load,
+  PerformedBlock,
+  PerformedCardioStep,
+  PerformedExerciseBlock,
+  PerformedGroupBlock,
+  PerformedSeries,
+  PerformedSideValue,
+  WorkoutSession,
+} from "../../../domain";
+import { defaultInstructionsFor } from "../../../domain/rules/blockInstructionRules";
+
+/**
+ * Lecture et fabrication des briques d'une réalisation : tout ce qui ne
+ * touche pas au temps. Fonctions pures, sans effet de bord.
+ */
+
+export type ExecutableBlock = PerformedExerciseBlock | PerformedGroupBlock;
+
+export function sortBlocks(blocks: PerformedBlock[]): PerformedBlock[] {
+  return [...blocks].sort((a, b) => a.position - b.position);
+}
+
+export function isExecutable(block: PerformedBlock): block is ExecutableBlock {
+  return block.kind !== "note";
+}
+
+export function findBlock(workout: WorkoutSession, blockId: Id): PerformedBlock {
+  const block = workout.blocks.find((item) => item.id === blockId);
+
+  if (!block) {
+    throw new Error("Brique introuvable dans la séance");
+  }
+
+  return block;
+}
+
+export function findExerciseBlock(
+  workout: WorkoutSession,
+  blockId: Id,
+): PerformedExerciseBlock {
+  const block = findBlock(workout, blockId);
+
+  if (block.kind !== "exercise") {
+    throw new Error("Cette brique n'est pas un exercice autonome");
+  }
+
+  return block;
+}
+
+export function findGroupBlock(
+  workout: WorkoutSession,
+  blockId: Id,
+): PerformedGroupBlock {
+  const block = findBlock(workout, blockId);
+
+  if (block.kind !== "group") {
+    throw new Error("Cette brique n'est pas un groupe");
+  }
+
+  return block;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Avancement d'une brique                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Une brique est commencée dès qu'une série, un palier, un tour ou une
+ * mesure porte une validation.
+ */
+export function hasCompletedEntries(block: ExecutableBlock): boolean {
+  if (block.kind === "group") {
+    return block.rounds.some((round) =>
+      round.children.some((child) => child.completedAt !== undefined),
+    );
+  }
+
+  return (
+    (block.series?.some((series) => series.status === "completed") ?? false) ||
+    (block.cardioSteps?.some((step) => step.status === "completed") ?? false) ||
+    block.simpleMeasurement?.completedAt !== undefined
+  );
+}
+
+export function allEntriesCompleted(block: ExecutableBlock): boolean {
+  if (block.kind === "group") {
+    return (
+      block.rounds.length > 0 &&
+      block.rounds.every((round) => round.status === "completed")
+    );
+  }
+
+  if (block.series) {
+    return (
+      block.series.length > 0 &&
+      block.series.every((series) => series.status === "completed")
+    );
+  }
+
+  if (block.cardioSteps) {
+    return (
+      block.cardioSteps.length > 0 &&
+      block.cardioSteps.every((step) => step.status === "completed")
+    );
+  }
+
+  return block.simpleMeasurement?.completedAt !== undefined;
+}
+
+/**
+ * En cours : commencée, ni terminée ni sautée (§13, point d'insertion).
+ */
+export function isBlockInProgress(block: PerformedBlock): boolean {
+  return (
+    isExecutable(block) &&
+    block.status === "not_performed" &&
+    hasCompletedEntries(block)
+  );
+}
+
+/**
+ * Prochaine brique à exécuter après `afterBlockId`, dans l'ordre
+ * structurel : ni note, ni sautée, ni terminée.
+ */
+export function findNextExecutableBlock(
+  workout: WorkoutSession,
+  afterBlockId: Id | undefined,
+): ExecutableBlock | undefined {
+  const ordered = sortBlocks(workout.blocks);
+  const startIndex =
+    afterBlockId === undefined
+      ? 0
+      : ordered.findIndex((block) => block.id === afterBlockId) + 1;
+
+  for (const block of ordered.slice(startIndex)) {
+    if (isExecutable(block) && block.status === "not_performed") {
+      return block;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Première entrée non validée d'une brique : celle qui devient active.
+ */
+export function firstPendingEntryId(block: ExecutableBlock): Id | undefined {
+  if (block.kind === "group") {
+    return block.rounds.find((round) => round.status !== "completed")?.id;
+  }
+
+  if (block.series) {
+    return block.series.find((series) => series.status !== "completed")?.id;
+  }
+
+  if (block.cardioSteps) {
+    return block.cardioSteps.find((step) => step.status !== "completed")?.id;
+  }
+
+  return undefined;
+}
+
+/**
+ * Point d'insertion d'un ajout (§13) : juste après la brique en cours,
+ * sinon après la dernière brique terminée, sinon en tête.
+ */
+export function findInsertionIndex(blocks: PerformedBlock[]): number {
+  const ordered = sortBlocks(blocks);
+
+  const inProgressIndex = ordered.findIndex(isBlockInProgress);
+
+  if (inProgressIndex >= 0) {
+    return inProgressIndex + 1;
+  }
+
+  let lastPerformedIndex = -1;
+
+  ordered.forEach((block, index) => {
+    if (isExecutable(block) && block.status === "performed") {
+      lastPerformedIndex = index;
+    }
+  });
+
+  return lastPerformedIndex + 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Brique ajoutée pendant la séance                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Premier palier d'un exercice ajouté sans consigne (décision Q3 du
+ * 17/09/2026) : cinq minutes à allure de marche, à ajuster avant de partir.
+ */
+const ADDED_STEP_DURATION_SEC = 300;
+const ADDED_STEP_SPEED_KMH = 5;
+const ADDED_STEP_DISTANCE_KM = 0.5;
+
+/**
+ * Consignes d'un exercice ajouté pendant la séance : les valeurs par
+ * défaut du catalogue, ramenées à **une** série ou **un** palier — c'est
+ * `Ajouter une série` qui fait grandir l'exercice, pas un prévu fictif.
+ */
+export function addedBlockInstructions(
+  exercise: Exercise,
+  newId: () => Id,
+): ExerciseInstructions {
+  const defaults = defaultInstructionsFor(exercise, newId);
+
+  switch (defaults.shape) {
+    case "reps":
+    case "duration":
+      return { ...defaults, sets: 1 };
+
+    case "steps": {
+      const first = defaults.steps[0];
+      const step =
+        first && "speedKmh" in first
+          ? {
+              id: newId(),
+              position: 0,
+              durationSec: ADDED_STEP_DURATION_SEC,
+              speedKmh: ADDED_STEP_SPEED_KMH,
+              inclinePercent: 0,
+            }
+          : {
+              id: newId(),
+              position: 0,
+              durationSec: ADDED_STEP_DURATION_SEC,
+              distanceKm: ADDED_STEP_DISTANCE_KM,
+            };
+
+      return { shape: "steps", steps: [step] };
+    }
+
+    default:
+      return defaults;
+  }
+}
+
+export function createAddedExerciseBlock(
+  exercise: Exercise,
+  position: number,
+  newId: () => Id,
+): PerformedExerciseBlock {
+  const id = `added-${newId()}`;
+  const instructions = addedBlockInstructions(exercise, newId);
+
+  const block: PerformedExerciseBlock = {
+    id,
+    kind: "exercise",
+    position,
+    addedDuringWorkout: true,
+    exerciseId: exercise.id,
+    status: "not_performed",
+    snapshotInstructions: instructions,
+  };
+
+  if (instructions.shape === "reps" || instructions.shape === "duration") {
+    block.series = [createSeries(`${id}-set-1`, 0)];
+  } else if (instructions.shape === "steps") {
+    block.cardioSteps = instructions.steps.map((step, index) => ({
+      id: `${id}-step-${step.id}`,
+      position: index,
+      status: "upcoming",
+      settings:
+        "speedKmh" in step
+          ? {
+              durationSec: step.durationSec,
+              speedKmh: step.speedKmh,
+              inclinePercent: step.inclinePercent,
+            }
+          : { durationSec: step.durationSec, distanceKm: step.distanceKm },
+    }));
+  } else {
+    block.simpleMeasurement = {};
+  }
+
+  return block;
+}
+
+export function createSeries(id: Id, position: number): PerformedSeries {
+  return { id, position, status: "upcoming" };
+}
+
+export function createStepFrom(
+  id: Id,
+  position: number,
+  previous: PerformedCardioStep | undefined,
+): PerformedCardioStep {
+  return {
+    id,
+    position,
+    status: "upcoming",
+    settings: previous
+      ? structuredClone(previous.settings)
+      : {
+          durationSec: ADDED_STEP_DURATION_SEC,
+          speedKmh: ADDED_STEP_SPEED_KMH,
+          inclinePercent: 0,
+        },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Proposition de valeurs (Q3)                                                */
+/* -------------------------------------------------------------------------- */
+
+export interface ProposedSeriesValues {
+  load?: Load;
+  reps?: number;
+  durationSec?: number;
+  sideValues?: PerformedSideValue[];
+}
+
+/**
+ * Valeurs proposées pour la prochaine série : celles de la série
+ * précédente du même exercice dans cette séance, sinon celles de la
+ * dernière fois. Une proposition, jamais une validation : RPE et note ne
+ * sont jamais proposés.
+ */
+export function proposeSeriesValues(
+  block: PerformedExerciseBlock,
+  lastTime?: ProposedSeriesValues,
+): ProposedSeriesValues {
+  const previous = [...(block.series ?? [])]
+    .reverse()
+    .find((series) => series.status === "completed");
+
+  const source = previous ?? lastTime;
+
+  if (!source) return {};
+
+  return {
+    ...(source.load !== undefined ? { load: structuredClone(source.load) } : {}),
+    ...(source.reps !== undefined ? { reps: source.reps } : {}),
+    ...(source.durationSec !== undefined ? { durationSec: source.durationSec } : {}),
+    ...(source.sideValues !== undefined
+      ? { sideValues: structuredClone(source.sideValues) }
+      : {}),
+  };
+}

@@ -51,9 +51,25 @@ export interface WorkoutSession {
   lastActionAt: string;
 
   /**
-   * Durée réellement active.
+   * Durée active (§12) : amplitude du démarrage à la fin, moins les
+   * pauses explicites. Recalculée à chaque sauvegarde, figée à la clôture.
+   * Une absence de l'application n'en retire rien (§15).
    */
   activeDurationSec: number;
+
+  /**
+   * Pauses explicites (§15), dans l'ordre. Une pause sans `endedAt`
+   * est la pause en cours ; elle survit à la fermeture de l'app.
+   * Absent sur les séances antérieures à la v2.9 : aucune pause.
+   */
+  pauses?: WorkoutPause[];
+
+  /**
+   * Dernière présence enregistrée de l'application (battement pendant
+   * qu'elle est visible, écriture à la mise en arrière-plan). Ne sert
+   * qu'à mesurer une absence au retour (§15) — jamais aux chronos.
+   */
+  lastSeenAt?: string;
 
   /**
    * Snapshot ordonné des briques au démarrage,
@@ -252,9 +268,15 @@ export interface PerformedSeries {
   note?: string;
 
   /**
-   * Repos réel après cette série.
+   * Repos réel après cette série : fin réelle − début (§12).
    */
   actualRestAfterSec?: number;
+
+  /**
+   * Faux si ce repos a été clôturé par la fin de séance ou chevauché
+   * par une pause : enregistré, lisible, mais hors repos moyen.
+   */
+  restComparable?: boolean;
 
   completedAt?: string;
 }
@@ -359,6 +381,11 @@ export interface PerformedGroupRound {
    */
   actualRestAfterSec?: number;
 
+  /**
+   * Voir PerformedSeries.restComparable.
+   */
+  restComparable?: boolean;
+
   completedAt?: string;
 }
 
@@ -401,6 +428,20 @@ export interface PerformedGroupRoundChild {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Pauses                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Suspension explicite de la séance (§15). Seule chose retirée de la
+ * durée active ; rien n'est supprimé, aucun repos n'est relancé.
+ */
+export interface WorkoutPause {
+  id: Id;
+  startedAt: string;
+  endedAt?: string;
+}
+
+/* -------------------------------------------------------------------------- */
 /* Repos                                                                      */
 /* -------------------------------------------------------------------------- */
 
@@ -415,10 +456,12 @@ export interface ActiveRest {
   kind: RestKind;
 
   /**
-   * Heure cible ISO.
+   * Heure de fin cible ISO : la fin du compte à rebours (§12).
+   * Le chrono n'est jamais implémenté par décrément JavaScript ;
+   * le repos suit l'horloge réelle, app ouverte ou non.
    *
-   * Le chrono n'est jamais implémenté
-   * par décrément JavaScript.
+   * La fin réelle est un autre instant : la validation suivante,
+   * `Passer`, ou la clôture de la séance.
    */
   targetEndAt: string;
 
@@ -427,10 +470,17 @@ export interface ActiveRest {
   startedAt: string;
 
   /**
-   * Vrai si l'application revient après
-   * expiration du repos.
+   * Brique et entrée (série, tour, enfant de tour) auxquelles le repos
+   * réel sera rattaché à sa fin.
    */
-  expiredWhileInactive?: boolean;
+  afterBlockId: Id;
+  afterEntryId: Id;
+
+  /**
+   * Une pause explicite a chevauché ce repos : il reste terminé à son
+   * heure cible mais n'est pas comparable (§12).
+   */
+  overlappedPauseId?: Id;
 }
 
 

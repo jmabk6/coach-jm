@@ -34,36 +34,38 @@ const freeWorkout: WorkoutSession = {
   activeDurationSec: 0,
   blocks: [],
   currentBlockId: "b1",
-  activeRest: {
-    id: "rest-1",
-    kind: "between_sets",
-    targetEndAt: "2026-09-17T16:10:00.000Z",
-    plannedDurationSec: 90,
-    startedAt: "2026-09-17T16:08:30.000Z",
-  },
+  pauses: [
+    { id: "pause-1", startedAt: "2026-09-17T16:20:00.000Z", endedAt: "2026-09-17T16:30:00.000Z" },
+  ],
   createdAt: startedAt,
   updatedAt: startedAt,
 };
 
 describe("completeWorkoutSession", () => {
-  it("passe la séance Faite, sans repos ni brique courante", () => {
+  it("passe la séance Faite, durée active = amplitude moins les pauses", () => {
     const result = completeWorkoutSession(freeWorkout, now);
 
     expect(result.status).toBe("completed");
     expect(result.completedAt).toBe(now);
     expect(result.lastActionAt).toBe(now);
-    expect(result.activeDurationSec).toBe(42 * 60);
+    expect(result.activeDurationSec).toBe(42 * 60 - 10 * 60);
     expect(result.activeRest).toBeUndefined();
     expect(result.currentBlockId).toBeUndefined();
   });
 
-  it("conserve la durée active déjà accumulée par le moteur", () => {
+  it("termine à la clôture une pause encore ouverte", () => {
     const result = completeWorkoutSession(
-      { ...freeWorkout, activeDurationSec: 1500 },
+      {
+        ...freeWorkout,
+        pauses: [{ id: "pause-1", startedAt: "2026-09-17T16:30:00.000Z" }],
+      },
       now,
     );
 
-    expect(result.activeDurationSec).toBe(1500);
+    expect(result.pauses).toEqual([
+      { id: "pause-1", startedAt: "2026-09-17T16:30:00.000Z", endedAt: now },
+    ]);
+    expect(result.activeDurationSec).toBe(30 * 60);
   });
 });
 

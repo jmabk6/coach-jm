@@ -7,55 +7,28 @@ import {
   saveWorkout,
 } from "../../db/repositories/workoutRepository";
 import type { Id, WorkoutSession } from "../../domain";
+import { completeWorkoutSession } from "./engine/workoutEngine";
+import { calculateActiveDurationSec } from "./engine/workoutTime";
+
+export { completeWorkoutSession };
 
 /**
- * Clôture d'une réalisation (§14) : la séance passe `Faite` avec ses
- * briques dans l'état où elles sont — réalisées, sautées, ou jamais
- * abordées (`Non réalisé`). Rien n'est supprimé, rien n'est complété.
- *
- * La durée active est celle accumulée par le moteur de séance ; tant
- * qu'il n'existe pas (Étape 6), elle vaut le temps écoulé depuis le
- * démarrage.
+ * Durée active d'une séance à l'instant `now` (§12) : amplitude moins
+ * pauses pour une séance en cours, valeur figée pour une séance terminée.
  */
-export function elapsedActiveDurationSec(
+export function currentActiveDurationSec(
   workout: WorkoutSession,
   now: string,
 ): number {
-  if (workout.activeDurationSec > 0) {
-    return workout.activeDurationSec;
-  }
-
-  return Math.max(
-    0,
-    Math.round(
-      (new Date(now).getTime() - new Date(workout.startedAt).getTime()) / 1000,
-    ),
-  );
-}
-
-export function completeWorkoutSession(
-  workout: WorkoutSession,
-  now: string,
-): WorkoutSession {
-  const completed: WorkoutSession = {
-    ...workout,
-    status: "completed",
-    completedAt: now,
-    lastActionAt: now,
-    activeDurationSec: elapsedActiveDurationSec(workout, now),
-    updatedAt: now,
-  };
-
-  delete completed.activeRest;
-  delete completed.currentBlockId;
-  delete completed.currentEntryId;
-
-  return completed;
+  return workout.status === "completed"
+    ? workout.activeDurationSec
+    : calculateActiveDurationSec(workout, now);
 }
 
 /**
- * Termine la séance en cours et, si elle était planifiée, passe
- * l'instance `Faite`. Une séance libre ne touche pas au Programme.
+ * Termine la séance en cours (`Terminer` comme `Arrêter`, §14 et §15) et,
+ * si elle était planifiée, passe l'instance `Faite`. Une séance libre
+ * ne touche pas au Programme.
  */
 export async function finishWorkout(
   workoutId: Id,
