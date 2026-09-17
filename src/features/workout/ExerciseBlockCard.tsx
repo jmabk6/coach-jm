@@ -7,7 +7,11 @@ import type {
   PerformedSeries,
 } from "../../domain";
 import type { SeriesValues } from "./engine/workoutEngine";
-import { proposeSeriesValues } from "./engine/workoutBlocks";
+import {
+  hasCompletedEntries,
+  isOpenEndedBlock,
+  proposeSeriesValues,
+} from "./engine/workoutBlocks";
 import type { LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
 import {
@@ -31,6 +35,7 @@ interface ExerciseBlockCardProps {
   onValidateSeries: (seriesId: Id, values: SeriesValues) => void;
   onEditSeries: (seriesId: Id, values: SeriesValues) => void;
   onAddSeries: () => void;
+  onFinishBlock: () => void;
 }
 
 /**
@@ -50,8 +55,14 @@ export function ExerciseBlockCard({
   onValidateSeries,
   onEditSeries,
   onAddSeries,
+  onFinishBlock,
 }: ExerciseBlockCardProps) {
   const [editingId, setEditingId] = useState<Id>();
+  /* Sans nombre prévu, c'est l'utilisateur qui clôt l'exercice (§11). */
+  const canFinish =
+    !performedOrSkipped(block) && isOpenEndedBlock(block) && hasCompletedEntries(block);
+  const awaitingChoice =
+    canFinish && !(block.series ?? []).some((series) => series.status === "active");
   const name = exercise?.name ?? "Exercice supprimé";
   const status = formatBlockStatus(block);
   const performed = block.status === "performed";
@@ -123,10 +134,23 @@ export function ExerciseBlockCard({
               ))}
           </ol>
 
-          <button type="button" className="wblock__add-series" onClick={onAddSeries} disabled={busy}>
-            <Plus size={16} strokeWidth={2.4} aria-hidden="true" />
-            Ajouter une série
-          </button>
+          <div className={`wblock__actions ${awaitingChoice ? "wblock__actions--choice" : ""}`}>
+            <button type="button" className="wblock__add-series" onClick={onAddSeries} disabled={busy}>
+              <Plus size={16} strokeWidth={2.4} aria-hidden="true" />
+              Ajouter une série
+            </button>
+            {canFinish && (
+              <button
+                type="button"
+                className={`wblock__finish ${awaitingChoice ? "wblock__finish--primary" : ""}`}
+                onClick={onFinishBlock}
+                disabled={busy}
+              >
+                <Check size={16} strokeWidth={2.4} aria-hidden="true" />
+                Terminer l'exercice
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -162,6 +186,10 @@ export function ExerciseBlockCard({
       )}
     </li>
   );
+}
+
+function performedOrSkipped(block: PerformedExerciseBlock): boolean {
+  return block.status === "performed" || block.status === "skipped";
 }
 
 function ReferenceBlock({

@@ -15,6 +15,7 @@ import {
   addExerciseBlocks,
   addSeries,
   editSeries,
+  finishBlock,
   skipRest,
   validateSeries,
 } from "./engine/workoutEngine";
@@ -234,6 +235,7 @@ export function WorkoutScreen() {
                   void run((current, at) => editSeries(current, block.id, seriesId, values, at))
                 }
                 onAddSeries={() => void run((current, at) => addSeries(current, block.id, at))}
+                onFinishBlock={() => void run((current, at) => finishBlock(current, block.id, at))}
               />
             );
           })}

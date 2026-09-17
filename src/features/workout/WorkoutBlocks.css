@@ -128,6 +128,37 @@
   font-style: italic;
 }
 
+.wblock__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wblock__actions > * {
+  flex: 1;
+  padding: 0 6px;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.wblock__finish {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-sm, 10px);
+  background: var(--color-surface, white);
+  color: var(--color-text, #1f2937);
+  font-weight: 600;
+}
+
+.wblock__finish--primary {
+  border-color: var(--color-accent, #2f6fed);
+  background: var(--color-accent, #2f6fed);
+  color: white;
+}
+
 .wblock__add-series {
   display: flex;
   align-items: center;

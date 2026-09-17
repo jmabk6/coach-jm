@@ -26,6 +26,7 @@ import {
   allEntriesCompleted,
   hasCompletedEntries,
   isExecutable,
+  isOpenEndedBlock,
   sortBlocks,
   type ExecutableBlock,
 } from "./workoutBlocks";
@@ -401,9 +402,11 @@ function plannedRestAfterSeries(block: PerformedExerciseBlock): number {
 /**
  * Valide une série : le repos en cours trouve sa fin réelle, la série
  * reçoit ses valeurs, la suivante devient active, un repos démarre.
- * Après la dernière série, la brique est réalisée et la suivante
+ * Après la dernière série prévue, la brique est réalisée et la suivante
  * devient courante ; le repos démarre quand même — le temps de changer
- * de machine est un repos réel, rattaché à cette série.
+ * de machine est un repos réel, rattaché à cette série. Une brique sans
+ * nombre prévu (ajoutée pendant la séance) reste ouverte après chaque
+ * validation : voir `finishBlock`.
  */
 export function validateSeries(
   workout: WorkoutSession,
@@ -472,6 +475,15 @@ function afterEntryValidated(
   const block = findBlock(workout, blockId) as ExecutableBlock;
 
   if (allEntriesCompleted(block)) {
+    /* Sans nombre prévu, la brique reste ouverte : `Ajouter une série`
+       ou `Terminer l'exercice` décideront (décision du 17/09/2026). */
+    if (isOpenEndedBlock(block)) {
+      const open: WorkoutSession = { ...workout, currentBlockId: blockId };
+      delete open.currentEntryId;
+
+      return open;
+    }
+
     const done = withBlock(workout, blockId, (item) => ({
       ...item,
       status: "performed" as const,
@@ -916,6 +928,71 @@ export function addRound(
   if (wasCurrent || block.status === "performed") {
     next = activateBlock(next, blockId, now);
   }
+
+  return touch(next, now);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Terminer l'exercice                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `Terminer l'exercice` : clôt explicitement une brique commencée et
+ * passe à la suivante. Les entrées jamais validées d'une brique sans
+ * nombre prévu sont retirées — elles n'étaient ni prévues ni faites ;
+ * celles d'une brique prévue restent et se liront `Non réalisée`. Le
+ * repos en cours n'est pas touché : sa fin réelle reste la validation
+ * suivante, `Passer` ou la clôture.
+ */
+export function finishBlock(workout: WorkoutSession, blockId: Id, now: string): WorkoutSession {
+  assertInProgress(workout);
+
+  const block = findBlock(workout, blockId);
+
+  if (!isExecutable(block)) {
+    throw new Error("Une note ne se termine pas");
+  }
+
+  if (block.status === "skipped") {
+    throw new Error("Cet exercice est sauté : annulez le saut d'abord");
+  }
+
+  if (!hasCompletedEntries(block)) {
+    throw new Error("Rien n'a été validé dans cet exercice");
+  }
+
+  const openEnded = isOpenEndedBlock(block);
+
+  let next = withBlock(workout, blockId, (item) => {
+    if (!isExecutable(item)) return item;
+
+    const settled = markActiveEntry(item, undefined);
+
+    if (!openEnded || settled.kind === "group") {
+      return { ...settled, status: "performed" as const };
+    }
+
+    return {
+      ...settled,
+      status: "performed" as const,
+      ...(settled.series
+        ? {
+            series: settled.series
+              .filter((series) => series.status === "completed")
+              .map((series, position) => ({ ...series, position })),
+          }
+        : {}),
+      ...(settled.cardioSteps
+        ? {
+            cardioSteps: settled.cardioSteps
+              .filter((step) => step.status === "completed")
+              .map((step, position) => ({ ...step, position })),
+          }
+        : {}),
+    };
+  });
+
+  next = advanceFrom(next, blockId, now);
 
   return touch(next, now);
 }

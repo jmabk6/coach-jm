@@ -16,6 +16,7 @@ import {
   buildResumeSummary,
   completeWorkoutSession,
   editSeries,
+  finishBlock,
   pauseWorkout,
   recordPresence,
   resumeWorkout,
@@ -101,7 +102,13 @@ function tapisBlock(position = 2): PerformedExerciseBlock {
     addedDuringWorkout: false,
     exerciseId: "tapis",
     status: "not_performed",
-    snapshotInstructions: { shape: "steps", steps: [] },
+    snapshotInstructions: {
+      shape: "steps",
+      steps: [
+        { id: "i1", position: 0, durationSec: 300, speedKmh: 5, inclinePercent: 10 },
+        { id: "i2", position: 1, durationSec: 300, speedKmh: 5, inclinePercent: 12 },
+      ],
+    },
     cardioSteps: [
       { id: "p1", position: 0, status: "upcoming", settings: { durationSec: 300, speedKmh: 5, inclinePercent: 10 } },
       { id: "p2", position: 1, status: "upcoming", settings: { durationSec: 300, speedKmh: 5, inclinePercent: 12 } },
@@ -583,6 +590,128 @@ describe("groupes tour par tour", () => {
     expect(group.rounds).toHaveLength(3);
     expect(group.rounds[2]).toMatchObject({ roundNumber: 3, status: "upcoming" });
     expect(group.rounds[2]?.children.map((c) => c.exerciseId)).toEqual(["tirage", "chest"]);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Brique sans nombre prévu : séance libre                                    */
+/* -------------------------------------------------------------------------- */
+
+describe("exercice ajouté, sans nombre de séries prévu", () => {
+  function freeSession() {
+    return addExerciseBlocks(workout([]), [exercise("presse", "load_reps"), exercise("curl", "load_reps")], T0, newId);
+  }
+
+  it("valider l'unique série ne termine pas l'exercice : repos lancé, brique toujours courante", () => {
+    let w = freeSession();
+    const presse = w.blocks[0]!;
+    const seriesId = (presse as PerformedExerciseBlock).series![0]!.id;
+
+    w = validateSeries(w, presse.id, seriesId, { load: kg(40), reps: 10 }, at(1), newId);
+
+    const block = exerciseOf(w, presse.id);
+    expect(block.status).toBe("not_performed");
+    expect(block.series?.[0]?.status).toBe("completed");
+    expect(w.currentBlockId).toBe(presse.id);
+    expect(w.currentEntryId).toBeUndefined();
+    expect(w.activeRest).toMatchObject({ afterEntryId: seriesId, plannedDurationSec: 90 });
+    expect(calculateExecutionProgress(w.blocks)).toEqual({ completed: 0, total: 2 });
+  });
+
+  it("Ajouter une série poursuit avec les valeurs précédentes, sans RPE ni note", () => {
+    let w = freeSession();
+    const presse = w.blocks[0]!;
+    const first = (presse as PerformedExerciseBlock).series![0]!.id;
+
+    w = validateSeries(w, presse.id, first, { load: kg(40), reps: 10, rpe: 8, note: "ok" }, at(1), newId);
+    w = addSeries(w, presse.id, at(2), newId);
+
+    const block = exerciseOf(w, presse.id);
+    expect(block.series).toHaveLength(2);
+    expect(block.series?.[1]?.status).toBe("active");
+    expect(w.currentEntryId).toBe(block.series?.[1]?.id);
+    expect(proposeSeriesValues(block)).toEqual({ load: kg(40), reps: 10 });
+  });
+
+  it("Terminer l'exercice le passe réalisé, retire la série jamais commencée et ouvre le suivant", () => {
+    let w = freeSession();
+    const [presse, curl] = w.blocks as PerformedExerciseBlock[];
+    const first = presse!.series![0]!.id;
+
+    w = validateSeries(w, presse!.id, first, { load: kg(40), reps: 10 }, at(1), newId);
+    w = addSeries(w, presse!.id, at(2), newId);
+    const rest = w.activeRest;
+
+    w = finishBlock(w, presse!.id, at(3));
+
+    const block = exerciseOf(w, presse!.id);
+    expect(block.status).toBe("performed");
+    expect(block.series).toHaveLength(1);
+    expect(w.currentBlockId).toBe(curl!.id);
+    expect(exerciseOf(w, curl!.id).series?.[0]?.status).toBe("active");
+    expect(w.activeRest).toEqual(rest);
+    expect(calculateExecutionProgress(w.blocks)).toEqual({ completed: 1, total: 2 });
+  });
+
+  it("refuse de terminer un exercice où rien n'a été validé", () => {
+    const w = freeSession();
+
+    expect(() => finishBlock(w, w.blocks[0]!.id, at(1))).toThrow(/Rien n'a été validé/);
+  });
+
+  it("terminer la séance après une seule série la conserve et compte l'exercice réalisé", () => {
+    let w = freeSession();
+    const presse = w.blocks[0]!;
+    const first = (presse as PerformedExerciseBlock).series![0]!.id;
+
+    w = validateSeries(w, presse.id, first, { load: kg(40), reps: 10 }, at(1), newId);
+    const done = completeWorkoutSession(w, at(2));
+
+    const block = exerciseOf(done, presse.id);
+    expect(block.status).toBe("performed");
+    expect(block.series).toEqual([
+      expect.objectContaining({ status: "completed", load: kg(40), reps: 10, actualRestAfterSec: 60, restComparable: false }),
+    ]);
+    expect(formatBlockCompletion(summarizeBlockCompletion(block))).toBe("1 série réalisée sur 1");
+    expect(exerciseOf(done, done.blocks[1]!.id).status).toBe("not_performed");
+  });
+
+  it("une séance planifiée garde l'enchaînement automatique, sauf au-delà des séries prévues", () => {
+    let w = activateBlock(workout([squatBlock(), crunchBlock()]), "squat-block", T0);
+    w = validateSeries(w, "squat-block", "s1", { reps: 10 }, at(1), newId);
+    w = validateSeries(w, "squat-block", "s2", { reps: 10 }, at(2), newId);
+    w = validateSeries(w, "squat-block", "s3", { reps: 10 }, at(3), newId);
+    expect(exerciseOf(w, "squat-block").status).toBe("performed");
+    expect(w.currentBlockId).toBe("crunch-block");
+
+    w = addSeries(w, "squat-block", at(4), newId);
+    const fourth = exerciseOf(w, "squat-block").series![3]!.id;
+    w = validateSeries(w, "squat-block", fourth, { reps: 8 }, at(5), newId);
+
+    expect(exerciseOf(w, "squat-block").status).toBe("not_performed");
+    expect(w.currentBlockId).toBe("squat-block");
+
+    w = finishBlock(w, "squat-block", at(6));
+    expect(exerciseOf(w, "squat-block").status).toBe("performed");
+    expect(exerciseOf(w, "squat-block").series).toHaveLength(4);
+    expect(w.currentBlockId).toBe("crunch-block");
+  });
+
+  it("terminer une brique prévue en cours de route garde ses séries restantes", () => {
+    let w = activateBlock(workout([squatBlock(), crunchBlock()]), "squat-block", T0);
+    w = validateSeries(w, "squat-block", "s1", { reps: 10 }, at(1), newId);
+    w = finishBlock(w, "squat-block", at(2));
+
+    const squat = exerciseOf(w, "squat-block");
+    expect(squat.status).toBe("performed");
+    expect(squat.series?.map((series) => series.status)).toEqual(["completed", "upcoming", "upcoming"]);
+    expect(completeWorkoutSession(w, at(3)).blocks[0]).toMatchObject({
+      series: [
+        expect.objectContaining({ status: "completed" }),
+        expect.objectContaining({ status: "not_performed" }),
+        expect.objectContaining({ status: "not_performed" }),
+      ],
+    });
   });
 });
 

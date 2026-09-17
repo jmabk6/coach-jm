@@ -112,6 +112,34 @@ export function allEntriesCompleted(block: ExecutableBlock): boolean {
 }
 
 /**
+ * Nombre d'entrées sans consigne de compte : un exercice ajouté pendant
+ * la séance n'a pas de nombre de séries prévu, et les séries ajoutées
+ * au-delà du snapshot n'en ont pas non plus. Valider la dernière entrée
+ * d'une telle brique ne la termine jamais : c'est `Terminer l'exercice`
+ * qui le fait (décision du 17/09/2026).
+ */
+export function isOpenEndedBlock(block: ExecutableBlock): boolean {
+  if (block.kind === "group") return false;
+
+  if (block.addedDuringWorkout) return true;
+
+  const instructions = block.snapshotInstructions;
+
+  if (
+    block.series &&
+    (instructions.shape === "reps" || instructions.shape === "duration")
+  ) {
+    return block.series.length > instructions.sets;
+  }
+
+  if (block.cardioSteps && instructions.shape === "steps") {
+    return block.cardioSteps.length > instructions.steps.length;
+  }
+
+  return false;
+}
+
+/**
  * En cours : commencée, ni terminée ni sautée (§13, point d'insertion).
  */
 export function isBlockInProgress(block: PerformedBlock): boolean {
