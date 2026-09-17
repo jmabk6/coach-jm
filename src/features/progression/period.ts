@@ -77,12 +77,13 @@ export function formatPeriodRange(period: Period): string {
 }
 
 /**
- * La variation `vs période précédente` n'a de sens que si l'historique
+ * La variation `vs période précédente` n'a de sens que si la collecte
  * couvre **entièrement** la période précédente : sinon on comparerait
- * une période pleine à une période à moitié vide.
+ * une période pleine à une période à moitié vide. `coverageStart` est la
+ * date de collecte complète, pas la première séance.
  */
-export function coversPreviousPeriod(period: Period, historyStart: string | undefined): boolean {
-  return historyStart !== undefined && historyStart <= period.previous.start;
+export function coversPreviousPeriod(period: Period, coverageStart: string | undefined): boolean {
+  return coverageStart !== undefined && coverageStart <= period.previous.start;
 }
 
 /**

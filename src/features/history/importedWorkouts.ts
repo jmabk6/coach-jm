@@ -666,3 +666,20 @@ export function buildImportedWorkout(spec: WorkoutSpec): WorkoutSession {
 export function buildImportedWorkouts(): WorkoutSession[] {
   return importedWorkoutSpecs.map(buildImportedWorkout);
 }
+
+const IMPORTED_ID_PREFIX = "import-";
+
+export function isImportedWorkoutId(id: Id): boolean {
+  return id.startsWith(IMPORTED_ID_PREFIX);
+}
+
+/**
+ * Début de la collecte complète : le premier jour des feuilles importées
+ * (§16 : « données réelles depuis le 1er septembre 2026 »). Avant cette
+ * date, rien n'a été relevé — ce n'est pas une absence de séances.
+ */
+export function getImportedHistoryStart(): string {
+  return importedWorkoutSpecs
+    .map((spec) => spec.date)
+    .reduce((min, date) => (date < min ? date : min));
+}

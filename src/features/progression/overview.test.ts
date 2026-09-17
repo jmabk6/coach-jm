@@ -21,7 +21,8 @@ import {
   describeWorkoutSummary,
   getCategoryBreakdown,
   getCompletionRate,
-  getHistoryStart,
+  getCoverageStart,
+  getFirstCountedDate,
   getStrengthSummary,
   getCardioSummary,
   getTrainingFrequency,
@@ -237,9 +238,22 @@ describe("séances comptées (Q2)", () => {
     expect(isCountedWorkout(workout("e", TODAY, [{ id: "n", kind: "note", position: 0, addedDuringWorkout: false, text: "x" }]))).toBe(false);
   });
 
-  it("date le début de l'historique sur la première séance comptée", () => {
-    expect(getHistoryStart([musc("a", "2026-06-01"), workout("z", "2026-01-05", [notDone("squat")]), musc("b", "2026-03-10")])).toBe("2026-03-10");
-    expect(getHistoryStart([])).toBeUndefined();
+  it("date la première séance comptée à titre indicatif, sans en faire une preuve de couverture", () => {
+    const workouts = [musc("a", "2026-06-01"), workout("z", "2026-01-05", [notDone("squat")]), musc("b", "2026-03-10")];
+
+    expect(getFirstCountedDate(workouts)).toBe("2026-03-10");
+    expect(getFirstCountedDate([])).toBeUndefined();
+    /* Aucune date de collecte complète connue : pas de couverture. */
+    expect(getCoverageStart(workouts)).toBeUndefined();
+  });
+
+  it("ne connaît la couverture que par l'import complet des feuilles de septembre 2026", () => {
+    const imported = buildImportedWorkouts();
+
+    expect(getCoverageStart(imported)).toBe("2026-09-01");
+    expect(getCoverageStart([...imported, musc("later", TODAY)])).toBe("2026-09-01");
+    /* Une séance antérieure à la collecte ne recule pas la couverture : rien n'est inventé. */
+    expect(getCoverageStart([...imported, musc("before", "2026-05-01")])).toBe("2026-09-01");
   });
 });
 
@@ -459,7 +473,8 @@ describe("vue générale", () => {
       TODAY,
     );
 
-    expect(overview.historyStart).toBe("2026-09-01");
+    expect(overview.coverageStart).toBeUndefined();
+    expect(overview.firstCountedDate).toBe("2026-09-01");
     expect(overview.previousCovered).toBe(false);
     expect(overview.completion).toEqual({ done: 1, expected: 1, percent: 100 });
     expect(overview.frequency).toEqual({ sessions: 2, weeks: 4, perWeek: 0.5 });
@@ -475,8 +490,8 @@ describe("vue générale", () => {
     const imported = buildImportedWorkouts();
     const exerciseById = new Map<string, Exercise>();
     const period = resolvePeriod("12w", "2026-09-10");
-    const strength = getStrengthSummary(imported, exerciseById, period, getHistoryStart(imported));
-    const cardio = getCardioSummary(imported, exerciseById, period, getHistoryStart(imported));
+    const strength = getStrengthSummary(imported, exerciseById, period, getCoverageStart(imported));
+    const cardio = getCardioSummary(imported, exerciseById, period, getCoverageStart(imported));
 
     /* Recalcul brut, séance par séance, avec les mêmes règles que le moteur. */
     let series = 0;

@@ -10,6 +10,7 @@ import type {
   WorkoutSession,
 } from "../../domain";
 import { calculateVolume } from "../../domain/rules/workoutRules";
+import { getImportedHistoryStart, isImportedWorkoutId } from "../history/importedWorkouts";
 import { listCompletedRoundChildren } from "../workout/workoutRecap";
 import { coversPreviousPeriod, isWithin, type DateRange, type Period } from "./period";
 
@@ -43,10 +44,28 @@ export function listCountedWorkouts(workouts: WorkoutSession[], range: DateRange
 }
 
 /**
- * Début de l'historique : la première séance comptée, toutes périodes
- * confondues. C'est elle qui dit si la période précédente est couverte.
+ * Début de couverture de l'historique — la date à partir de laquelle
+ * **toutes** les séances ont été relevées. Elle décide si la période
+ * précédente est entièrement couverte, donc si une variation peut
+ * s'afficher (§16).
+ *
+ * Règle prudente (décision du 17/09/2026) : la première séance comptée
+ * ne prouve rien — on peut avoir commencé à noter au milieu d'une
+ * pratique. Seule une date de collecte complète fait foi : celle de
+ * l'import des feuilles de septembre 2026, quand il est présent dans les
+ * données. Sans elle, aucune variation. Rien n'est inventé.
  */
-export function getHistoryStart(workouts: WorkoutSession[]): string | undefined {
+export function getCoverageStart(workouts: WorkoutSession[]): string | undefined {
+  return workouts.some((workout) => isImportedWorkoutId(workout.id))
+    ? getImportedHistoryStart()
+    : undefined;
+}
+
+/**
+ * Première séance comptée : informative (« historique depuis le… »),
+ * jamais une preuve de couverture.
+ */
+export function getFirstCountedDate(workouts: WorkoutSession[]): string | undefined {
   const dates = workouts.filter(isCountedWorkout).map((workout) => workout.date);
 
   return dates.length === 0 ? undefined : dates.reduce((min, date) => (date < min ? date : min));
@@ -318,10 +337,10 @@ export function getStrengthSummary(
   workouts: WorkoutSession[],
   exerciseById: Map<Id, Exercise>,
   period: Period,
-  historyStart: string | undefined,
+  coverageStart: string | undefined,
 ): StrengthSummary {
   const current = strengthTotals(workouts, exerciseById, period);
-  const covered = coversPreviousPeriod(period, historyStart);
+  const covered = coversPreviousPeriod(period, coverageStart);
 
   if (!covered) return { ...current, variation: {} };
 
@@ -376,10 +395,10 @@ export function getCardioSummary(
   workouts: WorkoutSession[],
   exerciseById: Map<Id, Exercise>,
   period: Period,
-  historyStart: string | undefined,
+  coverageStart: string | undefined,
 ): CardioSummary {
   const current = cardioTotals(workouts, exerciseById, period);
-  const covered = coversPreviousPeriod(period, historyStart);
+  const covered = coversPreviousPeriod(period, coverageStart);
 
   if (!covered) return { ...current, variation: {} };
 
@@ -572,7 +591,10 @@ export interface ProgressionSources {
 
 export interface Overview {
   period: Period;
-  historyStart?: string;
+  /** Date de collecte complète, si elle est connue. */
+  coverageStart?: string;
+  /** Première séance comptée, à titre indicatif. */
+  firstCountedDate?: string;
   /** Vrai quand les variations `vs période précédente` peuvent s'afficher. */
   previousCovered: boolean;
   completion: CompletionRate;
@@ -584,19 +606,34 @@ export interface Overview {
   recent: RecentWorkoutLine[];
 }
 
-export function buildOverview(sources: ProgressionSources, period: Period, today: string): Overview {
+export interface OverviewOptions {
+  /**
+   * Date de collecte complète imposée par l'appelant (jeu de référence,
+   * test). Par défaut, déduite des données : voir `getCoverageStart`.
+   */
+  coverageStart?: string;
+}
+
+export function buildOverview(
+  sources: ProgressionSources,
+  period: Period,
+  today: string,
+  options: OverviewOptions = {},
+): Overview {
   const exerciseById = new Map(sources.exercises.map((exercise) => [exercise.id, exercise]));
   const templateById = new Map(sources.templates.map((template) => [template.id, template]));
-  const historyStart = getHistoryStart(sources.workouts);
+  const coverageStart = options.coverageStart ?? getCoverageStart(sources.workouts);
+  const firstCountedDate = getFirstCountedDate(sources.workouts);
 
   return {
     period,
-    ...(historyStart ? { historyStart } : {}),
-    previousCovered: coversPreviousPeriod(period, historyStart),
+    ...(coverageStart ? { coverageStart } : {}),
+    ...(firstCountedDate ? { firstCountedDate } : {}),
+    previousCovered: coversPreviousPeriod(period, coverageStart),
     completion: getCompletionRate(sources.plannedSessions, sources.workouts, period, today),
     frequency: getTrainingFrequency(sources.workouts, period),
-    strength: getStrengthSummary(sources.workouts, exerciseById, period, historyStart),
-    cardio: getCardioSummary(sources.workouts, exerciseById, period, historyStart),
+    strength: getStrengthSummary(sources.workouts, exerciseById, period, coverageStart),
+    cardio: getCardioSummary(sources.workouts, exerciseById, period, coverageStart),
     categories: getCategoryBreakdown(sources.workouts, templateById, period),
     zones: getZoneBreakdown(sources.workouts, exerciseById, period),
     recent: listRecentWorkouts(sources.workouts, templateById, exerciseById, period),
