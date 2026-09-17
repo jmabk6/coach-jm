@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity,
   BarChart3,
@@ -8,6 +8,7 @@ import {
   ChevronUp,
   Circle,
   Clock,
+  EllipsisVertical,
   HeartPulse,
   Info,
   MinusCircle,
@@ -24,6 +25,8 @@ import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
 import { getWorkout } from "../../db/repositories/workoutRepository";
 import { formatFullDate } from "../../domain/rules/programRules";
+import { BottomSheet } from "../../components/ui/BottomSheet";
+import { deleteWorkout } from "./deleteWorkout";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
 import {
   buildWorkoutRecapLines,
@@ -61,9 +64,14 @@ function capitalize(value: string): string {
  */
 export function WorkoutRecapScreen() {
   const { workoutId } = useParams<{ workoutId: string }>();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [openBlockId, setOpenBlockId] = useState<Id>();
+  /* Suppression d'une séance réalisée (§14) : menu, puis confirmation. */
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string>();
 
   const returnTo = searchParams.get("returnTo") ?? "/programme";
 
@@ -131,6 +139,17 @@ export function WorkoutRecapScreen() {
   const lines = buildWorkoutRecapLines(workout, exerciseById);
   const title = template?.name ?? "Séance libre";
 
+  async function confirmDelete() {
+    try {
+      setDeleteError(undefined);
+      await deleteWorkout(workout.id);
+      setConfirmingDelete(false);
+      navigate(returnTo, { replace: true });
+    } catch (cause) {
+      setDeleteError(cause instanceof Error ? cause.message : "Suppression impossible");
+    }
+  }
+
   return (
     <section className="recap">
       <header className="recap__nav">
@@ -139,8 +158,68 @@ export function WorkoutRecapScreen() {
           <h1>{title}</h1>
           <p>{capitalize(formatFullDate(workout.date))}</p>
         </div>
-        <span />
+        {workout.status === "completed" ? (
+          <button
+            type="button"
+            className="recap__menu"
+            aria-label="Actions sur cette séance"
+            onClick={() => setMenuOpen(true)}
+          >
+            <EllipsisVertical size={22} strokeWidth={2} aria-hidden="true" />
+          </button>
+        ) : (
+          <span />
+        )}
       </header>
+
+      {menuOpen && (
+        <BottomSheet
+          title={`${title} — ${formatFullDate(workout.date)}`}
+          message="Séance réalisée"
+          actions={[
+            {
+              label: "Supprimer cette séance",
+              hint: "Disparaît de l'historique, de la progression et de « Dernière fois »",
+              tone: "danger",
+              onSelect: () => {
+                setMenuOpen(false);
+                setConfirmingDelete(true);
+              },
+            },
+          ]}
+          dismissLabel="Fermer"
+          onDismiss={() => setMenuOpen(false)}
+        />
+      )}
+
+      {confirmingDelete && (
+        <BottomSheet
+          title="Supprimer cette séance ?"
+          message="Cette suppression est définitive."
+          actions={[
+            {
+              label: "Supprimer définitivement",
+              hint: "Rien n'est supprimé tant que vous n'avez pas appuyé ici",
+              tone: "danger",
+              onSelect: () => void confirmDelete(),
+            },
+          ]}
+          dismissLabel="Annuler"
+          onDismiss={() => setConfirmingDelete(false)}
+        >
+          <ul className="recap__consequences">
+            <li>La séance disparaît de l'historique et du Programme.</li>
+            <li>La progression, les moyennes de durée et « Dernière fois » sont recalculées sur ce qui reste.</li>
+            {workout.plannedSessionId && (
+              <li>
+                La séance planifiée repasse « À venir », sauf si une autre réalisation lui reste rattachée.
+              </li>
+            )}
+            <li>Le modèle{template ? ` ${template.name}` : ""} et les autres séances ne sont pas touchés.</li>
+          </ul>
+          {deleteError && <p className="recap__message recap__message--error">{deleteError}</p>}
+        </BottomSheet>
+      )}
 
       <div className="recap__cards">
         <div className="recap__card">

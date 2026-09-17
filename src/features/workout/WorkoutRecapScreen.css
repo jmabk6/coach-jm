@@ -263,3 +263,34 @@
   font-size: 0.75rem;
   font-style: italic;
 }
+
+/* Menu ⋯ et confirmation de suppression (§14) */
+
+.recap__menu {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-accent, #2f6fed);
+  justify-self: end;
+}
+
+.recap__consequences {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 12px 14px 12px 28px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-soft, #f2f4f7);
+  color: var(--color-text, #1f2937);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.recap__message--error {
+  color: var(--color-danger, #c2413b);
+}

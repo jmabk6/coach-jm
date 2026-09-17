@@ -100,3 +100,22 @@ export async function updateWorkout(
   });
 }
 
+/**
+ * Réalisations rattachées à une instance planifiée, toutes dates.
+ */
+export async function getWorkoutsByPlannedSession(
+  plannedSessionId: Id,
+): Promise<WorkoutSession[]> {
+  return db.workouts
+    .where("plannedSessionId")
+    .equals(plannedSessionId)
+    .toArray();
+}
+
+/**
+ * Suppression physique d'une réalisation (§14) : réservée à la
+ * suppression explicite d'une séance réalisée depuis son récapitulatif.
+ */
+export async function deleteWorkoutRecord(id: Id): Promise<void> {
+  await db.workouts.delete(id);
+}
