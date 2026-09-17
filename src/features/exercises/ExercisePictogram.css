@@ -1,0 +1,27 @@
+.exercise-pictogram {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: #344054;
+}
+
+.exercise-pictogram--musculation {
+  background: #eef4ff;
+  color: #175cd3;
+}
+
+.exercise-pictogram--cardio {
+  background: #fff1f3;
+  color: #c01048;
+}
+
+.exercise-pictogram--mobilité {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.exercise-pictogram--test-mobilité {
+  background: #f9f5ff;
+  color: #6938ef;
+}

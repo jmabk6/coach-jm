@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, EllipsisVertical, Plus } from "lucide-react";
 import type {
   CardioStepSettings,
   Exercise,
@@ -50,7 +50,14 @@ interface ExerciseBlockCardProps {
    * la brique courante (§12).
    */
   restCard?: ReactNode;
+  /**
+   * Nom de l'exercice prévu à l'origine quand la brique a été remplacée
+   * (§13) : la ligne `Prévu : <origine>`.
+   */
+  originalName?: string | undefined;
   onToggle: () => void;
+  onOpenMenu: () => void;
+  onUnskip: () => void;
   onValidateSeries: (seriesId: Id, values: SeriesValues) => void;
   onEditSeries: (seriesId: Id, values: SeriesValues) => void;
   onAddSeries: () => void;
@@ -81,7 +88,10 @@ export function ExerciseBlockCard({
   expanded,
   busy,
   restCard,
+  originalName,
   onToggle,
+  onOpenMenu,
+  onUnskip,
   onValidateSeries,
   onEditSeries,
   onAddSeries,
@@ -106,6 +116,7 @@ export function ExerciseBlockCard({
   const name = exercise?.name ?? "Exercice supprimé";
   const status = formatBlockStatus(block);
   const performed = block.status === "performed";
+  const skipped = block.status === "skipped";
   const url = exercise?.media?.thumbnailUrl ?? exercise?.media?.photoUrl;
 
   return (
@@ -114,39 +125,61 @@ export function ExerciseBlockCard({
         performed ? "wblock--done" : ""
       } ${block.status === "skipped" ? "wblock--skipped" : ""}`}
     >
-      <button type="button" className="wblock__head" onClick={onToggle} aria-expanded={expanded}>
-        <span className="wblock__thumb" aria-hidden="true">
-          {url ? <img src={url} alt="" loading="lazy" /> : null}
-        </span>
-        <span className="wblock__body">
-          <span className="wblock__name">
-            {number !== undefined ? `${number}. ` : ""}
-            {name}
+      <div className="wblock__row">
+        <button type="button" className="wblock__head" onClick={onToggle} aria-expanded={expanded}>
+          <span className="wblock__thumb" aria-hidden="true">
+            {url ? <img src={url} alt="" loading="lazy" /> : null}
           </span>
-          <span className="wblock__meta">
-            {formatExerciseSubtitle(block)}
-            {block.addedDuringWorkout && (
-              <span className="wblock__added">Ajouté pendant la séance</span>
-            )}
-          </span>
-        </span>
-        <span className="wblock__aside">
-          {performed ? (
-            <span className="wblock__check" aria-label="Terminé">
-              <Check size={16} strokeWidth={3} aria-hidden="true" />
+          <span className="wblock__body">
+            <span className="wblock__name">
+              {number !== undefined ? `${number}. ` : ""}
+              {name}
             </span>
-          ) : (
-            <span className="wblock__status">{status}</span>
-          )}
-          {expanded ? (
-            <ChevronUp size={18} strokeWidth={2} aria-hidden="true" />
-          ) : (
-            <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
-          )}
-        </span>
-      </button>
+            <span className="wblock__meta">
+              {formatExerciseSubtitle(block)}
+              {block.addedDuringWorkout && (
+                <span className="wblock__added">Ajouté pendant la séance</span>
+              )}
+              {originalName && (
+                <span className="wblock__added">Prévu : {originalName}</span>
+              )}
+            </span>
+          </span>
+          <span className="wblock__aside">
+            {performed ? (
+              <span className="wblock__check" aria-label="Terminé">
+                <Check size={16} strokeWidth={3} aria-hidden="true" />
+              </span>
+            ) : skipped ? (
+              <span className="wblock__skipped">Sauté</span>
+            ) : (
+              <span className="wblock__status">{status}</span>
+            )}
+            {!skipped &&
+              (expanded ? (
+                <ChevronUp size={18} strokeWidth={2} aria-hidden="true" />
+              ) : (
+                <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
+              ))}
+          </span>
+        </button>
+        {skipped ? (
+          <button type="button" className="wblock__unskip" onClick={onUnskip} disabled={busy}>
+            Annuler
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="wblock__menu"
+            aria-label={`Actions pour ${name}`}
+            onClick={onOpenMenu}
+          >
+            <EllipsisVertical size={20} strokeWidth={2} aria-hidden="true" />
+          </button>
+        )}
+      </div>
 
-      {expanded && block.series && (
+      {expanded && !skipped && block.series && (
         <div className="wblock__content">
           {restCard}
           <ReferenceBlock block={block} lastTime={lastTime} />
@@ -195,7 +228,7 @@ export function ExerciseBlockCard({
         </div>
       )}
 
-      {expanded && block.cardioSteps && (
+      {expanded && !skipped && block.cardioSteps && (
         <div className="wblock__content">
           {restCard}
           <StepReference block={block} lastComparableStep={lastComparableStep} />
@@ -247,7 +280,7 @@ export function ExerciseBlockCard({
         </div>
       )}
 
-      {expanded && block.simpleMeasurement && !block.series && !block.cardioSteps && (
+      {expanded && !skipped && block.simpleMeasurement && !block.series && !block.cardioSteps && (
         <div className="wblock__content">
           {restCard}
           {block.simpleMeasurement.completedAt === undefined ? (

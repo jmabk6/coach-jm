@@ -20,6 +20,9 @@ import {
   editSimpleMeasurement,
   editStep,
   finishBlock,
+  findSubstitutionRound,
+  substituteExercise,
+  substituteGroupChild,
   pauseWorkout,
   recordPresence,
   resumeWorkout,
@@ -823,6 +826,88 @@ describe("exercice ajouté, sans nombre de séries prévu", () => {
         expect.objectContaining({ status: "not_performed" }),
       ],
     });
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Substitution                                                               */
+/* -------------------------------------------------------------------------- */
+
+describe("substitution", () => {
+  const haltere = exercise("developpe-halteres", "load_reps");
+  const planche = exercise("planche", "duration");
+
+  it("remplace un exercice autonome non commencé en gardant le snapshot et l'origine", () => {
+    let w = activateBlock(workout([squatBlock()]), "squat-block", T0);
+    w = substituteExercise(w, "squat-block", haltere, at(1));
+
+    const block = exerciseOf(w, "squat-block");
+    expect(block.exerciseId).toBe("developpe-halteres");
+    expect(block.originalExerciseId).toBe("squat");
+    expect(block.snapshotInstructions).toEqual(squatBlock().snapshotInstructions);
+    expect(block.series).toHaveLength(3);
+
+    /* Un second remplacement ne réécrit pas l'origine ; revenir l'efface. */
+    w = substituteExercise(w, "squat-block", exercise("presse", "load_reps"), at(2));
+    expect(exerciseOf(w, "squat-block").originalExerciseId).toBe("squat");
+
+    w = substituteExercise(w, "squat-block", exercise("squat", "load_reps"), at(3));
+    expect(exerciseOf(w, "squat-block").exerciseId).toBe("squat");
+    expect(exerciseOf(w, "squat-block").originalExerciseId).toBeUndefined();
+  });
+
+  it("refuse une brique commencée, un exercice d'une autre forme, ou une brique sautée", () => {
+    let w = activateBlock(workout([squatBlock()]), "squat-block", T0);
+    expect(() => substituteExercise(w, "squat-block", planche, at(1))).toThrow(/même façon/);
+
+    w = validateSeries(w, "squat-block", "s1", { reps: 10 }, at(1), newId);
+    expect(() => substituteExercise(w, "squat-block", haltere, at(2))).toThrow(/commencé/);
+
+    let skipped = activateBlock(workout([squatBlock(), crunchBlock()]), "squat-block", T0);
+    skipped = skipBlock(skipped, "crunch-block", at(1));
+    expect(() => substituteExercise(skipped, "crunch-block", haltere, at(2))).toThrow(/saut/);
+  });
+
+  it("remplace un enfant de groupe pour le tour courant et les suivants, jamais le passé", () => {
+    let w = activateBlock(workout([groupBlock()]), "group-block", T0);
+    w = validateRoundChild(w, "group-block", "round-1", "round-1-a", { reps: 10 }, at(1), newId);
+    w = validateRoundChild(w, "group-block", "round-1", "round-1-b", { reps: 10 }, at(2), newId);
+
+    w = substituteGroupChild(w, "group-block", "child-b", haltere, at(3));
+
+    const group = groupOf(w, "group-block");
+    expect(group.rounds[0]?.children[1]?.exerciseId).toBe("chest");
+    expect(group.rounds[1]?.children[1]?.exerciseId).toBe("developpe-halteres");
+    expect(group.children[1]?.exerciseId).toBe("chest");
+    expect(findSubstitutionRound(group, "child-b")).toBe(2);
+    expect(findSubstitutionRound(group, "child-a")).toBeUndefined();
+
+    /* Un troisième tour ajouté suit l'exercice courant du tour 2. */
+    w = addRound(w, "group-block", at(4), newId);
+    expect(groupOf(w, "group-block").rounds[2]?.children[1]?.exerciseId).toBe("chest");
+    w = substituteGroupChild(w, "group-block", "child-b", haltere, at(4));
+    expect(groupOf(w, "group-block").rounds[2]?.children[1]?.exerciseId).toBe("developpe-halteres");
+
+    /* La progression est attribuée à l'exercice réellement fait. */
+    w = validateRoundChild(w, "group-block", "round-2", "round-2-a", { reps: 10 }, at(5), newId);
+    w = validateRoundChild(w, "group-block", "round-2", "round-2-b", { load: kg(20), reps: 10 }, at(6), newId);
+    expect(groupOf(w, "group-block").rounds[1]?.children[1]).toMatchObject({
+      exerciseId: "developpe-halteres",
+      load: kg(20),
+      completedAt: at(6),
+    });
+
+    /* Revenir à l'origine ne touche ni le tour 1 ni le tour 2 terminés : seul le tour 3 change. */
+    w = substituteGroupChild(w, "group-block", "child-b", exercise("chest", "load_reps"), at(7));
+    const after = groupOf(w, "group-block");
+    expect(after.rounds[0]?.children[1]?.exerciseId).toBe("chest");
+    expect(after.rounds[1]?.children[1]?.exerciseId).toBe("developpe-halteres");
+    expect(after.rounds[2]?.children[1]?.exerciseId).toBe("chest");
+    expect(findSubstitutionRound(after, "child-b")).toBe(2);
+
+    expect(() => substituteGroupChild(w, "group-block", "child-b", exercise("chest", "load_reps"), at(8))).toThrow(
+      /Aucun tour restant/,
+    );
   });
 });
 

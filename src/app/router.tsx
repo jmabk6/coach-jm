@@ -17,6 +17,7 @@ import { ProgramScreen } from "../features/program/ProgramScreen";
 import { WeeklyProgramScreen } from "../features/program/WeeklyProgramScreen";
 import { WorkoutRecapScreen } from "../features/workout/WorkoutRecapScreen";
 import { WorkoutScreen } from "../features/workout/WorkoutScreen";
+import { QuickExerciseScreen } from "../features/workout/QuickExerciseScreen";
 import { TodayScreen } from "../features/today/TodayScreen";
 import { SessionPreviewScreen } from "../features/today/SessionPreviewScreen";
 
@@ -31,6 +32,7 @@ export const router = createHashRouter([
         element: <SessionPreviewScreen />,
       },
       { path: "seance", element: <WorkoutScreen /> },
+      { path: "seance/exercice-rapide", element: <QuickExerciseScreen /> },
       { path: "programme", element: <ProgramScreen /> },
       { path: "programme/programmation", element: <WeeklyProgramScreen /> },
       { path: "workouts/:workoutId", element: <WorkoutRecapScreen /> },

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronUp, Hourglass, Plus } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, EllipsisVertical, Hourglass, Plus } from "lucide-react";
 import type {
   Exercise,
   Id,
@@ -14,6 +14,7 @@ import {
 } from "../../domain/rules/blockInstructionRules";
 import type { SeriesValues } from "./engine/workoutEngine";
 import { proposeRoundChildValues } from "./engine/workoutBlocks";
+import { findSubstitutionRound } from "./engine/workoutEngine";
 import type { LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
 import { formatLoadSuggestion, suggestLoad } from "./suggestedLoad";
@@ -37,6 +38,8 @@ interface GroupBlockCardProps {
    */
   restBand?: ReactNode;
   onToggle: () => void;
+  onOpenMenu: () => void;
+  onUnskip: () => void;
   onValidateChild: (roundId: Id, roundChildId: Id, values: SeriesValues) => void;
   onEditChild: (roundId: Id, roundChildId: Id, values: SeriesValues) => void;
   onAddRound: () => void;
@@ -59,6 +62,8 @@ export function GroupBlockCard({
   restCard,
   restBand,
   onToggle,
+  onOpenMenu,
+  onUnskip,
   onValidateChild,
   onEditChild,
   onAddRound,
@@ -66,6 +71,7 @@ export function GroupBlockCard({
   const [openRoundId, setOpenRoundId] = useState<Id>();
   const [editingId, setEditingId] = useState<Id>();
   const performed = block.status === "performed";
+  const skipped = block.status === "skipped";
   const children = [...block.children].sort((a, b) => a.position - b.position);
   const rounds = [...block.rounds].sort((a, b) => a.roundNumber - b.roundNumber);
   const activeRound = rounds.find((round) => round.status === "active") ?? rounds.find((round) => round.status !== "completed");
@@ -79,34 +85,62 @@ export function GroupBlockCard({
         block.status === "skipped" ? "wblock--skipped" : ""
       }`}
     >
-      <button type="button" className="wblock__head wblock__head--static" onClick={onToggle} aria-expanded={expanded}>
-        <span className="wblock__body">
-          <span className="wblock__name">
-            {number !== undefined ? `${number}. ` : ""}
-            {block.name?.trim() || `Groupe ${number ?? ""}`}
-          </span>
-          <span className="wblock__meta">
-            {rounds.length} tours · {children.length} exercices · repos{" "}
-            {formatDurationShort(block.plannedRestBetweenRoundsSec)} entre les tours
-          </span>
-        </span>
-        <span className="wblock__aside">
-          {performed ? (
-            <span className="wblock__check" aria-label="Terminé">
-              <Check size={16} strokeWidth={3} aria-hidden="true" />
+      <div className="wblock__row">
+        <button type="button" className="wblock__head wblock__head--static" onClick={onToggle} aria-expanded={expanded}>
+          <span className="wblock__body">
+            <span className="wblock__name">
+              {number !== undefined ? `${number}. ` : ""}
+              {block.name?.trim() || `Groupe ${number ?? ""}`}
             </span>
-          ) : (
-            <span className="wblock__status">{formatBlockStatus(block)}</span>
-          )}
-          {expanded ? (
-            <ChevronUp size={18} strokeWidth={2} aria-hidden="true" />
-          ) : (
-            <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
-          )}
-        </span>
-      </button>
+            <span className="wblock__meta">
+              {rounds.length} tours · {children.length} exercices · repos{" "}
+              {formatDurationShort(block.plannedRestBetweenRoundsSec)} entre les tours
+              {children.map((child) => {
+                const since = findSubstitutionRound(block, child.id);
 
-      {expanded && (
+                return since !== undefined ? (
+                  <span key={child.id} className="wblock__added">
+                    {label(child)} remplacé à partir du tour {since} · prévu : {nameOf(child.exerciseId)}
+                  </span>
+                ) : null;
+              })}
+            </span>
+          </span>
+          <span className="wblock__aside">
+            {performed ? (
+              <span className="wblock__check" aria-label="Terminé">
+                <Check size={16} strokeWidth={3} aria-hidden="true" />
+              </span>
+            ) : skipped ? (
+              <span className="wblock__skipped">Sauté</span>
+            ) : (
+              <span className="wblock__status">{formatBlockStatus(block)}</span>
+            )}
+            {!skipped &&
+              (expanded ? (
+                <ChevronUp size={18} strokeWidth={2} aria-hidden="true" />
+              ) : (
+                <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
+              ))}
+          </span>
+        </button>
+        {skipped ? (
+          <button type="button" className="wblock__unskip" onClick={onUnskip} disabled={busy}>
+            Annuler
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="wblock__menu"
+            aria-label={`Actions pour ${block.name?.trim() || "le groupe"}`}
+            onClick={onOpenMenu}
+          >
+            <EllipsisVertical size={20} strokeWidth={2} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+
+      {expanded && !skipped && (
         <div className="wblock__content">
           {restCard}
 

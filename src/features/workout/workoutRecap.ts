@@ -349,7 +349,14 @@ export function buildWorkoutRecapLines(
     }
 
     const exercise = exerciseById.get(block.exerciseId);
-    const name = exercise?.name ?? "Exercice supprimé";
+    const original = block.originalExerciseId
+      ? exerciseById.get(block.originalExerciseId)
+      : undefined;
+    /* Substitution (§13) : la progression va à l'exercice réellement fait,
+       le prévu reste lisible. */
+    const name = `${exercise?.name ?? "Exercice supprimé"}${
+      original && original.id !== block.exerciseId ? ` (prévu : ${original.name})` : ""
+    }`;
     const series = (block.series ?? []).filter((item) => item.status === "completed");
     const steps = (block.cardioSteps ?? []).filter((step) => step.status === "completed");
     const rpes = series.map((item) => item.rpe).filter((v): v is number => v !== undefined);

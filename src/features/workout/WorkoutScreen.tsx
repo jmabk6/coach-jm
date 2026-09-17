@@ -10,7 +10,15 @@ import {
   Play,
   Plus,
 } from "lucide-react";
-import type { Id, PerformedBlock, PerformedNoteBlock } from "../../domain";
+import type {
+  Exercise,
+  Id,
+  PerformedBlock,
+  PerformedExerciseBlock,
+  PerformedGroupBlock,
+  PerformedNoteBlock,
+} from "../../domain";
+import { listExerciseAlternatives } from "../exercises/exerciseAlternatives";
 import { calculateExecutionProgress } from "../../domain/rules/workoutRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import {
@@ -27,7 +35,11 @@ import {
   finishBlock,
   pauseWorkout,
   resumeWorkout,
+  skipBlock,
   skipRest,
+  substituteExercise,
+  substituteGroupChild,
+  unskipBlock,
   updateStep,
   validateRoundChild,
   validateSeries,
@@ -35,6 +47,8 @@ import {
   validateStep,
 } from "./engine/workoutEngine";
 import { hasCompletedEntries, proposeSeriesValues } from "./engine/workoutBlocks";
+import { formatSeriesLine } from "./workoutRecap";
+import { formatShortDate } from "./workoutDisplay";
 import { getOpenPause, getRestCountdown } from "./engine/workoutTime";
 import { ExerciseBlockCard } from "./ExerciseBlockCard";
 import { GroupBlockCard } from "./GroupBlockCard";
@@ -64,6 +78,12 @@ export function WorkoutScreen() {
   const [peekedId, setPeekedId] = useState<Id>();
   const [adding, setAdding] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  /* Menu `⋯` d'une brique, puis feuille de remplacement (§13). */
+  const [blockMenu, setBlockMenu] = useState<PerformedExerciseBlock | PerformedGroupBlock>();
+  const [substitution, setSubstitution] = useState<{
+    block: PerformedExerciseBlock | PerformedGroupBlock;
+    groupChildId?: Id;
+  }>();
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string>();
 
@@ -96,14 +116,17 @@ export function WorkoutScreen() {
     }
   }, [rest, restPhase]);
 
-  /* Retour de la bibliothèque : `?add=<id>` dans l'ordre de sélection. */
+  /* Retour de la bibliothèque : `?add=<id>` dans l'ordre de sélection —
+     ou, avec `substitute=<brique>[&child=<enfant>]`, le remplaçant choisi. */
   const pendingAddIds = useMemo(() => searchParams.getAll("add"), [searchParams]);
+  const substituteBlockId = searchParams.get("substitute");
+  const substituteChildId = searchParams.get("child");
   const handledAddKey = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (state.status !== "ready" || pendingAddIds.length === 0) return;
 
-    const key = pendingAddIds.join(",");
+    const key = `${substituteBlockId ?? ""}:${substituteChildId ?? ""}:${pendingAddIds.join(",")}`;
     if (handledAddKey.current === key) return;
     handledAddKey.current = key;
 
@@ -115,8 +138,19 @@ export function WorkoutScreen() {
 
     if (exercises.length === 0) return;
 
+    if (substituteBlockId) {
+      const replacement = exercises[0]!;
+
+      void apply((current, at) =>
+        substituteChildId
+          ? substituteGroupChild(current, substituteBlockId, substituteChildId, replacement, at)
+          : substituteExercise(current, substituteBlockId, replacement, at),
+      );
+      return;
+    }
+
     void apply((current, at) => addExerciseBlocks(current, exercises, at));
-  }, [state, pendingAddIds, apply, setSearchParams]);
+  }, [state, pendingAddIds, substituteBlockId, substituteChildId, apply, setSearchParams]);
 
   /* Une séance qui n'a pas encore de brique courante s'ouvre sur sa
      première brique exécutable (§11 : la brique active dépliée). */
@@ -220,6 +254,54 @@ export function WorkoutScreen() {
       }
     }
     navigate(`/exercises?${params.toString()}`);
+  }
+
+  /* Bibliothèque complète, préfiltrée sur la zone du prévu (§13). */
+  function openLibraryForSubstitution(
+    block: PerformedExerciseBlock | PerformedGroupBlock,
+    groupChildId: Id | undefined,
+    planned: Exercise | undefined,
+  ) {
+    setSubstitution(undefined);
+    const returnTo = new URLSearchParams();
+    returnTo.set("substitute", block.id);
+    if (groupChildId) returnTo.set("child", groupChildId);
+
+    const params = new URLSearchParams();
+    params.set("mode", "select");
+    params.set("single", "1");
+    params.set("returnTo", `/seance?${returnTo.toString()}`);
+    if (planned?.category === "Musculation") params.append("zone", planned.zone);
+    navigate(`/exercises?${params.toString()}`);
+  }
+
+  function substitutionTarget(entry: NonNullable<typeof substitution>): {
+    current: Exercise | undefined;
+    original: Exercise | undefined;
+  } {
+    if (entry.block.kind === "exercise") {
+      return {
+        current: exerciseById.get(entry.block.exerciseId),
+        original: exerciseById.get(entry.block.originalExerciseId ?? entry.block.exerciseId),
+      };
+    }
+
+    const child = entry.block.children.find((item) => item.id === entry.groupChildId);
+    const pendingRound = entry.block.rounds.find((round) => round.status !== "completed");
+    const roundChild = pendingRound?.children.find((item) => item.groupChildId === entry.groupChildId);
+
+    return {
+      current: exerciseById.get(roundChild?.exerciseId ?? child?.exerciseId ?? ""),
+      original: exerciseById.get(child?.exerciseId ?? ""),
+    };
+  }
+
+  function describeHistory(exerciseId: Id): string {
+    const last = lastByExercise.get(exerciseId);
+
+    return last
+      ? `dernière fois ${formatSeriesLine(last.series)} · ${formatShortDate(last.date)}`
+      : "jamais réalisé";
   }
 
   function toggleBlock(block: PerformedBlock) {
@@ -356,6 +438,8 @@ export function WorkoutScreen() {
                   restCard={block.id === currentBlock?.id && restCardInBlock ? restCard : undefined}
                   restBand={block.id === currentBlock?.id ? restBand : undefined}
                   onToggle={() => toggleBlock(block)}
+                  onOpenMenu={() => setBlockMenu(block)}
+                  onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}
                   onValidateChild={(roundId, childId, values) =>
                     void run((current, at) =>
                       validateRoundChild(current, block.id, roundId, childId, values, at),
@@ -381,7 +465,14 @@ export function WorkoutScreen() {
                 expanded={isExpanded(block)}
                 busy={locked}
                 restCard={block.id === currentBlock?.id && restCardInBlock ? restCard : undefined}
+                originalName={
+                  block.originalExerciseId
+                    ? exerciseById.get(block.originalExerciseId)?.name ?? "exercice supprimé"
+                    : undefined
+                }
                 onToggle={() => toggleBlock(block)}
+                onOpenMenu={() => setBlockMenu(block)}
+                onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}
                 onValidateSeries={(seriesId, values) =>
                   void run((current, at) => validateSeries(current, block.id, seriesId, values, at))
                 }
@@ -445,6 +536,114 @@ export function WorkoutScreen() {
         />
       )}
 
+      {blockMenu && (
+        <BottomSheet
+          title={
+            blockMenu.kind === "exercise"
+              ? exerciseById.get(blockMenu.exerciseId)?.name ?? "Exercice"
+              : blockMenu.name?.trim() || "Groupe"
+          }
+          message={
+            blockMenu.kind === "exercise"
+              ? "Sauter n'est ni destructeur ni irréversible ; remplacer garde les consignes prévues."
+              : "Remplacer un exercice vaut pour le tour courant et les suivants, jamais pour un tour terminé."
+          }
+          actions={[
+            ...(blockMenu.kind === "exercise"
+              ? [
+                  {
+                    label: blockMenu.originalExerciseId
+                      ? "Changer le remplacement"
+                      : "Remplacer l'exercice",
+                    hint: hasCompletedEntries(blockMenu)
+                      ? "Non disponible : un exercice commencé ne se remplace plus, ajoutez-en un à la place"
+                      : "Les consignes prévues sont conservées",
+                    disabled: hasCompletedEntries(blockMenu),
+                    onSelect: () => {
+                      const target = blockMenu;
+                      setBlockMenu(undefined);
+                      setSubstitution({ block: target });
+                    },
+                  },
+                  {
+                    label: "Voir la fiche",
+                    onSelect: () => navigate(`/exercises/${blockMenu.exerciseId}`, { state: { from: "/seance" } }),
+                  },
+                ]
+              : [...blockMenu.children]
+                  .sort((a, b) => a.position - b.position)
+                  .map((child, index) => ({
+                    label: `Remplacer ${numbering[blockMenu.id] ?? ""}${String.fromCharCode(97 + index)} ${
+                      exerciseById.get(child.exerciseId)?.name ?? "Exercice"
+                    }`,
+                    hint: "À partir du tour courant",
+                    onSelect: () => {
+                      const target = blockMenu;
+                      setBlockMenu(undefined);
+                      setSubstitution({ block: target, groupChildId: child.id });
+                    },
+                  }))),
+            {
+              label: blockMenu.kind === "exercise" ? "Sauter l'exercice" : "Sauter le groupe",
+              hint: "Reste visible, sort du compteur ; annulable jusqu'à la clôture",
+              onSelect: () => {
+                const target = blockMenu;
+                setBlockMenu(undefined);
+                void run((current, at) => skipBlock(current, target.id, at));
+              },
+            },
+          ]}
+          onDismiss={() => setBlockMenu(undefined)}
+        />
+      )}
+
+      {substitution &&
+        (() => {
+          const { current, original } = substitutionTarget(substitution);
+          const alternatives = current
+            ? listExerciseAlternatives(current, [...exerciseById.values()])
+            : [];
+          const applyReplacement = (replacement: Exercise) => {
+            const target = substitution;
+            setSubstitution(undefined);
+            void run((now, at) =>
+              target.groupChildId
+                ? substituteGroupChild(now, target.block.id, target.groupChildId, replacement, at)
+                : substituteExercise(now, target.block.id, replacement, at),
+            );
+          };
+
+          return (
+            <BottomSheet
+              title={`Remplacer ${current?.name ?? "l'exercice"}`}
+              message="Les consignes prévues sont conservées ; Dernière fois et Conseillé viendront du nouvel exercice."
+              actions={[
+                ...alternatives.map((alternative) => ({
+                  label: alternative.name,
+                  hint: `${alternative.equipment ?? ""} · ${alternative.location} · ${describeHistory(alternative.id)}`,
+                  onSelect: () => applyReplacement(alternative),
+                })),
+                {
+                  label: "Choisir dans la bibliothèque",
+                  hint: original?.category === "Musculation" ? `Préfiltrée sur la zone ${original.zone}` : "Bibliothèque complète",
+                  tone: "primary" as const,
+                  onSelect: () => openLibraryForSubstitution(substitution.block, substitution.groupChildId, original),
+                },
+                ...(original && current && original.id !== current.id
+                  ? [
+                      {
+                        label: `Revenir à ${original.name}`,
+                        hint: "Sans réécrire ce qui est déjà fait",
+                        onSelect: () => applyReplacement(original),
+                      },
+                    ]
+                  : []),
+              ]}
+              onDismiss={() => setSubstitution(undefined)}
+            />
+          );
+        })()}
+
       {menuOpen && (
         <BottomSheet
           title={name}
@@ -495,9 +694,11 @@ export function WorkoutScreen() {
             },
             {
               label: "Créer un exercice rapide",
-              hint: "Bientôt : étape 6.7 (nom, zone, mouvement, équipement, type de mesure)",
-              disabled: true,
-              onSelect: () => undefined,
+              hint: "Nom, zone, mouvement, équipement, type de mesure — il rejoint la bibliothèque",
+              onSelect: () => {
+                setAdding(false);
+                navigate("/seance/exercice-rapide");
+              },
             },
           ]}
           onDismiss={() => setAdding(false)}

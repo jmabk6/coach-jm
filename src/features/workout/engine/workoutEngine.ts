@@ -13,6 +13,7 @@ import type {
   RestKind,
   WorkoutSession,
 } from "../../../domain";
+import { defaultInstructionsFor } from "../../../domain/rules/blockInstructionRules";
 import {
   createAddedExerciseBlock,
   createSeries,
@@ -1110,6 +1111,165 @@ export function finishBlock(workout: WorkoutSession, blockId: Id, now: string): 
   });
 
   next = advanceFrom(next, blockId, now);
+
+  return touch(next, now);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Substitution                                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Un exercice ne peut en remplacer un autre que s'il se saisit de la
+ * même façon : le snapshot des consignes est conservé (§13), il doit
+ * rester lisible par le nouvel exercice.
+ */
+export function canSubstitute(
+  replacement: Exercise,
+  shape: "reps" | "duration" | "steps" | "simple",
+): boolean {
+  const defaults = defaultInstructionsFor(replacement, () => "tmp");
+
+  if (shape === "simple") {
+    return (
+      defaults.shape === "duration_distance" ||
+      defaults.shape === "distance" ||
+      defaults.shape === "distance_cm" ||
+      defaults.shape === "distance_cm_per_side"
+    );
+  }
+
+  return defaults.shape === shape;
+}
+
+function blockShape(block: PerformedExerciseBlock): "reps" | "duration" | "steps" | "simple" {
+  const shape = block.snapshotInstructions.shape;
+
+  return shape === "reps" || shape === "duration" || shape === "steps" ? shape : "simple";
+}
+
+/**
+ * Remplace l'exercice d'une brique autonome (§13). Tant qu'aucune
+ * entrée n'est validée : les consignes du snapshot sont conservées,
+ * l'exercice d'origine reste connu (`originalExerciseId`, jamais
+ * réécrit par un second remplacement) et revenir à l'origine efface la
+ * rupture. Une brique commencée ne se remplace plus : on ajoute un
+ * exercice à la place.
+ */
+export function substituteExercise(
+  workout: WorkoutSession,
+  blockId: Id,
+  replacement: Exercise,
+  now: string,
+): WorkoutSession {
+  assertInProgress(workout);
+
+  const block = findExerciseBlock(workout, blockId);
+
+  if (hasCompletedEntries(block)) {
+    throw new Error("Un exercice commencé ne se remplace plus : ajoutez un exercice");
+  }
+
+  if (block.status === "skipped") {
+    throw new Error("Annulez le saut avant de remplacer cet exercice");
+  }
+
+  if (!canSubstitute(replacement, blockShape(block))) {
+    throw new Error("Cet exercice ne se saisit pas de la même façon que celui prévu");
+  }
+
+  const originalExerciseId = block.originalExerciseId ?? block.exerciseId;
+
+  const next = withExerciseBlock(workout, blockId, (item) => {
+    const updated: PerformedExerciseBlock = { ...item, exerciseId: replacement.id };
+
+    if (replacement.id === originalExerciseId) {
+      delete updated.originalExerciseId;
+    } else {
+      updated.originalExerciseId = originalExerciseId;
+    }
+
+    return updated;
+  });
+
+  return touch(next, now);
+}
+
+/**
+ * Premier tour où un enfant s'exécute sur un autre exercice que celui
+ * prévu, pour le badge `Remplacé à partir du tour N` ; absent si aucun.
+ */
+export function findSubstitutionRound(
+  block: PerformedGroupBlock,
+  groupChildId: Id,
+): number | undefined {
+  const child = block.children.find((item) => item.id === groupChildId);
+
+  if (!child) return undefined;
+
+  const round = [...block.rounds]
+    .sort((a, b) => a.roundNumber - b.roundNumber)
+    .find((entry) =>
+      entry.children.some(
+        (roundChild) =>
+          roundChild.groupChildId === groupChildId && roundChild.exerciseId !== child.exerciseId,
+      ),
+    );
+
+  return round?.roundNumber;
+}
+
+/**
+ * Remplace un enfant de groupe pour le tour courant et tous les tours
+ * restants — jamais rétroactif (§13). Un tour terminé garde son
+ * exercice ; `Revenir à l'origine` est un remplacement par l'exercice
+ * prévu ; une même brique peut porter plusieurs ruptures.
+ */
+export function substituteGroupChild(
+  workout: WorkoutSession,
+  blockId: Id,
+  groupChildId: Id,
+  replacement: Exercise,
+  now: string,
+): WorkoutSession {
+  assertInProgress(workout);
+
+  const block = findGroupBlock(workout, blockId);
+  const child = block.children.find((item) => item.id === groupChildId);
+
+  if (!child) {
+    throw new Error("Exercice du groupe introuvable");
+  }
+
+  if (!canSubstitute(replacement, child.snapshotInstructions.shape)) {
+    throw new Error("Cet exercice ne se saisit pas de la même façon que celui prévu");
+  }
+
+  let changed = false;
+
+  const next = withGroupBlock(workout, blockId, (item) => ({
+    ...item,
+    rounds: item.rounds.map((round) => ({
+      ...round,
+      children: round.children.map((roundChild) => {
+        if (
+          roundChild.groupChildId !== groupChildId ||
+          roundChild.completedAt !== undefined ||
+          roundChild.exerciseId === replacement.id
+        ) {
+          return roundChild;
+        }
+
+        changed = true;
+
+        return { ...roundChild, exerciseId: replacement.id };
+      }),
+    })),
+  }));
+
+  if (!changed) {
+    throw new Error("Aucun tour restant à remplacer");
+  }
 
   return touch(next, now);
 }
