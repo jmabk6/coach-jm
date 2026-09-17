@@ -16,8 +16,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { SessionBlock } from "../../domain";
+import type { PlannedSession, SessionBlock } from "../../domain";
 import { calculateBlockNumbering } from "../../domain/rules/sessionTemplateRules";
+import { formatLocalDate, formatPlannedSessionTitle } from "../../domain/rules/programRules";
+import { startFreeWorkout } from "../workout/startFreeWorkout";
+import * as startFromTemplate from "../workout/startFromTemplate";
+import { startWorkout } from "../workout/startWorkout";
 import { archiveSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
 import { BottomSheet, type SheetAction } from "../../components/ui/BottomSheet";
 import {
@@ -50,6 +54,8 @@ export function SessionDetailScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [blockMenu, setBlockMenu] = useState<SessionBlock>();
   const [selectionNotice, setSelectionNotice] = useState<string>();
+  /* Feuille du §10 : une planifiée du même modèle existe aujourd'hui. */
+  const [startChoice, setStartChoice] = useState<PlannedSession>();
 
   /* Mode sélection (§7) dans l'URL : `select=1` masque la barre d'onglets,
      `picked=<id>` porte les briques cochées dans l'ordre du geste. */
@@ -151,6 +157,35 @@ export function SessionDetailScreen() {
         : [...current, blockId]
       ).forEach((id) => params.append("picked", id));
     });
+  }
+
+  /* Démarrage depuis le modèle (§10) : la feuille de choix dépend de
+     l'existence d'une planifiée du même modèle aujourd'hui. */
+  async function handleStart() {
+    setMenuOpen(false);
+
+    const planned = await startFromTemplate.findPlannedTodayForTemplate(
+      template.id,
+      formatLocalDate(new Date()),
+    );
+
+    if (planned) {
+      setStartChoice(planned);
+      return;
+    }
+
+    await launch(() => startFreeWorkout(formatLocalDate(new Date()), new Date().toISOString(), template));
+  }
+
+  async function launch(start: () => Promise<unknown>) {
+    setStartChoice(undefined);
+
+    try {
+      await start();
+      navigate("/seance");
+    } catch (cause) {
+      setSelectionNotice(cause instanceof Error ? cause.message : "Démarrage impossible");
+    }
   }
 
   /* Le bouton reste actif : une sélection invalide s'explique au tap (§7). */
@@ -449,6 +484,16 @@ export function SessionDetailScreen() {
           title={template.name}
           onDismiss={() => setMenuOpen(false)}
           actions={[
+            {
+              label: "Démarrer la séance",
+              hint:
+                blocks.length === 0
+                  ? "Ajoutez au moins une brique pour démarrer"
+                  : "Les consignes sont copiées ; le modèle n'est pas modifié",
+              disabled: blocks.length === 0,
+              tone: "primary" as const,
+              onSelect: () => void handleStart(),
+            },
             ...(candidateCount >= 2
               ? [
                   {
@@ -469,6 +514,30 @@ export function SessionDetailScreen() {
               onSelect: () => void handleArchive(),
             },
           ]}
+        />
+      )}
+
+      {startChoice && (
+        <BottomSheet
+          title={formatPlannedSessionTitle(template.name, startChoice.date)}
+          message="Une séance de ce modèle est prévue aujourd'hui."
+          actions={[
+            {
+              label: "Démarrer la séance prévue",
+              hint: "La réalisation est rattachée à la séance planifiée",
+              tone: "primary",
+              onSelect: () => void launch(() => startWorkout(startChoice.id)),
+            },
+            {
+              label: "Démarrer une séance supplémentaire",
+              hint: "Réalisation libre : la séance prévue reste à faire",
+              onSelect: () =>
+                void launch(() =>
+                  startFreeWorkout(formatLocalDate(new Date()), new Date().toISOString(), template),
+                ),
+            },
+          ]}
+          onDismiss={() => setStartChoice(undefined)}
         />
       )}
 

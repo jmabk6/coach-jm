@@ -968,6 +968,48 @@ export function validateRoundChild(
 }
 
 /**
+ * `Modifier` un enfant de tour validé : la seule voie pour réécrire ses
+ * valeurs. Ni repos, ni changement de tour, ni effet sur les autres
+ * enfants ; l'exercice réellement fait reste celui du tour.
+ */
+export function editRoundChild(
+  workout: WorkoutSession,
+  blockId: Id,
+  roundId: Id,
+  roundChildId: Id,
+  values: SeriesValues,
+  now: string,
+): WorkoutSession {
+  assertInProgress(workout);
+
+  const block = findGroupBlock(workout, blockId);
+  const round = block.rounds.find((item) => item.id === roundId);
+  const child = round?.children.find((item) => item.id === roundChildId);
+
+  if (!round || !child || child.completedAt === undefined) {
+    throw new Error("Seul un exercice de tour validé se modifie");
+  }
+
+  const next = withGroupBlock(workout, blockId, (item) => ({
+    ...item,
+    rounds: item.rounds.map((entry) =>
+      entry.id !== roundId
+        ? entry
+        : {
+            ...entry,
+            children: entry.children.map((roundChild) =>
+              roundChild.id === roundChildId
+                ? { ...roundChild, ...definedOnly(values) }
+                : roundChild,
+            ),
+          },
+    ),
+  }));
+
+  return touch(next, now);
+}
+
+/**
  * `Ajouter un tour` en bas du groupe (§11).
  */
 export function addRound(

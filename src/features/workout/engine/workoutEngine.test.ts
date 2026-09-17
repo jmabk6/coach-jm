@@ -15,6 +15,7 @@ import {
   adjustRest,
   buildResumeSummary,
   completeWorkoutSession,
+  editRoundChild,
   editSeries,
   editSimpleMeasurement,
   editStep,
@@ -33,6 +34,7 @@ import {
 } from "./workoutEngine";
 import {
   formatBlockCompletion,
+  proposeRoundChildValues,
   proposeSeriesValues,
   summarizeBlockCompletion,
 } from "./workoutBlocks";
@@ -662,6 +664,33 @@ describe("groupes tour par tour", () => {
     w = validateRoundChild(w, "group-block", "round-1", "round-1-b", { reps: 10 }, at(1, 45), newId);
     expect(groupOf(w, "group-block").rounds[0]?.children[1]?.actualRestBeforeSec).toBe(45);
     expect(summarizeRests(w.blocks).totalCount).toBe(0);
+  });
+
+  it("propose au tour 2 les valeurs du tour 1, sinon la cible", () => {
+    let w = activateBlock(workout([groupBlock()]), "group-block", T0);
+    expect(proposeRoundChildValues(groupOf(w, "group-block"), "child-a")).toEqual({ reps: 10 });
+
+    w = validateRoundChild(w, "group-block", "round-1", "round-1-a", { load: kg(30), reps: 9, rpe: 8 }, at(1), newId);
+    expect(proposeRoundChildValues(groupOf(w, "group-block"), "child-a")).toEqual({ load: kg(30), reps: 9 });
+    expect(proposeRoundChildValues(groupOf(w, "group-block"), "child-b", { load: kg(25), reps: 12 })).toEqual({
+      load: kg(25),
+      reps: 12,
+    });
+  });
+
+  it("Modifier un enfant de tour validé ne touche ni au repos ni au tour courant", () => {
+    let w = activateBlock(workout([groupBlock()]), "group-block", T0);
+    w = validateRoundChild(w, "group-block", "round-1", "round-1-a", { load: kg(30), reps: 10 }, at(1), newId);
+    w = validateRoundChild(w, "group-block", "round-1", "round-1-b", { load: kg(25), reps: 10 }, at(2), newId);
+    const rest = w.activeRest;
+
+    expect(() => editRoundChild(w, "group-block", "round-2", "round-2-a", { reps: 5 }, at(3))).toThrow(/validé/);
+
+    w = editRoundChild(w, "group-block", "round-1", "round-1-a", { reps: 11, note: "facile" }, at(3));
+
+    expect(groupOf(w, "group-block").rounds[0]?.children[0]).toMatchObject({ load: kg(30), reps: 11, note: "facile" });
+    expect(w.activeRest).toEqual(rest);
+    expect(w.currentEntryId).toBe("round-2");
   });
 
   it("Ajouter un tour prolonge la boucle", () => {

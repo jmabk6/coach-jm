@@ -441,3 +441,40 @@ export function proposeSeriesValues(
       : {}),
   };
 }
+
+/**
+ * Valeurs proposées pour un enfant de tour : celles du même enfant au
+ * tour précédent dans cette séance, sinon la dernière fois, sinon la
+ * cible prévue. RPE et note ne sont jamais proposés.
+ */
+export function proposeRoundChildValues(
+  block: PerformedGroupBlock,
+  groupChildId: Id,
+  lastTime?: ProposedSeriesValues,
+): ProposedSeriesValues {
+  const previous = [...block.rounds]
+    .reverse()
+    .flatMap((round) => round.children)
+    .find((child) => child.groupChildId === groupChildId && child.completedAt !== undefined);
+
+  const source = previous ?? lastTime;
+
+  if (!source) {
+    const child = block.children.find((item) => item.id === groupChildId);
+    const instructions = child?.snapshotInstructions;
+
+    if (!instructions) return {};
+    if (instructions.shape === "reps") return { reps: instructions.reps.max };
+
+    return { durationSec: instructions.durationSec };
+  }
+
+  return {
+    ...(source.load !== undefined ? { load: structuredClone(source.load) } : {}),
+    ...(source.reps !== undefined ? { reps: source.reps } : {}),
+    ...(source.durationSec !== undefined ? { durationSec: source.durationSec } : {}),
+    ...(source.sideValues !== undefined
+      ? { sideValues: structuredClone(source.sideValues) }
+      : {}),
+  };
+}

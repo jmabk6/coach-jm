@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { WorkoutSession } from "../../domain";
 import { findLastComparableStep, findLastPerformances } from "./lastPerformance";
 import { formatCardioSettingsLine } from "./workoutRecap";
+import { formatLoadSuggestion, suggestLoad } from "./suggestedLoad";
 import {
   calculatePerformedNumbering,
   describeNextUp,
@@ -262,5 +263,44 @@ describe("paliers : dernière fois comparable et réglages", () => {
       "1 min 30 · 5 km/h · 12 %",
     );
     expect(formatCardioSettingsLine({ durationSec: 600, distanceKm: 1.2 })).toBe("10 min · 1,2 km");
+  });
+});
+
+describe("charge conseillée", () => {
+  const last = (series: Array<{ kg: number; reps: number; rpe?: number }>) => ({
+    workoutId: "w",
+    date: "2026-09-10",
+    series: { id: "x", position: 0, status: "completed" as const },
+    allSeries: series.map((item, index) => ({
+      id: `s${index}`,
+      position: index,
+      status: "completed" as const,
+      load: { kind: "total" as const, kg: item.kg },
+      reps: item.reps,
+      ...(item.rpe !== undefined ? { rpe: item.rpe } : {}),
+    })),
+  });
+
+  it("monte de 2,5 kg quand les reps sont tenues avec un RPE bas", () => {
+    const suggestion = suggestLoad(last([{ kg: 40, reps: 10, rpe: 6 }, { kg: 40, reps: 10, rpe: 6 }]), { min: 8, max: 10 }, { min: 7, max: 8 });
+
+    expect(suggestion).toMatchObject({ action: "increase", load: { kind: "total", kg: 42.5 } });
+    expect(formatLoadSuggestion(suggestion!)).toBe("42,5 kg · +2,5 kg");
+  });
+
+  it("baisse quand le RPE atteint 9 ou que les reps chutent, maintient sinon", () => {
+    expect(suggestLoad(last([{ kg: 40, reps: 10, rpe: 9 }]), { min: 8, max: 10 })).toMatchObject({
+      action: "decrease",
+      load: { kind: "total", kg: 37.5 },
+    });
+    expect(suggestLoad(last([{ kg: 40, reps: 6 }]), { min: 8, max: 10 })).toMatchObject({ action: "decrease" });
+    expect(suggestLoad(last([{ kg: 40, reps: 10 }]), { min: 8, max: 10 })).toMatchObject({
+      action: "maintain",
+      load: { kind: "total", kg: 40 },
+    });
+  });
+
+  it("ne conseille rien sans historique", () => {
+    expect(suggestLoad(undefined, { min: 8, max: 10 })).toBeUndefined();
   });
 });

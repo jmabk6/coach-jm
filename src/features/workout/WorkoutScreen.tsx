@@ -10,21 +10,17 @@ import {
   Play,
   Plus,
 } from "lucide-react";
-import type {
-  Id,
-  PerformedBlock,
-  PerformedGroupBlock,
-  PerformedNoteBlock,
-} from "../../domain";
+import type { Id, PerformedBlock, PerformedNoteBlock } from "../../domain";
 import { calculateExecutionProgress } from "../../domain/rules/workoutRules";
-import { formatGroupChildInstructionsRow } from "../../domain/rules/blockInstructionRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import {
   activateBlock,
   addExerciseBlocks,
   addSeries,
+  addRound,
   addStep,
   adjustRest,
+  editRoundChild,
   editSeries,
   editSimpleMeasurement,
   editStep,
@@ -33,13 +29,16 @@ import {
   resumeWorkout,
   skipRest,
   updateStep,
+  validateRoundChild,
   validateSeries,
   validateSimpleMeasurement,
   validateStep,
 } from "./engine/workoutEngine";
-import { proposeSeriesValues } from "./engine/workoutBlocks";
+import { hasCompletedEntries, proposeSeriesValues } from "./engine/workoutBlocks";
 import { getOpenPause, getRestCountdown } from "./engine/workoutTime";
 import { ExerciseBlockCard } from "./ExerciseBlockCard";
+import { GroupBlockCard } from "./GroupBlockCard";
+import { RestBand } from "./RestBand";
 import { finishWorkout } from "./finishWorkout";
 import { findLastComparableStep } from "./lastPerformance";
 import { RestBar } from "./RestBar";
@@ -175,9 +174,22 @@ export function WorkoutScreen() {
   const paused = openPause !== undefined;
   const locked = busy || paused;
 
+  /* Deux échelles de repos (§12) : la carte pleine pour la fin de série
+     ou de tour, la bande d'une ligne pour `Repos avant cet exercice`. */
+  const intraRoundRest = workout.activeRest?.kind === "before_group_child";
+  const restBand =
+    workout.activeRest && intraRoundRest ? (
+      <RestBand
+        rest={workout.activeRest}
+        now={nowIso}
+        busy={busy}
+        onSkip={() => void run((current, at) => skipRest(current, at))}
+      />
+    ) : null;
+
   /* Carte de repos pleine : dans la brique courante si elle est dépliée,
      sinon au-dessus de la liste. */
-  const restCard = workout.activeRest ? (
+  const restCard = workout.activeRest && !intraRoundRest ? (
     <RestCard
       rest={workout.activeRest}
       now={nowIso}
@@ -193,7 +205,7 @@ export function WorkoutScreen() {
   const currentBlock = blocks.find((block) => block.id === workout.currentBlockId);
   const restCardInBlock =
     currentBlock !== undefined &&
-    currentBlock.kind === "exercise" &&
+    currentBlock.kind !== "note" &&
     isExpanded(currentBlock);
 
   function openLibrary() {
@@ -248,7 +260,7 @@ export function WorkoutScreen() {
   }
 
   return (
-    <section className={`workout ${workout.activeRest ? "workout--resting" : ""}`}>
+    <section className={`workout ${workout.activeRest && !intraRoundRest ? "workout--resting" : ""}`}>
       <header className="workout__header">
         <div className="workout__topline">
           <Link to="/" className="workout__back">‹ Aujourd'hui</Link>
@@ -333,11 +345,28 @@ export function WorkoutScreen() {
 
             if (block.kind === "group") {
               return (
-                <GroupRow
+                <GroupBlockCard
                   key={block.id}
                   block={block}
                   number={numbering[block.id]}
-                  exerciseName={(id) => exerciseById.get(id)?.name ?? "Exercice"}
+                  exerciseById={exerciseById}
+                  lastByExercise={lastByExercise}
+                  expanded={isExpanded(block)}
+                  busy={locked}
+                  restCard={block.id === currentBlock?.id && restCardInBlock ? restCard : undefined}
+                  restBand={block.id === currentBlock?.id ? restBand : undefined}
+                  onToggle={() => toggleBlock(block)}
+                  onValidateChild={(roundId, childId, values) =>
+                    void run((current, at) =>
+                      validateRoundChild(current, block.id, roundId, childId, values, at),
+                    )
+                  }
+                  onEditChild={(roundId, childId, values) =>
+                    void run((current, at) =>
+                      editRoundChild(current, block.id, roundId, childId, values, at),
+                    )
+                  }
+                  onAddRound={() => void run((current, at) => addRound(current, block.id, at))}
                 />
               );
             }
@@ -406,7 +435,7 @@ export function WorkoutScreen() {
         Terminer la séance
       </button>
 
-      {workout.activeRest && (
+      {workout.activeRest && !intraRoundRest && (
         <RestBar
           rest={workout.activeRest}
           now={nowIso}
@@ -523,14 +552,18 @@ function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count <= 1 ? singular : pluralForm}`;
 }
 
+/**
+ * Les trois statuts tels que la clôture les fixera (§14) : une brique
+ * commencée compte déjà comme réalisée, avec ses données.
+ */
 function countBlockStatuses(blocks: PerformedBlock[]) {
   const counts = { performed: 0, skipped: 0, notPerformed: 0 };
 
   for (const block of blocks) {
     if (block.kind === "note") continue;
 
-    if (block.status === "performed") counts.performed += 1;
-    else if (block.status === "skipped") counts.skipped += 1;
+    if (block.status === "skipped") counts.skipped += 1;
+    else if (block.status === "performed" || hasCompletedEntries(block)) counts.performed += 1;
     else counts.notPerformed += 1;
   }
 
@@ -544,44 +577,6 @@ function NoteRow({ block }: { block: PerformedNoteBlock }) {
         <span className="wblock__body">
           <span className="wblock__name">{block.title?.trim() || "Note"}</span>
           <span className="wblock__meta wblock__meta--wrap">{block.text}</span>
-        </span>
-      </div>
-    </li>
-  );
-}
-
-function GroupRow({
-  block,
-  number,
-  exerciseName,
-}: {
-  block: PerformedGroupBlock;
-  number: number | undefined;
-  exerciseName: (id: Id) => string;
-}) {
-  const children = [...block.children].sort((a, b) => a.position - b.position);
-
-  return (
-    <li className="wblock">
-      <div className="wblock__head wblock__head--static">
-        <span className="wblock__body">
-          <span className="wblock__name">
-            {number !== undefined ? `${number}. ` : ""}
-            {block.name?.trim() || "Groupe"}
-          </span>
-          <span className="wblock__meta wblock__meta--wrap">
-            {block.plannedRounds} tours ·{" "}
-            {children
-              .map(
-                (child, index) =>
-                  `${number ?? ""}${String.fromCharCode(97 + index)} ${exerciseName(child.exerciseId)} (${formatGroupChildInstructionsRow(child.snapshotInstructions)})`,
-              )
-              .join(", ")}
-          </span>
-          <span className="wblock__soon">L'exécution tour par tour arrive à l'étape 6.6.</span>
-        </span>
-        <span className="wblock__aside">
-          <span className="wblock__status">À venir</span>
         </span>
       </div>
     </li>

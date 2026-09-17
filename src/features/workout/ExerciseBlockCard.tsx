@@ -22,6 +22,7 @@ import type { LastComparableStep, LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
 import { SimpleMeasurementForm } from "./SimpleMeasurementForm";
 import { StepForm } from "./StepForm";
+import { formatLoadSuggestion, suggestLoad } from "./suggestedLoad";
 import {
   formatBlockStatus,
   formatExerciseSubtitle,
@@ -308,6 +309,11 @@ function ReferenceBlock({
   lastTime: LastPerformance | undefined;
 }) {
   const planned = formatPlannedLine(block);
+  const instructions = block.snapshotInstructions;
+  const suggestion =
+    instructions.shape === "reps"
+      ? suggestLoad(lastTime, instructions.reps, instructions.targetRpe)
+      : undefined;
 
   if (!planned && !lastTime) return null;
 
@@ -326,6 +332,12 @@ function ReferenceBlock({
             {formatSeriesLine(lastTime.series)}
             <small>{formatShortDate(lastTime.date)}</small>
           </dd>
+        </div>
+      )}
+      {suggestion && (
+        <div>
+          <dt>Conseillé</dt>
+          <dd>{formatLoadSuggestion(suggestion)}</dd>
         </div>
       )}
     </dl>

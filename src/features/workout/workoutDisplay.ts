@@ -9,6 +9,7 @@ import type {
 } from "../../domain";
 import {
   formatDurationShort,
+  formatGroupChildInstructionsRow,
   formatRange,
 } from "../../domain/rules/blockInstructionRules";
 import {
@@ -205,9 +206,21 @@ export function describeNextUp(
 
   if (block.kind === "group") {
     const round = block.rounds.find((item) => item.status !== "completed");
+    const children = [...block.children].sort((a, b) => a.position - b.position);
+    const firstChild = children[0];
+    const firstRoundChild = round?.children.find((item) => item.groupChildId === firstChild?.id);
+    const number = [...workout.blocks]
+      .filter((item) => item.kind !== "note")
+      .sort((a, b) => a.position - b.position)
+      .findIndex((item) => item.id === block.id) + 1;
 
     return {
       title: `${block.name?.trim() || "Groupe"} — ${round ? `Tour ${round.roundNumber}` : "tour suivant"}`,
+      ...(firstChild && firstRoundChild
+        ? {
+            detail: `${number}a ${exerciseName(firstRoundChild.exerciseId)} · ${formatGroupChildInstructionsRow(firstChild.snapshotInstructions)}`,
+          }
+        : {}),
     };
   }
 
