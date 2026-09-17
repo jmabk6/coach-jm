@@ -158,11 +158,11 @@ function getExerciseSeriesFromWorkout(
       continue;
     }
 
+    /* Règle unique (décision du 17/09/2026) : toute série effectivement
+       validée compte pour l'exercice réellement effectué, même si son tour
+       est ensuite interrompu ; un enfant non validé ne compte nulle part.
+       Le rang du tour et son statut ne sont pas des critères. */
     for (const round of block.rounds) {
-      if (round.status !== "completed") {
-        continue;
-      }
-
       for (const child of round.children) {
         if (
           child.exerciseId === exerciseId &&

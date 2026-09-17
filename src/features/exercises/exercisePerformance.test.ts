@@ -343,6 +343,107 @@ describe("exercisePerformance", () => {
     expect(substituteEntry?.repsMax).toBe(10);
     expect(originalEntry).toBeUndefined();
   });
+  it("règle unique des groupes : toute série validée compte, même dans un tour interrompu ; un enfant non validé ne compte nulle part ; la substitution va au remplaçant", () => {
+    const pompes = { ...squat, id: "pompes", name: "Pompes", measurementType: "reps" } as Exercise;
+    const pecDeck = { ...squat, id: "pec-deck", name: "Pec deck" } as Exercise;
+    const child = (id: string, exerciseId: string, extra: Record<string, unknown>) => ({
+      id,
+      position: exerciseId === "squat" ? 0 : 1,
+      exerciseId,
+      snapshotInstructions: { shape: "reps", reps: { min: 8, max: 12 } },
+      ...extra,
+    });
+    const workout = makeWorkout({
+      blocks: [
+        {
+          id: "group-1",
+          kind: "group",
+          position: 0,
+          addedDuringWorkout: false,
+          status: "performed",
+          plannedRounds: 3,
+          plannedRestBetweenRoundsSec: 60,
+          children: [child("gc-squat", "squat", {}), child("gc-pompes", "pompes", {})],
+          rounds: [
+            /* Tour 1 complet : squat 40 × 10, pompes 15. */
+            {
+              id: "round-1",
+              roundNumber: 1,
+              status: "completed",
+              children: [
+                { id: "r1-a", groupChildId: "gc-squat", exerciseId: "squat", load: { kind: "total", kg: 40 }, reps: 10, completedAt: "2026-09-01T18:05:00.000Z" },
+                { id: "r1-b", groupChildId: "gc-pompes", exerciseId: "pompes", reps: 15, completedAt: "2026-09-01T18:07:00.000Z" },
+              ],
+              completedAt: "2026-09-01T18:07:00.000Z",
+            },
+            /* Tour 2 interrompu après le squat (45 × 8) : le remplaçant Pec deck n'a rien fait. */
+            {
+              id: "round-2",
+              roundNumber: 2,
+              status: "not_performed",
+              children: [
+                { id: "r2-a", groupChildId: "gc-squat", exerciseId: "squat", load: { kind: "total", kg: 45 }, reps: 8, completedAt: "2026-09-01T18:12:00.000Z" },
+                { id: "r2-b", groupChildId: "gc-pompes", exerciseId: "pec-deck", load: { kind: "total", kg: 30 }, reps: 12 },
+              ],
+            },
+            /* Tour 3 jamais commencé. */
+            {
+              id: "round-3",
+              roundNumber: 3,
+              status: "not_performed",
+              children: [
+                { id: "r3-a", groupChildId: "gc-squat", exerciseId: "squat" },
+                { id: "r3-b", groupChildId: "gc-pompes", exerciseId: "pec-deck" },
+              ],
+            },
+          ],
+        } as WorkoutSession["blocks"][number],
+      ],
+    });
+
+    const squatEntry = buildExercisePerformanceHistory(squat, [workout])[0]!;
+    const pompesEntry = buildExercisePerformanceHistory(pompes, [workout])[0]!;
+
+    /* Les deux squats validés comptent, tour interrompu compris : charge max 45, volume 400 + 360. */
+    expect(squatEntry.series).toHaveLength(2);
+    expect(squatEntry.chargeMaxKg).toBe(45);
+    expect(squatEntry.volumeKg).toBe(760);
+    expect(squatEntry.repsMax).toBe(10);
+    /* Les pompes du tour 1 seulement. */
+    expect(pompesEntry.series).toHaveLength(1);
+    expect(pompesEntry.repsMax).toBe(15);
+    /* L'enfant du tour 2 non validé (valeurs préremplies, sans completedAt) ne compte pas : pas de Pec deck. */
+    expect(buildExercisePerformanceHistory(pecDeck, [workout])).toEqual([]);
+  });
+
+  it("ne change rien aux exercices autonomes : seules les séries terminées d'une brique réalisée comptent", () => {
+    const workout = makeWorkout({
+      blocks: [
+        {
+          id: "block-1",
+          kind: "exercise",
+          position: 0,
+          addedDuringWorkout: false,
+          exerciseId: "squat",
+          status: "performed",
+          snapshotInstructions: { shape: "reps", sets: 3, reps: { min: 8, max: 10 }, restBetweenSetsSec: 90 },
+          series: [
+            { id: "s1", position: 0, status: "completed", load: { kind: "total", kg: 50 }, reps: 10 },
+            { id: "s2", position: 1, status: "completed", load: { kind: "total", kg: 52.5 }, reps: 8 },
+            { id: "s3", position: 2, status: "not_performed" },
+          ],
+        } as WorkoutSession["blocks"][number],
+      ],
+    });
+
+    const entry = buildExercisePerformanceHistory(squat, [workout])[0]!;
+
+    expect(entry.series).toHaveLength(2);
+    expect(entry.chargeMaxKg).toBe(52.5);
+    expect(entry.volumeKg).toBe(500 + 420);
+    expect(entry.repsMax).toBe(10);
+  });
+
   it("n'utilise pas les workouts non terminés", () => {
     const workout = makeWorkout({
       status: "in_progress",
