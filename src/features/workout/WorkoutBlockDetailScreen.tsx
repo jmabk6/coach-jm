@@ -11,6 +11,7 @@ import {
   Info,
   Layers,
   NotebookPen,
+  Repeat,
   Timer,
   Wrench,
 } from "lucide-react";
@@ -39,6 +40,17 @@ import {
 } from "./workoutBlockDetail";
 import { formatShortDate } from "./workoutDisplay";
 import {
+  compareGroupVolumeToPrevious,
+  describeGroupRounds,
+  describeGroupStructure,
+  exerciseName,
+  listGroupSubstitutions,
+  summarizeGroupBlock,
+  type GroupRoundView,
+  type GroupVolumeVsLast,
+  type RoundRestView,
+} from "./workoutGroupDetail";
+import {
   buildWorkoutRecapLines,
   formatCardioSettingsLine,
   formatDecimal,
@@ -63,6 +75,7 @@ type LoadState =
       lines: WorkoutRecapLine[];
       exerciseById: Map<Id, Exercise>;
       history: ExerciseHistoryEntry[];
+      groupVolumeVsLast: GroupVolumeVsLast | undefined;
       neighbours: BlockNeighbours;
     };
 
@@ -72,7 +85,9 @@ type LoadState =
  * données enregistrées série par série ou palier par palier, ligne
  * `Prévu (par série)`, notes et adaptations, cinq dernières réalisations
  * de l'exercice réellement effectué, navigation précédent / suivant.
- * Le détail d'un groupe reste minimal jusqu'en 7.3.
+ * Pour un groupe (mockup 19.2) : structure prévue, substitutions
+ * explicites, réalisation tour par tour, repos entre tours et avant un
+ * enfant, prévu et réel.
  */
 export function WorkoutBlockDetailScreen() {
   const { workoutId, blockId } = useParams<{ workoutId: string; blockId: string }>();
@@ -129,6 +144,10 @@ export function WorkoutBlockDetailScreen() {
         lines,
         exerciseById,
         history,
+        groupVolumeVsLast:
+          line.block.kind === "group"
+            ? compareGroupVolumeToPrevious(workout, line.block, completed)
+            : undefined,
         neighbours: findBlockNeighbours(lines.map((item) => item.block), blockId),
       });
     }
@@ -157,7 +176,7 @@ export function WorkoutBlockDetailScreen() {
     );
   }
 
-  const { workout, line, lines, exerciseById, history, neighbours } = state;
+  const { workout, line, lines, exerciseById, history, groupVolumeVsLast, neighbours } = state;
   const { block } = line;
   const exercise = block.kind === "exercise" ? exerciseById.get(block.exerciseId) : undefined;
   const original =
@@ -208,7 +227,14 @@ export function WorkoutBlockDetailScreen() {
           search={search}
         />
       )}
-      {block.kind === "group" && <GroupDetail block={block} exerciseById={exerciseById} />}
+      {block.kind === "group" && (
+        <GroupDetail
+          block={block}
+          blockNumber={line.number}
+          exerciseById={exerciseById}
+          volumeVsLast={groupVolumeVsLast}
+        />
+      )}
 
       {block.kind === "group" && block.note && <NoteCard note={block.note} />}
 
@@ -687,57 +713,298 @@ function ExerciseHistory({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Groupe (minimal jusqu'en 7.3)                                              */
+/* Groupe (§14, mockup 19.2)                                                  */
 /* -------------------------------------------------------------------------- */
 
 function GroupDetail({
   block,
+  blockNumber,
   exerciseById,
+  volumeVsLast,
 }: {
   block: PerformedGroupBlock;
+  blockNumber: string;
   exerciseById: Map<Id, Exercise>;
+  volumeVsLast: GroupVolumeVsLast | undefined;
 }) {
-  const rounds = [...block.rounds].sort((a, b) => a.roundNumber - b.roundNumber);
+  const summary = summarizeGroupBlock(block, volumeVsLast);
+  const structure = describeGroupStructure(block, blockNumber);
+  const substitutions = listGroupSubstitutions(block);
+  const rounds = describeGroupRounds(block);
+  const missingRounds = summary.roundsPlanned - summary.roundsDone;
+  const name = (exerciseId: Id) => exerciseName(exerciseById, exerciseId);
+  const labelOf = (groupChildId: Id) =>
+    structure.find((child) => child.groupChildId === groupChildId)?.label ?? "";
 
   return (
-    <div className="recap-detail__rounds">
-      {rounds.map((round) => {
-        const done = round.children.filter((child) => child.completedAt !== undefined);
+    <>
+      <div className="recap__cards">
+        <div className="recap__card">
+          <Layers size={20} strokeWidth={2} aria-hidden="true" />
+          <span className="recap__card-label">Tours</span>
+          <strong>
+            {summary.roundsDone} / {summary.roundsPlanned}
+          </strong>
+          <span className="recap__card-meta">
+            {missingRounds > 0
+              ? `${missingRounds} non réalisé${missingRounds > 1 ? "s" : ""} ou partiel${missingRounds > 1 ? "s" : ""}`
+              : `${summary.childrenCount} exercices`}
+          </span>
+        </div>
 
-        if (done.length === 0) return null;
+        {summary.volumeKg !== undefined && (
+          <div className="recap__card">
+            <BarChart3 size={20} strokeWidth={2} aria-hidden="true" />
+            <span className="recap__card-label">Volume total</span>
+            <strong>{formatKg(summary.volumeKg)}</strong>
+            {summary.volumeVsLast ? (
+              <span className="recap__card-meta recap__card-meta--compare">
+                {formatSignedPercent(summary.volumeVsLast.deltaPercent)} vs dernière fois (
+                {formatShortDate(summary.volumeVsLast.previousDate)})
+              </span>
+            ) : (
+              <span className="recap__card-meta">sans référence comparable</span>
+            )}
+          </div>
+        )}
 
-        return (
-          <section key={round.id} className="recap-detail__round">
-            <h2>
-              Tour {round.roundNumber}
-              {round.actualRestAfterSec !== undefined &&
-                ` · repos ${formatSeconds(round.actualRestAfterSec)}`}
-            </h2>
-            <ol className="recap-series recap-series--detail">
-              {done.map((child, index) => (
-                <li key={child.id}>
-                  <span className="recap-series__number">{index + 1}</span>
+        {summary.rpe && (
+          <div className="recap__card">
+            <Activity size={20} strokeWidth={2} aria-hidden="true" />
+            <span className="recap__card-label">RPE moyen</span>
+            <strong>{formatDecimal(summary.rpe.value)}</strong>
+            <span className="recap__card-meta">
+              ({summary.rpe.count} sur {summary.rpe.total} séries)
+            </span>
+          </div>
+        )}
+
+        {summary.restBetweenRounds && (
+          <div className="recap__card">
+            <Timer size={20} strokeWidth={2} aria-hidden="true" />
+            <span className="recap__card-label">Repos entre tours</span>
+            <strong>{formatSeconds(summary.restBetweenRounds.averageSec)}</strong>
+            <span className="recap__card-meta">
+              {summary.restBetweenRounds.comparableCount} sur {summary.restBetweenRounds.totalCount} repos
+            </span>
+            <span className="recap__card-meta recap__card-meta--compare">
+              prévu {formatSeconds(summary.restBetweenRounds.plannedSec)} ·{" "}
+              {formatSignedSeconds(summary.restBetweenRounds.deltaSec)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {summary.restBeforeChildren && (
+        <p className="recap-table__legend recap-detail__aside">
+          Repos avant un exercice : {summary.restBeforeChildren.count},{" "}
+          {formatSeconds(summary.restBeforeChildren.totalSec)} au total — conservés ci-dessous, hors du
+          repos moyen.
+        </p>
+      )}
+
+      {substitutions.length > 0 && (
+        <section className="recap-detail__block">
+          <h2 className="recap-detail__heading">Substitutions</h2>
+          <ul className="recap-detail__substitutions">
+            {substitutions.map((item) => (
+              <li key={`${item.groupChildId}-${item.fromRound}`}>
+                <Repeat size={16} strokeWidth={2} aria-hidden="true" />
+                <span>
+                  <strong>{labelOf(item.groupChildId)}.</strong> {name(item.fromExerciseId)} →{" "}
+                  <strong>{name(item.toExerciseId)}</strong> · à partir du tour {item.fromRound}
+                  {item.roundsDone === 0
+                    ? " · aucun tour réalisé"
+                    : ` · ${item.roundsDone} tour${item.roundsDone > 1 ? "s" : ""} réalisé${item.roundsDone > 1 ? "s" : ""}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="recap-detail__block">
+        <h2 className="recap__section">
+          Structure prévue
+          <span className="recap__section-meta">
+            {block.plannedRounds} tour{block.plannedRounds > 1 ? "s" : ""}
+          </span>
+        </h2>
+        <ol className="recap-detail__structure">
+          {structure.map((child) => (
+            <li key={child.groupChildId}>
+              <span className="recap-detail__structure-label">{child.label}</span>
+              <span className="recap-detail__structure-body">
+                <strong>{name(child.exerciseId)}</strong>
+                <small>
+                  {child.instructions}
+                  {child.restBeforeSec !== undefined &&
+                    ` · repos avant : ${formatSeconds(child.restBeforeSec)}`}
+                </small>
+              </span>
+            </li>
+          ))}
+          <li className="recap-detail__structure-rest">
+            <Timer size={16} strokeWidth={2} aria-hidden="true" />
+            <span>Repos entre tours : {formatSeconds(block.plannedRestBetweenRoundsSec)}</span>
+          </li>
+        </ol>
+      </section>
+
+      <section className="recap-detail__block">
+        <h2 className="recap__section">
+          Réalisation
+          <span className="recap__section-meta">
+            {summary.roundsDone} tour{summary.roundsDone > 1 ? "s" : ""} sur {summary.roundsPlanned}
+          </span>
+        </h2>
+        <div className="recap-detail__rounds">
+          {rounds.map((round) => (
+            <RoundCard key={round.roundNumber} round={round} name={name} labelOf={labelOf} />
+          ))}
+        </div>
+      </section>
+
+      {rounds.some((round) => round.restAfter) && (
+        <section className="recap-detail__block">
+          <h2 className="recap-detail__heading">Repos réels entre tours</h2>
+          <ul className="recap-detail__rests">
+            {rounds
+              .flatMap((round) => (round.restAfter ? [round.restAfter] : []))
+              .map((rest) => (
+                <li key={rest.fromRound}>
                   <span>
-                    <strong>{exerciseById.get(child.exerciseId)?.name ?? "Exercice supprimé"}</strong>
-                    {" · "}
-                    {formatSeriesLine({
-                      id: child.id,
-                      position: index,
-                      status: "completed",
-                      ...(child.load !== undefined ? { load: child.load } : {}),
-                      ...(child.reps !== undefined ? { reps: child.reps } : {}),
-                      ...(child.durationSec !== undefined ? { durationSec: child.durationSec } : {}),
-                      ...(child.sideValues !== undefined ? { sideValues: child.sideValues } : {}),
-                      ...(child.rpe !== undefined ? { rpe: child.rpe } : {}),
-                      ...(child.note !== undefined ? { note: child.note } : {}),
-                    })}
+                    Tour {rest.fromRound} → {rest.toRound}
                   </span>
+                  <span>{describeRoundRest(rest)}</span>
                 </li>
               ))}
-            </ol>
-          </section>
-        );
-      })}
-    </div>
+          </ul>
+        </section>
+      )}
+    </>
+  );
+}
+
+/**
+ * `100 s (prévu 90 s) · ajusté +30 s · hors moyenne` — ou `non pris`.
+ */
+function describeRoundRest(rest: RoundRestView) {
+  if (rest.actualSec === undefined) {
+    return <em>non pris (prévu {formatSeconds(rest.plannedSec)})</em>;
+  }
+
+  return (
+    <>
+      <strong>{formatSeconds(rest.actualSec)}</strong> (prévu {formatSeconds(rest.plannedSec)})
+      {rest.adjustmentSec !== undefined &&
+        ` · ajusté ${rest.adjustmentSec > 0 ? "+" : "−"}${Math.abs(rest.adjustmentSec)} s`}
+      {!rest.comparable && <em> · hors moyenne (pause ou fin de séance)</em>}
+    </>
+  );
+}
+
+const roundStatusLabel = {
+  completed: "complet",
+  partial: "partiel",
+  not_performed: "non réalisé",
+} as const;
+
+/**
+ * Un tour : chaque enfant avec l'exercice réellement fait, ses valeurs,
+ * son repos avant s'il a eu lieu ; le repos qui a suivi le tour.
+ */
+function RoundCard({
+  round,
+  name,
+  labelOf,
+}: {
+  round: GroupRoundView;
+  name: (exerciseId: Id) => string;
+  labelOf: (groupChildId: Id) => string;
+}) {
+  return (
+    <section className={`recap-detail__round recap-detail__round--${round.status}`}>
+      <h3>
+        Tour {round.roundNumber}
+        <span className={`recap-detail__round-status recap-detail__round-status--${round.status}`}>
+          {round.status === "partial"
+            ? `${roundStatusLabel.partial} · ${round.doneCount} sur ${round.children.length}`
+            : roundStatusLabel[round.status]}
+        </span>
+      </h3>
+      <table className="recap-table recap-table--detail">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Exercice</th>
+            <th>Réalisé</th>
+            <th>RPE</th>
+          </tr>
+        </thead>
+        <tbody>
+          {round.children.map((child) => {
+            const bare = child.series ? { ...child.series } : undefined;
+            if (bare) {
+              delete bare.rpe;
+              delete bare.note;
+            }
+            const showRestBefore =
+              child.restBefore && (child.restBefore.actualSec !== undefined || child.series);
+
+            return (
+              <Fragment key={child.groupChildId}>
+                {showRestBefore && child.restBefore && (
+                  <tr className="recap-table__adapted">
+                    <td />
+                    <td colSpan={3}>
+                      Repos avant :{" "}
+                      {child.restBefore.actualSec !== undefined
+                        ? formatSeconds(child.restBefore.actualSec)
+                        : "non pris"}
+                      {child.restBefore.plannedSec !== undefined &&
+                        ` (prévu ${formatSeconds(child.restBefore.plannedSec)})`}
+                      {" · hors repos moyen"}
+                    </td>
+                  </tr>
+                )}
+                <tr className={child.series ? undefined : "recap-table__missing"}>
+                  <td>{labelOf(child.groupChildId)}</td>
+                  <td>
+                    {name(child.exerciseId)}
+                    {child.substituted && (
+                      <span className="recap-table__note" title="Remplaçant">
+                        {" "}
+                        ↺
+                      </span>
+                    )}
+                  </td>
+                  {bare ? (
+                    <>
+                      <td>{formatSeriesLine(bare)}</td>
+                      <td>{child.series?.rpe ?? "—"}</td>
+                    </>
+                  ) : (
+                    <td colSpan={2}>Non réalisé</td>
+                  )}
+                </tr>
+                {child.series?.note && (
+                  <tr className="recap-table__adapted">
+                    <td />
+                    <td colSpan={3}>{child.series.note}</td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+      {round.restAfter && (
+        <p className="recap-detail__round-rest">
+          <Timer size={14} strokeWidth={2} aria-hidden="true" />
+          <span>Repos après le tour : {describeRoundRest(round.restAfter)}</span>
+        </p>
+      )}
+    </section>
   );
 }
