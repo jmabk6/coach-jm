@@ -490,14 +490,15 @@ export const ZONE_ORDER: MuscleZone[] = ["Jambes", "Dos", "Pecs", "Épaules", "B
  * Séries réalisées par zone : chaque série d'un exercice en mode séries
  * compte pour **la** zone de son exercice — une seule zone, aucun double
  * comptage ; paliers et mesures simples n'y entrent pas. Une série dont
- * l'exercice a disparu ou n'a pas de zone reste dans le total.
+ * l'exercice a disparu ou n'a pas de zone (mobilité) reste dans le total,
+ * sur une ligne « Sans zone ».
  */
 export function getZoneBreakdown(
   workouts: WorkoutSession[],
   exerciseById: Map<Id, Exercise>,
   range: DateRange,
-): Breakdown<MuscleZone | "Autre"> {
-  const counts = new Map<MuscleZone | "Autre", number>(ZONE_ORDER.map((zone) => [zone, 0]));
+): Breakdown<MuscleZone | "Sans zone"> {
+  const counts = new Map<MuscleZone | "Sans zone", number>(ZONE_ORDER.map((zone) => [zone, 0]));
   let other = 0;
 
   for (const workout of listCountedWorkouts(workouts, range)) {
@@ -509,7 +510,7 @@ export function getZoneBreakdown(
     }
   }
 
-  if (other > 0) counts.set("Autre", other);
+  if (other > 0) counts.set("Sans zone", other);
 
   const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
 
@@ -615,7 +616,7 @@ export interface Overview {
   strength: StrengthSummary;
   cardio: CardioSummary;
   categories: Breakdown<CategoryKey>;
-  zones: Breakdown<MuscleZone | "Autre">;
+  zones: Breakdown<MuscleZone | "Sans zone">;
   recent: RecentWorkoutLine[];
 }
 

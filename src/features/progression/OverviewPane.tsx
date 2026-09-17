@@ -194,7 +194,7 @@ export function OverviewPane({ overview }: { overview: Overview }) {
         <h3>Séries réalisées par zone musculaire</h3>
         <Bars
           breakdown={zones}
-          labelOf={(key: MuscleZone | "Autre") => key}
+          labelOf={(key: MuscleZone | "Sans zone") => key}
           totalLabel="séries"
           emptyLabel="Aucune série réalisée sur la période."
         />
