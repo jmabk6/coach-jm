@@ -166,7 +166,10 @@ export function firstPendingEntryId(block: ExecutableBlock): Id | undefined {
 
 /**
  * Point d'insertion d'un ajout (§13) : juste après la brique en cours,
- * sinon après la dernière brique terminée, sinon en tête.
+ * sinon après la dernière brique terminée. Si rien n'a commencé
+ * (décision du 17/09/2026), l'ajout va en fin de liste : il ne passe
+ * jamais implicitement devant ce qui était prévu. Une séance libre vide
+ * n'a pas de prévu : son premier ajout est son premier exercice.
  */
 export function findInsertionIndex(blocks: PerformedBlock[]): number {
   const ordered = sortBlocks(blocks);
@@ -185,7 +188,60 @@ export function findInsertionIndex(blocks: PerformedBlock[]): number {
     }
   });
 
-  return lastPerformedIndex + 1;
+  return lastPerformedIndex >= 0 ? lastPerformedIndex + 1 : ordered.length;
+}
+
+export interface BlockCompletion {
+  completed: number;
+  total: number;
+  /**
+   * Le mot du récapitulatif : `2 séries réalisées sur 3`.
+   */
+  unit: "série" | "palier" | "tour" | "mesure";
+}
+
+/**
+ * Avancement d'une brique en entrées validées : ce que le récapitulatif
+ * dit d'un exercice réalisé en partie (`2 séries réalisées sur 3`).
+ */
+export function summarizeBlockCompletion(block: ExecutableBlock): BlockCompletion {
+  if (block.kind === "group") {
+    return {
+      completed: block.rounds.filter((round) => round.status === "completed").length,
+      total: block.rounds.length,
+      unit: "tour",
+    };
+  }
+
+  if (block.series) {
+    return {
+      completed: block.series.filter((series) => series.status === "completed").length,
+      total: block.series.length,
+      unit: "série",
+    };
+  }
+
+  if (block.cardioSteps) {
+    return {
+      completed: block.cardioSteps.filter((step) => step.status === "completed").length,
+      total: block.cardioSteps.length,
+      unit: "palier",
+    };
+  }
+
+  return {
+    completed: block.simpleMeasurement?.completedAt !== undefined ? 1 : 0,
+    total: 1,
+    unit: "mesure",
+  };
+}
+
+export function formatBlockCompletion(completion: BlockCompletion): string {
+  const { completed, total, unit } = completion;
+  const plural = completed > 1 ? "s" : "";
+  const feminine = unit === "série" || unit === "mesure";
+
+  return `${completed} ${unit}${plural} réalisé${feminine ? "e" : ""}${plural} sur ${total}`;
 }
 
 /* -------------------------------------------------------------------------- */

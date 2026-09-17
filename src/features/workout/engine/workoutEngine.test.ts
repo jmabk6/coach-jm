@@ -28,7 +28,11 @@ import {
   validateSimpleMeasurement,
   validateStep,
 } from "./workoutEngine";
-import { proposeSeriesValues } from "./workoutBlocks";
+import {
+  formatBlockCompletion,
+  proposeSeriesValues,
+  summarizeBlockCompletion,
+} from "./workoutBlocks";
 import { shouldShowResumeSheet, summarizeRests } from "./workoutTime";
 
 /* -------------------------------------------------------------------------- */
@@ -420,11 +424,53 @@ describe("clôture", () => {
     const squat = exerciseOf(done, "squat-block");
     expect(squat.status).toBe("performed");
     expect(squat.series?.[1]).toMatchObject({ actualRestAfterSec: 6 * 60, restComparable: false });
-    expect(squat.series?.[2]?.status).toBe("upcoming");
+    expect(squat.series?.[2]?.status).toBe("not_performed");
+    expect(formatBlockCompletion(summarizeBlockCompletion(squat))).toBe("2 séries réalisées sur 3");
     expect(exerciseOf(done, "crunch-block").status).toBe("skipped");
     expect(exerciseOf(done, "tapis-block").status).toBe("not_performed");
     expect(summarizeRests(done.blocks)).toMatchObject({ averageSec: 120, comparableCount: 1, totalCount: 2 });
     expect(() => validateSeries(done, "squat-block", "s3", { reps: 1 }, at(10), newId)).toThrow(/terminée/);
+  });
+});
+
+describe("clôture — rien ne reste à venir", () => {
+  it("passe les paliers et les tours non validés en non réalisés", () => {
+    let w = activateBlock(workout([tapisBlock(0), groupBlock(1)]), "tapis-block", T0);
+    w = validateStep(w, "tapis-block", "p1", { bpm: 120 }, at(5));
+    w = activateBlock(w, "group-block", at(6));
+    w = validateRoundChild(w, "group-block", "round-1", "round-1-a", { reps: 10 }, at(7), newId);
+
+    const done = completeWorkoutSession(w, at(8));
+
+    const tapis = exerciseOf(done, "tapis-block");
+    expect(tapis.status).toBe("performed");
+    expect(tapis.cardioSteps?.map((step) => step.status)).toEqual(["completed", "not_performed"]);
+    expect(formatBlockCompletion(summarizeBlockCompletion(tapis))).toBe("1 palier réalisé sur 2");
+
+    const group = groupOf(done, "group-block");
+    expect(group.status).toBe("performed");
+    expect(group.rounds.map((round) => round.status)).toEqual(["not_performed", "not_performed"]);
+    expect(group.rounds[0]?.children[0]?.completedAt).toBe(at(7));
+    expect(group.rounds[0]?.children[1]?.completedAt).toBeUndefined();
+
+    const allEntries = done.blocks.flatMap((block) =>
+      block.kind === "exercise"
+        ? [...(block.series ?? []), ...(block.cardioSteps ?? [])].map((entry) => entry.status)
+        : block.kind === "group"
+          ? block.rounds.map((round) => round.status)
+          : [],
+    );
+    expect(allEntries).not.toContain("upcoming");
+    expect(allEntries).not.toContain("active");
+  });
+
+  it("une brique jamais abordée reste non réalisée, toutes ses séries aussi", () => {
+    const done = completeWorkoutSession(workout([squatBlock()]), at(1));
+    const squat = exerciseOf(done, "squat-block");
+
+    expect(squat.status).toBe("not_performed");
+    expect(squat.series?.every((series) => series.status === "not_performed")).toBe(true);
+    expect(formatBlockCompletion(summarizeBlockCompletion(squat))).toBe("0 série réalisée sur 3");
   });
 });
 
@@ -585,6 +631,17 @@ describe("ajout d'exercices", () => {
     const tapis = w.blocks[1] as PerformedExerciseBlock;
     expect(tapis.cardioSteps).toHaveLength(1);
     expect(tapis.cardioSteps?.[0]?.settings).toEqual({ durationSec: 300, speedKmh: 5, inclinePercent: 0 });
+  });
+
+  it("séance planifiée non commencée : l'ajout va en fin de liste, jamais devant le prévu", () => {
+    const planned = workout([squatBlock(), crunchBlock(), tapisBlock()]);
+    const w = addExerciseBlocks(planned, [exercise("a", "reps")], at(1), newId);
+
+    expect(w.blocks.map((b) => (b.kind === "exercise" ? b.exerciseId : b.kind))).toEqual([
+      "squat", "crunch", "tapis", "a",
+    ]);
+    expect(w.blocks.map((b) => b.position)).toEqual([0, 1, 2, 3]);
+    expect(w.currentBlockId).toBeUndefined();
   });
 
   it("s'insère juste après la brique en cours, dans l'ordre de sélection", () => {

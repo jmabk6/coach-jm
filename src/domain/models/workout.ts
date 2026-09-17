@@ -240,6 +240,22 @@ export interface PerformedSideValue {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Statut d'une entrée : série, palier, tour                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `upcoming` et `active` n'existent que pendant la séance. À la clôture,
+ * toute entrée non validée devient `not_performed` : trois mois plus
+ * tard, on doit lire qu'elle n'a pas été faite, pas qu'elle était
+ * encore prévue.
+ */
+export type PerformedEntryStatus =
+  | "upcoming"
+  | "active"
+  | "completed"
+  | "not_performed";
+
+/* -------------------------------------------------------------------------- */
 /* Séries                                                                     */
 /* -------------------------------------------------------------------------- */
 
@@ -248,7 +264,7 @@ export interface PerformedSeries {
 
   position: number;
 
-  status: "upcoming" | "active" | "completed";
+  status: PerformedEntryStatus;
 
   load?: Load;
   reps?: number;
@@ -305,7 +321,7 @@ export interface PerformedCardioStep {
 
   position: number;
 
-  status: "upcoming" | "active" | "completed";
+  status: PerformedEntryStatus;
 
   /**
    * Valeurs qui font foi au moment de l'exécution.
@@ -372,7 +388,7 @@ export interface PerformedGroupRound {
 
   roundNumber: number;
 
-  status: "upcoming" | "active" | "completed";
+  status: PerformedEntryStatus;
 
   children: PerformedGroupRoundChild[];
 

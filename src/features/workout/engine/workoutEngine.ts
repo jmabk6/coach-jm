@@ -5,6 +5,7 @@ import type {
   Id,
   Load,
   PerformedBlock,
+  PerformedEntryStatus,
   PerformedExerciseBlock,
   PerformedGroupBlock,
   PerformedGroupRound,
@@ -128,14 +129,26 @@ function assertInProgress(workout: WorkoutSession): void {
 /* Brique active                                                              */
 /* -------------------------------------------------------------------------- */
 
-function markActiveEntry(block: ExecutableBlock, entryId: Id | undefined): ExecutableBlock {
+/**
+ * Recalcule le statut de chaque entrée non validée : `active` pour celle
+ * désignée, `pending` pour les autres — `upcoming` pendant la séance,
+ * `not_performed` à la clôture (rien ne reste « à venir » après).
+ */
+function setPendingEntries(
+  block: ExecutableBlock,
+  entryId: Id | undefined,
+  pending: PerformedEntryStatus,
+): ExecutableBlock {
+  const statusOf = (id: Id): PerformedEntryStatus =>
+    id === entryId ? "active" : pending;
+
   if (block.kind === "group") {
     return {
       ...block,
       rounds: block.rounds.map((round) =>
         round.status === "completed"
           ? round
-          : { ...round, status: round.id === entryId ? "active" : "upcoming" },
+          : { ...round, status: statusOf(round.id) },
       ),
     };
   }
@@ -147,7 +160,7 @@ function markActiveEntry(block: ExecutableBlock, entryId: Id | undefined): Execu
           series: block.series.map((series) =>
             series.status === "completed"
               ? series
-              : { ...series, status: series.id === entryId ? "active" : "upcoming" },
+              : { ...series, status: statusOf(series.id) },
           ),
         }
       : {}),
@@ -156,11 +169,15 @@ function markActiveEntry(block: ExecutableBlock, entryId: Id | undefined): Execu
           cardioSteps: block.cardioSteps.map((step) =>
             step.status === "completed"
               ? step
-              : { ...step, status: step.id === entryId ? "active" : "upcoming" },
+              : { ...step, status: statusOf(step.id) },
           ),
         }
       : {}),
   };
+}
+
+function markActiveEntry(block: ExecutableBlock, entryId: Id | undefined): ExecutableBlock {
+  return setPendingEntries(block, entryId, "upcoming");
 }
 
 /**
@@ -996,8 +1013,9 @@ export function addExerciseBlocks(
 
   let next: WorkoutSession = { ...workout, blocks };
 
-  /* Une séance sans brique courante commence par le premier ajout. */
-  if (workout.currentBlockId === undefined) {
+  /* Une séance libre vide commence par son premier ajout ; une séance
+     planifiée non commencée garde son prévu en tête. */
+  if (workout.currentBlockId === undefined && ordered.length === 0) {
     next = activateBlock(next, added[0]!.id, now);
   }
 
@@ -1111,7 +1129,8 @@ export function buildResumeSummary(workout: WorkoutSession, now: string): Resume
  * `Terminer` comme `Arrêter` (§14, §15) : la pause ouverte se termine,
  * le repos en cours trouve sa fin réelle sans être comparable, chaque
  * brique garde son statut — réalisée dès qu'elle porte une donnée,
- * sautée, ou jamais abordée. Rien n'est supprimé, rien n'est complété.
+ * sautée, ou jamais abordée — et ses entrées non validées deviennent
+ * `not_performed`. Rien n'est supprimé, rien n'est complété.
  */
 export function completeWorkoutSession(
   workout: WorkoutSession,
@@ -1144,7 +1163,7 @@ export function completeWorkoutSession(
           ? "performed"
           : "not_performed";
 
-    const settled = markActiveEntry(block, undefined);
+    const settled = setPendingEntries(block, undefined, "not_performed");
 
     return { ...settled, status };
   });
