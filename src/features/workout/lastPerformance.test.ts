@@ -281,23 +281,36 @@ describe("charge conseillée", () => {
     })),
   });
 
-  it("monte de 2,5 kg quand les reps sont tenues avec un RPE bas", () => {
-    const suggestion = suggestLoad(last([{ kg: 40, reps: 10, rpe: 6 }, { kg: 40, reps: 10, rpe: 6 }]), { min: 8, max: 10 }, { min: 7, max: 8 });
+  it("garde la dernière charge comme référence et qualifie la progression, sans chiffrer", () => {
+    const suggestion = suggestLoad(
+      last([{ kg: 40, reps: 10, rpe: 6 }, { kg: 40, reps: 10, rpe: 6 }]),
+      { min: 8, max: 10 },
+      { min: 7, max: 8 },
+    );
 
-    expect(suggestion).toMatchObject({ action: "increase", load: { kind: "total", kg: 42.5 } });
-    expect(formatLoadSuggestion(suggestion!)).toBe("42,5 kg · +2,5 kg");
+    expect(suggestion).toEqual({ referenceLoad: { kind: "total", kg: 40 }, action: "increase" });
+    expect(formatLoadSuggestion(suggestion!)).toBe("40 kg · progression envisageable");
   });
 
-  it("baisse quand le RPE atteint 9 ou que les reps chutent, maintient sinon", () => {
-    expect(suggestLoad(last([{ kg: 40, reps: 10, rpe: 9 }]), { min: 8, max: 10 })).toMatchObject({
-      action: "decrease",
-      load: { kind: "total", kg: 37.5 },
-    });
+  it("réduction à envisager quand le RPE atteint 9 ou que les reps chutent, maintien sinon", () => {
+    expect(formatLoadSuggestion(suggestLoad(last([{ kg: 40, reps: 10, rpe: 9 }]), { min: 8, max: 10 })!)).toBe(
+      "40 kg · réduction à envisager",
+    );
     expect(suggestLoad(last([{ kg: 40, reps: 6 }]), { min: 8, max: 10 })).toMatchObject({ action: "decrease" });
-    expect(suggestLoad(last([{ kg: 40, reps: 10 }]), { min: 8, max: 10 })).toMatchObject({
-      action: "maintain",
-      load: { kind: "total", kg: 40 },
-    });
+    expect(formatLoadSuggestion(suggestLoad(last([{ kg: 40, reps: 10 }]), { min: 8, max: 10 })!)).toBe(
+      "40 kg · maintien",
+    );
+  });
+
+  it("respecte la forme de la charge de référence", () => {
+    const perSide = {
+      ...last([{ kg: 0, reps: 10 }]),
+      allSeries: [
+        { id: "s0", position: 0, status: "completed" as const, load: { kind: "per_side" as const, kgPerSide: 10 }, reps: 10 },
+      ],
+    };
+
+    expect(formatLoadSuggestion(suggestLoad(perSide, { min: 8, max: 10 })!)).toBe("10 kg/côté · maintien");
   });
 
   it("ne conseille rien sans historique", () => {
