@@ -1,43 +1,47 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity,
   BarChart3,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
+  ChevronRight,
   Circle,
   Clock,
   EllipsisVertical,
   HeartPulse,
+  Hourglass,
   Info,
   MinusCircle,
+  PauseCircle,
+  Timer,
 } from "lucide-react";
 import type {
   Exercise,
   Id,
   PerformedBlock,
-  PerformedExerciseBlock,
   SessionTemplate,
   WorkoutSession,
 } from "../../domain";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
-import { getWorkout } from "../../db/repositories/workoutRepository";
+import { getCompletedWorkouts, getWorkout } from "../../db/repositories/workoutRepository";
 import { formatFullDate } from "../../domain/rules/programRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { deleteWorkout } from "./deleteWorkout";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
 import {
   buildWorkoutRecapLines,
-  formatCardioSettingsLine,
+  compareVolumeToPrevious,
   formatClock,
   formatDecimal,
   formatKg,
   formatMinutes,
-  formatSeriesLine,
-  formatStepSettings,
+  formatPause,
+  formatSeconds,
+  recapStatusLabels,
+  splitRecapLines,
   summarizeWorkout,
+  type VolumeComparison,
   type WorkoutRecapLine,
 } from "./workoutRecap";
 import "./WorkoutRecapScreen.css";
@@ -50,24 +54,29 @@ type LoadState =
       workout: WorkoutSession;
       template: SessionTemplate | undefined;
       exerciseById: Map<Id, Exercise>;
+      volumeComparison: VolumeComparison | undefined;
     };
 
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+function formatDelta(deltaPercent: number): string {
+  if (deltaPercent === 0) return "= dernière fois";
+  return `${deltaPercent > 0 ? "+" : "−"}${Math.abs(deltaPercent)} % vs dernière fois`;
+}
+
 /**
- * Récapitulatif d'une réalisation (§14, mockup p. 19) en lecture :
- * cartes de tête, puis chaque brique avec son détail série par série ou
- * palier par palier, notes sur la ligne. Sert aux séances importées et
- * aux séances faites ; l'Étape 7 y ajoutera la confrontation au prévu.
+ * Récapitulatif global d'une réalisation (§14, mockup 19.1) : cartes de
+ * tête confrontées au prévu, puis une ligne par brique — les ajouts
+ * pendant la séance dans leur propre section, numérotés à la suite.
+ * Chaque ligne ouvre son écran de détail ; rien ne se déplie ici.
  */
 export function WorkoutRecapScreen() {
   const { workoutId } = useParams<{ workoutId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [openBlockId, setOpenBlockId] = useState<Id>();
   /* Suppression d'une séance réalisée (§14) : menu, puis confirmation. */
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -96,9 +105,12 @@ export function WorkoutRecapScreen() {
         return;
       }
 
-      const template = workout.sessionTemplateId
-        ? await getSessionTemplate(workout.sessionTemplateId)
-        : undefined;
+      const [template, completed] = await Promise.all([
+        workout.sessionTemplateId
+          ? getSessionTemplate(workout.sessionTemplateId)
+          : Promise.resolve(undefined),
+        workout.sessionTemplateId ? getCompletedWorkouts() : Promise.resolve([]),
+      ]);
 
       if (cancelled) return;
 
@@ -107,6 +119,7 @@ export function WorkoutRecapScreen() {
         workout,
         template,
         exerciseById: new Map(exercises.map((exercise) => [exercise.id, exercise])),
+        volumeComparison: compareVolumeToPrevious(workout, completed),
       });
     }
 
@@ -134,10 +147,23 @@ export function WorkoutRecapScreen() {
     );
   }
 
-  const { workout, template, exerciseById } = state;
-  const head = summarizeWorkout(workout);
-  const lines = buildWorkoutRecapLines(workout, exerciseById);
+  const { workout, template, exerciseById, volumeComparison } = state;
+  const head = summarizeWorkout(workout, template);
+  const { planned, added } = splitRecapLines(
+    buildWorkoutRecapLines(workout, exerciseById),
+    workout.sessionTemplateId !== undefined,
+  );
   const title = template?.name ?? "Séance libre";
+  const detailBase = `/workouts/${workout.id}/blocks`;
+  const detailSearch = `?returnTo=${encodeURIComponent(returnTo)}`;
+  const amplitudeSec = head.completedAt
+    ? Math.max(
+        0,
+        Math.round(
+          (new Date(head.completedAt).getTime() - new Date(head.startedAt).getTime()) / 1000,
+        ),
+      )
+    : undefined;
 
   async function confirmDelete() {
     try {
@@ -226,12 +252,79 @@ export function WorkoutRecapScreen() {
           <Clock size={20} strokeWidth={2} aria-hidden="true" />
           <span className="recap__card-label">Durée active</span>
           <strong>{formatMinutes(head.activeDurationSec)}</strong>
-          {head.completedAt && (
-            <span className="recap__card-meta">
-              {formatClock(head.startedAt)} – {formatClock(head.completedAt)}
-            </span>
-          )}
+          <span className="recap__card-meta">
+            {head.plannedDurationSec !== undefined
+              ? `prévu ${formatMinutes(head.plannedDurationSec)}`
+              : "sans durée prévue"}
+          </span>
         </div>
+
+        <div className="recap__card">
+          <Hourglass size={20} strokeWidth={2} aria-hidden="true" />
+          <span className="recap__card-label">Amplitude horaire</span>
+          <strong>
+            {formatClock(head.startedAt)}
+            {head.completedAt && ` – ${formatClock(head.completedAt)}`}
+          </strong>
+          <span className="recap__card-meta">
+            {amplitudeSec !== undefined ? formatMinutes(amplitudeSec) : "en cours"}
+            {head.pauses.length > 0 &&
+              ` · ${head.pauses.length} pause${head.pauses.length > 1 ? "s" : ""}`}
+          </span>
+        </div>
+
+        {(head.volumeKg > 0 || head.seriesPlanned > 0) && (
+          <div className="recap__card">
+            <BarChart3 size={20} strokeWidth={2} aria-hidden="true" />
+            {head.volumeKg > 0 ? (
+              <>
+                <span className="recap__card-label">Volume total</span>
+                <strong>{formatKg(head.volumeKg)}</strong>
+                <span className="recap__card-meta">
+                  {head.seriesDone} série{head.seriesDone > 1 ? "s" : ""} réalisée
+                  {head.seriesDone > 1 ? "s" : ""} sur {head.seriesPlanned}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="recap__card-label">Séries réalisées</span>
+                <strong>
+                  {head.seriesDone} / {head.seriesPlanned}
+                </strong>
+                <span className="recap__card-meta">sans charge</span>
+              </>
+            )}
+            {volumeComparison && head.volumeKg > 0 && (
+              <span className="recap__card-meta recap__card-meta--compare">
+                {formatDelta(volumeComparison.deltaPercent)}
+              </span>
+            )}
+          </div>
+        )}
+
+        {head.rest.averageSec !== undefined && (
+          <div className="recap__card">
+            <Timer size={20} strokeWidth={2} aria-hidden="true" />
+            <span className="recap__card-label">Repos moyen</span>
+            <strong>{formatSeconds(head.rest.averageSec)}</strong>
+            <span className="recap__card-meta">
+              {head.rest.plannedAverageSec !== undefined &&
+                `prévu ${formatSeconds(head.rest.plannedAverageSec)} · `}
+              {head.rest.comparableCount} sur {head.rest.totalCount} repos
+            </span>
+          </div>
+        )}
+
+        {head.rpe && (
+          <div className="recap__card">
+            <Activity size={20} strokeWidth={2} aria-hidden="true" />
+            <span className="recap__card-label">RPE moyen</span>
+            <strong>{formatDecimal(head.rpe.value)}</strong>
+            <span className="recap__card-meta">
+              ({head.rpe.count} sur {head.rpe.total} séries)
+            </span>
+          </div>
+        )}
 
         {head.bpm ? (
           <div className="recap__card">
@@ -249,33 +342,28 @@ export function WorkoutRecapScreen() {
           <div className="recap__card">
             <Activity size={20} strokeWidth={2} aria-hidden="true" />
             <span className="recap__card-label">Paliers cardio</span>
-            <strong>{head.cardioSteps}</strong>
-            <span className="recap__card-meta">{formatMinutes(head.cardioDurationSec)}</span>
+            <strong>
+              {head.cardioSteps}
+              {head.cardioStepsPlanned > head.cardioSteps && ` / ${head.cardioStepsPlanned}`}
+            </strong>
+            <span className="recap__card-meta">
+              {formatMinutes(head.cardioDurationSec)}
+              {head.bpmKnown > 0 && ` · BPM sur ${head.bpmKnown}`}
+            </span>
           </div>
         ) : null}
-
-        {head.volumeKg > 0 && (
-          <div className="recap__card">
-            <BarChart3 size={20} strokeWidth={2} aria-hidden="true" />
-            <span className="recap__card-label">Volume total</span>
-            <strong>{formatKg(head.volumeKg)}</strong>
-            <span className="recap__card-meta">
-              {head.seriesDone} série{head.seriesDone > 1 ? "s" : ""}
-            </span>
-          </div>
-        )}
-
-        {head.rpe && (
-          <div className="recap__card">
-            <Activity size={20} strokeWidth={2} aria-hidden="true" />
-            <span className="recap__card-label">RPE moyen</span>
-            <strong>{formatDecimal(head.rpe.value)}</strong>
-            <span className="recap__card-meta">
-              ({head.rpe.count} sur {head.rpe.total} séries)
-            </span>
-          </div>
-        )}
       </div>
+
+      {head.pauses.length > 0 && (
+        <ul className="recap__pauses">
+          {head.pauses.map((pause) => (
+            <li key={pause.id}>
+              <PauseCircle size={16} strokeWidth={2} aria-hidden="true" />
+              <span>{formatPause(pause)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <h2 className="recap__section">
         Réalisation de la séance
@@ -288,19 +376,32 @@ export function WorkoutRecapScreen() {
       </h2>
 
       <ol className="recap__lines">
-        {lines.map((line) => (
+        {planned.map((line) => (
           <RecapLine
             key={line.block.id}
             line={line}
-            open={openBlockId === line.block.id}
-            onToggle={() =>
-              setOpenBlockId((current) =>
-                current === line.block.id ? undefined : line.block.id,
-              )
-            }
+            to={`${detailBase}/${line.block.id}${detailSearch}`}
           />
         ))}
       </ol>
+
+      {added.length > 0 && (
+        <>
+          <h2 className="recap__section recap__section--added">
+            Ajouts pendant la séance
+            <span className="recap__section-meta">+{added.length}</span>
+          </h2>
+          <ol className="recap__lines">
+            {added.map((line) => (
+              <RecapLine
+                key={line.block.id}
+                line={line}
+                to={`${detailBase}/${line.block.id}${detailSearch}`}
+              />
+            ))}
+          </ol>
+        </>
+      )}
 
       {!workout.plannedSessionId && (
         <p className="recap__notice">
@@ -329,7 +430,7 @@ function StatusIcon({ block }: { block: PerformedBlock }) {
         className="recap__status recap__status--performed"
         size={22}
         strokeWidth={2}
-        aria-label="Réalisé"
+        aria-label={recapStatusLabels.performed}
       />
     );
   }
@@ -340,7 +441,7 @@ function StatusIcon({ block }: { block: PerformedBlock }) {
         className="recap__status recap__status--skipped"
         size={22}
         strokeWidth={2}
-        aria-label="Sauté"
+        aria-label={recapStatusLabels.skipped}
       />
     );
   }
@@ -350,20 +451,16 @@ function StatusIcon({ block }: { block: PerformedBlock }) {
       className="recap__status recap__status--not-performed"
       size={22}
       strokeWidth={2}
-      aria-label="Non réalisé"
+      aria-label={recapStatusLabels.not_performed}
     />
   );
 }
 
-function RecapLine({
-  line,
-  open,
-  onToggle,
-}: {
-  line: WorkoutRecapLine;
-  open: boolean;
-  onToggle: () => void;
-}) {
+/**
+ * Une ligne du tableau (§14) : `# / Exercice / Statut / Séries / Volume /
+ * RPE moyen`, qui ouvre l'écran de détail de la brique (décision Q3).
+ */
+function RecapLine({ line, to }: { line: WorkoutRecapLine; to: string }) {
   const { block } = line;
 
   if (block.kind === "note") {
@@ -378,21 +475,14 @@ function RecapLine({
     );
   }
 
-  const expandable = block.kind === "exercise" && block.status === "performed";
   const category =
     line.category === "Cardio" || line.category === "Mobilité"
       ? line.category
       : "Musculation";
 
   return (
-    <li className={`recap-line ${open ? "recap-line--open" : ""}`}>
-      <button
-        type="button"
-        className="recap-line__main"
-        disabled={!expandable}
-        aria-expanded={expandable ? open : undefined}
-        onClick={onToggle}
-      >
+    <li className="recap-line">
+      <Link to={to} className="recap-line__main">
         <span className="recap-line__number">{line.number}</span>
         <span
           className={`recap-line__icon session-card__icon--${category}`}
@@ -410,90 +500,8 @@ function RecapLine({
           {block.note && <span className="recap-line__note">{block.note}</span>}
         </span>
         <StatusIcon block={block} />
-        {expandable &&
-          (open ? (
-            <ChevronUp size={18} strokeWidth={2} aria-hidden="true" />
-          ) : (
-            <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
-          ))}
-      </button>
-
-      {open && block.kind === "exercise" && <BlockDetail block={block} />}
+        <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+      </Link>
     </li>
   );
-}
-
-/**
- * Détail série par série ou palier par palier (§14) : les notes se
- * lisent sur la ligne, jamais dans un bloc à part.
- */
-function BlockDetail({ block }: { block: PerformedExerciseBlock }) {
-  const steps = (block.cardioSteps ?? []).filter((step) => step.status === "completed");
-  const series = (block.series ?? []).filter((item) => item.status === "completed");
-
-  if (steps.length > 0) {
-    const distanceBased = steps[0] && "distanceKm" in steps[0].settings;
-
-    return (
-      <table className="recap-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Durée</th>
-            <th>{distanceBased ? "Distance" : "Vitesse"}</th>
-            {!distanceBased && <th>Pente</th>}
-            <th>BPM</th>
-          </tr>
-        </thead>
-        <tbody>
-          {steps.map((step, index) => {
-            const settings = formatStepSettings(step);
-
-            return (
-              <Fragment key={step.id}>
-                <tr>
-                  <td>{index + 1}</td>
-                  <td>{settings.duration}</td>
-                  <td>{settings.first}</td>
-                  {!distanceBased && <td>{settings.second}</td>}
-                  <td>
-                    {step.bpm ?? "—"}
-                    {step.note && <span className="recap-table__note"> · {step.note}</span>}
-                  </td>
-                </tr>
-                {step.originalSettings && (
-                  <tr className="recap-table__adapted">
-                    <td />
-                    <td colSpan={distanceBased ? 3 : 4}>
-                      Adapté pendant la séance · initialement{" "}
-                      {formatCardioSettingsLine(step.originalSettings)}
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-    );
-  }
-
-  if (series.length > 0) {
-    return (
-      <ol className="recap-series">
-        {series.map((item, index) => (
-          <li key={item.id}>
-            <span className="recap-series__number">{index + 1}</span>
-            <span>{formatSeriesLine(item)}</span>
-          </li>
-        ))}
-      </ol>
-    );
-  }
-
-  if (block.simpleMeasurement?.note) {
-    return <p className="recap-line__note">{block.simpleMeasurement.note}</p>;
-  }
-
-  return null;
 }

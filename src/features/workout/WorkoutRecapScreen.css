@@ -129,8 +129,12 @@
   text-align: left;
 }
 
-.recap-line__main:disabled {
-  cursor: default;
+.recap-line__main {
+  text-decoration: none;
+}
+
+.recap-line__main > svg:last-child {
+  color: var(--color-text-soft, #666);
 }
 
 .recap-line__number {
@@ -181,6 +185,73 @@
 
 .recap__status--not-performed {
   color: var(--color-text-soft, #666);
+}
+
+/* Pauses explicites (§15) : listées, jamais comptées dans la durée active */
+
+.recap__pauses {
+  display: grid;
+  gap: 4px;
+  margin: -10px 0 18px;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+}
+
+.recap__pauses li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recap__card-meta--compare {
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+}
+
+.recap__section--added {
+  margin-top: 20px;
+}
+
+/* Détail d'une brique (écran à part, décision Q3) */
+
+.recap-detail__summary {
+  margin: 0 0 14px;
+  color: var(--color-text-soft, #666);
+  font-size: 0.9rem;
+}
+
+.recap-detail__status {
+  font-weight: 600;
+}
+
+.recap-detail__status--performed {
+  color: #1f8a3b;
+}
+
+.recap-detail__note {
+  margin-top: 12px;
+}
+
+.recap-series--detail {
+  padding: 0;
+  font-size: 0.95rem;
+}
+
+.recap-table--detail {
+  width: 100%;
+  margin: 0;
+}
+
+.recap-detail__rounds {
+  display: grid;
+  gap: 14px;
+}
+
+.recap-detail__round h2 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
 }
 
 /* Détail : séries en lignes, paliers en tableau */

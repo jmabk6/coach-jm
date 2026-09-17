@@ -8,10 +8,15 @@ import type {
   PerformedCardioStep,
   PerformedSeries,
   PerformedSimpleMeasurement,
+  SessionTemplate,
+  WorkoutPause,
   WorkoutSession,
 } from "../../domain";
 import { calculateVolume, getLoadKg } from "../../domain/rules/workoutRules";
+import { estimateSessionTemplateDurationSec } from "../../domain/rules/sessionTemplateRules";
 import { formatBlockCompletion, summarizeBlockCompletion } from "./engine/workoutBlocks";
+import { findSubstitutionRound } from "./engine/workoutEngine";
+import { summarizeRests, type RestSummary } from "./engine/workoutTime";
 
 /**
  * Récapitulatif d'une réalisation (§14), en lecture : cartes de tête,
@@ -219,17 +224,39 @@ function coveredAverage(
 
 export interface WorkoutRecapHead {
   activeDurationSec: number;
+  /**
+   * Durée estimée depuis les consignes du modèle (Q2), jamais une
+   * moyenne d'historique ; absente pour une séance libre sans modèle.
+   */
+  plannedDurationSec?: number;
   startedAt: string;
   completedAt?: string;
   volumeKg: number;
   seriesDone: number;
+  /**
+   * Séries et tours attendus : toutes les entrées des briques non
+   * sautées — le dénominateur de `28 / 30`.
+   */
+  seriesPlanned: number;
   rpe?: CoveredAverage;
   bpm?: { min: number; max: number; average: CoveredAverage };
   cardioSteps: number;
+  cardioStepsPlanned: number;
   cardioDurationSec: number;
+  /**
+   * Paliers avec un BPM relevé, sur les paliers validés.
+   */
+  bpmKnown: number;
+  /**
+   * Repos moyen des seuls repos comparables, avec sa couverture et le
+   * prévu ; les repos intra-tour n'en font jamais partie (§12).
+   */
+  rest: RestSummary;
+  pauses: WorkoutPause[];
   performed: number;
   skipped: number;
   notPerformed: number;
+  added: number;
 }
 
 export function listCompletedSeries(blocks: PerformedBlock[]): PerformedSeries[] {
@@ -260,8 +287,62 @@ export function listCompletedSteps(blocks: PerformedBlock[]): PerformedCardioSte
   return steps;
 }
 
-export function summarizeWorkout(workout: WorkoutSession): WorkoutRecapHead {
-  const series = listCompletedSeries(workout.blocks);
+/**
+ * Les enfants de tour validés, vus comme des séries : même volume, même
+ * RPE, pour que groupes et exercices comptent pareil dans le récap.
+ */
+export function listCompletedRoundChildren(blocks: PerformedBlock[]): PerformedSeries[] {
+  const series: PerformedSeries[] = [];
+
+  for (const block of blocks) {
+    if (block.kind !== "group" || block.status === "skipped") continue;
+
+    for (const round of block.rounds) {
+      for (const child of round.children) {
+        if (child.completedAt === undefined) continue;
+        series.push({
+          id: child.id,
+          position: round.roundNumber,
+          status: "completed",
+          ...(child.load !== undefined ? { load: child.load } : {}),
+          ...(child.reps !== undefined ? { reps: child.reps } : {}),
+          ...(child.durationSec !== undefined ? { durationSec: child.durationSec } : {}),
+          ...(child.rpe !== undefined ? { rpe: child.rpe } : {}),
+        });
+      }
+    }
+  }
+
+  return series;
+}
+
+/**
+ * Séries attendues d'une réalisation : séries des exercices et tours ×
+ * enfants des groupes, briques sautées exclues (elles sortent du
+ * dénominateur, §11).
+ */
+export function countPlannedSeries(blocks: PerformedBlock[]): number {
+  let total = 0;
+
+  for (const block of blocks) {
+    if (block.kind === "note" || block.status === "skipped") continue;
+
+    if (block.kind === "exercise") {
+      total += block.series?.length ?? 0;
+      continue;
+    }
+
+    total += block.rounds.length * block.children.length;
+  }
+
+  return total;
+}
+
+export function summarizeWorkout(
+  workout: WorkoutSession,
+  template?: SessionTemplate,
+): WorkoutRecapHead {
+  const series = [...listCompletedSeries(workout.blocks), ...listCompletedRoundChildren(workout.blocks)];
   const steps = listCompletedSteps(workout.blocks);
   const bpmValues = steps.map((step) => step.bpm);
   const knownBpm = bpmValues.filter((value): value is number => value !== undefined);
@@ -273,20 +354,34 @@ export function summarizeWorkout(workout: WorkoutSession): WorkoutRecapHead {
   let performed = 0;
   let skipped = 0;
   let notPerformed = 0;
+  let added = 0;
 
   for (const block of workout.blocks) {
     if (block.kind === "note") continue;
     if (block.status === "performed") performed += 1;
     else if (block.status === "skipped") skipped += 1;
     else notPerformed += 1;
+    if (block.addedDuringWorkout) added += 1;
   }
+
+  const plannedSteps = workout.blocks.reduce(
+    (sum, block) =>
+      block.kind === "exercise" && block.status !== "skipped"
+        ? sum + (block.cardioSteps?.length ?? 0)
+        : sum,
+    0,
+  );
 
   return {
     activeDurationSec: workout.activeDurationSec,
+    ...(template && workout.sessionTemplateId
+      ? { plannedDurationSec: estimateSessionTemplateDurationSec(template.blocks) }
+      : {}),
     startedAt: workout.startedAt,
     ...(workout.completedAt ? { completedAt: workout.completedAt } : {}),
     volumeKg: calculateVolume(series),
     seriesDone: series.length,
+    seriesPlanned: countPlannedSeries(workout.blocks),
     ...(rpeAverage ? { rpe: rpeAverage } : {}),
     ...(bpmAverage && knownBpm.length > 0
       ? {
@@ -298,14 +393,108 @@ export function summarizeWorkout(workout: WorkoutSession): WorkoutRecapHead {
         }
       : {}),
     cardioSteps: steps.length,
+    cardioStepsPlanned: plannedSteps,
     cardioDurationSec: steps.reduce(
       (sum, step) => sum + step.settings.durationSec,
       0,
     ),
+    bpmKnown: knownBpm.length,
+    rest: summarizeRests(workout.blocks),
+    pauses: (workout.pauses ?? []).filter((pause) => pause.endedAt !== undefined),
     performed,
     skipped,
     notPerformed,
+    added,
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Volume : comparaison à la dernière fois                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Une séance n'est comparable en volume que si son périmètre est celui
+ * du modèle (décision Q1 du 17/09/2026) : aucun exercice ajouté, sauté ou
+ * non réalisé, aucune substitution — brique autonome ou enfant de groupe.
+ */
+export function isVolumePerimeterIntact(workout: WorkoutSession): boolean {
+  for (const block of workout.blocks) {
+    if (block.kind === "note") continue;
+    if (block.addedDuringWorkout || block.status !== "performed") return false;
+
+    if (block.kind === "exercise" && block.originalExerciseId !== undefined) return false;
+
+    if (
+      block.kind === "group" &&
+      block.children.some((child) => findSubstitutionRound(block, child.id) !== undefined)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export interface VolumeComparison {
+  previousWorkoutId: string;
+  previousDate: string;
+  previousVolumeKg: number;
+  deltaPercent: number;
+}
+
+/**
+ * `+12 % vs dernière fois` : contre la dernière réalisation terminée du
+ * même modèle, antérieure, seulement si les deux périmètres sont
+ * intacts. Sinon rien : un pourcentage trompeur ne s'affiche pas.
+ */
+export function compareVolumeToPrevious(
+  workout: WorkoutSession,
+  completedWorkouts: WorkoutSession[],
+): VolumeComparison | undefined {
+  if (!workout.sessionTemplateId || !isVolumePerimeterIntact(workout)) return undefined;
+
+  const previous = completedWorkouts
+    .filter(
+      (candidate) =>
+        candidate.id !== workout.id &&
+        candidate.status === "completed" &&
+        candidate.sessionTemplateId === workout.sessionTemplateId &&
+        candidate.startedAt < workout.startedAt,
+    )
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+
+  if (!previous || !isVolumePerimeterIntact(previous)) return undefined;
+
+  const previousVolumeKg = calculateVolume([
+    ...listCompletedSeries(previous.blocks),
+    ...listCompletedRoundChildren(previous.blocks),
+  ]);
+  const volumeKg = calculateVolume([
+    ...listCompletedSeries(workout.blocks),
+    ...listCompletedRoundChildren(workout.blocks),
+  ]);
+
+  if (previousVolumeKg <= 0) return undefined;
+
+  return {
+    previousWorkoutId: previous.id,
+    previousDate: previous.date,
+    previousVolumeKg,
+    deltaPercent: Math.round(((volumeKg - previousVolumeKg) / previousVolumeKg) * 100),
+  };
+}
+
+/**
+ * `Pause 10:42 – 11:15 · 33 min, non comptée dans la durée active`.
+ */
+export function formatPause(pause: WorkoutPause): string {
+  const end = pause.endedAt ?? pause.startedAt;
+  const seconds = Math.round(
+    (new Date(end).getTime() - new Date(pause.startedAt).getTime()) / 1000,
+  );
+  const duration = seconds < 60 ? `${seconds} s` : formatMinutes(seconds);
+
+  return `Pause ${formatClock(pause.startedAt)} – ${formatClock(end)} · ${duration}, non comptée dans la durée active`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -323,6 +512,49 @@ export interface WorkoutRecapLine {
   category?: Exercise["category"];
 }
 
+/**
+ * Le tableau du récapitulatif (§14) : les briques prévues numérotées
+ * dans l'ordre, puis les ajouts pendant la séance dans une section à
+ * part, numérotés à la suite.
+ */
+export function splitRecapLines(
+  lines: WorkoutRecapLine[],
+  /**
+   * Faux pour une séance libre sans modèle : tout y est ajouté au fil de
+   * l'eau, une section « Ajouts » n'aurait rien à distinguer.
+   */
+  separateAdded = true,
+): {
+  planned: WorkoutRecapLine[];
+  added: WorkoutRecapLine[];
+} {
+  const planned: WorkoutRecapLine[] = [];
+  const added: WorkoutRecapLine[] = [];
+  let visibleNumber = 0;
+
+  for (const line of lines) {
+    if (line.block.kind === "note" || !separateAdded || !line.block.addedDuringWorkout) {
+      const numbered =
+        line.block.kind === "note" ? line : { ...line, number: String(++visibleNumber) };
+      planned.push(numbered);
+    }
+  }
+
+  for (const line of lines) {
+    if (separateAdded && line.block.kind !== "note" && line.block.addedDuringWorkout) {
+      added.push({ ...line, number: String(++visibleNumber) });
+    }
+  }
+
+  return { planned, added };
+}
+
+export const recapStatusLabels = {
+  performed: "Réalisé",
+  skipped: "Sauté",
+  not_performed: "Non réalisé",
+} as const;
+
 export function buildWorkoutRecapLines(
   workout: WorkoutSession,
   exerciseById: Map<Id, Exercise>,
@@ -339,12 +571,29 @@ export function buildWorkoutRecapLines(
 
     if (block.kind === "group") {
       const rounds = block.rounds.filter((round) => round.status === "completed");
+      const roundSeries = listCompletedRoundChildren([block]);
+      const groupRpes = roundSeries.map((item) => item.rpe).filter((v): v is number => v !== undefined);
+      const groupVolume = calculateVolume(roundSeries);
+      const substituted = block.children.filter(
+        (child) => findSubstitutionRound(block, child.id) !== undefined,
+      ).length;
 
       return {
         block,
         number,
         name: block.name ?? `Groupe ${number}`,
-        subtitle: `${rounds.length} tour${rounds.length > 1 ? "s" : ""} · ${block.children.length} exercices`,
+        subtitle:
+          block.status === "skipped"
+            ? "Sauté"
+            : block.status === "not_performed"
+              ? "Non réalisé"
+              : `${rounds.length} tour${rounds.length > 1 ? "s" : ""} sur ${block.rounds.length} · ${block.children.length} exercices${
+                  substituted > 0 ? ` · ${substituted} remplacé${substituted > 1 ? "s" : ""}` : ""
+                }`,
+        ...(groupVolume > 0 ? { volumeKg: groupVolume } : {}),
+        ...(groupRpes.length > 0
+          ? { rpe: groupRpes.reduce((sum, value) => sum + value, 0) / groupRpes.length }
+          : {}),
       };
     }
 
