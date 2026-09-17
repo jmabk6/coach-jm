@@ -19,6 +19,11 @@ export interface WorkoutSessionData {
   template: SessionTemplate | undefined;
   exerciseById: Map<Id, Exercise>;
   lastByExercise: Map<Id, LastPerformance>;
+  /**
+   * Réalisations terminées, pour les références calculées à la demande
+   * (`Dernière fois comparable` d'un palier).
+   */
+  completedWorkouts: WorkoutSession[];
 }
 
 export type WorkoutSessionState =
@@ -72,6 +77,7 @@ export function useWorkoutSession(): {
         template,
         exerciseById: new Map(exercises.map((exercise) => [exercise.id, exercise])),
         lastByExercise: findLastPerformances(completed, workout.id),
+        completedWorkouts: completed,
       });
     }
 

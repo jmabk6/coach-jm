@@ -1,4 +1,6 @@
+import { formatDurationShort } from "../../domain/rules/blockInstructionRules";
 import type {
+  CardioStepSettings,
   Exercise,
   Id,
   Load,
@@ -102,26 +104,45 @@ export function formatSeriesLine(series: PerformedSeries): string {
   return [line || "—", ...extras].join(" · ");
 }
 
-export function formatStepSettings(step: PerformedCardioStep): {
+/**
+ * Les trois colonnes d'un réglage de palier : `1 min 30`, `5 km/h`, `12 %`
+ * (ou `1,2 km` et rien pour un palier en distance).
+ */
+export function formatCardioSettings(settings: CardioStepSettings): {
   duration: string;
   first: string;
   second: string;
 } {
-  const settings = step.settings;
-
   if ("speedKmh" in settings) {
     return {
-      duration: formatMinutes(settings.durationSec),
+      duration: formatDurationShort(settings.durationSec),
       first: `${fr.format(settings.speedKmh)} km/h`,
       second: `${fr.format(settings.inclinePercent)} %`,
     };
   }
 
   return {
-    duration: formatMinutes(settings.durationSec),
+    duration: formatDurationShort(settings.durationSec),
     first: `${fr.format(settings.distanceKm)} km`,
     second: "",
   };
+}
+
+/**
+ * `5 min · 5 km/h · 12 %` sur une ligne.
+ */
+export function formatCardioSettingsLine(settings: CardioStepSettings): string {
+  const parts = formatCardioSettings(settings);
+
+  return [parts.duration, parts.first, parts.second].filter(Boolean).join(" · ");
+}
+
+export function formatStepSettings(step: PerformedCardioStep): {
+  duration: string;
+  first: string;
+  second: string;
+} {
+  return formatCardioSettings(step.settings);
 }
 
 /* -------------------------------------------------------------------------- */

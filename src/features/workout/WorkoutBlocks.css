@@ -533,3 +533,26 @@
   color: var(--color-accent, #2f6fed);
   font-weight: 700;
 }
+
+/* Paliers (§11, mockup 14) */
+
+.step-form__fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.step-form__adapted {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 10px);
+  background: var(--color-surface-soft, #f2f4f7);
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.step-form__adapted strong {
+  color: var(--color-text, #1f2937);
+}

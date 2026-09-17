@@ -256,3 +256,10 @@
   flex-shrink: 0;
   margin-top: 1px;
 }
+
+.recap-table__adapted td {
+  padding-top: 0;
+  color: var(--color-text-soft, #666);
+  font-size: 0.75rem;
+  font-style: italic;
+}

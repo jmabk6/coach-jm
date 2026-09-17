@@ -23,18 +23,22 @@ import {
   activateBlock,
   addExerciseBlocks,
   addSeries,
+  addStep,
   adjustRest,
   editSeries,
   finishBlock,
   pauseWorkout,
   resumeWorkout,
   skipRest,
+  updateStep,
   validateSeries,
+  validateStep,
 } from "./engine/workoutEngine";
 import { proposeSeriesValues } from "./engine/workoutBlocks";
 import { getOpenPause, getRestCountdown } from "./engine/workoutTime";
 import { ExerciseBlockCard } from "./ExerciseBlockCard";
 import { finishWorkout } from "./finishWorkout";
+import { findLastComparableStep } from "./lastPerformance";
 import { RestBar } from "./RestBar";
 import { RestCard } from "./RestCard";
 import { playRestSignal, primeRestSignal } from "./restSignal";
@@ -155,7 +159,7 @@ export function WorkoutScreen() {
     );
   }
 
-  const { template, exerciseById, lastByExercise } = state;
+  const { template, exerciseById, lastByExercise, completedWorkouts } = state;
   const name = template?.name ?? "Séance libre";
   const blocks = [...workout.blocks].sort((a, b) => a.position - b.position);
   const numbering = calculatePerformedNumbering(blocks);
@@ -354,6 +358,16 @@ export function WorkoutScreen() {
                 }
                 onAddSeries={() => void run((current, at) => addSeries(current, block.id, at))}
                 onFinishBlock={() => void run((current, at) => finishBlock(current, block.id, at))}
+                onValidateStep={(stepId, values) =>
+                  void run((current, at) => validateStep(current, block.id, stepId, values, at))
+                }
+                onUpdateStep={(stepId, settings) =>
+                  void run((current, at) => updateStep(current, block.id, stepId, settings, at))
+                }
+                onAddStep={() => void run((current, at) => addStep(current, block.id, at))}
+                lastComparableStep={(settings) =>
+                  findLastComparableStep(block.exerciseId, settings, completedWorkouts, workout.id)
+                }
               />
             );
           })}

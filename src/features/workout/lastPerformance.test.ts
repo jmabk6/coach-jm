@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WorkoutSession } from "../../domain";
-import { findLastPerformances } from "./lastPerformance";
+import { findLastComparableStep, findLastPerformances } from "./lastPerformance";
+import { formatCardioSettingsLine } from "./workoutRecap";
 import {
   calculatePerformedNumbering,
   describeNextUp,
@@ -204,5 +205,62 @@ describe("carte de repos : chrono et bloc Ensuite", () => {
 
   it("ne dit rien sans repos en cours", () => {
     expect(describeNextUp(workout("w", "2026-09-17", []), exerciseById, () => ({}))).toBeUndefined();
+  });
+});
+
+describe("paliers : dernière fois comparable et réglages", () => {
+  const tapis = workout("w-tapis", "2026-09-09", [
+    {
+      id: "t",
+      kind: "exercise",
+      position: 0,
+      addedDuringWorkout: false,
+      exerciseId: "tapis",
+      status: "performed",
+      snapshotInstructions: { shape: "steps", steps: [] },
+      cardioSteps: [
+        { id: "p1", position: 0, status: "completed", settings: { durationSec: 300, speedKmh: 4.5, inclinePercent: 0 }, bpm: 79 },
+        { id: "p2", position: 1, status: "completed", settings: { durationSec: 300, speedKmh: 5, inclinePercent: 5 }, bpm: 106 },
+        { id: "p3", position: 2, status: "completed", settings: { durationSec: 300, speedKmh: 5, inclinePercent: 10 }, bpm: 139 },
+        { id: "p4", position: 3, status: "completed", settings: { durationSec: 300, speedKmh: 5, inclinePercent: 10 }, bpm: 138 },
+      ],
+    },
+  ]);
+
+  it("retrouve le dernier palier aux mêmes réglages, pas celui de même rang", () => {
+    const last = findLastComparableStep(
+      "tapis",
+      { durationSec: 300, speedKmh: 5, inclinePercent: 10 },
+      [tapis],
+    );
+
+    expect(last?.step.id).toBe("p4");
+    expect(last?.step.bpm).toBe(138);
+    expect(last?.date).toBe("2026-09-09");
+  });
+
+  it("tolère une durée proche mais pas d'autres réglages", () => {
+    expect(
+      findLastComparableStep("tapis", { durationSec: 320, speedKmh: 5, inclinePercent: 5 }, [tapis])?.step.id,
+    ).toBe("p2");
+    expect(
+      findLastComparableStep("tapis", { durationSec: 300, speedKmh: 5, inclinePercent: 12 }, [tapis]),
+    ).toBeUndefined();
+    expect(
+      findLastComparableStep("tapis", { durationSec: 120, speedKmh: 5, inclinePercent: 10 }, [tapis]),
+    ).toBeUndefined();
+  });
+
+  it("ignore la séance en cours", () => {
+    expect(
+      findLastComparableStep("tapis", { durationSec: 300, speedKmh: 5, inclinePercent: 10 }, [tapis], "w-tapis"),
+    ).toBeUndefined();
+  });
+
+  it("écrit les réglages sans arrondir la durée", () => {
+    expect(formatCardioSettingsLine({ durationSec: 90, speedKmh: 5, inclinePercent: 12 })).toBe(
+      "1 min 30 · 5 km/h · 12 %",
+    );
+    expect(formatCardioSettingsLine({ durationSec: 600, distanceKm: 1.2 })).toBe("10 min · 1,2 km");
   });
 });

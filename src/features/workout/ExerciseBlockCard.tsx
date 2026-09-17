@@ -1,19 +1,22 @@
 import { useState, type ReactNode } from "react";
 import { Check, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import type {
+  CardioStepSettings,
   Exercise,
   Id,
+  PerformedCardioStep,
   PerformedExerciseBlock,
   PerformedSeries,
 } from "../../domain";
-import type { SeriesValues } from "./engine/workoutEngine";
+import type { SeriesValues, StepValues } from "./engine/workoutEngine";
 import {
   hasCompletedEntries,
   isOpenEndedBlock,
   proposeSeriesValues,
 } from "./engine/workoutBlocks";
-import type { LastPerformance } from "./lastPerformance";
+import type { LastComparableStep, LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
+import { StepForm } from "./StepForm";
 import {
   formatBlockStatus,
   formatExerciseSubtitle,
@@ -23,7 +26,7 @@ import {
   formatShortDate,
   seriesFieldLayout,
 } from "./workoutDisplay";
-import { formatSeriesLine, formatStepSettings } from "./workoutRecap";
+import { formatCardioSettingsLine, formatSeriesLine } from "./workoutRecap";
 
 interface ExerciseBlockCardProps {
   block: PerformedExerciseBlock;
@@ -42,6 +45,13 @@ interface ExerciseBlockCardProps {
   onEditSeries: (seriesId: Id, values: SeriesValues) => void;
   onAddSeries: () => void;
   onFinishBlock: () => void;
+  onValidateStep: (stepId: Id, values: StepValues) => void;
+  onUpdateStep: (stepId: Id, settings: CardioStepSettings) => void;
+  onAddStep: () => void;
+  /**
+   * `Dernière fois comparable` d'un palier : mêmes réglages, pas même rang (§11).
+   */
+  lastComparableStep: (settings: CardioStepSettings) => LastComparableStep | undefined;
 }
 
 /**
@@ -63,13 +73,19 @@ export function ExerciseBlockCard({
   onEditSeries,
   onAddSeries,
   onFinishBlock,
+  onValidateStep,
+  onUpdateStep,
+  onAddStep,
+  lastComparableStep,
 }: ExerciseBlockCardProps) {
   const [editingId, setEditingId] = useState<Id>();
   /* Sans nombre prévu, c'est l'utilisateur qui clôt l'exercice (§11). */
   const canFinish =
     !performedOrSkipped(block) && isOpenEndedBlock(block) && hasCompletedEntries(block);
   const awaitingChoice =
-    canFinish && !(block.series ?? []).some((series) => series.status === "active");
+    canFinish &&
+    !(block.series ?? []).some((series) => series.status === "active") &&
+    !(block.cardioSteps ?? []).some((step) => step.status === "active");
   const name = exercise?.name ?? "Exercice supprimé";
   const status = formatBlockStatus(block);
   const performed = block.status === "performed";
@@ -165,26 +181,48 @@ export function ExerciseBlockCard({
       {expanded && block.cardioSteps && (
         <div className="wblock__content">
           {restCard}
-          <ol className="wseries">
-            {block.cardioSteps.map((step, index) => {
-              const settings = formatStepSettings(step);
+          <StepReference block={block} lastComparableStep={lastComparableStep} />
 
-              return (
-                <li key={step.id} className="wseries__row wseries__row--upcoming">
-                  <span className="wseries__bullet">{index + 1}</span>
-                  <span className="wseries__body">
-                    <span className="wseries__title">Palier {index + 1}</span>
-                    <span className="wseries__meta">
-                      {settings.duration} · {settings.first} · {settings.second}
-                    </span>
-                  </span>
-                </li>
-              );
-            })}
+          <ol className="wseries">
+            {[...block.cardioSteps]
+              .sort((a, b) => a.position - b.position)
+              .map((step, index) => (
+                <StepRow
+                  key={step.id}
+                  step={step}
+                  index={index}
+                  editing={editingId === step.id}
+                  busy={busy}
+                  onEdit={() => setEditingId(step.id)}
+                  onCancelEdit={() => setEditingId(undefined)}
+                  onValidate={(values) => onValidateStep(step.id, values)}
+                  onSaveEdit={(settings) => {
+                    setEditingId(undefined);
+                    onUpdateStep(step.id, settings);
+                  }}
+                />
+              ))}
           </ol>
-          <p className="wblock__soon">
-            La saisie des paliers arrive à l'étape 6.4. Les paliers sont notés ici en lecture.
-          </p>
+
+          <p className="wblock__soon">Aucun repos entre les paliers : valider ouvre le suivant.</p>
+
+          <div className={`wblock__actions ${awaitingChoice ? "wblock__actions--choice" : ""}`}>
+            <button type="button" className="wblock__add-series" onClick={onAddStep} disabled={busy}>
+              <Plus size={16} strokeWidth={2.4} aria-hidden="true" />
+              Ajouter un palier
+            </button>
+            {canFinish && (
+              <button
+                type="button"
+                className={`wblock__finish ${awaitingChoice ? "wblock__finish--primary" : ""}`}
+                onClick={onFinishBlock}
+                disabled={busy}
+              >
+                <Check size={16} strokeWidth={2.4} aria-hidden="true" />
+                Terminer l'exercice
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -342,6 +380,139 @@ function SeriesRow({
       <span className="wseries__state">
         {series.status === "not_performed" ? "Non réalisée" : "À venir"}
       </span>
+    </li>
+  );
+}
+
+/**
+ * Bloc de lecture d'un palier : ni `Prévu` ni `Conseillé` (§11), une
+ * seule ligne `Dernière fois comparable` — et rien si elle n'existe pas.
+ */
+function StepReference({
+  block,
+  lastComparableStep,
+}: {
+  block: PerformedExerciseBlock;
+  lastComparableStep: (settings: CardioStepSettings) => LastComparableStep | undefined;
+}) {
+  const active = block.cardioSteps?.find((step) => step.status === "active");
+
+  if (!active) return null;
+
+  const last = lastComparableStep(active.settings);
+
+  if (!last) return null;
+
+  return (
+    <dl className="wref">
+      <div>
+        <dt>Dernière fois comparable</dt>
+        <dd>
+          {formatCardioSettingsLine(last.step.settings)}
+          {last.step.bpm !== undefined ? ` · ${last.step.bpm} bpm` : " · BPM non relevé"}
+          <small>{formatShortDate(last.date)}</small>
+        </dd>
+      </div>
+    </dl>
+  );
+}
+
+interface StepRowProps {
+  step: PerformedCardioStep;
+  index: number;
+  editing: boolean;
+  busy: boolean;
+  onEdit: () => void;
+  onCancelEdit: () => void;
+  onValidate: (values: StepValues) => void;
+  onSaveEdit: (settings: CardioStepSettings) => void;
+}
+
+/**
+ * Un palier : terminé (réglages réels, BPM, trace d'adaptation), actif
+ * (saisie), à venir (modifiable avant d'être commencé). Aucun `Prévu /
+ * Réalisé` à l'intérieur : la consigne courante fait foi (§11).
+ */
+function StepRow({ step, index, editing, busy, onEdit, onCancelEdit, onValidate, onSaveEdit }: StepRowProps) {
+  const label = `Palier ${index + 1}`;
+  const line = formatCardioSettingsLine(step.settings);
+  const adapted = step.originalSettings ? (
+    <span className="wseries__rest">
+      Adapté pendant la séance · initialement {formatCardioSettingsLine(step.originalSettings)}
+    </span>
+  ) : null;
+
+  if (step.status === "completed") {
+    return (
+      <li className="wseries__row wseries__row--done">
+        <span className="wseries__bullet wseries__bullet--done" aria-hidden="true">
+          <Check size={14} strokeWidth={3} />
+        </span>
+        <span className="wseries__body">
+          <span className="wseries__title">{label}</span>
+          <span className="wseries__meta">
+            {line}
+            {step.bpm !== undefined ? ` · ${step.bpm} bpm` : ""}
+            {step.note ? ` · ${step.note}` : ""}
+          </span>
+          {adapted}
+        </span>
+      </li>
+    );
+  }
+
+  if (step.status === "active") {
+    return (
+      <li className="wseries__row wseries__row--active">
+        <span className="wseries__bullet wseries__bullet--active">{index + 1}</span>
+        <span className="wseries__body">
+          <span className="wseries__title">{label}</span>
+          <span className="wseries__meta">En cours · {line}</span>
+          {adapted}
+        </span>
+        <div className="wseries__form">
+          <StepForm
+            key={`exec-${step.id}-${line}`}
+            step={step}
+            mode="execute"
+            submitLabel={`Valider le palier ${index + 1}`}
+            onSubmit={onValidate}
+            busy={busy}
+          />
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className={`wseries__row wseries__row--upcoming ${editing ? "wseries__row--editing" : ""}`}>
+      <span className="wseries__bullet">{index + 1}</span>
+      <span className="wseries__body">
+        <span className="wseries__title">{label}</span>
+        <span className="wseries__meta">{line}</span>
+        {adapted}
+      </span>
+      {!editing && step.status !== "not_performed" && (
+        <button type="button" className="wseries__edit" onClick={onEdit}>
+          Modifier
+        </button>
+      )}
+      {step.status === "not_performed" && <span className="wseries__state">Non réalisé</span>}
+      {editing && (
+        <div className="wseries__form">
+          <StepForm
+            key={`edit-${step.id}`}
+            step={step}
+            mode="edit"
+            submitLabel="Valider les nouvelles consignes"
+            onSubmit={(values) => {
+              if (values.settings) onSaveEdit(values.settings);
+            }}
+            onCancel={onCancelEdit}
+            busy={busy}
+          />
+        </div>
+      )}
     </li>
   );
 }

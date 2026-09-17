@@ -1,4 +1,11 @@
-import type { Id, PerformedSeries, WorkoutSession } from "../../domain";
+import type {
+  CardioStepSettings,
+  Id,
+  PerformedCardioStep,
+  PerformedSeries,
+  WorkoutSession,
+} from "../../domain";
+import { isCardioStepComparable } from "../../domain/rules/workoutRules";
 
 export interface LastPerformance {
   workoutId: Id;
@@ -92,4 +99,65 @@ export function findLastPerformances(
   }
 
   return byExercise;
+}
+
+export interface LastComparableStep {
+  workoutId: Id;
+  date: string;
+  step: PerformedCardioStep;
+}
+
+/**
+ * `Dernière fois comparable` (§11) : le dernier palier validé de cet
+ * exercice ayant les **mêmes réglages** — vitesse et pente, durée
+ * comparable — et non le palier de même rang. Sans palier comparable,
+ * rien : la ligne disparaît plutôt que d'afficher une fausse référence.
+ * Pour un palier en distance, même distance et durée comparable.
+ */
+export function findLastComparableStep(
+  exerciseId: Id,
+  settings: CardioStepSettings,
+  completedWorkouts: WorkoutSession[],
+  exceptWorkoutId?: Id,
+): LastComparableStep | undefined {
+  const ordered = [...completedWorkouts]
+    .filter((workout) => workout.status === "completed" && workout.id !== exceptWorkoutId)
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+
+  for (const workout of ordered) {
+    for (const block of workout.blocks) {
+      if (block.kind !== "exercise" || block.exerciseId !== exerciseId) continue;
+
+      const candidates = [...(block.cardioSteps ?? [])]
+        .filter((step) => step.status === "completed")
+        .reverse();
+
+      for (const step of candidates) {
+        if (areStepSettingsComparable(settings, step.settings)) {
+          return { workoutId: workout.id, date: workout.date, step };
+        }
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function areStepSettingsComparable(
+  reference: CardioStepSettings,
+  candidate: CardioStepSettings,
+): boolean {
+  if ("speedKmh" in reference && "speedKmh" in candidate) {
+    return isCardioStepComparable(reference, candidate);
+  }
+
+  if ("distanceKm" in reference && "distanceKm" in candidate) {
+    return (
+      reference.distanceKm === candidate.distanceKm &&
+      candidate.durationSec >= reference.durationSec * 0.9 &&
+      candidate.durationSec <= reference.durationSec * 1.1
+    );
+  }
+
+  return false;
 }

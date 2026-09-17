@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity,
@@ -27,6 +27,7 @@ import { formatFullDate } from "../../domain/rules/programRules";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
 import {
   buildWorkoutRecapLines,
+  formatCardioSettingsLine,
   formatClock,
   formatDecimal,
   formatKg,
@@ -226,8 +227,9 @@ export function WorkoutRecapScreen() {
         <p className="recap__notice">
           <Info size={18} strokeWidth={2} aria-hidden="true" />
           <span>
-            Séance libre : réalisée hors Programme, sans modèle rattaché.
-            La règle hebdomadaire n'est pas concernée.
+            {template
+              ? `Séance supplémentaire : réalisée hors Programme à partir du modèle ${template.name}, qui n'est pas modifié. La règle hebdomadaire n'est pas concernée.`
+              : "Séance libre : réalisée hors Programme, sans modèle rattaché. La règle hebdomadaire n'est pas concernée."}
           </span>
         </p>
       )}
@@ -369,16 +371,27 @@ function BlockDetail({ block }: { block: PerformedExerciseBlock }) {
             const settings = formatStepSettings(step);
 
             return (
-              <tr key={step.id}>
-                <td>{index + 1}</td>
-                <td>{settings.duration}</td>
-                <td>{settings.first}</td>
-                {!distanceBased && <td>{settings.second}</td>}
-                <td>
-                  {step.bpm ?? "—"}
-                  {step.note && <span className="recap-table__note"> · {step.note}</span>}
-                </td>
-              </tr>
+              <Fragment key={step.id}>
+                <tr>
+                  <td>{index + 1}</td>
+                  <td>{settings.duration}</td>
+                  <td>{settings.first}</td>
+                  {!distanceBased && <td>{settings.second}</td>}
+                  <td>
+                    {step.bpm ?? "—"}
+                    {step.note && <span className="recap-table__note"> · {step.note}</span>}
+                  </td>
+                </tr>
+                {step.originalSettings && (
+                  <tr className="recap-table__adapted">
+                    <td />
+                    <td colSpan={distanceBased ? 3 : 4}>
+                      Adapté pendant la séance · initialement{" "}
+                      {formatCardioSettingsLine(step.originalSettings)}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             );
           })}
         </tbody>
