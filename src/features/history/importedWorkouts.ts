@@ -10,7 +10,7 @@ import type {
 } from "../../domain";
 
 /**
- * Historique des feuilles SEMAINE_1/2/3.xlsx (1er → 15 septembre 2026),
+ * Historique des feuilles SEMAINE_1/2/3.xlsx (1er → 16 septembre 2026),
  * transcrit à la main dans une notation compacte puis converti en
  * réalisations libres (`source: "free"`, décision du 16/09/2026).
  *
@@ -57,7 +57,7 @@ interface WorkoutSpec {
   blocks: BlockSpec[];
 }
 
-const IMPORT_TIMESTAMP = "2026-09-16T12:00:00.000Z";
+const IMPORT_TIMESTAMP = "2026-09-17T12:00:00.000Z";
 
 /* -------------------------------------------------------------------------- */
 /* Les séances                                                                */
@@ -485,6 +485,57 @@ export const importedWorkoutSpecs: WorkoutSpec[] = [
           { load: 35, reps: 12, rpe: 8 },
           { load: 35, reps: 12, rpe: 10 },
         ],
+      },
+    ],
+  },
+  {
+    date: "2026-09-16",
+    blocks: [
+      {
+        exercise: "tapis",
+        steps: [
+          { min: 5, kmh: 4.5, incline: 0, bpm: 86 },
+          { min: 5, kmh: 5, incline: 5, bpm: 98 },
+          { min: 5, kmh: 5, incline: 7, bpm: 111 },
+          { min: 5, kmh: 5, incline: 5, bpm: 102 },
+          { min: 5, kmh: 5, incline: 7, bpm: 112 },
+          { min: 5, kmh: 5, incline: 5, bpm: 105 },
+          { min: 2, kmh: 5, incline: 15, bpm: 140 },
+          { min: 8, kmh: 4.5, incline: 0, bpm: 92 },
+        ],
+      },
+      {
+        exercise: "dead-bug",
+        sets: [
+          { perSide: { reps: 8 }, rpe: 7 },
+          { perSide: { reps: 8 }, rpe: 8 },
+        ],
+      },
+      {
+        exercise: "planche",
+        sets: [
+          { sec: 45, rpe: 8 },
+          { sec: 45, rpe: 8 },
+          { sec: 60, rpe: 9 },
+        ],
+      },
+      {
+        exercise: "mobilite-chat-vache",
+        note: "8 répétitions lentes.",
+        sets: [{ reps: 8 }],
+      },
+      {
+        exercise: "import-position-enfant",
+        sets: [{ sec: 45 }],
+      },
+      {
+        exercise: "mobilite-flechisseur-hanche",
+        sets: [{ perSide: { sec: 45 } }],
+      },
+      {
+        exercise: "import-rotation-dos-allonge",
+        note: "5 répétitions lentes de chaque côté.",
+        sets: [{ perSide: { reps: 5 } }],
       },
     ],
   },

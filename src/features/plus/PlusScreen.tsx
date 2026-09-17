@@ -93,7 +93,7 @@ export function PlusScreen() {
               Importer mes séances de septembre 2026
             </span>
             <span className="plus-list__meta">
-              9 séances des feuilles SEMAINE_1 à 3, du 1er au 15 septembre
+              10 séances des feuilles SEMAINE_1 à 3, du 1er au 16 septembre
             </span>
           </span>
           <span className="plus-list__chevron" aria-hidden="true">
@@ -129,7 +129,7 @@ export function PlusScreen() {
       {importState.status === "confirm" && (
         <BottomSheet
           title="Importer mes séances de septembre 2026 ?"
-          message="9 séances réalisées (tapis, musculation, gainage, mobilité, marche) rejoignent l'historique et alimentent les fiches exercices."
+          message="10 séances réalisées (tapis, musculation, gainage, mobilité, marche) rejoignent l'historique et alimentent les fiches exercices."
           actions={[
             {
               label: "Importer",

@@ -26,7 +26,7 @@ describe("historique importé de septembre 2026", () => {
     db.close();
   });
 
-  it("transcrit les 9 séances des feuilles, toutes terminées et datées", () => {
+  it("transcrit les 10 séances des feuilles, toutes terminées et datées", () => {
     const workouts = buildImportedWorkouts();
 
     expect(workouts.map((w) => w.date)).toEqual([
@@ -39,6 +39,7 @@ describe("historique importé de septembre 2026", () => {
       "2026-09-09",
       "2026-09-11",
       "2026-09-15",
+      "2026-09-16",
     ]);
 
     for (const workout of workouts) {
@@ -62,7 +63,7 @@ describe("historique importé de septembre 2026", () => {
 
   it("alimente les fiches : charge max et volume de la presse, BPM du tapis", async () => {
     const first = await importSeptember2026History();
-    expect(first).toEqual({ workoutsCreated: 9, workoutsUpdated: 0 });
+    expect(first).toEqual({ workoutsCreated: 10, workoutsUpdated: 0 });
 
     const exercises = await getAllExercises();
     const presse = exercises.find((e) => e.id === "presse-cuisses");
@@ -87,9 +88,17 @@ describe("historique importé de septembre 2026", () => {
     expect(tapis?.kind === "exercise" && tapis.cardioSteps?.length).toBe(8);
     expect(tapis?.kind === "exercise" && tapis.cardioSteps?.[5]?.bpm).toBe(150);
 
+    /* 16/09 : la colonne « Temps » est cumulative (5, 10 … 30, 32, 40 min). */
+    const tapis16 = workouts.find((w) => w.date === "2026-09-16")?.blocks[0];
+    const steps16 = tapis16?.kind === "exercise" ? tapis16.cardioSteps ?? [] : [];
+    const settings16 = steps16.map((step) => step.settings as { durationSec: number; inclinePercent: number });
+    expect(settings16.map((step) => step.durationSec)).toEqual([300, 300, 300, 300, 300, 300, 120, 480]);
+    expect(settings16.map((step) => step.inclinePercent)).toEqual([0, 5, 7, 5, 7, 5, 15, 0]);
+    expect(steps16.map((step) => step.bpm)).toEqual([86, 98, 111, 102, 112, 105, 140, 92]);
+
     /* Réimporter ne crée rien de plus. */
     const second = await importSeptember2026History();
-    expect(second).toEqual({ workoutsCreated: 0, workoutsUpdated: 9 });
-    expect((await getCompletedWorkouts()).length).toBe(9);
+    expect(second).toEqual({ workoutsCreated: 0, workoutsUpdated: 10 });
+    expect((await getCompletedWorkouts()).length).toBe(10);
   });
 });
