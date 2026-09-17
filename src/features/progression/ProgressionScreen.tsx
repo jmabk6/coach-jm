@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Target } from "lucide-react";
+import { CardioPane } from "./CardioPane";
 import { ExercisesPane, type TrendFilter } from "./ExercisesPane";
 import { OverviewPane } from "./OverviewPane";
 import { buildOverview } from "./overview";
@@ -142,8 +143,8 @@ export function ProgressionScreen() {
           returnTo={here}
         />
       )}
-      {data.status === "ready" && tab === "cardio" && (
-        <p className="progression__message">L'analyse cardio arrive avec la sous-étape 8D.</p>
+      {data.status === "ready" && period && tab === "cardio" && (
+        <CardioPane exercises={data.sources.exercises} workouts={data.sources.workouts} period={period} returnTo={here} />
       )}
     </section>
   );

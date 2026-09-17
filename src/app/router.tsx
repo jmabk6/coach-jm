@@ -21,6 +21,7 @@ import { QuickExerciseScreen } from "../features/workout/QuickExerciseScreen";
 import { TodayScreen } from "../features/today/TodayScreen";
 import { ProgressionScreen } from "../features/progression/ProgressionScreen";
 import { HistoryScreen } from "../features/progression/HistoryScreen";
+import { CardioDetailScreen } from "../features/progression/CardioDetailScreen";
 import { SessionPreviewScreen } from "../features/today/SessionPreviewScreen";
 
 export const router = createHashRouter([
@@ -41,6 +42,7 @@ export const router = createHashRouter([
       { path: "workouts/:workoutId/blocks/:blockId", element: <WorkoutBlockDetailScreen /> },
       { path: "progression", element: <ProgressionScreen /> },
       { path: "historique", element: <HistoryScreen /> },
+      { path: "progression/cardio/:exerciseId", element: <CardioDetailScreen /> },
       { path: "plus", element: <PlusScreen /> },
       { path: "sessions", element: <SessionsScreen /> },
       { path: "sessions/new", element: <SessionCreateScreen /> },

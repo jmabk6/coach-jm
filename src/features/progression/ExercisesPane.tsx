@@ -92,7 +92,12 @@ function TrendRow({ trend, from }: { trend: ExerciseTrend; from: string }) {
           <small>dernière · le {formatShortDay(trend.lastDate)}</small>
         </span>
         <span className="trend-row__side">
-          <TrendSparkline trend={trend} />
+          <TrendSparkline
+            points={trend.points}
+            line={trend.line}
+            status={trend.status}
+            label={`${trend.count} réalisations, tendance ${formatTrendPercent(trend.percent)}`}
+          />
           <span className={`trend-row__percent trend-row__percent--${trend.status}`}>
             {formatTrendPercent(trend.percent)} <small>sur la période</small>
           </span>
