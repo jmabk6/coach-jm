@@ -121,6 +121,9 @@ export function allEntriesCompleted(block: ExecutableBlock): boolean {
 export function isOpenEndedBlock(block: ExecutableBlock): boolean {
   if (block.kind === "group") return false;
 
+  /* Une mesure simple se valide en une fois : pas de liste, pas d'ajout (§11). */
+  if (!block.series && !block.cardioSteps) return false;
+
   if (block.addedDuringWorkout) return true;
 
   const instructions = block.snapshotInstructions;

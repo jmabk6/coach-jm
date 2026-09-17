@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CalendarDays, Ellipsis, Sun, BarChart3 } from "lucide-react";
+import { ResumeWatcher } from "../features/workout/ResumeWatcher";
 import "./AppShell.css";
 
 const tabs = [
@@ -23,6 +24,8 @@ export function AppShell() {
       <main className="app-content">
         <Outlet />
       </main>
+
+      <ResumeWatcher />
 
       {!selectionMode && (
         <nav className="tab-bar" aria-label="Navigation principale">

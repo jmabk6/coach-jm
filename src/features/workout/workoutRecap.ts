@@ -7,9 +7,11 @@ import type {
   PerformedBlock,
   PerformedCardioStep,
   PerformedSeries,
+  PerformedSimpleMeasurement,
   WorkoutSession,
 } from "../../domain";
 import { calculateVolume, getLoadKg } from "../../domain/rules/workoutRules";
+import { formatBlockCompletion, summarizeBlockCompletion } from "./engine/workoutBlocks";
 
 /**
  * Récapitulatif d'une réalisation (§14), en lecture : cartes de tête,
@@ -135,6 +137,38 @@ export function formatCardioSettingsLine(settings: CardioStepSettings): string {
   const parts = formatCardioSettings(settings);
 
   return [parts.duration, parts.first, parts.second].filter(Boolean).join(" · ");
+}
+
+/**
+ * `7 km`, `45 min · 7 km · 118 bpm`, `−3 cm`, `G 12 cm · D 9 cm` : une
+ * mesure simple sur une ligne, avec sa note.
+ */
+export function formatSimpleMeasurement(
+  measure: PerformedSimpleMeasurement,
+  exercise?: Exercise | undefined,
+): string {
+  const parts: string[] = [];
+
+  if (measure.durationSec !== undefined) parts.push(formatDurationShort(measure.durationSec));
+  if (measure.distanceKm !== undefined) parts.push(`${fr.format(measure.distanceKm)} km`);
+  if (measure.distanceCm !== undefined) {
+    const label = exercise?.measurementLabels?.value;
+    parts.push(`${label ? `${label} ` : ""}${fr.format(measure.distanceCm)} cm`);
+  }
+  if (measure.sideValues && measure.sideValues.length > 0) {
+    parts.push(
+      measure.sideValues
+        .map((value) => {
+          const side = value.side === "left" ? "G" : "D";
+          return `${side} ${fr.format(value.distanceCm ?? value.reps ?? value.durationSec ?? 0)} cm`;
+        })
+        .join(" · "),
+    );
+  }
+  if (measure.bpm !== undefined) parts.push(`${measure.bpm} bpm`);
+  if (measure.note) parts.push(measure.note);
+
+  return parts.join(" · ") || "Mesure simple";
 }
 
 export function formatStepSettings(step: PerformedCardioStep): {
@@ -320,31 +354,28 @@ export function buildWorkoutRecapLines(
     const steps = (block.cardioSteps ?? []).filter((step) => step.status === "completed");
     const rpes = series.map((item) => item.rpe).filter((v): v is number => v !== undefined);
 
-    if (steps.length > 0) {
+    if (block.cardioSteps && (steps.length > 0 || block.status === "performed")) {
       const durationSec = steps.reduce((sum, step) => sum + step.settings.durationSec, 0);
+      const missing = block.cardioSteps.length - steps.length;
 
       return {
         block,
         number,
         name,
-        subtitle: `${steps.length} palier${steps.length > 1 ? "s" : ""} · ${formatMinutes(durationSec)}`,
+        subtitle:
+          missing > 0
+            ? `${formatBlockCompletion(summarizeBlockCompletion(block))} · ${formatMinutes(durationSec)}`
+            : `${steps.length} palier${steps.length > 1 ? "s" : ""} · ${formatMinutes(durationSec)}`,
         ...(exercise ? { category: exercise.category } : {}),
       };
     }
 
     if (block.simpleMeasurement) {
-      const measure = block.simpleMeasurement;
-      const parts: string[] = [];
-
-      if (measure.distanceKm !== undefined) parts.push(`${fr.format(measure.distanceKm)} km`);
-      if (measure.durationSec !== undefined) parts.push(formatMinutes(measure.durationSec));
-      if (measure.distanceCm !== undefined) parts.push(`${fr.format(measure.distanceCm)} cm`);
-
       return {
         block,
         number,
         name,
-        subtitle: parts.join(" · ") || "Mesure simple",
+        subtitle: formatSimpleMeasurement(block.simpleMeasurement, exercise),
         ...(exercise ? { category: exercise.category } : {}),
       };
     }
@@ -358,7 +389,9 @@ export function buildWorkoutRecapLines(
       name,
       subtitle:
         block.status === "performed"
-          ? `${series.length} série${series.length > 1 ? "s" : ""}`
+          ? block.series && series.length < block.series.length
+            ? formatBlockCompletion(summarizeBlockCompletion(block))
+            : `${series.length} série${series.length > 1 ? "s" : ""}`
           : block.status === "skipped"
             ? "Sauté"
             : "Non réalisé",

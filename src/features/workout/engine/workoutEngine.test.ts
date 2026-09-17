@@ -16,6 +16,7 @@ import {
   buildResumeSummary,
   completeWorkoutSession,
   editSeries,
+  editSimpleMeasurement,
   editStep,
   finishBlock,
   pauseWorkout,
@@ -594,6 +595,35 @@ describe("mesure simple", () => {
     });
     expect(w.activeRest).toBeUndefined();
     expect(exerciseOf(w, "squat-block").series?.[0]?.actualRestAfterSec).toBe(120);
+  });
+
+  it("se corrige après validation, sans repos ni avancement", () => {
+    const marche: PerformedExerciseBlock = {
+      id: "marche-block",
+      kind: "exercise",
+      position: 0,
+      addedDuringWorkout: true,
+      exerciseId: "marche",
+      status: "not_performed",
+      snapshotInstructions: { shape: "distance" },
+      simpleMeasurement: {},
+    };
+
+    let w = activateBlock(workout([marche, crunchBlock(1)]), "marche-block", T0);
+    expect(() => editSimpleMeasurement(w, "marche-block", { distanceKm: 6 }, at(1))).toThrow(/validée/);
+
+    w = validateSimpleMeasurement(w, "marche-block", { distanceKm: 7 }, at(2));
+    expect(w.currentBlockId).toBe("crunch-block");
+
+    w = editSimpleMeasurement(w, "marche-block", { distanceKm: 7.4, note: "pluie" }, at(3));
+    expect(exerciseOf(w, "marche-block").simpleMeasurement).toMatchObject({
+      distanceKm: 7.4,
+      note: "pluie",
+      completedAt: at(2),
+    });
+    expect(exerciseOf(w, "marche-block").status).toBe("performed");
+    expect(w.currentBlockId).toBe("crunch-block");
+    expect(w.activeRest).toBeUndefined();
   });
 });
 

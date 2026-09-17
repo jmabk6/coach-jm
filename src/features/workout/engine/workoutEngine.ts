@@ -822,6 +822,32 @@ export function validateSimpleMeasurement(
   return touch(next, now);
 }
 
+/**
+ * `Modifier` une mesure simple validée : la seule voie pour corriger ses
+ * valeurs. Ni repos, ni avancement, ni effet sur les autres briques.
+ */
+export function editSimpleMeasurement(
+  workout: WorkoutSession,
+  blockId: Id,
+  values: SimpleMeasurementValues,
+  now: string,
+): WorkoutSession {
+  assertInProgress(workout);
+
+  const block = findExerciseBlock(workout, blockId);
+
+  if (!block.simpleMeasurement || block.simpleMeasurement.completedAt === undefined) {
+    throw new Error("Seule une mesure validée se modifie");
+  }
+
+  const next = withExerciseBlock(workout, blockId, (item) => ({
+    ...item,
+    simpleMeasurement: { ...item.simpleMeasurement, ...definedOnly(values) },
+  }));
+
+  return touch(next, now);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Groupes : tour par tour                                                    */
 /* -------------------------------------------------------------------------- */

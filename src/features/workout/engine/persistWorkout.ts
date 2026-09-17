@@ -2,6 +2,7 @@ import {
   getInProgressWorkout,
   getWorkout,
   saveWorkout,
+  updateWorkout,
 } from "../../../db/repositories/workoutRepository";
 import type { Id, WorkoutSession } from "../../../domain";
 import { recordPresence } from "./workoutEngine";
@@ -37,7 +38,9 @@ export async function applyWorkoutAction(
 
 /**
  * Battement de présence de la séance en cours, s'il y en a une. Ne
- * compte pas comme un geste et ne touche à aucun chrono.
+ * compte pas comme un geste et ne touche à aucun chrono. Écriture
+ * partielle (`lastSeenAt` seul) : un battement ne peut jamais écraser
+ * un geste enregistré au même instant.
  */
 export async function recordWorkoutPresence(
   now: string = new Date().toISOString(),
@@ -50,7 +53,7 @@ export async function recordWorkoutPresence(
 
   const next = recordPresence(workout, now);
 
-  await saveWorkout(next);
+  await updateWorkout(workout.id, { lastSeenAt: next.lastSeenAt! });
 
   return next;
 }

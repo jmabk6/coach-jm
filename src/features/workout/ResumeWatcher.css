@@ -1,0 +1,49 @@
+/* Feuille « Séance en cours retrouvée » (§15) */
+
+.resume-sheet__facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-soft, #f2f4f7);
+  font-size: 0.9rem;
+}
+
+.resume-sheet__facts div {
+  display: contents;
+}
+
+.resume-sheet__facts dt {
+  color: var(--color-text-soft, #666);
+}
+
+.resume-sheet__facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.resume-sheet__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.resume-sheet__notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.resume-sheet__error {
+  margin: 0 0 8px;
+  color: var(--color-danger, #c2413b);
+  font-size: 0.9rem;
+}

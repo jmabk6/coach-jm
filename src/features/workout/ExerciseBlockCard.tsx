@@ -8,7 +8,11 @@ import type {
   PerformedExerciseBlock,
   PerformedSeries,
 } from "../../domain";
-import type { SeriesValues, StepValues } from "./engine/workoutEngine";
+import type {
+  SeriesValues,
+  SimpleMeasurementValues,
+  StepValues,
+} from "./engine/workoutEngine";
 import {
   hasCompletedEntries,
   isOpenEndedBlock,
@@ -16,6 +20,7 @@ import {
 } from "./engine/workoutBlocks";
 import type { LastComparableStep, LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
+import { SimpleMeasurementForm } from "./SimpleMeasurementForm";
 import { StepForm } from "./StepForm";
 import {
   formatBlockStatus,
@@ -26,7 +31,11 @@ import {
   formatShortDate,
   seriesFieldLayout,
 } from "./workoutDisplay";
-import { formatCardioSettingsLine, formatSeriesLine } from "./workoutRecap";
+import {
+  formatCardioSettingsLine,
+  formatSeriesLine,
+  formatSimpleMeasurement,
+} from "./workoutRecap";
 
 interface ExerciseBlockCardProps {
   block: PerformedExerciseBlock;
@@ -49,6 +58,8 @@ interface ExerciseBlockCardProps {
   onUpdateStep: (stepId: Id, settings: CardioStepSettings) => void;
   onEditStep: (stepId: Id, values: StepValues) => void;
   onAddStep: () => void;
+  onValidateSimple: (values: SimpleMeasurementValues) => void;
+  onEditSimple: (values: SimpleMeasurementValues) => void;
   /**
    * `Dernière fois comparable` d'un palier : mêmes réglages, pas même rang (§11).
    */
@@ -78,9 +89,12 @@ export function ExerciseBlockCard({
   onUpdateStep,
   onEditStep,
   onAddStep,
+  onValidateSimple,
+  onEditSimple,
   lastComparableStep,
 }: ExerciseBlockCardProps) {
   const [editingId, setEditingId] = useState<Id>();
+  const [editingSimple, setEditingSimple] = useState(false);
   /* Sans nombre prévu, c'est l'utilisateur qui clôt l'exercice (§11). */
   const canFinish =
     !performedOrSkipped(block) && isOpenEndedBlock(block) && hasCompletedEntries(block);
@@ -234,7 +248,48 @@ export function ExerciseBlockCard({
 
       {expanded && block.simpleMeasurement && !block.series && !block.cardioSteps && (
         <div className="wblock__content">
-          <p className="wblock__soon">La saisie d'une mesure simple arrive à l'étape 6.4.</p>
+          {restCard}
+          {block.simpleMeasurement.completedAt === undefined ? (
+            <SimpleMeasurementForm
+              key={`measure-${block.id}`}
+              exercise={exercise}
+              initial={block.simpleMeasurement}
+              submitLabel="Valider la mesure"
+              onSubmit={onValidateSimple}
+              busy={busy}
+            />
+          ) : (
+            <div className={`wseries__row wseries__row--done ${editingSimple ? "wseries__row--editing" : ""}`}>
+              <span className="wseries__bullet wseries__bullet--done" aria-hidden="true">
+                <Check size={14} strokeWidth={3} />
+              </span>
+              <span className="wseries__body">
+                <span className="wseries__title">Mesure</span>
+                <span className="wseries__meta">{formatSimpleMeasurement(block.simpleMeasurement, exercise)}</span>
+              </span>
+              {!editingSimple && (
+                <button type="button" className="wseries__edit" onClick={() => setEditingSimple(true)}>
+                  Modifier
+                </button>
+              )}
+              {editingSimple && (
+                <div className="wseries__form">
+                  <SimpleMeasurementForm
+                    key={`measure-edit-${block.id}`}
+                    exercise={exercise}
+                    initial={block.simpleMeasurement}
+                    submitLabel="Enregistrer"
+                    onSubmit={(values) => {
+                      setEditingSimple(false);
+                      onEditSimple(values);
+                    }}
+                    onCancel={() => setEditingSimple(false)}
+                    busy={busy}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </li>

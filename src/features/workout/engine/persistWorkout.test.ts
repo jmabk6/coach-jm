@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkoutSession } from "../../../domain";
 
-const { getWorkout, getInProgressWorkout, saveWorkout } = vi.hoisted(() => ({
+const { getWorkout, getInProgressWorkout, saveWorkout, updateWorkout } = vi.hoisted(() => ({
   getWorkout: vi.fn(),
   getInProgressWorkout: vi.fn(),
   saveWorkout: vi.fn(),
+  updateWorkout: vi.fn(),
 }));
 
 vi.mock("../../../db/repositories/workoutRepository", () => ({
   getWorkout,
   getInProgressWorkout,
   saveWorkout,
+  updateWorkout,
 }));
 
 import { applyWorkoutAction, recordWorkoutPresence } from "./persistWorkout";
@@ -72,13 +74,14 @@ describe("recordWorkoutPresence", () => {
 
     expect(next?.lastSeenAt).toBe("2026-09-17T10:00:15.000Z");
     expect(next?.lastActionAt).toBe(T0);
-    expect(saveWorkout).toHaveBeenCalledTimes(1);
+    expect(updateWorkout).toHaveBeenCalledWith("w", { lastSeenAt: "2026-09-17T10:00:15.000Z" });
+    expect(saveWorkout).not.toHaveBeenCalled();
   });
 
   it("ne fait rien sans séance en cours", async () => {
     getInProgressWorkout.mockResolvedValue(undefined);
 
     expect(await recordWorkoutPresence()).toBeUndefined();
-    expect(saveWorkout).not.toHaveBeenCalled();
+    expect(updateWorkout).not.toHaveBeenCalled();
   });
 });

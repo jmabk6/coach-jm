@@ -26,6 +26,7 @@ import {
   addStep,
   adjustRest,
   editSeries,
+  editSimpleMeasurement,
   editStep,
   finishBlock,
   pauseWorkout,
@@ -33,6 +34,7 @@ import {
   skipRest,
   updateStep,
   validateSeries,
+  validateSimpleMeasurement,
   validateStep,
 } from "./engine/workoutEngine";
 import { proposeSeriesValues } from "./engine/workoutBlocks";
@@ -369,6 +371,12 @@ export function WorkoutScreen() {
                   void run((current, at) => editStep(current, block.id, stepId, values, at))
                 }
                 onAddStep={() => void run((current, at) => addStep(current, block.id, at))}
+                onValidateSimple={(values) =>
+                  void run((current, at) => validateSimpleMeasurement(current, block.id, values, at))
+                }
+                onEditSimple={(values) =>
+                  void run((current, at) => editSimpleMeasurement(current, block.id, values, at))
+                }
                 lastComparableStep={(settings) =>
                   findLastComparableStep(block.exerciseId, settings, completedWorkouts, workout.id)
                 }
