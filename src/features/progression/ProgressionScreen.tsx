@@ -1,9 +1,11 @@
 import { useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { Target } from "lucide-react";
+import { ExercisesPane, type TrendFilter } from "./ExercisesPane";
 import { OverviewPane } from "./OverviewPane";
 import { buildOverview } from "./overview";
 import { formatPeriodRange, periodLabels, resolvePeriod, type PeriodKey } from "./period";
+import { TREND_METRICS, type TrendMetric } from "./trends";
 import { useProgressionData } from "./useProgressionData";
 import "./Progression.css";
 
@@ -25,6 +27,16 @@ function readTab(value: string | null): ProgressionTab {
   return TABS.some((tab) => tab.key === value) ? (value as ProgressionTab) : "general";
 }
 
+function readMetric(value: string | null): TrendMetric {
+  return TREND_METRICS.includes(value as TrendMetric) ? (value as TrendMetric) : "chargeMax";
+}
+
+const FILTERS: TrendFilter[] = ["all", "down", "stable", "up"];
+
+function readFilter(value: string | null): TrendFilter {
+  return FILTERS.includes(value as TrendFilter) ? (value as TrendFilter) : "all";
+}
+
 /**
  * Progression (§16) : trois onglets, un sélecteur de période commun, le
  * bouton `Mes objectifs` (§16 bis, Étape 9). L'onglet et la période
@@ -33,20 +45,27 @@ function readTab(value: string | null): ProgressionTab {
  */
 export function ProgressionScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const data = useProgressionData();
   const periodKey = readPeriod(searchParams.get("period"));
   const tab = readTab(searchParams.get("tab"));
+  const metric = readMetric(searchParams.get("metric"));
+  const filter = readFilter(searchParams.get("filter"));
+  const here = `${location.pathname}${location.search}`;
 
-  const update = (patch: { period?: PeriodKey; tab?: ProgressionTab }) => {
+  const update = (patch: { period?: PeriodKey; tab?: ProgressionTab; metric?: TrendMetric; filter?: TrendFilter }) => {
     const next = new URLSearchParams(searchParams);
-    if (patch.period) {
-      if (patch.period === "12w") next.delete("period");
-      else next.set("period", patch.period);
-    }
-    if (patch.tab) {
-      if (patch.tab === "general") next.delete("tab");
-      else next.set("tab", patch.tab);
-    }
+    const set = (key: string, value: string | undefined, defaultValue: string) => {
+      if (value === undefined) return;
+      if (value === defaultValue) next.delete(key);
+      else next.set(key, value);
+    };
+    set("period", patch.period, "12w");
+    set("tab", patch.tab, "general");
+    set("metric", patch.metric, "chargeMax");
+    set("filter", patch.filter, "all");
+    /* Changer de métrique remet le filtre : les compteurs ne sont plus les mêmes. */
+    if (patch.metric !== undefined && patch.filter === undefined) next.delete("filter");
     setSearchParams(next, { replace: true });
   };
 
@@ -111,8 +130,17 @@ export function ProgressionScreen() {
       )}
 
       {overview && tab === "general" && <OverviewPane overview={overview} />}
-      {data.status === "ready" && tab === "exercices" && (
-        <p className="progression__message">Les tendances par exercice arrivent avec la sous-étape 8C.</p>
+      {data.status === "ready" && period && tab === "exercices" && (
+        <ExercisesPane
+          exercises={data.sources.exercises}
+          workouts={data.sources.workouts}
+          period={period}
+          metric={metric}
+          filter={filter}
+          onMetricChange={(value) => update({ metric: value })}
+          onFilterChange={(value) => update({ filter: value })}
+          returnTo={here}
+        />
       )}
       {data.status === "ready" && tab === "cardio" && (
         <p className="progression__message">L'analyse cardio arrive avec la sous-étape 8D.</p>
