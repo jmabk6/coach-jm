@@ -12,6 +12,7 @@ import {
   compareVolumeToPrevious,
   countPlannedSeries,
   formatPause,
+  formatSeconds,
   isVolumePerimeterIntact,
   splitRecapLines,
   summarizeWorkout,
@@ -227,6 +228,13 @@ describe("récapitulatif global — cartes de tête (§14)", () => {
       totalCount: 5,
       plannedAverageSec: (90 + 90 + 120 + 120) / 4,
     });
+  });
+
+  it("affiche les durées de repos lisiblement, sans toucher aux secondes stockées", () => {
+    expect(formatSeconds(45)).toBe("45 s");
+    expect(formatSeconds(120)).toBe("2 min");
+    expect(formatSeconds(345)).toBe("5 min 45 s");
+    expect(formatSeconds(95)).toBe("1 min 35 s");
   });
 
   it("n'a pas de repos moyen quand aucun repos n'est comparable", () => {

@@ -132,7 +132,7 @@ export function WorkoutBlockDetailScreen() {
           ? buildExerciseHistory(
               line.block.exerciseId,
               completed,
-              workout.id,
+              workout,
               exerciseById.get(line.block.exerciseId),
             )
           : [];
@@ -898,7 +898,7 @@ function describeRoundRest(rest: RoundRestView) {
     <>
       <strong>{formatSeconds(rest.actualSec)}</strong> (prévu {formatSeconds(rest.plannedSec)})
       {rest.adjustmentSec !== undefined &&
-        ` · ajusté ${rest.adjustmentSec > 0 ? "+" : "−"}${Math.abs(rest.adjustmentSec)} s`}
+        ` · ajusté ${rest.adjustmentSec > 0 ? "+" : "−"}${formatSeconds(Math.abs(rest.adjustmentSec))}`}
       {!rest.comparable && <em> · hors moyenne (pause ou fin de séance)</em>}
     </>
   );

@@ -43,8 +43,19 @@ export function formatMinutes(sec: number): string {
   return `${Math.round(sec / 60)} min`;
 }
 
+/**
+ * Une durée de repos lisible : `45 s`, `2 min`, `5 min 45 s`. Format
+ * d'affichage seulement — les valeurs stockées restent en secondes.
+ */
 export function formatSeconds(sec: number): string {
-  return sec >= 60 && sec % 60 === 0 ? `${sec / 60} min` : `${sec} s`;
+  const whole = Math.round(sec);
+
+  if (whole < 60) return `${whole} s`;
+
+  const minutes = Math.floor(whole / 60);
+  const seconds = whole % 60;
+
+  return seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} s`;
 }
 
 export function formatClock(iso: string): string {

@@ -308,7 +308,10 @@ export function WorkoutRecapScreen() {
             <span className="recap__card-label">Repos moyen</span>
             <strong>{formatSeconds(head.rest.averageSec)}</strong>
             <span className="recap__card-meta">
+              {/* Séance libre sans modèle : rien n'était prévu, le repos par
+                  défaut appliqué n'est pas une consigne. */}
               {head.rest.plannedAverageSec !== undefined &&
+                workout.sessionTemplateId !== undefined &&
                 `prévu ${formatSeconds(head.rest.plannedAverageSec)} · `}
               {head.rest.comparableCount} sur {head.rest.totalCount} repos
             </span>

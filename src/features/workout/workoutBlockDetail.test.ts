@@ -120,7 +120,7 @@ describe("historique de l'exercice réellement effectué (Q4)", () => {
   const current = workout("w-now", "2026-09-17", [squat3("sq-now", 50)]);
 
   it("garde les cinq dernières, la plus récente d'abord, la séance courante exclue", () => {
-    const history = buildExerciseHistory("squat", [...past, current], "w-now", squatEx);
+    const history = buildExerciseHistory("squat", [...past, current], current, squatEx);
 
     expect(history.map((entry) => entry.date)).toEqual([
       "2026-09-12",
@@ -139,15 +139,18 @@ describe("historique de l'exercice réellement effectué (Q4)", () => {
   });
 
   it("est vide sans réalisation antérieure, et ignore une séance en cours", () => {
-    expect(buildExerciseHistory("squat", [current], "w-now", squatEx)).toEqual([]);
+    expect(buildExerciseHistory("squat", [current], current, squatEx)).toEqual([]);
     expect(
       buildExerciseHistory(
         "squat",
         [current, { ...past[0]!, status: "in_progress" }],
-        "w-now",
+        current,
         squatEx,
       ),
     ).toEqual([]);
+    /* Une réalisation postérieure à la séance lue n'entre pas dans son historique. */
+    const later = workout("w-later", "2026-09-20", [squat3("sq-later", 55)]);
+    expect(buildExerciseHistory("squat", [current, later], current, squatEx)).toEqual([]);
   });
 
   it("alimente le remplaçant après substitution, jamais l'exercice prévu, y compris dans un groupe", () => {
@@ -265,6 +268,21 @@ describe("résumé d'un exercice en séries", () => {
     expect(formatSignedSeconds(0)).toBe("= prévu");
     expect(formatSignedPercent(10)).toBe("+10 %");
     expect(formatSignedPercent(0)).toBe("=");
+  });
+
+  it("prend pour référence la dernière réalisation complète au même nombre de séries, en enjambant les autres formats", () => {
+    const history = buildExerciseHistory(
+      "squat",
+      [
+        workout("w-two", "2026-09-12", [exerciseBlock("sq-two", "squat", [{ kg: 50, reps: 10 }, { kg: 50, reps: 10 }])]),
+        workout("w-three", "2026-09-05", [squat3("sq-three", 40)]),
+      ],
+      undefined,
+      squatEx,
+    );
+    const summary = summarizeExerciseBlock(squat3("sq", 44), squatEx, history);
+
+    expect(summary.kind === "series" && summary.volumeVsLast).toMatchObject({ previousWorkoutId: "w-three", deltaPercent: 10 });
   });
 
   it("ne compare pas le volume sans référence pertinente : exercice partiel, autre nombre de séries, référence partielle ou absente", () => {

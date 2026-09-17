@@ -15,6 +15,7 @@ import { formatPlannedLine } from "./workoutDisplay";
 import {
   formatDecimal,
   formatMinutes,
+  formatSeconds,
   formatSeriesLine,
   formatSimpleMeasurement,
   type CoveredAverage,
@@ -167,19 +168,26 @@ function describeWorkoutForExercise(
 
 /**
  * Les cinq dernières réalisations de l'exercice **réellement effectué**
- * (Q4), la séance courante exclue, de la plus récente à la plus ancienne.
+ * (Q4) **antérieures** à la séance lue, de la plus récente à la plus
+ * ancienne : l'historique d'une séance passée ne montre pas ce qui est
+ * venu après elle.
  */
 export function buildExerciseHistory(
   exerciseId: Id,
   completedWorkouts: WorkoutSession[],
-  exceptWorkoutId: Id | undefined,
+  current: Pick<WorkoutSession, "id" | "startedAt"> | undefined,
   exercise: Exercise | undefined,
   limit = 5,
 ): ExerciseHistoryEntry[] {
   const entries: ExerciseHistoryEntry[] = [];
 
   const ordered = [...completedWorkouts]
-    .filter((workout) => workout.status === "completed" && workout.id !== exceptWorkoutId)
+    .filter(
+      (workout) =>
+        workout.status === "completed" &&
+        (current === undefined ||
+          (workout.id !== current.id && workout.startedAt < current.startedAt)),
+    )
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 
   for (const workout of ordered) {
@@ -391,15 +399,14 @@ export function summarizeExerciseBlock(
       : undefined;
 
   /* Référence pertinente : la dernière réalisation complète du même
-     exercice, au même nombre de séries, avec un volume — et la brique
-     courante menée au bout. */
-  const previous = history.find((entry) => entry.complete && entry.volumeKg !== undefined);
+     exercice **au même nombre de séries**, avec un volume — et la brique
+     courante menée au bout. Une réalisation complète d'un autre format
+     (2 séries au lieu de 3) est enjambée, pas prise pour référence. */
+  const previous = history.find(
+    (entry) => entry.complete && entry.volumeKg !== undefined && entry.seriesCount === done.length,
+  );
   const volumeVsLast: VolumeVsLast | undefined =
-    previous &&
-    volumeKg > 0 &&
-    isBlockComplete(block) &&
-    previous.seriesCount === done.length &&
-    previous.volumeKg !== undefined
+    previous && volumeKg > 0 && isBlockComplete(block) && previous.volumeKg !== undefined
       ? {
           previousWorkoutId: previous.workoutId,
           previousDate: previous.date,
@@ -459,7 +466,7 @@ export function formatSignedPercent(delta: number): string {
 
 export function formatSignedSeconds(delta: number): string {
   if (delta === 0) return "= prévu";
-  return `${delta > 0 ? "+" : "−"}${Math.abs(Math.round(delta))} s`;
+  return `${delta > 0 ? "+" : "−"}${formatSeconds(Math.abs(delta))}`;
 }
 
 export function formatRpePosition(rpe: RpeSummary): string | undefined {
