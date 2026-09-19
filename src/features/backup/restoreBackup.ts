@@ -98,11 +98,23 @@ export async function restoreBackup(envelope: BackupEnvelope, database: Dexie): 
     }
   });
 
+  /* La base cible peut avoir plus de stores que le fichier (sauvegarde v1
+     restaurée dans une base v2) : l'empreinte de contrôle porte sur les
+     stores du fichier ; les autres doivent simplement être restés vides. */
   const { stores, counts } = await readStores(database);
-  const hash = await hashCanonical(stores);
+  const restoredOnly = Object.fromEntries(
+    Object.keys(envelope.stores).map((name) => [name, stores[name] ?? []]),
+  );
+  const hash = await hashCanonical(restoredOnly);
 
   if (hash !== envelope.integrity.hash) {
     throw new BackupValidationError("Après restauration, la base ne rend pas l'empreinte du fichier");
+  }
+
+  for (const [name, count] of Object.entries(counts)) {
+    if (!(name in envelope.stores) && count !== 0) {
+      throw new BackupValidationError(`Après restauration, le store ${name} (absent du fichier) n'est pas vide`);
+    }
   }
 
   return { counts, hash };

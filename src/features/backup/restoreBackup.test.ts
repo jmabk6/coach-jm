@@ -133,6 +133,44 @@ describe("restauration dans une base de test indépendante", () => {
   });
 });
 
+describe("restauration d'une sauvegarde v1 dans une base v2 (lot 1)", () => {
+  it("les sept stores du fichier sont restaurés, l'empreinte tient, les douze nouveaux stores restent vides", async () => {
+    const envelope = await sourceEnvelope();
+    expect(envelope.database.version).toBe(1);
+
+    const target = createTestDatabase("coach-jm-test", 2);
+    opened.push(target);
+    const result = await restoreBackup(envelope, target);
+
+    expect(target.verno).toBe(2);
+    expect(result.hash).toBe(envelope.integrity.hash);
+    expect(Object.keys(result.counts)).toHaveLength(19);
+    for (const [name, count] of Object.entries(result.counts)) {
+      expect(count, name).toBe(envelope.counts[name] ?? 0);
+    }
+
+    /* Ré-exporter depuis la base v2 : le fichier dit désormais version 2 et
+       porte 19 stores ; les sept d'origine sont inchangés. */
+    const again = await readBackup(target, context);
+    expect(again.database.version).toBe(2);
+    expect(Object.keys(again.stores)).toHaveLength(19);
+    const legacyOnly = Object.fromEntries(Object.keys(envelope.stores).map((name) => [name, again.stores[name]]));
+    expect(canonicalStringify(legacyOnly)).toBe(canonicalStringify(envelope.stores));
+  });
+
+  it("un fichier v2 ne se restaure pas dans une base v1 : store inconnu, aucune écriture", async () => {
+    const source = createTestDatabase("coach-jm-test", 2);
+    opened.push(source);
+    await source.table("workouts").bulkAdd(buildImportedWorkouts());
+    const envelope = await readBackup(source, context);
+    expect(envelope.database.version).toBe(2);
+
+    const legacyTarget = openTest();
+    await expect(restoreBackup(envelope, legacyTarget)).rejects.toThrow(/n'existe pas dans la base cible/);
+    expect(await legacyTarget.table("workouts").count()).toBe(0);
+  });
+});
+
 describe("fichier réel (COACH_JM_BACKUP)", () => {
   const path = process.env.COACH_JM_BACKUP;
 
@@ -148,6 +186,13 @@ describe("fichier réel (COACH_JM_BACKUP)", () => {
     const result = await restoreBackup(envelope, target);
     expect(result.counts).toEqual(envelope.counts);
     expect(result.hash).toBe(envelope.integrity.hash);
+
+    /* Et dans une base v2 : c'est le chemin que suivra l'iPhone (scénario 3 réel). */
+    const v2 = createTestDatabase("coach-jm-test", 2);
+    opened.push(v2);
+    const migrated = await restoreBackup(envelope, v2);
+    expect(migrated.hash).toBe(envelope.integrity.hash);
+    expect(v2.verno).toBe(2);
 
     console.info("[sauvegarde réelle]", envelope.exportedAt, envelope.database, envelope.counts, script.notes);
   });

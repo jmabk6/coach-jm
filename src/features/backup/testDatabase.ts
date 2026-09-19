@@ -1,28 +1,28 @@
 import Dexie from "dexie";
+import { CoachJmDatabase, VERSION_1_STORES } from "../../db/database";
 
 /**
- * Bases de test **indépendantes** de `coach-jm` : même schéma v1 que
- * l'application, nom unique. Le test `schemaMirror` vérifie que cette
- * copie ne dérive pas de `src/db/database.ts` (stores et index égaux).
+ * Bases de test **indépendantes** de `coach-jm`, nom unique :
+ * - version 1 : le schéma tel que l'application l'a créé jusqu'au lot 0
+ *   (celui des sauvegardes réelles existantes), lu dans `database.ts` ;
+ * - version 2 : la vraie classe de l'application (lot 1).
  */
-export const TEST_V1_STORES = {
-  exercises:
-    "id, name, zone, movement, equipment, location, mode, measurementType, status, updatedAt",
-  sessionTemplates: "id, name, category, status, position, updatedAt",
-  weeklyPrograms: "id, name, updatedAt",
-  plannedSessions: "id, date, sessionTemplateId, status, source, updatedAt",
-  workouts:
-    "id, date, plannedSessionId, sessionTemplateId, source, status, startedAt, completedAt, updatedAt",
-  goals: "id, status, dueDate, achievedAt, updatedAt",
-  weightEntries: "id, &date, kg, updatedAt",
-} as const;
+export const TEST_V1_STORES = VERSION_1_STORES;
 
 let counter = 0;
 
-export function createTestDatabase(prefix = "coach-jm-test"): Dexie {
+function uniqueName(prefix: string): string {
   counter += 1;
-  const database = new Dexie(`${prefix}-${Date.now()}-${counter}`);
-  database.version(1).stores(TEST_V1_STORES);
+  return `${prefix}-${Date.now()}-${counter}`;
+}
+
+export function createTestDatabase(prefix = "coach-jm-test", version: 1 | 2 = 1): Dexie {
+  if (version === 2) {
+    return new CoachJmDatabase(uniqueName(prefix));
+  }
+
+  const database = new Dexie(uniqueName(prefix));
+  database.version(1).stores(VERSION_1_STORES);
 
   return database;
 }

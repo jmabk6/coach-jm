@@ -152,7 +152,53 @@ export const STORE_LABELS: Record<string, string> = {
   workouts: "Séances réalisées",
   goals: "Objectifs",
   weightEntries: "Pesées",
+  strengthFrames: "Cadres de musculation",
+  strengthFrameVersions: "Versions de cadre",
+  strengthMilestones: "Jalons de musculation",
+  rpeScaleVersions: "Échelles de RPE",
+  cardioProtocols: "Protocoles cardio",
+  cardioProtocolVersions: "Versions de protocole cardio",
+  cardioTests: "Tests cardio",
+  cardioTestMeasures: "Mesures de test cardio",
+  mobilityProtocolVersions: "Protocoles de mobilité",
+  mobilityAssessments: "Bilans de mobilité",
+  mobilityMeasures: "Mesures de mobilité",
+  mobilityObservations: "Observations de mobilité",
 };
+
+/** Les sept stores d'origine, dans l'ordre d'affichage : toujours montrés, même à zéro. */
+export const LEGACY_STORE_ORDER = [
+  "exercises",
+  "sessionTemplates",
+  "weeklyPrograms",
+  "plannedSessions",
+  "workouts",
+  "goals",
+  "weightEntries",
+];
+const LEGACY_STORE_NAMES = new Set(LEGACY_STORE_ORDER);
+
+/**
+ * Comptes à afficher : les stores d'origine et tout store non vide ; les
+ * nouveaux stores encore vides sont résumés sur une ligne (`hiddenEmpty`)
+ * pour que la carte reste lisible sur un téléphone. Le fichier, lui,
+ * contient toujours tous les stores.
+ */
+export function splitCountsForDisplay(counts: Record<string, number>): {
+  shown: Array<[string, number]>;
+  hiddenEmpty: number;
+} {
+  const entries = Object.entries(counts);
+  const rank = (name: string) => {
+    const index = LEGACY_STORE_ORDER.indexOf(name);
+    return index === -1 ? LEGACY_STORE_ORDER.length : index;
+  };
+  const shown = entries
+    .filter(([name, count]) => LEGACY_STORE_NAMES.has(name) || count > 0)
+    .sort(([a], [b]) => rank(a) - rank(b) || storeLabel(a).localeCompare(storeLabel(b), "fr"));
+
+  return { shown, hiddenEmpty: entries.length - shown.length };
+}
 
 export function storeLabel(name: string): string {
   return STORE_LABELS[name] ?? name;

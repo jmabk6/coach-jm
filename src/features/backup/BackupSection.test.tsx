@@ -151,6 +151,30 @@ describe("Sauvegarder mes données — écran", () => {
     expect(screen.queryByText("Sauvegarde prête à partager")).toBeNull();
   });
 
+  it("sur une base v2, la carte garde les sept stores d'origine et résume les nouveaux stores vides", async () => {
+    const database = createTestDatabase("coach-jm-test", 2);
+    opened.push(database);
+    await database.table("workouts").bulkAdd(buildImportedWorkouts());
+    await database.table("mobilityObservations").add({ id: "o1", assessmentId: "a1", zone: "dos", ressenti: "limite" });
+
+    await renderReady({}, database);
+
+    const card = screen.getByRole("region", { name: "Sauvegarde prête" });
+    expect(within(card).getByText(/schéma version 2/)).toBeTruthy();
+    const labels = [...card.querySelectorAll("dl dt")].map((dt) => dt.textContent);
+    expect(labels).toEqual([
+      "Exercices",
+      "Modèles de séance",
+      "Programmation",
+      "Séances planifiées",
+      "Séances réalisées",
+      "Objectifs",
+      "Pesées",
+      "Observations de mobilité",
+    ]);
+    expect(within(card).getByText("11 autres stores, vides, inclus dans le fichier.")).toBeTruthy();
+  });
+
   it("signale les valeurs écrites sous une forme équivalente sans bloquer", async () => {
     const database = createTestDatabase();
     opened.push(database);

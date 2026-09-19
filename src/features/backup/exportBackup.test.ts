@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 
 import Dexie from "dexie";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { db } from "../../db/database";
+import { DATABASE_VERSION, db, STORE_NAMES } from "../../db/database";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
 import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
 import { buildImportedWorkouts } from "../history/importedWorkouts";
@@ -56,27 +56,41 @@ afterEach(async () => {
   vi.restoreAllMocks();
 });
 
-describe("schéma de l'application pendant le lot 0", () => {
+describe("schéma de l'application (lot 1 intégré)", () => {
   afterEach(async () => {
     db.close();
     await db.delete();
   });
 
-  it("la base déclarée par l'application est la version 1 avec ses sept stores — le lot 1 n'est pas embarqué", async () => {
+  it("la base déclarée par l'application est la version 2 avec ses dix-neuf stores, et la sauvegarde les couvre tous", async () => {
     await db.delete();
     await db.open();
 
-    expect(db.verno).toBe(1);
-    expect(db.tables.map((table) => table.name).sort()).toEqual(Object.keys(TEST_V1_STORES).sort());
+    expect(db.verno).toBe(DATABASE_VERSION);
+    expect(DATABASE_VERSION).toBe(2);
+    expect(db.tables.map((table) => table.name).sort()).toEqual([...STORE_NAMES].sort());
+    expect(db.tables).toHaveLength(19);
+
+    const envelope = await readBackup(db, context);
+    expect(envelope.database.version).toBe(2);
+    expect(Object.keys(envelope.stores).sort()).toEqual([...STORE_NAMES].sort());
+    expect(Object.keys(envelope.counts)).toHaveLength(19);
+    for (const name of STORE_NAMES) expect(envelope.counts[name], name).toBe(0);
   });
 
-  it("la base de test reflète exactement le schéma de production (aucune dérive)", async () => {
+  it("la base de test v2 reflète exactement le schéma de production ; la base de test v1 est celle des sauvegardes existantes", async () => {
     await db.delete();
     await db.open();
-    const test = openTest();
-    await test.open();
+    const v2 = createTestDatabase("coach-jm-test", 2);
+    opened.push(v2);
+    await v2.open();
+    expect(describeSchema(v2)).toEqual(describeSchema(db));
+    expect(v2.verno).toBe(2);
 
-    expect(describeSchema(test)).toEqual(describeSchema(db));
+    const v1 = openTest();
+    await v1.open();
+    expect(v1.verno).toBe(1);
+    expect(Object.keys(describeSchema(v1)).sort()).toEqual(Object.keys(TEST_V1_STORES).sort());
   });
 });
 

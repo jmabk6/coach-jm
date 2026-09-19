@@ -15,6 +15,7 @@ import {
   formatBytes,
   readBackup,
   serializeBackup,
+  splitCountsForDisplay,
   storeLabel,
   type BackupEnvelope,
 } from "./exportBackup";
@@ -164,13 +165,18 @@ export function BackupSection({
           </p>
 
           <dl className="backup-card__counts">
-            {Object.entries(state.envelope.counts).map(([name, count]) => (
+            {splitCountsForDisplay(state.envelope.counts).shown.map(([name, count]) => (
               <div key={name}>
                 <dt>{storeLabel(name)}</dt>
                 <dd>{count}</dd>
               </div>
             ))}
           </dl>
+          {splitCountsForDisplay(state.envelope.counts).hiddenEmpty > 0 && (
+            <p className="backup-card__meta">
+              {splitCountsForDisplay(state.envelope.counts).hiddenEmpty} autres stores, vides, inclus dans le fichier.
+            </p>
+          )}
 
           <p className="backup-card__hash">
             Empreinte <code>{state.envelope.integrity.hash.slice(0, 8)}</code>
