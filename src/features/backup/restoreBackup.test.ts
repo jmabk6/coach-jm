@@ -182,17 +182,21 @@ describe("fichier réel (COACH_JM_BACKUP)", () => {
     const script = scriptVerify(JSON.parse(text));
     expect(script.ok).toBe(true);
 
-    const target = openTest();
-    const result = await restoreBackup(envelope, target);
-    expect(result.counts).toEqual(envelope.counts);
-    expect(result.hash).toBe(envelope.integrity.hash);
+    /* Un fichier v1 se restaure dans une base v1 (son schéma d'origine)… */
+    if (envelope.database.version === 1) {
+      const target = openTest();
+      const result = await restoreBackup(envelope, target);
+      expect(result.counts).toEqual(envelope.counts);
+      expect(result.hash).toBe(envelope.integrity.hash);
+    }
 
-    /* Et dans une base v2 : c'est le chemin que suivra l'iPhone (scénario 3 réel). */
+    /* …et tout fichier, v1 ou v2, dans une base v2 : le chemin que suit l'iPhone. */
     const v2 = createTestDatabase("coach-jm-test", 2);
     opened.push(v2);
     const migrated = await restoreBackup(envelope, v2);
     expect(migrated.hash).toBe(envelope.integrity.hash);
     expect(v2.verno).toBe(2);
+    for (const [name, count] of Object.entries(envelope.counts)) expect(migrated.counts[name], name).toBe(count);
 
     console.info("[sauvegarde réelle]", envelope.exportedAt, envelope.database, envelope.counts, script.notes);
   });
