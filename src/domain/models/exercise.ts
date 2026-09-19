@@ -74,6 +74,35 @@ export type ExerciseStatus =
   | "active"
   | "archived";
 
+/**
+ * Groupe de progression (conception technique v1.5, § 2.1) : le
+ * sous-ensemble suivi par le module Musculation. Sa cohérence avec
+ * `zone` (Jambes → Quadriceps / Ischio-jambiers / Fessiers, Dos → Dos,
+ * Pecs → Pectoraux, Épaules → Épaules, Bras → Bras, Core → Abdominaux,
+ * zone absente → aucun) sera validée par `domain/rules/exerciseRules.ts`
+ * dans un lot ultérieur ; ici le type seul.
+ */
+export type ProgressionGroup =
+  | "Quadriceps"
+  | "Ischio-jambiers"
+  | "Fessiers"
+  | "Dos"
+  | "Pectoraux"
+  | "Épaules"
+  | "Bras"
+  | "Abdominaux";
+
+/**
+ * Famille de mouvement, indépendante de `movement` : un Tirage peut être
+ * horizontal ou vertical, aucune dérivation automatique. Vide est une
+ * valeur normale (squats, jambes, gainage, isolations).
+ */
+export type MovementFamily =
+  | "tirage_horizontal"
+  | "tirage_vertical"
+  | "poussee_horizontale"
+  | "poussee_verticale";
+
 export interface ExerciseMeasurementLabels {
   /**
    * Libellé d'une mesure simple.
@@ -169,6 +198,16 @@ interface ExerciseBase {
    * existent réellement sur l'exercice.
    */
   pinnedAlternativeExerciseIds?: Id[];
+
+  /**
+   * Classification de progression (v1.5, § 2.1), facultative : absente
+   * sur tous les enregistrements antérieurs au schéma v2 et sur les
+   * exercices créés par l'utilisateur tant qu'il ne l'a pas saisie.
+   * Un exercice sans `progressionGroup` n'entre dans aucun total par
+   * groupe. Renseignée par le catalogue dans un lot ultérieur.
+   */
+  progressionGroup?: ProgressionGroup;
+  movementFamily?: MovementFamily;
 
   status: ExerciseStatus;
 

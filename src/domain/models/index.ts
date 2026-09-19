@@ -4,3 +4,6 @@ export * from "./program";
 export * from "./workout";
 export * from "./goal";
 export * from "./weight";
+export * from "./strength";
+export * from "./cardioTest";
+export * from "./mobility";

@@ -17,6 +17,24 @@ export type PerformedBlockStatus =
   | "skipped"
   | "not_performed";
 
+/**
+ * Nature réelle d'une séance faite (conception technique v1.5, § 2.2).
+ * Absent = `"training"` : toutes les séances antérieures au schéma v2
+ * sont des séances d'entraînement et conservent leur traitement
+ * statistique. Posé au démarrage, jamais modifié après la clôture.
+ */
+export type WorkoutKind =
+  | "training"
+  | "mobility_assessment";
+
+/**
+ * Rôle d'une série (v1.5, § 4.4), saisi explicitement, jamais dérivé du
+ * RPE ni de la charge. Absent = série de travail.
+ */
+export type PerformedSeriesRole =
+  | "echauffement"
+  | "travail";
+
 export interface WorkoutSession {
   id: Id;
 
@@ -31,6 +49,20 @@ export interface WorkoutSession {
    * Peut être absent pour une séance libre créée vide.
    */
   sessionTemplateId?: Id;
+
+  /**
+   * Nature réelle de la séance (v1.5, § 2.2). Absent = entraînement.
+   * C'est ce champ, et non la catégorie du modèle, qui décide du
+   * traitement d'une séance faite dans les statistiques.
+   */
+  kind?: WorkoutKind;
+
+  /**
+   * Échelle de RPE en vigueur au démarrage (v1.5, § 4.5). Absent sur les
+   * séances antérieures à la première version de l'échelle : leur RPE est
+   * conservé tel quel, sans conversion.
+   */
+  rpeScaleVersionId?: Id;
 
   source: WorkoutSource;
 
@@ -132,6 +164,13 @@ export interface PerformedExerciseBlock extends PerformedBaseBlock {
   originalExerciseId?: Id;
 
   status: PerformedBlockStatus;
+
+  /**
+   * Version de cadre de l'exercice réellement effectué, capturée au
+   * démarrage, à l'ajout ou à la substitution (v1.5, § 4.3). Absent =
+   * exercice sans cadre au moment de l'exécution : aucune validation.
+   */
+  frameVersionId?: Id;
 
   /**
    * Seules les consignes sont figées au démarrage.
@@ -281,6 +320,17 @@ export interface PerformedSeries {
    */
   rpe?: number;
 
+  /**
+   * Rôle de la série (v1.5, § 4.4). Absent = travail.
+   */
+  role?: PerformedSeriesRole;
+
+  /**
+   * Série limitée par un côté (v1.5, § 4.4) : empêche la validation du
+   * cadre. Absent = faux.
+   */
+  sideLimited?: boolean;
+
   note?: string;
 
   /**
@@ -427,6 +477,12 @@ export interface PerformedGroupRoundChild {
    * - attribution correcte de la progression
    */
   exerciseId: Id;
+
+  /**
+   * Version de cadre de l'exercice de CE tour (v1.5, § 4.3) : elle suit
+   * l'exercice réellement effectué, jamais `PerformedGroupChild`.
+   */
+  frameVersionId?: Id;
 
   load?: Load;
   reps?: number;
