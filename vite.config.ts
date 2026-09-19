@@ -1,15 +1,24 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+/**
+ * Mode `lan` (npm run dev:lan) : serveur de recette exposé sur le réseau
+ * local en HTTPS auto-signé, pour tester sur un iPhone réel depuis un
+ * origin qui n'est pas celui de la PWA (Web Share et crypto.subtle
+ * exigent un contexte sécurisé). Sans effet sur le build de production.
+ */
+export default defineConfig(({ mode }) => ({
   base: "/coach-jm/",
   define: {
     /* Horodatage de build, affiché dans Plus pour savoir quelle version tourne. */
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
+  ...(mode === "lan" ? { server: { host: true, port: 5175, strictPort: true } } : {}),
   plugins: [
     react(),
+    ...(mode === "lan" ? [basicSsl()] : []),
     VitePWA({
       /* Pas encore d'interface de mise à jour : la nouvelle version s'active au lancement suivant. */
       registerType: "autoUpdate",
@@ -46,5 +55,4 @@ export default defineConfig({
       },
     }),
   ],
-});
-
+}));

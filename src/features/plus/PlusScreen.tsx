@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { DatabaseBackup, Dumbbell, ListChecks } from "lucide-react";
 import { BottomSheet } from "../../components/ui/BottomSheet";
+import { db } from "../../db/database";
+import { BackupSection } from "../backup/BackupSection";
 import {
   importSeptember2026History,
   type ImportHistoryResult,
@@ -100,6 +102,7 @@ export function PlusScreen() {
             ›
           </span>
         </button>
+        <p className="plus-list__hint">Sauvegardez avant d'importer.</p>
       </div>
 
       {importState.status === "running" && (
@@ -118,6 +121,10 @@ export function PlusScreen() {
         </p>
       )}
 
+      <div className="plus-list">
+        <BackupSection database={db} />
+      </div>
+
       <p className="plus-screen__version">
         Version du{" "}
         {new Date(__BUILD_TIME__).toLocaleString("fr-FR", {
@@ -129,7 +136,7 @@ export function PlusScreen() {
       {importState.status === "confirm" && (
         <BottomSheet
           title="Importer mes séances de septembre 2026 ?"
-          message="10 séances réalisées (tapis, musculation, gainage, mobilité, marche) rejoignent l'historique et alimentent les fiches exercices."
+          message="10 séances réalisées (tapis, musculation, gainage, mobilité, marche) rejoignent l'historique et alimentent les fiches exercices. Sauvegardez vos données avant d'importer."
           actions={[
             {
               label: "Importer",
