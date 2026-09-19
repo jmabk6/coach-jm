@@ -29,6 +29,7 @@ import { formatFullDate } from "../../domain/rules/programRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { deleteWorkout } from "./deleteWorkout";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
+import { categoryClassName } from "../sessions/sessionCategoryClass";
 import {
   buildWorkoutRecapLines,
   compareVolumeToPrevious,
@@ -485,7 +486,7 @@ function RecapLine({ line, to }: { line: WorkoutRecapLine; to: string }) {
       <Link to={to} className="recap-line__main">
         <span className="recap-line__number">{line.number}</span>
         <span
-          className={`recap-line__icon session-card__icon--${category}`}
+          className={`recap-line__icon ${categoryClassName("session-card__icon", category)}`}
           aria-hidden="true"
         >
           <SessionCategoryIcon category={category} size={20} />

@@ -7,6 +7,7 @@ import { getAllSessionTemplates } from "../../db/repositories/sessionTemplateRep
 import { getCompletedWorkouts } from "../../db/repositories/workoutRepository";
 import { formatDayLabel } from "../../domain/rules/programRules";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
+import { categoryClassName } from "../sessions/sessionCategoryClass";
 import { describeWorkoutSummary, isCountedWorkout } from "./overview";
 import { groupWorkoutsByMonth, type HistoryMonth } from "./historyGroups";
 import "./Progression.css";
@@ -88,7 +89,7 @@ export function HistoryScreen() {
                       <span className="progression-recent__date">
                         {label.weekday} {label.day}
                       </span>
-                      <span className={`progression-recent__icon session-card__icon--${category}`}>
+                      <span className={`progression-recent__icon ${categoryClassName("session-card__icon", category)}`}>
                         <SessionCategoryIcon category={category} size={16} />
                       </span>
                       <span className="history__body">

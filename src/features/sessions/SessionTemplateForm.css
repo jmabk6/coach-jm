@@ -92,22 +92,28 @@
   clip: rect(0 0 0 0);
 }
 
-.session-form__category--active.session-form__category--Musculation {
+.session-form__category--active.session-form__category--musculation {
   border-color: #6b3fd6;
   background: #efe9ff;
   color: #6b3fd6;
 }
 
-.session-form__category--active.session-form__category--Cardio {
+.session-form__category--active.session-form__category--cardio {
   border-color: #1f8a3b;
   background: #e6f6ea;
   color: #1f8a3b;
 }
 
-.session-form__category--active.session-form__category--Mobilité {
+.session-form__category--active.session-form__category--mobilite {
   border-color: #d9740e;
   background: #fff0e0;
   color: #d9740e;
+}
+
+.session-form__category--active.session-form__category--bilan {
+  border-color: #2a6f97;
+  background: #e8f1f8;
+  color: #2a6f97;
 }
 
 .session-form__error {

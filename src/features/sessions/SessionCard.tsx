@@ -19,6 +19,7 @@ import {
   summarizeSessionTemplate,
 } from "../../domain/rules/sessionTemplateRules";
 import { SessionCategoryIcon } from "./sessionCategory";
+import { categoryClassName } from "./sessionCategoryClass";
 
 interface SessionCardProps {
   template: SessionTemplate;
@@ -145,7 +146,7 @@ export function SortableSessionCard({ template }: SortableSessionCardProps) {
 function SessionCardIcon({ template }: { template: SessionTemplate }) {
   return (
     <span
-      className={`session-card__icon session-card__icon--${template.category}`}
+      className={`session-card__icon ${categoryClassName("session-card__icon", template.category)}`}
       aria-hidden="true"
     >
       <SessionCategoryIcon category={template.category} size={24} />

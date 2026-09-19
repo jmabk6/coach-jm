@@ -226,19 +226,24 @@
   border-radius: var(--radius-sm, 10px);
 }
 
-.session-card__icon--Musculation {
+.session-card__icon--musculation {
   background: #efe9ff;
   color: #6b3fd6;
 }
 
-.session-card__icon--Cardio {
+.session-card__icon--cardio {
   background: #e6f6ea;
   color: #1f8a3b;
 }
 
-.session-card__icon--Mobilité {
+.session-card__icon--mobilite {
   background: #fff0e0;
   color: #d9740e;
+}
+
+.session-card__icon--bilan {
+  background: #e8f1f8;
+  color: #2a6f97;
 }
 
 .session-card__body {

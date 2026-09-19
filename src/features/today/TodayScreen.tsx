@@ -25,6 +25,7 @@ import {
 } from "../../domain/rules/todayRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
+import { categoryClassName } from "../sessions/sessionCategoryClass";
 import { formatClock } from "../workout/workoutRecap";
 import { currentActiveDurationSec } from "../workout/finishWorkout";
 import { getOpenPause } from "../workout/engine/workoutTime";
@@ -322,7 +323,7 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
     <section className="today-card">
       <div className="today-card__head">
         <span
-          className={`today-card__icon session-card__icon session-card__icon--${category}`}
+          className={`today-card__icon session-card__icon ${categoryClassName("session-card__icon", category)}`}
           aria-hidden="true"
         >
           <SessionCategoryIcon category={category} size={26} />
@@ -403,7 +404,7 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
 function TemplateIcon({ template }: { template: SessionTemplate }) {
   return (
     <span
-      className={`today-card__icon session-card__icon session-card__icon--${template.category}`}
+      className={`today-card__icon session-card__icon ${categoryClassName("session-card__icon", template.category)}`}
       aria-hidden="true"
     >
       <SessionCategoryIcon category={template.category} size={26} />
@@ -447,7 +448,7 @@ function NextSessions({ data }: { data: TodayData }) {
                   </span>
                   <span
                     className={`today-next__icon ${
-                      template ? `session-card__icon--${template.category}` : ""
+                      template ? categoryClassName("session-card__icon", template.category) : ""
                     }`}
                     aria-hidden="true"
                   >

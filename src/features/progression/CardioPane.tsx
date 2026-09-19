@@ -33,7 +33,7 @@ function CardioCard({ report, period, returnTo }: { report: CardioExerciseReport
     <li>
       <Link to={to} className="cardio-card">
         <span className="cardio-card__head">
-          <span className="progression-recent__icon session-card__icon--Cardio">
+          <span className="progression-recent__icon session-card__icon--cardio">
             <SessionCategoryIcon category="Cardio" size={16} />
           </span>
           <span className="cardio-card__title">

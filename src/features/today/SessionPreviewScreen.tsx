@@ -40,6 +40,7 @@ import {
   formatDurationSource,
 } from "../../domain/rules/todayRules";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
+import { categoryClassName } from "../sessions/sessionCategoryClass";
 import { startWorkout } from "../workout/startWorkout";
 import { todayLocalDate } from "./useTodayData";
 import "./TodayScreen.css";
@@ -165,7 +166,7 @@ export function SessionPreviewScreen() {
 
       <header className="today-card__head preview__head">
         <span
-          className={`today-card__icon session-card__icon session-card__icon--${template.category}`}
+          className={`today-card__icon session-card__icon ${categoryClassName("session-card__icon", template.category)}`}
           aria-hidden="true"
         >
           <SessionCategoryIcon category={template.category} size={26} />

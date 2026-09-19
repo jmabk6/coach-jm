@@ -3,6 +3,7 @@ import { BarChart3, CalendarCheck, Clock, Dumbbell, HeartPulse, PieChart } from 
 import type { MuscleZone } from "../../domain";
 import { formatDayLabel } from "../../domain/rules/programRules";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
+import { categoryClassName } from "../sessions/sessionCategoryClass";
 import type { Breakdown, CategoryKey, Overview } from "./overview";
 import { periodBaseLabels, periodLabels } from "./period";
 import { formatTrendPercent } from "./trends";
@@ -28,10 +29,14 @@ function Variation({ percent, base }: { percent: number | undefined; base: strin
   );
 }
 
+/* « Bilan de mobilité » n'est jamais une ligne de la répartition (les bilans
+   sont hors statistiques, § 11.4) ; la clé existe parce que le type est
+   exhaustif. */
 const categoryLabels: Record<CategoryKey, string> = {
   Musculation: "Musculation",
   Cardio: "Cardio",
   Mobilité: "Mobilité",
+  "Bilan de mobilité": "Bilan de mobilité",
   "Sans catégorie": "Sans catégorie",
 };
 
@@ -222,7 +227,7 @@ export function OverviewPane({ overview }: { overview: Overview }) {
                     <span className="progression-recent__date">
                       {label.weekday} {label.day}
                     </span>
-                    <span className={`progression-recent__icon session-card__icon--${line.category ?? "Musculation"}`}>
+                    <span className={`progression-recent__icon ${categoryClassName("session-card__icon", line.category ?? "Musculation")}`}>
                       <SessionCategoryIcon category={line.category ?? "Musculation"} size={16} />
                     </span>
                     <span className="progression-recent__name">{line.name}</span>

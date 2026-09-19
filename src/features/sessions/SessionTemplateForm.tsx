@@ -4,6 +4,7 @@ import type { SessionCategory } from "../../domain";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { SessionCategoryIcon } from "./sessionCategory";
 import { sessionCategories } from "./sessionCategories";
+import { categoryClassName } from "./sessionCategoryClass";
 import "./SessionTemplateForm.css";
 
 export interface SessionTemplateIdentity {
@@ -134,7 +135,7 @@ export function SessionTemplateForm({
                   key={option}
                   className={`session-form__category ${
                     active ? "session-form__category--active" : ""
-                  } session-form__category--${option}`}
+                  } ${categoryClassName("session-form__category", option)}`}
                 >
                   <input
                     type="radio"

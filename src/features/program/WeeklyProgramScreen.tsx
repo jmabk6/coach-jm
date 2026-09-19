@@ -23,6 +23,7 @@ import {
 } from "../../domain/rules/sessionTemplateRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
+import { categoryClassName } from "../sessions/sessionCategoryClass";
 import { applyWeeklyProgram } from "./applyWeeklyProgram";
 import { TemplateSheet } from "./ProgramSheets";
 import "./ProgramScreen.css";
@@ -171,7 +172,7 @@ export function WeeklyProgramScreen() {
                 {template ? (
                   <>
                     <span
-                      className={`program-row__icon session-card__icon--${template.category}`}
+                      className={`program-row__icon ${categoryClassName("session-card__icon", template.category)}`}
                       aria-hidden="true"
                     >
                       <SessionCategoryIcon category={template.category} size={22} />

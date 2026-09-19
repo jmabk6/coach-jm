@@ -12,6 +12,7 @@ import {
   getDisplayedPlannedSessionStatus,
 } from "../../domain/rules/todayRules";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
+import { categoryClassName } from "../sessions/sessionCategoryClass";
 import {
   formatFreeWorkoutSummary,
   inferFreeWorkoutCategory,
@@ -51,7 +52,7 @@ export function PlannedSessionRow({
       >
         <span
           className={`program-row__icon ${
-            template ? `session-card__icon--${template.category}` : ""
+            template ? categoryClassName("session-card__icon", template.category) : ""
           }`}
           aria-hidden="true"
         >
@@ -107,7 +108,7 @@ export function FreeWorkoutRow({
         onClick={() => onOpenMenu(workout)}
       >
         <span
-          className={`program-row__icon session-card__icon--${category}`}
+          className={`program-row__icon ${categoryClassName("session-card__icon", category)}`}
           aria-hidden="true"
         >
           <SessionCategoryIcon category={category} size={22} />
