@@ -58,6 +58,13 @@ export default defineConfig(({ mode }) => ({
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
   ...(mode === "lan" ? { server: lanServer() } : {}),
+  /* Mode `tunnel` (npm run preview:tunnel) : le build de production servi en
+     HTTP local, exposé par un tunnel Cloudflare éphémère (HTTPS public à
+     URL aléatoire) pour la recette sur iPhone sans certificat à installer.
+     Seul `dist/` est servi ; aucun fichier du dépôt ni clé privée. */
+  ...(mode === "tunnel"
+    ? { preview: { host: "127.0.0.1", port: 5176, strictPort: true, allowedHosts: [".trycloudflare.com"] } }
+    : {}),
   plugins: [
     react(),
     ...(mode === "lan" ? [serveDevCa(), ...(hasLanCert ? [] : [basicSsl()])] : []),

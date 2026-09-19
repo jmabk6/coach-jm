@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "vite",
         "dev:lan": "vite --mode lan",
+        "preview:tunnel": "vite preview --mode tunnel",
         "backup:verify": "node scripts/verify-backup.mjs",
         "build": "tsc -b && vite build",
         "lint": "eslint .",
