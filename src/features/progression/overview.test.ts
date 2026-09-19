@@ -7,7 +7,10 @@ import type {
   SessionTemplate,
   WorkoutSession,
 } from "../../domain";
+import { buildExercisePerformanceHistory } from "../exercises/exercisePerformance";
 import { buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildCardioReport } from "./cardio";
+import { buildExerciseTrends } from "./trends";
 import {
   coversPreviousPeriod,
   formatPeriodRange,
@@ -21,6 +24,7 @@ import {
   describeWorkoutSummary,
   getCategoryBreakdown,
   getCompletionRate,
+  hasPerformedBlock,
   getCoverageStart,
   getFirstCountedDate,
   getStrengthSummary,
@@ -66,7 +70,7 @@ const exercises: Exercise[] = [
   exercise("marche", { category: "Cardio", mode: "simple", measurementType: "distance" }),
 ];
 
-const templates: SessionTemplate[] = (["Musculation", "Cardio", "Mobilité"] as const).map((category) => ({
+const templates: SessionTemplate[] = (["Musculation", "Cardio", "Mobilité", "Bilan de mobilité"] as const).map((category) => ({
   id: `tpl-${category}`,
   name: `Modèle ${category}`,
   category,
@@ -159,11 +163,17 @@ function workout(
   };
 }
 
-function planned(id: string, date: string, status: PlannedSession["status"], workoutId?: string): PlannedSession {
+function planned(
+  id: string,
+  date: string,
+  status: PlannedSession["status"],
+  workoutId?: string,
+  templateId = "tpl-Musculation",
+): PlannedSession {
   return {
     id,
     date,
-    sessionTemplateId: "tpl-Musculation",
+    sessionTemplateId: templateId,
     status,
     ...(workoutId ? { workoutId } : {}),
     source: "manual",
@@ -270,6 +280,8 @@ describe("taux de réalisation du programme (Q1)", () => {
     musc("w-free", "2026-09-14"),
   ];
 
+  const templateById = new Map(templates.map((item) => [item.id, item]));
+
   it("met au dénominateur les instances échues faites, sautées ou non réalisées, et au numérateur les faites réellement réalisées", () => {
     const plannedSessions = [
       planned("p-done", "2026-09-10", "done", "w-done"),
@@ -283,35 +295,183 @@ describe("taux de réalisation du programme (Q1)", () => {
       planned("p-future", "2026-09-20", "upcoming"),
     ];
 
-    expect(getCompletionRate(plannedSessions, workouts, period, TODAY)).toEqual({ done: 1, expected: 4, percent: 25 });
+    expect(getCompletionRate(plannedSessions, workouts, templateById, period, TODAY)).toEqual({ done: 1, expected: 4, percent: 25 });
   });
 
   it("n'intègre l'instance du jour qu'une fois terminée et réalisée, jamais une séance en cours", () => {
-    expect(getCompletionRate([planned("p-today", TODAY, "done", "w-today")], workouts, period, TODAY)).toEqual({ done: 1, expected: 1, percent: 100 });
-    expect(getCompletionRate([planned("p-today", TODAY, "upcoming")], workouts, period, TODAY)).toEqual({ done: 0, expected: 0 });
-    expect(getCompletionRate([planned("p-today", TODAY, "in_progress", "w-run")], [{ ...musc("w-run", TODAY), status: "in_progress" }], period, TODAY)).toEqual({ done: 0, expected: 0 });
+    expect(getCompletionRate([planned("p-today", TODAY, "done", "w-today")], workouts, templateById, period, TODAY)).toEqual({ done: 1, expected: 1, percent: 100 });
+    expect(getCompletionRate([planned("p-today", TODAY, "upcoming")], workouts, templateById, period, TODAY)).toEqual({ done: 0, expected: 0 });
+    expect(getCompletionRate([planned("p-today", TODAY, "in_progress", "w-run")], [{ ...musc("w-run", TODAY), status: "in_progress" }], templateById, period, TODAY)).toEqual({ done: 0, expected: 0 });
     /* Une séance en cours d'hier est attendue, pas réalisée. */
-    expect(getCompletionRate([planned("p-y", "2026-09-16", "in_progress", "w-y")], [{ ...musc("w-y", "2026-09-16"), status: "in_progress" }], period, TODAY)).toEqual({ done: 0, expected: 1, percent: 0 });
+    expect(getCompletionRate([planned("p-y", "2026-09-16", "in_progress", "w-y")], [{ ...musc("w-y", "2026-09-16"), status: "in_progress" }], templateById, period, TODAY)).toEqual({ done: 0, expected: 1, percent: 0 });
   });
 
   it("exclut les séances libres et compte la première journée de la période", () => {
-    const rate = getCompletionRate(
-      [planned("p-first", "2026-08-21", "done", "w-first")],
-      [...workouts, musc("w-first", "2026-08-21", 40, { plannedSessionId: "p-first" })],
-      period,
-      TODAY,
-    );
+    const rate = getCompletionRate([planned("p-first", "2026-08-21", "done", "w-first")], [...workouts, musc("w-first", "2026-08-21", 40, { plannedSessionId: "p-first" })], templateById, period, TODAY);
     expect(rate).toEqual({ done: 1, expected: 1, percent: 100 });
     /* Aucune instance attendue : pas de pourcentage, pas de 0 %. */
-    expect(getCompletionRate([], workouts, period, TODAY)).toEqual({ done: 0, expected: 0 });
+    expect(getCompletionRate([], workouts, templateById, period, TODAY)).toEqual({ done: 0, expected: 0 });
   });
 
   it("se recalcule après la suppression d'une réalisation : l'instance redevenue À venir reste attendue", () => {
-    const before = getCompletionRate([planned("p-done", "2026-09-10", "done", "w-done")], workouts, period, TODAY);
-    const after = getCompletionRate([planned("p-done", "2026-09-10", "upcoming")], workouts.filter((w) => w.id !== "w-done"), period, TODAY);
+    const before = getCompletionRate([planned("p-done", "2026-09-10", "done", "w-done")], workouts, templateById, period, TODAY);
+    const after = getCompletionRate([planned("p-done", "2026-09-10", "upcoming")], workouts.filter((w) => w.id !== "w-done"), templateById, period, TODAY);
 
     expect(before).toEqual({ done: 1, expected: 1, percent: 100 });
     expect(after).toEqual({ done: 0, expected: 1, percent: 0 });
+  });
+});
+
+describe("taux de réalisation et bilans de mobilité (v1.5, § 11.3)", () => {
+  const period = resolvePeriod("4w", TODAY);
+  const templateById = new Map(templates.map((item) => [item.id, item]));
+  const bilan = (id: string, date: string, extra: Partial<WorkoutSession> = {}) =>
+    workout(id, date, [seriesBlock("squat", [{ reps: 1 }])], {
+      kind: "mobility_assessment",
+      sessionTemplateId: "tpl-Bilan de mobilité",
+      source: "planned",
+      ...extra,
+    });
+  const training = [
+    planned("p1", "2026-09-10", "done", "w1"),
+    planned("p2", "2026-09-11", "skipped"),
+    planned("p3", "2026-09-12", "done", "w3"),
+  ];
+  const trainingWorkouts = [musc("w1", "2026-09-10"), musc("w3", "2026-09-12")];
+  const reference = getCompletionRate(training, trainingWorkouts, templateById, period, TODAY);
+
+  it("référence sans bilan : 2 réalisées sur 3 attendues", () => {
+    expect(reference).toEqual({ done: 2, expected: 3, percent: 67 });
+  });
+
+  it("bilan planifié non fait : hors du dénominateur, taux inchangé", () => {
+    const planned2 = [...training, planned("pb", "2026-09-13", "upcoming", undefined, "tpl-Bilan de mobilité")];
+    expect(getCompletionRate(planned2, trainingWorkouts, templateById, period, TODAY)).toEqual(reference);
+  });
+
+  it("bilan planifié fait : hors des deux côtés, taux inchangé", () => {
+    const planned2 = [...training, planned("pb", "2026-09-13", "done", "wb", "tpl-Bilan de mobilité")];
+    const workouts2 = [...trainingWorkouts, bilan("wb", "2026-09-13", { plannedSessionId: "pb" })];
+    expect(getCompletionRate(planned2, workouts2, templateById, period, TODAY)).toEqual(reference);
+  });
+
+  it("cas croisé A — entraînement planifié, séance faite en bilan (kind) : hors des deux côtés", () => {
+    const planned2 = [...training, planned("px", "2026-09-13", "done", "wx")];
+    const workouts2 = [...trainingWorkouts, bilan("wx", "2026-09-13", { sessionTemplateId: "tpl-Musculation", plannedSessionId: "px" })];
+    expect(getCompletionRate(planned2, workouts2, templateById, period, TODAY)).toEqual(reference);
+  });
+
+  it("cas croisé B — bilan planifié, séance faite en entraînement : attendue et réalisée, jamais plus de 100 %", () => {
+    const planned2 = [...training, planned("py", "2026-09-13", "done", "wy", "tpl-Bilan de mobilité")];
+    const workouts2 = [...trainingWorkouts, musc("wy", "2026-09-13", 40, { sessionTemplateId: "tpl-Bilan de mobilité", plannedSessionId: "py", kind: "training" })];
+    expect(getCompletionRate(planned2, workouts2, templateById, period, TODAY)).toEqual({ done: 3, expected: 4, percent: 75 });
+    /* Un bilan seul planifié et fait en entraînement : 1 / 1, pas 1 / 0. */
+    expect(getCompletionRate([planned("py", "2026-09-13", "done", "wy", "tpl-Bilan de mobilité")], workouts2, templateById, period, TODAY)).toEqual({ done: 1, expected: 1, percent: 100 });
+  });
+
+  it("changement de catégorie d'un modèle après réalisation : les instances faites ne bougent pas, seules les non faites suivent", () => {
+    /* Le modèle Musculation devient « Bilan de mobilité » après coup. */
+    const recategorised = new Map(templateById);
+    recategorised.set("tpl-Musculation", { ...templateById.get("tpl-Musculation")!, category: "Bilan de mobilité" });
+    const planned2 = [...training, planned("p4", "2026-09-14", "upcoming")];
+
+    const before = getCompletionRate(planned2, trainingWorkouts, templateById, period, TODAY);
+    const after = getCompletionRate(planned2, trainingWorkouts, recategorised, period, TODAY);
+
+    expect(before).toEqual({ done: 2, expected: 4, percent: 50 });
+    /* Les deux faites (kind absent = entraînement) et la sautée… non : la sautée n'est pas faite, elle suit la catégorie. */
+    expect(after).toEqual({ done: 2, expected: 2, percent: 100 });
+
+    /* Dans l'autre sens : un modèle « Bilan » redevenu « Mobilité » ne requalifie pas les bilans faits. */
+    const back = new Map(templateById);
+    back.set("tpl-Bilan de mobilité", { ...templateById.get("tpl-Bilan de mobilité")!, category: "Mobilité" });
+    const plannedB = [planned("pb", "2026-09-13", "done", "wb", "tpl-Bilan de mobilité"), planned("pb2", "2026-09-14", "upcoming", undefined, "tpl-Bilan de mobilité")];
+    const workoutsB = [bilan("wb", "2026-09-13", { plannedSessionId: "pb" })];
+    expect(getCompletionRate(plannedB, workoutsB, back, period, TODAY)).toEqual({ done: 0, expected: 1, percent: 0 });
+  });
+
+  it("séance vide et instance du jour : comportement antérieur conservé à l'identique", () => {
+    const empty = workout("we", "2026-09-13", [notDone("squat")], { sessionTemplateId: "tpl-Musculation", source: "planned", kind: "training" });
+    expect(getCompletionRate([planned("pe", "2026-09-13", "done", "we")], [empty], templateById, period, TODAY)).toEqual({ done: 0, expected: 1, percent: 0 });
+
+    const todayDone = musc("wt", TODAY, 40, { kind: "training" });
+    expect(getCompletionRate([planned("pt", TODAY, "done", "wt")], [todayDone], templateById, period, TODAY)).toEqual({ done: 1, expected: 1, percent: 100 });
+    expect(getCompletionRate([planned("pt", TODAY, "upcoming")], [], templateById, period, TODAY)).toEqual({ done: 0, expected: 0 });
+    const todayEmpty = workout("wte", TODAY, [notDone("squat")], { kind: "training" });
+    expect(getCompletionRate([planned("pte", TODAY, "done", "wte")], [todayEmpty], templateById, period, TODAY)).toEqual({ done: 0, expected: 0 });
+    /* Bilan fait aujourd'hui : n'entre nulle part. */
+    expect(getCompletionRate([planned("ptb", TODAY, "done", "wtb", "tpl-Bilan de mobilité")], [bilan("wtb", TODAY)], templateById, period, TODAY)).toEqual({ done: 0, expected: 0 });
+  });
+
+  it("modèle introuvable pour une instance non faite : traitée comme entraînement (comportement actuel)", () => {
+    expect(getCompletionRate([planned("pz", "2026-09-13", "skipped", undefined, "tpl-disparu")], [], templateById, period, TODAY)).toEqual({ done: 0, expected: 1, percent: 0 });
+  });
+});
+
+describe("séance comptée et bilans de mobilité (v1.5, § 3)", () => {
+  const exerciseById = new Map(exercises.map((item) => [item.id, item]));
+  const templateById = new Map(templates.map((item) => [item.id, item]));
+  const period = resolvePeriod("4w", TODAY);
+  const base = [
+    musc("a", "2026-09-01"),
+    musc("b", "2026-09-08"),
+    workout("c", "2026-09-10", [stepsBlock("tapis", [300, 300])], { sessionTemplateId: "tpl-Cardio" }),
+    workout("empty", "2026-09-11", [notDone("squat")]),
+  ];
+  const bilans = [
+    workout("bilan-1", "2026-09-05", [seriesBlock("squat", [{ kg: 100, reps: 10 }])], { kind: "mobility_assessment", sessionTemplateId: "tpl-Bilan de mobilité" }),
+    workout("bilan-libre", "2026-09-12", [seriesBlock("planche", [{ durationSec: 60 }])], { kind: "mobility_assessment" }),
+    workout("bilan-vide", "2026-09-13", [notDone("squat")], { kind: "mobility_assessment" }),
+  ];
+
+  it("un bilan n'est jamais une séance comptée, même avec des réalisations ; kind absent ou training l'est", () => {
+    for (const b of bilans) expect(isCountedWorkout(b)).toBe(false);
+    expect(isCountedWorkout(musc("k", "2026-09-01"))).toBe(true);
+    expect(isCountedWorkout(musc("k", "2026-09-01", 40, { kind: "training" }))).toBe(true);
+    expect(hasPerformedBlock(bilans[0]!)).toBe(true);
+    expect(hasPerformedBlock(bilans[2]!)).toBe(false);
+  });
+
+  it("tous les indicateurs de la vue générale sont identiques avec et sans bilans", () => {
+    const sources = (workouts: WorkoutSession[]) => ({ workouts, plannedSessions: [], templates, exercises });
+    const without = buildOverview(sources(base), period, TODAY, { coverageStart: "2026-01-01" });
+    const withBilans = buildOverview(sources([...base, ...bilans]), period, TODAY, { coverageStart: "2026-01-01" });
+
+    expect(withBilans.frequency).toEqual(without.frequency);
+    expect(withBilans.strength).toEqual(without.strength);
+    expect(withBilans.cardio).toEqual(without.cardio);
+    expect(withBilans.categories).toEqual(without.categories);
+    expect(withBilans.zones).toEqual(without.zones);
+    expect(withBilans.recent).toEqual(without.recent);
+    expect(withBilans.coverageStart).toBe(without.coverageStart);
+    expect(withBilans.firstCountedDate).toBe(without.firstCountedDate);
+    expect(withBilans.recent.map((line) => line.workoutId)).not.toContain("bilan-1");
+    expect(without.strength.volumeKg).toBe(2 * 3 * 40 * 10);
+  });
+
+  it("répartition par catégorie : pas de ligne « Bilan de mobilité » ; un entraînement rattaché à un modèle recatégorisé « Bilan » compte sans catégorie", () => {
+    const breakdown = getCategoryBreakdown([...base, ...bilans], templateById, period);
+    expect(breakdown.lines.map((line) => line.key)).not.toContain("Bilan de mobilité");
+    expect(breakdown.total).toBe(3);
+
+    const training = musc("t", "2026-09-09", 40, { sessionTemplateId: "tpl-Bilan de mobilité", kind: "training" });
+    const withTraining = getCategoryBreakdown([...base, training], templateById, period);
+    expect(withTraining.total).toBe(4);
+    expect(withTraining.lines.find((line) => line.key === "Sans catégorie")?.count).toBe(1);
+    expect(withTraining.lines.map((line) => line.key)).not.toContain("Bilan de mobilité");
+  });
+
+  it("aucune tendance ni analyse cardio n'est alimentée par un bilan ; la fiche, elle, voit toutes les séances terminées", () => {
+    const squat = exercises.find((item) => item.id === "squat")!;
+    const withBilans = [...base, ...bilans];
+    const trends = buildExerciseTrends([squat], withBilans, period, "chargeMax");
+    const trendsWithout = buildExerciseTrends([squat], base, period, "chargeMax");
+    expect(trends).toEqual(trendsWithout);
+    expect(buildCardioReport(exercises, [...base, bilans[1]!], period)).toEqual(buildCardioReport(exercises, base, period));
+
+    const history = buildExercisePerformanceHistory(squat, withBilans);
+    expect(history.map((entry) => entry.workoutId)).toContain("bilan-1");
+    void exerciseById;
   });
 });
 

@@ -8,7 +8,8 @@ import { getCompletedWorkouts } from "../../db/repositories/workoutRepository";
 import { formatDayLabel } from "../../domain/rules/programRules";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
 import { categoryClassName } from "../sessions/sessionCategoryClass";
-import { describeWorkoutSummary, isCountedWorkout } from "./overview";
+import { isMobilityAssessment } from "../../domain/rules/workoutKindRules";
+import { describeWorkoutSummary, hasPerformedBlock, isCountedWorkout } from "./overview";
 import { groupWorkoutsByMonth, type HistoryMonth } from "./historyGroups";
 import "./Progression.css";
 
@@ -79,12 +80,14 @@ export function HistoryScreen() {
                 const template = workout.sessionTemplateId
                   ? state.templateById.get(workout.sessionTemplateId)
                   : undefined;
-                const category = template?.category ?? "Musculation";
+                /* La nature réelle prime sur la catégorie du modèle (v1.5, § 11.4). */
+                const assessment = isMobilityAssessment(workout);
+                const category = assessment ? "Bilan de mobilité" : (template?.category ?? "Musculation");
                 const counted = isCountedWorkout(workout);
                 const label = formatDayLabel(workout.date);
 
                 return (
-                  <li key={workout.id} className={counted ? undefined : "history__item--empty"}>
+                  <li key={workout.id} className={counted || assessment ? undefined : "history__item--empty"}>
                     <Link to={`/workouts/${workout.id}?returnTo=${encodeURIComponent("/historique")}`}>
                       <span className="progression-recent__date">
                         {label.weekday} {label.day}
@@ -100,6 +103,9 @@ export function HistoryScreen() {
                         <span className="progression-recent__summary">
                           {counted ? (
                             describeWorkoutSummary(workout, state.exerciseById)
+                          ) : assessment ? (
+                            /* Un bilan n'est pas une séance ratée : son propre libellé (v1.5, § 3). */
+                            <em>Bilan de mobilité{hasPerformedBlock(workout) ? "" : " · aucune mesure"}</em>
                           ) : (
                             <em>Aucune réalisation · hors statistiques</em>
                           )}

@@ -9,6 +9,7 @@ import type {
   SessionTemplate,
   WorkoutSession,
 } from "../../domain";
+import { isAssessmentCategory, isMobilityAssessment } from "../../domain/rules/workoutKindRules";
 import { calculateVolume } from "../../domain/rules/workoutRules";
 import { getImportedHistoryStart, isImportedWorkoutId } from "../history/importedWorkouts";
 import { isCardioExercise } from "./exerciseNature";
@@ -29,12 +30,23 @@ import { roundPercent } from "./rounding";
 /* -------------------------------------------------------------------------- */
 
 /**
- * Une séance compte en Progression si elle est **terminée** et porte au
- * moins une brique réalisée (décision Q2 du 17/09/2026). Une séance
- * arrêtée sans rien avoir validé reste dans l'historique, hors des
- * statistiques.
+ * Une séance compte en Progression si elle est **terminée**, porte au
+ * moins une brique réalisée (décision Q2 du 17/09/2026) et n'est pas un
+ * **bilan de mobilité** (conception v1.5, § 3 : `kind`, absent =
+ * entraînement). Une séance arrêtée sans rien avoir validé reste dans
+ * l'historique, hors des statistiques ; un bilan aussi, mais pour une
+ * autre raison — c'est une session réussie d'une autre nature.
  */
 export function isCountedWorkout(workout: WorkoutSession): boolean {
+  return (
+    workout.status === "completed" &&
+    !isMobilityAssessment(workout) &&
+    workout.blocks.some((block) => block.kind !== "note" && block.status === "performed")
+  );
+}
+
+/** Terminée avec au moins une réalisation, quelle que soit sa nature. */
+export function hasPerformedBlock(workout: WorkoutSession): boolean {
   return (
     workout.status === "completed" &&
     workout.blocks.some((block) => block.kind !== "note" && block.status === "performed")
@@ -222,15 +234,25 @@ export interface CompletionRate {
 }
 
 /**
- * Taux de réalisation du programme (§16, Q1) : instances planifiées de la
- * période **strictement antérieures à aujourd'hui**, faites, sautées ou
- * échues, au dénominateur ; au numérateur, celles dont la séance est
- * terminée et comptée. L'instance du jour n'entre que faite et réalisée ;
- * une séance en cours ne compte jamais. Les séances libres sont exclues.
+ * Taux de réalisation du programme (§16, Q1 ; conception v1.5, § 11.3) :
+ * instances planifiées de la période **strictement antérieures à
+ * aujourd'hui**, faites, sautées ou échues, au dénominateur ; au
+ * numérateur, celles dont la séance est terminée et comptée. L'instance du
+ * jour n'entre que faite et réalisée ; une séance en cours ne compte
+ * jamais. Les séances libres sont exclues.
+ *
+ * Bilans de mobilité, règle « absorber » : pour une instance **faite**,
+ * c'est la nature réelle de sa séance (`kind`) qui décide — un bilan sort
+ * des deux côtés du ratio, un entraînement y entre, même si la catégorie
+ * du modèle a changé depuis. Pour une instance **non faite**, seule la
+ * catégorie du modèle existe : « Bilan de mobilité » n'est pas attendue.
+ * Une séance vide reste attendue non réalisée ; l'instance du jour garde
+ * sa règle.
  */
 export function getCompletionRate(
   plannedSessions: PlannedSession[],
   workouts: WorkoutSession[],
+  templateById: Map<Id, SessionTemplate>,
   period: Period,
   today: string,
 ): CompletionRate {
@@ -242,8 +264,17 @@ export function getCompletionRate(
     if (!isWithin(planned.date, period)) continue;
 
     const workout = planned.workoutId ? workoutById.get(planned.workoutId) : undefined;
-    const realised =
-      planned.status === "done" && workout !== undefined && isCountedWorkout(workout);
+    const isDone = planned.status === "done" && workout !== undefined;
+
+    if (isDone) {
+      /* Faite : la nature réelle fait foi, jamais la catégorie du modèle. */
+      if (isMobilityAssessment(workout)) continue;
+    } else if (isAssessmentCategory(templateById.get(planned.sessionTemplateId)?.category)) {
+      /* Non faite : un bilan planifié n'est pas une séance d'entraînement attendue. */
+      continue;
+    }
+
+    const realised = isDone && isCountedWorkout(workout);
 
     /* Échue : attendue quel que soit son statut — une séance encore « en
        cours » d'un jour passé n'est pas réalisée tant qu'elle n'est pas
@@ -452,6 +483,13 @@ const CATEGORY_ORDER: SessionCategory[] = ["Musculation", "Cardio", "Mobilité"]
  * (planifiée ou libre depuis un modèle) ; une séance libre sans modèle
  * n'a pas de catégorie et figure sur sa propre ligne, seulement si elle
  * n'est pas vide. La somme des lignes est le total affiché.
+ *
+ * « Bilan de mobilité » n'est **pas** une ligne (v1.5, § 11.4) : les bilans
+ * sont déjà hors des séances comptées, et une ligne toujours à zéro serait
+ * du bruit. L'exclusion est explicite ici pour le cas où une séance
+ * d'entraînement (`kind` absent ou `training`) serait rattachée à un
+ * modèle recatégorisé « Bilan » après coup : elle compte, mais sans
+ * catégorie. Total et pourcentages des trois autres ne bougent pas.
  */
 export function getCategoryBreakdown(
   workouts: WorkoutSession[],
@@ -466,7 +504,7 @@ export function getCategoryBreakdown(
       ? templateById.get(workout.sessionTemplateId)?.category
       : undefined;
 
-    if (category) counts.set(category, (counts.get(category) ?? 0) + 1);
+    if (category && !isAssessmentCategory(category)) counts.set(category, (counts.get(category) ?? 0) + 1);
     else uncategorised += 1;
   }
 
@@ -644,7 +682,7 @@ export function buildOverview(
     ...(coverageStart ? { coverageStart } : {}),
     ...(firstCountedDate ? { firstCountedDate } : {}),
     previousCovered: coversPreviousPeriod(period, coverageStart),
-    completion: getCompletionRate(sources.plannedSessions, sources.workouts, period, today),
+    completion: getCompletionRate(sources.plannedSessions, sources.workouts, templateById, period, today),
     frequency: getTrainingFrequency(sources.workouts, period),
     strength: getStrengthSummary(sources.workouts, exerciseById, period, coverageStart),
     cardio: getCardioSummary(sources.workouts, exerciseById, period, coverageStart),
