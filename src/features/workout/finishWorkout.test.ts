@@ -69,6 +69,14 @@ describe("completeWorkoutSession", () => {
   });
 });
 
+describe("completeWorkoutSession — nature conservée", () => {
+  it("garde kind tel quel à la clôture, et n'en invente pas sur une séance qui n'en a pas", () => {
+    expect(completeWorkoutSession({ ...freeWorkout, kind: "mobility_assessment" }, now).kind).toBe("mobility_assessment");
+    expect(completeWorkoutSession({ ...freeWorkout, kind: "training" }, now).kind).toBe("training");
+    expect("kind" in completeWorkoutSession(freeWorkout, now)).toBe(false);
+  });
+});
+
 describe("finishWorkout", () => {
   beforeEach(() => {
     vi.clearAllMocks();

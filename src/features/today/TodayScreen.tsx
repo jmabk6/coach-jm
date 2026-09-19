@@ -9,7 +9,7 @@ import {
   Play,
   Plus,
 } from "lucide-react";
-import type { Id, PlannedSession, SessionTemplate } from "../../domain";
+import type { Id, PlannedSession, SessionTemplate, WorkoutKind } from "../../domain";
 import { calculateExecutionProgress } from "../../domain/rules/workoutRules";
 import { formatDayLabel } from "../../domain/rules/programRules";
 import {
@@ -87,9 +87,9 @@ export function TodayScreen() {
       () => navigate("/seance"),
     );
 
-  const startFree = (template?: SessionTemplate) =>
+  const startFree = (template?: SessionTemplate, kind?: WorkoutKind) =>
     run(
-      () => startFreeWorkout(data.today, new Date().toISOString(), template),
+      () => startFreeWorkout(data.today, new Date().toISOString(), template, kind ? { kind } : {}),
       () => navigate("/seance"),
     );
 
@@ -136,9 +136,9 @@ export function TodayScreen() {
       {choosing && (
         <ChooseSessionSheet
           data={data}
-          onChoose={(template) => {
+          onChoose={(template, kind) => {
             setChoosing(false);
-            void startFree(template);
+            void startFree(template, kind);
           }}
           onDismiss={() => setChoosing(false)}
         />
@@ -481,14 +481,15 @@ function NextSessions({ data }: { data: TodayData }) {
 
 interface ChooseSessionSheetProps {
   data: TodayData;
-  onChoose: (template?: SessionTemplate) => void;
+  onChoose: (template?: SessionTemplate, kind?: WorkoutKind) => void;
   onDismiss: () => void;
 }
 
 /**
  * Feuille `Choisir une séance` (§10, décision du 17/09/2026) : les modèles
  * actifs — la réalisation copie leurs consignes sans créer d'instance —
- * puis la séance libre sans modèle, qui part vide.
+ * puis le bilan de mobilité libre (v1.5, § 2.2 : seul endroit où un bilan
+ * sans modèle peut naître) et la séance libre sans modèle, qui part vide.
  */
 function ChooseSessionSheet({ data, onChoose, onDismiss }: ChooseSessionSheetProps) {
   const durationLabel = (templateId: Id) => {
@@ -507,6 +508,11 @@ function ChooseSessionSheet({ data, onChoose, onDismiss }: ChooseSessionSheetPro
           hint: `${template.category} · ${durationLabel(template.id)}`,
           onSelect: () => onChoose(template),
         })),
+        {
+          label: "Bilan de mobilité (séance libre)",
+          hint: "Part vide ; n'entre pas dans les statistiques d'entraînement",
+          onSelect: () => onChoose(undefined, "mobility_assessment"),
+        },
         {
           label: "Séance libre sans modèle",
           hint: "Part vide : ajoute les exercices au fil de la séance",

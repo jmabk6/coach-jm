@@ -11,6 +11,7 @@ import type {
   Id,
   WorkoutSession,
 } from "../../domain";
+import { kindForCategory } from "../../domain/rules/workoutKindRules";
 import { createWorkoutSnapshot } from "./createWorkoutSnapshot";
 
 export async function startWorkout(
@@ -66,6 +67,8 @@ export async function startWorkout(
     id: `workout-${plannedSession.id}`,
     plannedSessionId: plannedSession.id,
     sessionTemplateId: template.id,
+    /* Nature posée au démarrage, dérivée du modèle, sans choix (v1.5, § 11.3). */
+    kind: kindForCategory(template.category),
     source: "planned",
     status: "in_progress",
     date: plannedSession.date,

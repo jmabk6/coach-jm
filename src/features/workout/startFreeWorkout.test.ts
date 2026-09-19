@@ -31,6 +31,7 @@ describe("startFreeWorkout", () => {
 
     expect(result).toEqual({
       id: "free-2026-09-14-2026-09-14T18:00:00.000Z",
+      kind: "training",
       source: "free",
       status: "in_progress",
       date: "2026-09-14",
@@ -63,6 +64,42 @@ describe("startFreeWorkout", () => {
     expect(saveWorkout).not.toHaveBeenCalled();
   });
 });
+describe("startFreeWorkout — nature de la séance (kind)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getInProgressWorkout.mockResolvedValue(undefined);
+  });
+
+  const now = "2026-09-14T18:00:00.000Z";
+  const template = {
+    id: "t",
+    name: "T",
+    category: "Musculation" as const,
+    status: "active" as const,
+    position: 0,
+    blocks: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  it("sans modèle ni choix : entraînement, écrit explicitement", async () => {
+    const result = await startFreeWorkout("2026-09-14", now);
+    expect(result.kind).toBe("training");
+  });
+
+  it("sans modèle, avec le choix « Bilan de mobilité » : bilan", async () => {
+    const result = await startFreeWorkout("2026-09-14", now, undefined, { kind: "mobility_assessment" });
+    expect(result.kind).toBe("mobility_assessment");
+    expect(result.blocks).toEqual([]);
+  });
+
+  it("avec un modèle : la catégorie du modèle décide, le choix est ignoré", async () => {
+    expect((await startFreeWorkout("2026-09-14", now, template, { kind: "mobility_assessment" })).kind).toBe("training");
+    expect((await startFreeWorkout("2026-09-14", now, { ...template, category: "Bilan de mobilité" })).kind).toBe("mobility_assessment");
+    expect((await startFreeWorkout("2026-09-14", now, { ...template, category: "Mobilité" })).kind).toBe("training");
+  });
+});
+
 describe("startFreeWorkout depuis un modèle", () => {
   beforeEach(() => {
     vi.clearAllMocks();

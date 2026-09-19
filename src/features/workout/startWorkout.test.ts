@@ -95,6 +95,7 @@ describe("startWorkout", () => {
       id: "workout-weekly-2026-09-14",
       plannedSessionId: "weekly-2026-09-14",
       sessionTemplateId: "muscu-a",
+      kind: "training",
       source: "planned",
       status: "in_progress",
       date: "2026-09-14",
@@ -121,6 +122,17 @@ describe("startWorkout", () => {
       workoutId: result.id,
       updatedAt: now,
     });
+  });
+
+  it("pose kind depuis la catégorie du modèle, sans choix : un modèle « Bilan de mobilité » donne un bilan", async () => {
+    getSessionTemplate.mockResolvedValue({ ...template, id: "bilan", name: "Bilan", category: "Bilan de mobilité" });
+    getPlannedSession.mockResolvedValue({ ...plannedSession, sessionTemplateId: "bilan" });
+
+    const result = await startWorkout(plannedSession.id, "2026-09-14T18:00:00.000Z");
+
+    expect(result.kind).toBe("mobility_assessment");
+    expect(result.source).toBe("planned");
+    expect(saveWorkout).toHaveBeenCalledWith(result);
   });
 
   it("refuse de démarrer une autre séance si une réalisation est déjà en cours", async () => {
