@@ -1044,7 +1044,8 @@ export function ExerciseEditScreen() {
           <label className="exercise-create__field">
             <span>Photo</span>
             <input
-              type="url"
+              type="text"
+              inputMode="url"
               value={photoUrl}
               onChange={(event) =>
                 setPhotoUrl(event.target.value)
@@ -1056,7 +1057,8 @@ export function ExerciseEditScreen() {
           <label className="exercise-create__field">
             <span>Vidéo / démonstration</span>
             <input
-              type="url"
+              type="text"
+              inputMode="url"
               value={videoUrl}
               onChange={(event) =>
                 setVideoUrl(event.target.value)
