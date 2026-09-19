@@ -46,6 +46,13 @@ export function verifyBackup(envelope) {
     problems.push(`empreinte DIFFÉRENTE : fichier ${envelope.integrity.hash}, recalculée ${computed}`);
   }
 
+  /* Empreinte des sept stores d'origine seuls : permet de comparer une
+     sauvegarde prise après migration (19 stores) à celle prise avant (7). */
+  const legacyStores = Object.fromEntries(
+    LEGACY_STORE_ORDER.filter((name) => Array.isArray(envelope.stores[name])).map((name) => [name, envelope.stores[name]]),
+  );
+  const legacyHash = Object.keys(legacyStores).length === LEGACY_STORE_ORDER.length ? sha256Hex(canonicalStringify(legacyStores)) : undefined;
+
   for (const [name, count] of Object.entries(envelope.counts)) {
     const records = envelope.stores[name];
     if (!Array.isArray(records)) problems.push(`store manquant : ${name}`);
@@ -103,8 +110,10 @@ export function verifyBackup(envelope) {
     }
   }
 
-  return { ok: problems.length === 0, problems, notes, computed };
+  return { ok: problems.length === 0, problems, notes, computed, legacyHash };
 }
+
+const LEGACY_STORE_ORDER = ["exercises", "sessionTemplates", "weeklyPrograms", "plannedSessions", "workouts", "goals", "weightEntries"];
 
 async function main(path) {
   if (!path) {
@@ -120,6 +129,10 @@ async function main(path) {
   console.log(`Appareil     : ${envelope.device?.userAgent ?? "?"}${envelope.device?.standalone ? " (écran d'accueil)" : ""}`);
   console.log(`Base         : ${envelope.database?.name ?? "?"} — schéma version ${envelope.database?.version ?? "?"}`);
   console.log(`Empreinte    : ${result.ok && !result.problems.length ? "OK" : "voir ci-dessous"} — ${envelope.integrity?.hash?.slice(0, 8) ?? "?"} (fichier) / ${result.computed?.slice(0, 8) ?? "?"} (recalculée)`);
+  if (result.legacyHash) {
+    console.log(`Sept stores d'origine : ${result.legacyHash.slice(0, 8)} (empreinte des 7 stores seuls, comparable entre v1 et v2)`);
+  }
+  console.log(`Stores       : ${Object.keys(envelope.stores ?? {}).length}`);
   console.log("Comptes      :");
   for (const [name, count] of Object.entries(envelope.counts ?? {})) {
     console.log(`  ${name.padEnd(18)} ${String(count).padStart(5)}`);

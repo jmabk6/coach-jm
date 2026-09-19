@@ -5,4 +5,5 @@ export function verifyBackup(envelope: unknown): {
   problems: string[];
   notes: string[];
   computed: string | undefined;
+  legacyHash: string | undefined;
 };
