@@ -1,4 +1,5 @@
-import type { Exercise, Id, WorkoutSession } from "../../domain";
+import type { Exercise, Id, SessionCategory, SessionTemplate, WorkoutSession } from "../../domain";
+import { isMobilityAssessment } from "../../domain/rules/workoutKindRules";
 
 /**
  * Réalisations libres affichées dans le Programme (décision du 16/09/2026) :
@@ -51,13 +52,18 @@ export function formatFreeWorkoutSummary(
 }
 
 /**
- * Catégorie dominante pour l'icône de la ligne : cardio seul → Cardio,
- * mobilité seule → Mobilité, sinon Musculation.
+ * Catégorie dominante pour l'icône de la ligne d'une séance libre : un
+ * **bilan de mobilité** d'abord (`kind` prime sur toute inférence, v1.5
+ * § 11.4 — l'inférence ne connaît pas « Test mobilité » et classerait un
+ * bilan improvisé en Musculation), puis cardio seul → Cardio, mobilité
+ * seule → Mobilité, sinon Musculation.
  */
 export function inferFreeWorkoutCategory(
   workout: WorkoutSession,
   exerciseById: Map<Id, Exercise>,
-): "Musculation" | "Cardio" | "Mobilité" {
+): SessionCategory {
+  if (isMobilityAssessment(workout)) return "Bilan de mobilité";
+
   const categories = new Set<string>();
 
   for (const block of workout.blocks) {
@@ -72,4 +78,19 @@ export function inferFreeWorkoutCategory(
   if (categories.size === 1 && categories.has("Mobilité")) return "Mobilité";
 
   return "Musculation";
+}
+
+/**
+ * Catégorie affichée pour une séance faite, quelle que soit sa source :
+ * la nature réelle (`kind`) prime, puis la catégorie du modèle, puis
+ * l'inférence sur le contenu pour une séance libre sans modèle.
+ */
+export function categoryForWorkout(
+  workout: WorkoutSession,
+  template: SessionTemplate | undefined,
+  exerciseById: Map<Id, Exercise>,
+): SessionCategory {
+  if (isMobilityAssessment(workout)) return "Bilan de mobilité";
+
+  return template?.category ?? inferFreeWorkoutCategory(workout, exerciseById);
 }

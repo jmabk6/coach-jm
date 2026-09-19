@@ -31,7 +31,7 @@ import { currentActiveDurationSec } from "../workout/finishWorkout";
 import { getOpenPause } from "../workout/engine/workoutTime";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import { startWorkout } from "../workout/startWorkout";
-import { inferFreeWorkoutCategory } from "../program/freeWorkouts";
+import { categoryForWorkout } from "../program/freeWorkouts";
 import { useTodayData, type TodayData } from "./useTodayData";
 import "./TodayScreen.css";
 
@@ -305,8 +305,7 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
     ? data.templateById.get(workout.sessionTemplateId)
     : undefined;
   const name = template?.name ?? "Séance libre";
-  const category =
-    template?.category ?? inferFreeWorkoutCategory(workout, data.exerciseById);
+  const category = categoryForWorkout(workout, template, data.exerciseById);
   const running = entry.kind === "in_progress";
   const openPause = running ? getOpenPause(workout) : undefined;
   const badge = `${

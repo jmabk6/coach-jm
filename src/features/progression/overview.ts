@@ -624,7 +624,11 @@ export function listRecentWorkouts(
         workoutId: workout.id,
         date: workout.date,
         name: template?.name ?? "Séance libre",
-        ...(template ? { category: template.category } : {}),
+        ...(isMobilityAssessment(workout)
+          ? { category: "Bilan de mobilité" as const }
+          : template
+            ? { category: template.category }
+            : {}),
         summary: describeWorkoutSummary(workout, exerciseById),
       };
     });

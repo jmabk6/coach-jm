@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Exercise, WorkoutSession } from "../../domain";
+import type { Exercise, SessionTemplate, WorkoutSession } from "../../domain";
 import {
   formatFreeWorkoutSummary,
+  categoryForWorkout,
   inferFreeWorkoutCategory,
   isFreeWorkoutVisibleInProgram,
 } from "./freeWorkouts";
@@ -13,6 +14,7 @@ const exercises = new Map<string, Exercise>(
       ["presse", "Presse", "Musculation"],
       ["planche", "Planche", "Musculation"],
       ["chat", "Chat-vache", "Mobilité"],
+      ["doigts-sol", "Distance doigts-sol", "Test mobilité"],
     ] as const
   ).map(([id, name, category]) => [
     id,
@@ -56,6 +58,22 @@ describe("réalisations libres dans le Programme", () => {
     expect(inferFreeWorkoutCategory(workout(["tapis"]), exercises)).toBe("Cardio");
     expect(inferFreeWorkoutCategory(workout(["chat"]), exercises)).toBe("Mobilité");
     expect(inferFreeWorkoutCategory(workout(["tapis", "presse"]), exercises)).toBe("Musculation");
+  });
+
+  it("kind prime sur l'inférence : un bilan libre est « Bilan de mobilité », même vide ; sans kind, trois tests en cm tombent en Musculation", () => {
+    expect(inferFreeWorkoutCategory({ ...workout(["doigts-sol"]), kind: "mobility_assessment" }, exercises)).toBe("Bilan de mobilité");
+    expect(inferFreeWorkoutCategory({ ...workout([]), kind: "mobility_assessment" }, exercises)).toBe("Bilan de mobilité");
+    /* Documenté : l'inférence ne connaît pas « Test mobilité » — c'est pourquoi kind existe. */
+    expect(inferFreeWorkoutCategory(workout(["doigts-sol"]), exercises)).toBe("Musculation");
+    expect(inferFreeWorkoutCategory({ ...workout(["tapis"]), kind: "training" }, exercises)).toBe("Cardio");
+  });
+
+  it("categoryForWorkout : kind, puis le modèle, puis l'inférence", () => {
+    const template: SessionTemplate = { id: "t", name: "T", category: "Cardio", status: "active", position: 0, blocks: [], createdAt: "n", updatedAt: "n" };
+    expect(categoryForWorkout({ ...workout(["presse"]), kind: "mobility_assessment" }, template, exercises)).toBe("Bilan de mobilité");
+    expect(categoryForWorkout(workout(["presse"]), template, exercises)).toBe("Cardio");
+    expect(categoryForWorkout(workout(["presse"]), undefined, exercises)).toBe("Musculation");
+    expect(categoryForWorkout({ ...workout(["presse"]), kind: "training" }, { ...template, category: "Bilan de mobilité" }, exercises)).toBe("Bilan de mobilité");
   });
 
   it("n'affiche que les réalisations libres terminées", () => {
