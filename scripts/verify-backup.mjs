@@ -137,6 +137,13 @@ async function main(path) {
   for (const [name, count] of Object.entries(envelope.counts ?? {})) {
     console.log(`  ${name.padEnd(18)} ${String(count).padStart(5)}`);
   }
+  const exercises = envelope.stores?.exercises ?? [];
+  if (Array.isArray(exercises) && exercises.length) {
+    const withGroup = exercises.filter((e) => e?.progressionGroup !== undefined).length;
+    const withFamily = exercises.filter((e) => e?.movementFamily !== undefined).length;
+    const strength = exercises.filter((e) => e?.category === "Musculation").length;
+    console.log(`Classification : groupe de progression sur ${withGroup} exercice(s), famille de mouvement sur ${withFamily} (musculation : ${strength})`);
+  }
   if (envelope.warnings?.length) {
     console.log(`Avertissements de sérialisation embarqués : ${envelope.warnings.length}`);
     for (const warning of envelope.warnings) console.log(`  - ${warning.store} · ${warning.id ?? ""} · ${warning.path} : ${warning.kind}`);

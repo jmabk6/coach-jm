@@ -123,6 +123,94 @@ describe("seedExerciseCatalog", () => {
     expect(saveExercise).not.toHaveBeenCalled();
   });
 
+  it("classification de progression : complète seulement les champs vides, sans toucher updatedAt", async () => {
+    const catalogSquat = exerciseCatalog.find((exercise) => exercise.id === "squat")!;
+    const catalogRowing = exerciseCatalog.find((exercise) => exercise.id === "rowing-poulie-basse")!;
+    const stored = (exercise: Exercise): Exercise => {
+      const copy: Exercise = { ...exercise, updatedAt: "2026-09-14T00:00:00.000Z" };
+      delete copy.progressionGroup;
+      delete copy.movementFamily;
+      return copy;
+    };
+
+    getExercise.mockImplementation(async (id: string) =>
+      id === "squat" || id === "rowing-poulie-basse"
+        ? stored(exerciseCatalog.find((exercise) => exercise.id === id)!)
+        : exerciseCatalog.find((exercise) => exercise.id === id),
+    );
+
+    await seedExerciseCatalog();
+
+    expect(saveExercise).toHaveBeenCalledTimes(2);
+    expect(saveExercise).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "squat", progressionGroup: "Quadriceps", updatedAt: "2026-09-14T00:00:00.000Z" }),
+    );
+    const savedSquat = saveExercise.mock.calls.find(([e]) => e.id === "squat")![0] as Exercise;
+    expect("movementFamily" in savedSquat).toBe(false);
+    expect(savedSquat).toEqual({ ...catalogSquat, updatedAt: "2026-09-14T00:00:00.000Z" });
+    expect(saveExercise).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "rowing-poulie-basse", progressionGroup: "Dos", movementFamily: "tirage_horizontal", updatedAt: "2026-09-14T00:00:00.000Z" }),
+    );
+    void catalogRowing;
+  });
+
+  it("n'écrase jamais un classement déjà renseigné, même différent du catalogue (modification personnelle)", async () => {
+    const catalogSquat = exerciseCatalog.find((exercise) => exercise.id === "squat")!;
+    const catalogRowing = exerciseCatalog.find((exercise) => exercise.id === "rowing-poulie-basse")!;
+    const personalSquat: Exercise = { ...catalogSquat, progressionGroup: "Fessiers" };
+    const personalRowing: Exercise = { ...catalogRowing, movementFamily: "tirage_vertical" };
+
+    getExercise.mockImplementation(async (id: string) =>
+      id === "squat" ? personalSquat : id === "rowing-poulie-basse" ? personalRowing : exerciseCatalog.find((exercise) => exercise.id === id),
+    );
+
+    await seedExerciseCatalog();
+
+    expect(saveExercise).not.toHaveBeenCalled();
+  });
+
+  it("ne pose aucune classification sur un exercice créé par l'utilisateur, et signale sans corriger une combinaison invalide", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const custom = {
+      id: "perso-1",
+      name: "Mon exercice",
+      category: "Musculation",
+      zone: "Dos",
+      movement: "Tirage",
+      equipment: "Poulie",
+      location: "Salle",
+      mode: "series",
+      measurementType: "load_reps",
+      progressionGroup: "Quadriceps",
+      status: "active",
+      createdAt: "2026-09-18T00:00:00.000Z",
+      updatedAt: "2026-09-18T00:00:00.000Z",
+    } as unknown as Exercise;
+    getAllExercises.mockResolvedValue([custom]);
+    getExercise.mockImplementation(async (id: string) => exerciseCatalog.find((exercise) => exercise.id === id));
+
+    await seedExerciseCatalog();
+
+    /* Hors catalogue : jamais lu par identifiant, jamais réécrit. */
+    expect(getExercise).not.toHaveBeenCalledWith("perso-1");
+    expect(saveExercise).not.toHaveBeenCalledWith(expect.objectContaining({ id: "perso-1" }));
+    expect(archiveExercise).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("signale dans la console une classification invalide d'un exercice du catalogue et la laisse en l'état", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const catalogSquat = exerciseCatalog.find((exercise) => exercise.id === "squat")!;
+    const broken: Exercise = { ...catalogSquat, progressionGroup: "Dos" };
+    getExercise.mockImplementation(async (id: string) => (id === "squat" ? broken : exerciseCatalog.find((exercise) => exercise.id === id)));
+
+    await seedExerciseCatalog();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/classification de progression invalide sur « Squat barre » \(squat\)/));
+    expect(saveExercise).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it("n'écrit rien lorsque tout le catalogue est déjà à jour", async () => {
     getExercise.mockImplementation(
       async (id: string) =>

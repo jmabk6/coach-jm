@@ -7,10 +7,14 @@ import type {
   ExerciseLocation,
   MeasurementType,
   Movement,
+  MovementFamily,
   MuscleZone,
+  ProgressionGroup,
 } from "../../domain";
+import { allowedProgressionGroups } from "../../domain/rules/exerciseRules";
 import { saveExercise } from "../../db/repositories/exerciseRepository";
 import { buildExercise, type DurationDistanceMode } from "./buildExercise";
+import { ProgressionClassificationFields } from "./ProgressionClassificationFields";
 import "./ExerciseCreateScreen.css";
 
 const categories: ExerciseCategory[] = [
@@ -150,6 +154,10 @@ export function ExerciseCreateScreen() {
     useState<Movement>("Squat");
   const [equipment, setEquipment] =
     useState<Equipment>("Barre");
+  const [progressionGroup, setProgressionGroup] =
+    useState<ProgressionGroup | undefined>();
+  const [movementFamily, setMovementFamily] =
+    useState<MovementFamily | undefined>();
   const [location, setLocation] =
     useState<ExerciseLocation>("Salle");
   const [measurementType, setMeasurementType] =
@@ -232,6 +240,10 @@ export function ExerciseCreateScreen() {
         location,
         measurementType,
         durationDistanceMode,
+        {
+          ...(progressionGroup !== undefined ? { progressionGroup } : {}),
+          ...(movementFamily !== undefined ? { movementFamily } : {}),
+        },
       );
 
       const measurementLabels =
@@ -349,11 +361,14 @@ export function ExerciseCreateScreen() {
                 <span>Zone</span>
                 <select
                   value={zone}
-                  onChange={(event) =>
-                    setZone(
-                      event.target.value as MuscleZone,
-                    )
-                  }
+                  onChange={(event) => {
+                    const next = event.target.value as MuscleZone;
+                    setZone(next);
+                    /* Un groupe qui n'appartient plus à la zone est vidé, pas conservé en silence. */
+                    setProgressionGroup((current) =>
+                      current !== undefined && allowedProgressionGroups(next).includes(current) ? current : undefined,
+                    );
+                  }}
                 >
                   {zones.map((value) => (
                     <option
@@ -386,6 +401,15 @@ export function ExerciseCreateScreen() {
                   ))}
                 </select>
               </label>
+
+              <ProgressionClassificationFields
+                zone={zone}
+                movement={movement}
+                progressionGroup={progressionGroup}
+                movementFamily={movementFamily}
+                onProgressionGroupChange={setProgressionGroup}
+                onMovementFamilyChange={setMovementFamily}
+              />
             </>
           )}
 

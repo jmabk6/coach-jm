@@ -29,6 +29,13 @@
   gap: 8px;
 }
 
+/* Classification de progression (groupe · famille) : même pastille, ton accentué. */
+.exercise-detail__tags .exercise-detail__classification {
+  border-color: var(--color-accent-soft, #eaf1ff);
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+}
+
 .exercise-detail__tags span {
   display: inline-flex;
   min-height: 32px;

@@ -7,7 +7,9 @@ import type {
   ExerciseLocation,
   MeasurementType,
   Movement,
+  MovementFamily,
   MuscleZone,
+  ProgressionGroup,
 } from "../../domain";
 import {
   archiveExercise,
@@ -15,6 +17,8 @@ import {
   getExercise,
   saveExercise,
 } from "../../db/repositories/exerciseRepository";
+import { allowedProgressionGroups, classificationErrors } from "../../domain/rules/exerciseRules";
+import { ProgressionClassificationFields } from "./ProgressionClassificationFields";
 import "./ExerciseCreateScreen.css";
 
 const categories: ExerciseCategory[] = [
@@ -179,7 +183,22 @@ function updateExercise(
   measurementLabelValue: string,
   measurementLabelLeft: string,
   measurementLabelRight: string,
+  progressionGroup: ProgressionGroup | undefined,
+  movementFamily: MovementFamily | undefined,
 ): Exercise {
+  if (category === "Musculation") {
+    const errors = classificationErrors({
+      category,
+      zone,
+      movement,
+      ...(progressionGroup !== undefined ? { progressionGroup } : {}),
+      ...(movementFamily !== undefined ? { movementFamily } : {}),
+    });
+    if (errors.length > 0) {
+      throw new Error(errors.join(" "));
+    }
+  }
+
   const commonBase = {
     id: current.id,
     name,
@@ -265,6 +284,8 @@ function updateExercise(
           zone,
           movement,
           equipment,
+          ...(progressionGroup !== undefined ? { progressionGroup } : {}),
+          ...(movementFamily !== undefined ? { movementFamily } : {}),
         }
       : category === "Cardio"
         ? {
@@ -368,6 +389,12 @@ export function ExerciseEditScreen() {
   const [equipment, setEquipment] =
     useState<Equipment>("Barre");
 
+  const [progressionGroup, setProgressionGroup] =
+    useState<ProgressionGroup | undefined>();
+
+  const [movementFamily, setMovementFamily] =
+    useState<MovementFamily | undefined>();
+
   const [location, setLocation] =
     useState<ExerciseLocation>("Salle");
 
@@ -462,6 +489,8 @@ export function ExerciseEditScreen() {
           setZone(loaded.zone);
           setMovement(loaded.movement);
           setEquipment(loaded.equipment);
+          setProgressionGroup(loaded.progressionGroup);
+          setMovementFamily(loaded.movementFamily);
         } else if (loaded.category === "Cardio") {
           setEquipment(loaded.equipment);
         }
@@ -617,6 +646,8 @@ export function ExerciseEditScreen() {
         measurementLabelValue,
         measurementLabelLeft,
         measurementLabelRight,
+        progressionGroup,
+        movementFamily,
       );
 
       await saveExercise(updated);
@@ -784,11 +815,13 @@ export function ExerciseEditScreen() {
                 <span>Zone</span>
                 <select
                   value={zone}
-                  onChange={(event) =>
-                    setZone(
-                      event.target.value as MuscleZone,
-                    )
-                  }
+                  onChange={(event) => {
+                    const next = event.target.value as MuscleZone;
+                    setZone(next);
+                    setProgressionGroup((current) =>
+                      current !== undefined && allowedProgressionGroups(next).includes(current) ? current : undefined,
+                    );
+                  }}
                 >
                   {zones.map((value) => (
                     <option
@@ -821,6 +854,15 @@ export function ExerciseEditScreen() {
                   ))}
                 </select>
               </label>
+
+              <ProgressionClassificationFields
+                zone={zone}
+                movement={movement}
+                progressionGroup={progressionGroup}
+                movementFamily={movementFamily}
+                onProgressionGroupChange={setProgressionGroup}
+                onMovementFamilyChange={setMovementFamily}
+              />
             </>
           )}
 

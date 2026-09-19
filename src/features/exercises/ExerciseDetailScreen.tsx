@@ -20,6 +20,7 @@ import {
   getExercise,
 } from "../../db/repositories/exerciseRepository";
 import { getCompletedWorkouts } from "../../db/repositories/workoutRepository";
+import { formatClassification } from "../../domain/rules/exerciseRules";
 import {
   buildExercisePerformanceHistory,
   buildExercisePerformanceSummary,
@@ -350,6 +351,9 @@ export function ExerciseDetailScreen() {
               <span>{exercise.zone}</span>
               <span>{exercise.movement}</span>
               <span>{exercise.equipment}</span>
+              {formatClassification(exercise) && (
+                <span className="exercise-detail__classification">{formatClassification(exercise)}</span>
+              )}
             </>
           ) : exercise.category === "Cardio" ? (
             <>

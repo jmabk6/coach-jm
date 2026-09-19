@@ -4,6 +4,7 @@ import {
   getExercise,
   saveExercise,
 } from "../../db/repositories/exerciseRepository";
+import { classificationErrors } from "../../domain/rules/exerciseRules";
 import { exerciseCatalog } from "./exerciseCatalog";
 
 /**
@@ -12,6 +13,12 @@ import { exerciseCatalog } from "./exerciseCatalog";
  * - un exercice absent est ajouté ;
  * - un exercice existant n'est jamais remplacé ;
  * - seuls les champs éditoriaux encore absents sont complétés ;
+ * - la classification de progression (`progressionGroup`, `movementFamily`,
+ *   conception v1.5 § 8.2) suit la même règle : **complétée seulement si
+ *   absente en base**, jamais écrasée, jamais posée sur un exercice hors
+ *   catalogue ; `updatedAt` n'est pas modifié ;
+ * - une classification invalide trouvée en base est signalée dans la
+ *   console et laissée en l'état (§ 8.2) ;
  * - les médias officiels (vignette, photo) suivent toujours le catalogue :
  *   ce sont des fichiers générés, pas des données de l'utilisateur.
  *
@@ -85,6 +92,19 @@ export async function seedExerciseCatalog(): Promise<void> {
         existing.media?.photoUrl !== officialMedia.photoUrl ||
         !sameFrames);
 
+    /* Classification en base : signalée si invalide, jamais corrigée. */
+    const storedIssues = classificationErrors(existing);
+    if (storedIssues.length > 0) {
+      console.warn(`[coach-jm] classification de progression invalide sur « ${existing.name} » (${existing.id}), laissée en l'état : ${storedIssues.join(" ")}`);
+    }
+
+    const groupMissing =
+      existing.progressionGroup === undefined &&
+      exercise.progressionGroup !== undefined;
+    const familyMissing =
+      existing.movementFamily === undefined &&
+      exercise.movementFamily !== undefined;
+
     const needsCatalogUpgrade =
       (existing.technique === undefined &&
         exercise.technique !== undefined) ||
@@ -94,6 +114,8 @@ export async function seedExerciseCatalog(): Promise<void> {
         exercise.advice !== undefined) ||
       (existing.muscles === undefined &&
         exercise.muscles !== undefined) ||
+      groupMissing ||
+      familyMissing ||
       mediaOutdated;
 
     if (!needsCatalogUpgrade) {
@@ -133,6 +155,11 @@ export async function seedExerciseCatalog(): Promise<void> {
       exercise.muscles !== undefined
         ? { muscles: exercise.muscles }
         : {}),
+
+      /* Champs vides seulement (§ 8.2) : une valeur déjà présente — a
+         fortiori une modification personnelle — n'est jamais touchée. */
+      ...(groupMissing ? { progressionGroup: exercise.progressionGroup } : {}),
+      ...(familyMissing ? { movementFamily: exercise.movementFamily } : {}),
 
       ...(mediaOutdated && officialMedia !== undefined
         ? {

@@ -96,6 +96,15 @@
   color: #b42318;
 }
 
+/* Avertissement de classification : informe, ne bloque pas. */
+.exercise-create__warning {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #b45309;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 .exercise-create__submit {
   min-height: 50px;
   border: 0;

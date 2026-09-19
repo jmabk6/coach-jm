@@ -434,6 +434,10 @@ describe("migration v1 → v2 — par les fonctions de l'application (instance g
     const all = await db.exercises.toArray();
     expect(new Set(all.map((e) => e.id)).size).toBe(all.length);
     expect(all.filter((e) => e.status === "active")).toHaveLength(48);
-    expect(all.every((e) => e.progressionGroup === undefined && e.movementFamily === undefined)).toBe(true);
+    /* Depuis le lot 3, le seed complète la classification des exercices de
+       musculation du catalogue (champs vides seulement) ; rien ailleurs. */
+    expect(all.filter((e) => e.status === "active" && e.category === "Musculation").every((e) => e.progressionGroup !== undefined)).toBe(true);
+    expect(all.filter((e) => e.category !== "Musculation").every((e) => e.progressionGroup === undefined && e.movementFamily === undefined)).toBe(true);
+    expect(perso?.progressionGroup).toBeUndefined();
   });
 });
