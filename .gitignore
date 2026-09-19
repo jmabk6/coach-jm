@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Certificats de développement locaux (recette iPhone), jamais versionnés
+.certs
