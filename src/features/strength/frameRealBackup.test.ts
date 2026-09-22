@@ -22,7 +22,7 @@ import { currentLoadOf, proposeStartingLoad } from "./frameReadings";
  * Jeu réel du lot 4B (plan § 8) : la sauvegarde personnelle
  * (`COACH_JM_BACKUP`, ignoré si absent) restaurée sur une base de test,
  * un cadre créé sur un exercice de septembre, une séance faite et
- * validée → **un** jalon ; rien d'autre ne bouge : les 11 séances, les
+ * validée → **un** jalon ; rien d'autre ne bouge : les séances existantes, les
  * 48 exercices, le modèle, les autres stores sont identiques au fichier.
  * Lot 4C : hausse proposée, acceptée, conseillée à la séance suivante,
  * validée → second jalon et objectif effacé. Puis les séances sont
@@ -44,7 +44,8 @@ describe("lot 4B sur la sauvegarde réelle", () => {
     await restoreBackup(envelope, db);
     const initial = await readStores(db);
 
-    expect(initial.counts.workouts).toBe(11);
+    /* 11 séances au 20/09 (0205), 12 depuis la séance libre du 20/09 (sauvegarde du 22/09) : le test suit le fichier. */
+    expect(initial.counts.workouts).toBeGreaterThanOrEqual(11);
     expect(initial.counts.strengthFrames).toBe(0);
     expect(initial.counts.strengthMilestones).toBe(0);
 
@@ -99,7 +100,7 @@ describe("lot 4B sur la sauvegarde réelle", () => {
 
     const afterSession = await readStores(db);
     expect(afterSession.counts.strengthMilestones).toBe(1);
-    expect(afterSession.counts.workouts).toBe(12);
+    expect(afterSession.counts.workouts).toBe((initial.counts.workouts ?? 0) + 1);
     const frozen = await db.strengthFrameVersions.get(version.id);
     expect(frozen).toMatchObject({ firstOfficialWorkoutId: w.id });
     expect(frozen).not.toHaveProperty("currentTarget");
