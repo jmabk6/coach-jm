@@ -3,11 +3,12 @@ import "fake-indexeddb/auto";
 import { readFile } from "node:fs/promises";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
-import type { Exercise } from "../../domain";
+import type { Exercise, WorkoutSession } from "../../domain";
 import { checkClassification } from "../../domain/rules/exerciseRules";
 import { parseBackup, restoreBackup } from "../backup/restoreBackup";
 import { readStores } from "../backup/exportBackup";
 import { canonicalStringify } from "../backup/canonicalJson";
+import { seedRpeScale } from "../strength/seedRpeScale";
 
 /* En production, les médias du catalogue sont préfixés par la base de la
    PWA (`/coach-jm/`), comme dans la sauvegarde ; sous Vitest la base vaut
@@ -89,5 +90,37 @@ describe("seed du lot 3 sur la sauvegarde réelle", () => {
     expect(canonicalStringify((await readStores(db)).stores)).toBe(canonicalStringify(again.stores));
 
     console.info("[seed réel]", { exercices: after.counts.exercises, enrichis: enriched, seances: after.counts.workouts });
+  });
+
+  it.skipIf(!path)("lot 4A : le seed de l'échelle RPE ajoute une V1 et ne touche à rien d'autre", async () => {
+    await db.delete();
+    await db.open();
+    const envelope = parseBackup(await readFile(path!, "utf8"));
+    await restoreBackup(envelope, db);
+    await seedExerciseCatalog();
+    const before = await readStores(db);
+
+    await seedRpeScale(new Date("2026-09-22T10:00:00.000Z"));
+
+    const after = await readStores(db);
+    for (const store of Object.keys(before.stores)) {
+      if (store === "rpeScaleVersions") continue;
+      expect(canonicalStringify(after.stores[store]), store).toBe(canonicalStringify(before.stores[store]));
+    }
+    expect(before.counts.rpeScaleVersions).toBe(0);
+    expect(after.counts.rpeScaleVersions).toBe(1);
+    expect(after.counts.workouts).toBe(before.counts.workouts);
+
+    /* Les séances existantes gardent leurs séries sans rôle ni drapeau. */
+    for (const workout of after.stores.workouts as WorkoutSession[]) {
+      expect(workout).not.toHaveProperty("rpeScaleVersionId");
+      for (const block of workout.blocks) {
+        if (block.kind !== "exercise") continue;
+        for (const series of block.series ?? []) {
+          expect(series).not.toHaveProperty("role");
+          expect(series).not.toHaveProperty("sideLimited");
+        }
+      }
+    }
   });
 });
