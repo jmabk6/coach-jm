@@ -337,7 +337,7 @@ export function WorkoutScreen() {
   async function finish() {
     try {
       setFinishError(undefined);
-      const completed = await finishWorkout(workout!.id);
+      const { workout: completed } = await finishWorkout(workout!.id);
       navigate(`/workouts/${completed.id}?returnTo=/`, { replace: true });
     } catch (cause) {
       setFinishing(false);

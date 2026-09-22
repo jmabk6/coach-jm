@@ -238,7 +238,7 @@ describe("scénario de fin d'étape : séance libre au fil de l'eau", () => {
     const marche = w.blocks[2]!.id;
     await act((c, t) => validateSimpleMeasurement(c, marche, { distanceKm: 7 }, t), at(18));
 
-    const done = await finishWorkout(id, at(20));
+    const { workout: done } = await finishWorkout(id, at(20));
     expect(done.status).toBe("completed");
     expect(done.activeDurationSec).toBe(20 * 60 - 5 * 60);
     expect(done.blocks.map(statusOf)).toEqual(["performed", "performed", "performed", "not_performed"]);
@@ -327,7 +327,7 @@ describe("scénario de fin d'étape : séance planifiée avec substitution et sa
     expect(calculateExecutionProgress(w.blocks)).toEqual({ completed: 2, total: 4 });
 
     /* Clôture avec le crunch et le tapis jamais abordés. */
-    const done = await finishWorkout(id, at(15));
+    const { workout: done } = await finishWorkout(id, at(15));
     expect(done.blocks.map(statusOf)).toEqual([
       "note",
       "performed",

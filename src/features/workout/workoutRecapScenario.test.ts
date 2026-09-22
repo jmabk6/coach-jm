@@ -160,7 +160,7 @@ async function playCompleteMuscuA(plannedSessionId: string, start: string, kg: n
     await act((c, t) => validateSeries(c, sq, series.id, { load: { kind: "total", kg: kg * 2 }, reps: 10, rpe: 8 }, t, newId), when(++minute));
   }
 
-  return finishWorkout(started.id, when(minute + 1));
+  return (await finishWorkout(started.id, when(minute + 1))).workout;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -192,7 +192,7 @@ describe("Étape 7 — récapitulatif de bout en bout, sur base réelle", () => 
     await act((c, t) => validateStep(c, tapis, p1, { settings: { durationSec: 120, speedKmh: 5, inclinePercent: 6 }, bpm: 140 }, t), at(10));
 
     /* Clôture avant le crunch. */
-    const done = await finishWorkout(started.id, at(11));
+    const { workout: done } = await finishWorkout(started.id, at(11));
     const stored = (await getWorkout(done.id))!;
     expect(stored).toEqual(done);
 
@@ -283,7 +283,7 @@ describe("Étape 7 — récapitulatif de bout en bout, sur base réelle", () => 
     for (const [index, series] of (w.blocks.find((b) => b.id === sq) as { series: { id: string }[] }).series.entries()) {
       await act((c, t) => validateSeries(c, sq, series.id, { load: { kind: "total", kg: 66 }, reps: 10, rpe: 8 }, t, newId), at(12 + index * 2));
     }
-    const done = await finishWorkout(started.id, at(17));
+    const { workout: done } = await finishWorkout(started.id, at(17));
     const stored = (await getWorkout(done.id))!;
     expect(stored).toEqual(done);
     expect((await getPlannedSession("planned-17"))?.status).toBe("done");

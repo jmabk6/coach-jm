@@ -96,7 +96,7 @@ export function ResumeWatcher() {
   async function stop() {
     try {
       setError(undefined);
-      const completed = await finishWorkout(workout.id);
+      const { workout: completed } = await finishWorkout(workout.id);
       setFound(undefined);
       navigate(`/workouts/${completed.id}?returnTo=/`, { replace: true });
     } catch (cause) {
