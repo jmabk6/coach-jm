@@ -162,7 +162,20 @@ export const frameValidationReasonLabels: Record<FrameValidationReason, string> 
 };
 
 export type FrameValidationResult =
-  | { validated: true; value: number; unit: StrengthUnit; ceilingReached?: boolean }
+  | {
+      validated: true;
+      /** La charge tenue sur **toutes** les séries de travail (la plus basse ; la plus haute pour une assistance). */
+      value: number;
+      unit: StrengthUnit;
+      ceilingReached?: boolean;
+      /**
+       * Présent quand les séries de travail n'avaient pas toutes la même
+       * charge (précision du 22/09/2026) : la charge la plus exigeante
+       * atteinte sur une partie des séries, qui reste à confirmer sur
+       * toutes. Les charges réelles restent dans les séries.
+       */
+      pendingValue?: number;
+    }
   | { validated: false; reason: FrameValidationReason };
 
 /**
@@ -225,13 +238,33 @@ export function validateFrame(
 
   const assistance = version.progressionType === "assistance_decroissante";
   const value = assistance ? Math.max(...known) : Math.min(...known);
+  const pending = assistance ? Math.min(...known) : Math.max(...known);
 
   return {
     validated: true,
     value,
     unit: "kg",
     ...(assistance && value <= 0 ? { ceilingReached: true } : {}),
+    ...(pending !== value ? { pendingValue: pending } : {}),
   };
+}
+
+/**
+ * « Validé — 40 kg » ; avec des charges différentes : « Palier validé à
+ * 40 kg — 45 kg reste à confirmer sur 3 séries » ; sinon « Non validé —
+ * motif ».
+ */
+export function formatFrameValidation(result: FrameValidationResult, workSets: number): string {
+  if (!result.validated) return `Non validé — ${frameValidationReasonLabels[result.reason]}`;
+
+  if (result.pendingValue !== undefined) {
+    return `Palier validé à ${formatStrengthValue(result.value, result.unit)} — ${formatStrengthValue(
+      result.pendingValue,
+      result.unit,
+    )} reste à confirmer sur ${workSets} séries`;
+  }
+
+  return `Validé — ${formatStrengthValue(result.value, result.unit)}`;
 }
 
 /* -------------------------------------------------------------------------- */

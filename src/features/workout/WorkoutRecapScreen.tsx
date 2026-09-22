@@ -21,6 +21,7 @@ import type {
   PerformedBlock,
   SessionTemplate,
   WorkoutSession,
+  StrengthFrameVersion,
 } from "../../domain";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
@@ -62,6 +63,7 @@ type LoadState =
       volumeComparison: VolumeComparison | undefined;
       /** Sort de chaque version de cadre exécutée (v1.6, § 4.4), recalculé. */
       frameOutcomes: Map<Id, FrameValidationResult>;
+      versionById: Map<Id, StrengthFrameVersion>;
     };
 
 function capitalize(value: string): string {
@@ -129,6 +131,7 @@ export function WorkoutRecapScreen() {
         exerciseById: new Map(exercises.map((exercise) => [exercise.id, exercise])),
         volumeComparison: compareVolumeToPrevious(workout, completed),
         frameOutcomes: frameOutcomesOf(workout, frames.versionById),
+        versionById: frames.versionById,
       });
     }
 
@@ -156,12 +159,12 @@ export function WorkoutRecapScreen() {
     );
   }
 
-  const { workout, template, exerciseById, volumeComparison, frameOutcomes } = state;
+  const { workout, template, exerciseById, volumeComparison, frameOutcomes, versionById } = state;
   const head = summarizeWorkout(workout, template);
   /* `dont 4 comptées · 2 éch.` : rien quand toutes les séries comptent (v1.6). */
   const rolesLine = formatSeriesRoleSummary(head.roles);
   const { planned, added } = splitRecapLines(
-    withFrameLines(buildWorkoutRecapLines(workout, exerciseById), frameOutcomes, exerciseById),
+    withFrameLines(buildWorkoutRecapLines(workout, exerciseById), frameOutcomes, exerciseById, versionById),
     workout.sessionTemplateId !== undefined,
   );
   const title = template?.name ?? "Séance libre";
@@ -510,7 +513,7 @@ function RecapLine({ line, to }: { line: WorkoutRecapLine; to: string }) {
             {line.rpe !== undefined && ` · RPE ${formatDecimal(line.rpe)}`}
           </span>
           {line.frameLine && (
-            <span className={`recap-line__frame ${line.frameLine.startsWith("Validé") ? "recap-line__frame--ok" : ""}`}>
+            <span className={`recap-line__frame ${line.frameLine.startsWith("Non validé") ? "" : "recap-line__frame--ok"}`}>
               {line.frameLine}
             </span>
           )}

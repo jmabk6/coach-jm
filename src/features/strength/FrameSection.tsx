@@ -13,10 +13,10 @@ import {
   getStrengthMilestonesByVersion,
 } from "../../db/repositories/strengthRepository";
 import {
+  formatFrameValidation,
   formatFrameVersionSummary,
   formatStrengthValue,
   frameTypesFor,
-  frameValidationReasonLabels,
   isVersionFrozen,
   strengthArchiveReasonLabels,
   strengthProgressionTypeLabels,
@@ -286,10 +286,7 @@ export function FrameSection({ exercise, completedWorkouts }: FrameSectionProps)
 
       {outcome && (
         <p className={`frame-section__outcome ${outcome.result.validated ? "frame-section__outcome--ok" : ""}`}>
-          Dernière séance ({formatDate(outcome.date)}) :{" "}
-          {outcome.result.validated
-            ? `Validé — ${formatStrengthValue(outcome.result.value, outcome.result.unit)}`
-            : `Non validé — ${frameValidationReasonLabels[outcome.result.reason]}`}
+          Dernière séance ({formatDate(outcome.date)}) : {formatFrameValidation(outcome.result, current.workSets)}
         </p>
       )}
 

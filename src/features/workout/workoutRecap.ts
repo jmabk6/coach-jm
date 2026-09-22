@@ -9,14 +9,14 @@ import type {
   PerformedSeries,
   PerformedSimpleMeasurement,
   SessionTemplate,
+  StrengthFrameVersion,
   WorkoutPause,
   WorkoutSession,
 } from "../../domain";
 import {
   SERIES_SIDE_LIMITED_LABEL,
   SERIES_WARMUP_SHORT_LABEL,
-  formatStrengthValue,
-  frameValidationReasonLabels,
+  formatFrameValidation,
   isWorkSeries,
   summarizeSeriesRoles,
   type FrameValidationResult,
@@ -550,11 +550,9 @@ export interface WorkoutRecapLine {
   frameLine?: string;
 }
 
-/** « Validé — 100 kg » / « Non validé — répétitions insuffisantes ». */
-export function formatFrameOutcome(result: FrameValidationResult): string {
-  return result.validated
-    ? `Validé — ${formatStrengthValue(result.value, result.unit)}`
-    : `Non validé — ${frameValidationReasonLabels[result.reason]}`;
+/** « Validé — 100 kg » / « Palier validé à 40 kg — 45 kg reste à confirmer sur 3 séries » / « Non validé — motif ». */
+export function formatFrameOutcome(result: FrameValidationResult, workSets: number): string {
+  return formatFrameValidation(result, workSets);
 }
 
 /**
@@ -567,15 +565,19 @@ export function withFrameLines(
   lines: WorkoutRecapLine[],
   outcomes: ReadonlyMap<Id, FrameValidationResult>,
   exerciseById: Map<Id, Exercise>,
+  versionById: ReadonlyMap<Id, StrengthFrameVersion>,
 ): WorkoutRecapLine[] {
   if (outcomes.size === 0) return lines;
+
+  const text = (versionId: Id, result: FrameValidationResult) =>
+    formatFrameOutcome(result, versionById.get(versionId)?.workSets ?? 0);
 
   return lines.map((line) => {
     const { block } = line;
 
     if (block.kind === "exercise") {
       const result = block.frameVersionId !== undefined ? outcomes.get(block.frameVersionId) : undefined;
-      return result ? { ...line, frameLine: formatFrameOutcome(result) } : line;
+      return result ? { ...line, frameLine: text(block.frameVersionId!, result) } : line;
     }
 
     if (block.kind === "group") {
@@ -590,8 +592,8 @@ export function withFrameLines(
       const parts = [...seen]
         .filter(([versionId]) => outcomes.has(versionId))
         .map(([versionId, exerciseId]) => {
-          const text = formatFrameOutcome(outcomes.get(versionId)!);
-          return seen.size > 1 ? `${exerciseById.get(exerciseId)?.name ?? exerciseId} : ${text}` : text;
+          const outcome = text(versionId, outcomes.get(versionId)!);
+          return seen.size > 1 ? `${exerciseById.get(exerciseId)?.name ?? exerciseId} : ${outcome}` : outcome;
         });
       return parts.length > 0 ? { ...line, frameLine: parts.join(" · ") } : line;
     }

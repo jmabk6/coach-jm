@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PerformedSeries, StrengthFrameVersion, WorkoutSession } from "../models";
 import {
+  formatFrameValidation,
   formatFrameVersionSummary,
   formatStrengthValue,
   frameParametersChanged,
@@ -54,7 +55,32 @@ describe("validateFrame — critères et motifs (spec § 4, conception § 4.4)",
     /* Une série plus légère : le palier validé est le plus bas. */
     const mixed = good();
     mixed[1] = series({ load: kg(95), reps: 12, rpe: 7 });
-    expect(validateFrame(version(), mixed)).toMatchObject({ validated: true, value: 95 });
+    expect(validateFrame(version(), mixed)).toEqual({ validated: true, value: 95, unit: "kg", pendingValue: 100 });
+  });
+
+  it("charges différentes (précision du 22/09/2026) : jalon = charge tenue sur toutes les séries, la plus haute reste à confirmer", () => {
+    const climbing = [
+      series({ load: kg(40), reps: 12, rpe: 7 }),
+      series({ load: kg(45), reps: 12, rpe: 8 }),
+      series({ load: kg(45), reps: 12, rpe: 8 }),
+    ];
+    const result = validateFrame(version(), climbing);
+    expect(result).toEqual({ validated: true, value: 40, unit: "kg", pendingValue: 45 });
+    expect(formatFrameValidation(result, 3)).toBe("Palier validé à 40 kg — 45 kg reste à confirmer sur 3 séries");
+
+    /* Charges identiques : pas de mention. */
+    expect(formatFrameValidation(validateFrame(version(), good()), 3)).toBe("Validé — 100 kg");
+    expect(formatFrameValidation({ validated: false, reason: "cote_limite" }, 3)).toBe("Non validé — série limitée par un côté");
+
+    /* Assistance : le jalon est l'assistance la plus haute, la plus basse reste à confirmer. */
+    const pullups = version({ progressionType: "assistance_decroissante", repRange: { min: 6, max: 8 }, rpeTarget: 9 });
+    const assisted = [
+      series({ load: kg(25), reps: 8, rpe: 8 }),
+      series({ load: kg(20), reps: 8, rpe: 9 }),
+      series({ load: kg(20), reps: 8, rpe: 9 }),
+    ];
+    expect(validateFrame(pullups, assisted)).toEqual({ validated: true, value: 25, unit: "kg", pendingValue: 20 });
+    expect(formatFrameValidation(validateFrame(pullups, assisted), 3)).toBe("Palier validé à 25 kg — 20 kg reste à confirmer sur 3 séries");
   });
 
   it("ignore les échauffements, les séries non validées, et exige au moins workSets séries de travail", () => {
@@ -167,7 +193,7 @@ describe("validateFrame — critères et motifs (spec § 4, conception § 4.4)",
       series({ load: kg(25), reps: 8, rpe: 9 }),
       series({ load: kg(20), reps: 8, rpe: 9 }),
     ];
-    expect(validateFrame(pullups, done)).toEqual({ validated: true, value: 25, unit: "kg" });
+    expect(validateFrame(pullups, done)).toEqual({ validated: true, value: 25, unit: "kg", pendingValue: 20 });
 
     const free = done.map((item) => ({ ...item, load: kg(0) }));
     expect(validateFrame(pullups, free)).toEqual({ validated: true, value: 0, unit: "kg", ceilingReached: true });

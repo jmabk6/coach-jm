@@ -120,16 +120,21 @@ describe("lectures d'un cadre", () => {
 
     const outcomes = frameOutcomesOf(w2, versionById);
     expect(outcomes.get("v1")).toEqual({ validated: false, reason: "reps_insuffisantes" });
-    const lines = withFrameLines(buildWorkoutRecapLines(w2, exerciseById), outcomes, exerciseById);
+    const lines = withFrameLines(buildWorkoutRecapLines(w2, exerciseById), outcomes, exerciseById, versionById);
     expect(lines[0]?.frameLine).toBe("Non validé — répétitions insuffisantes");
 
-    const ok = withFrameLines(buildWorkoutRecapLines(w3, exerciseById), frameOutcomesOf(w3, versionById), exerciseById);
+    const ok = withFrameLines(buildWorkoutRecapLines(w3, exerciseById), frameOutcomesOf(w3, versionById), exerciseById, versionById);
     expect(ok[0]?.frameLine).toBe("Validé — 100 kg");
+
+    /* Charges différentes : l'explication de la précision du 22/09/2026, avec le nombre de séries du cadre. */
+    const climbing = workout("w5", "2026-09-28", [block("b", "presse", [series("s1", 100, 12, 8), series("s2", 105, 12, 8)], "v1")]);
+    const lines5 = withFrameLines(buildWorkoutRecapLines(climbing, exerciseById), frameOutcomesOf(climbing, versionById), exerciseById, versionById);
+    expect(lines5[0]?.frameLine).toBe("Palier validé à 100 kg — 105 kg reste à confirmer sur 2 séries");
 
     expect(frameOutcomesOf(w1, versionById).size).toBe(0);
     expect(frameOutcomesOf({ ...w3, kind: "mobility_assessment" }, versionById).size).toBe(0);
     expect(frameOutcomesOf({ ...w3, id: "import-x" }, versionById).size).toBe(0);
-    const bare = withFrameLines(buildWorkoutRecapLines(w1, exerciseById), new Map(), exerciseById);
+    const bare = withFrameLines(buildWorkoutRecapLines(w1, exerciseById), new Map(), exerciseById, versionById);
     expect(bare[0]).not.toHaveProperty("frameLine");
   });
 });
