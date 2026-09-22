@@ -2,10 +2,12 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { seedExerciseCatalog } from "./features/exercises/seedExerciseCatalog";
+import { seedRpeScale } from "./features/strength/seedRpeScale";
 import "./index.css";
 
 async function bootstrap() {
   await seedExerciseCatalog();
+  await seedRpeScale();
 
   /* Console de recette : restauration d'une sauvegarde dans la base de
      cet origin (serveur de développement). Absent du build de production. */
