@@ -26,7 +26,9 @@ import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
 import { getCompletedWorkouts, getWorkout } from "../../db/repositories/workoutRepository";
 import { formatFullDate } from "../../domain/rules/programRules";
-import { formatSeriesRoleSummary } from "../../domain/rules/strengthRules";
+import { formatSeriesRoleSummary, type FrameValidationResult } from "../../domain/rules/strengthRules";
+import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
+import { frameOutcomesOf } from "../strength/frameReadings";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { deleteWorkout } from "./deleteWorkout";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
@@ -43,6 +45,7 @@ import {
   recapStatusLabels,
   splitRecapLines,
   summarizeWorkout,
+  withFrameLines,
   type VolumeComparison,
   type WorkoutRecapLine,
 } from "./workoutRecap";
@@ -57,6 +60,8 @@ type LoadState =
       template: SessionTemplate | undefined;
       exerciseById: Map<Id, Exercise>;
       volumeComparison: VolumeComparison | undefined;
+      /** Sort de chaque version de cadre exécutée (v1.6, § 4.4), recalculé. */
+      frameOutcomes: Map<Id, FrameValidationResult>;
     };
 
 function capitalize(value: string): string {
@@ -107,11 +112,12 @@ export function WorkoutRecapScreen() {
         return;
       }
 
-      const [template, completed] = await Promise.all([
+      const [template, completed, frames] = await Promise.all([
         workout.sessionTemplateId
           ? getSessionTemplate(workout.sessionTemplateId)
           : Promise.resolve(undefined),
         workout.sessionTemplateId ? getCompletedWorkouts() : Promise.resolve([]),
+        loadActiveFrameVersions(),
       ]);
 
       if (cancelled) return;
@@ -122,6 +128,7 @@ export function WorkoutRecapScreen() {
         template,
         exerciseById: new Map(exercises.map((exercise) => [exercise.id, exercise])),
         volumeComparison: compareVolumeToPrevious(workout, completed),
+        frameOutcomes: frameOutcomesOf(workout, frames.versionById),
       });
     }
 
@@ -149,12 +156,12 @@ export function WorkoutRecapScreen() {
     );
   }
 
-  const { workout, template, exerciseById, volumeComparison } = state;
+  const { workout, template, exerciseById, volumeComparison, frameOutcomes } = state;
   const head = summarizeWorkout(workout, template);
   /* `dont 4 comptées · 2 éch.` : rien quand toutes les séries comptent (v1.6). */
   const rolesLine = formatSeriesRoleSummary(head.roles);
   const { planned, added } = splitRecapLines(
-    buildWorkoutRecapLines(workout, exerciseById),
+    withFrameLines(buildWorkoutRecapLines(workout, exerciseById), frameOutcomes, exerciseById),
     workout.sessionTemplateId !== undefined,
   );
   const title = template?.name ?? "Séance libre";
@@ -502,6 +509,11 @@ function RecapLine({ line, to }: { line: WorkoutRecapLine; to: string }) {
             {line.volumeKg !== undefined && ` · ${formatKg(line.volumeKg)}`}
             {line.rpe !== undefined && ` · RPE ${formatDecimal(line.rpe)}`}
           </span>
+          {line.frameLine && (
+            <span className={`recap-line__frame ${line.frameLine.startsWith("Validé") ? "recap-line__frame--ok" : ""}`}>
+              {line.frameLine}
+            </span>
+          )}
           {block.note && <span className="recap-line__note">{block.note}</span>}
         </span>
         <StatusIcon block={block} />

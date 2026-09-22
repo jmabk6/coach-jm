@@ -87,6 +87,30 @@ describe("SeriesForm — rôle, drapeau et aide RPE (lot 4A)", () => {
     expect(onSubmit).toHaveBeenLastCalledWith({ sideValues: [{ side: "left", reps: 12 }], role: "travail", sideLimited: false });
   });
 
+  it("barre connue (décision 4) : saisie par côté par défaut, total affiché, tare enregistrée avec la série", () => {
+    const onSubmit = vi.fn<(values: SeriesValues) => void>();
+    render(<SeriesForm layout="load_reps" initial={{}} strengthFields barWeightKg={20} submitLabel="Valider" onSubmit={onSubmit} />);
+
+    expect(screen.getByRole("button", { name: "Par côté", pressed: true })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Charge"), { target: { value: "7,5" } });
+    expect(screen.getByText("= 35 kg (7,5 / côté + 20 barre)")).toBeTruthy();
+
+    typeReps("12");
+    fireEvent.click(screen.getByRole("button", { name: "Valider" }));
+    expect(onSubmit).toHaveBeenLastCalledWith({
+      load: { kind: "per_side", kgPerSide: 7.5, tareKg: 20 },
+      reps: 12,
+      role: "travail",
+      sideLimited: false,
+    });
+
+    /* Total choisi explicitement : pas de tare, comme avant. */
+    fireEvent.click(screen.getByRole("button", { name: "Total" }));
+    fireEvent.change(screen.getByLabelText("Charge"), { target: { value: "35" } });
+    fireEvent.click(screen.getByRole("button", { name: "Valider" }));
+    expect(onSubmit).toHaveBeenLastCalledWith({ load: { kind: "total", kg: 35 }, reps: 12, role: "travail", sideLimited: false });
+  });
+
   it("modification : rôle et drapeau de la série sont repris", () => {
     render(
       <SeriesForm

@@ -720,3 +720,17 @@
 .recap__message--error {
   color: var(--color-danger, #c2413b);
 }
+
+/* Sort du palier d'un exercice cadré (lot 4B) */
+
+.recap-line__frame {
+  display: block;
+  margin-top: 2px;
+  color: #b54708;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.recap-line__frame--ok {
+  color: #067647;
+}

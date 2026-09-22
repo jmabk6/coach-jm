@@ -39,6 +39,11 @@ interface SeriesFormProps {
    * du champ (spec Musculation § 6). Sans table, pas d'aide.
    */
   rpeTable?: RpeScaleVersion["table"] | undefined;
+  /**
+   * Poids de la barre du cadre (v1.6, décision 4) : la saisie se fait par
+   * côté, la série garde la tare et le total est affiché.
+   */
+  barWeightKg?: number | undefined;
   submitLabel: string;
   onSubmit: (values: SeriesValues) => void;
   onCancel?: () => void;
@@ -71,13 +76,16 @@ export function SeriesForm({
   initial,
   strengthFields = false,
   rpeTable,
+  barWeightKg,
   submitLabel,
   onSubmit,
   onCancel,
   busy = false,
 }: SeriesFormProps) {
   const helpId = useId();
-  const [loadKind, setLoadKind] = useState<LoadKind>(initial.load?.kind ?? "total");
+  const [loadKind, setLoadKind] = useState<LoadKind>(
+    initial.load?.kind ?? (barWeightKg !== undefined ? "per_side" : "total"),
+  );
   const [load, setLoad] = useState(
     formatNumberInput(
       initial.load?.kind === "total"
@@ -130,8 +138,18 @@ export function SeriesForm({
 
     if (kg === undefined) return undefined;
 
-    return loadKind === "total" ? { kind: "total", kg } : { kind: "per_side", kgPerSide: kg };
+    if (loadKind === "total") return { kind: "total", kg };
+
+    /* Par côté : la tare de la barre du cadre voyage avec la série (§ 4.2, v1.6). */
+    return barWeightKg !== undefined
+      ? { kind: "per_side", kgPerSide: kg, tareKg: barWeightKg }
+      : { kind: "per_side", kgPerSide: kg };
   }
+
+  const perSideTotal =
+    loadKind === "per_side" && barWeightKg !== undefined && parseNumber(load) !== undefined
+      ? parseNumber(load)! * 2 + barWeightKg
+      : undefined;
 
   function buildValues(): SeriesValues {
     const values: SeriesValues = {};
@@ -197,6 +215,11 @@ export function SeriesForm({
               decimal
               disabled={loadKind === "empty"}
             />
+            {perSideTotal !== undefined && (
+              <span className="series-form__total">
+                = {formatNumberInput(perSideTotal)} kg ({formatNumberInput(parseNumber(load)!)} / côté + {formatNumberInput(barWeightKg!)} barre)
+              </span>
+            )}
             <div className="series-form__load-kinds" role="group" aria-label="Forme de la charge">
               {(Object.keys(LOAD_KIND_LABELS) as LoadKind[]).map((kind) => (
                 <button

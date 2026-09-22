@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Exercise } from "../../domain";
+import type { Exercise, WorkoutSession } from "../../domain";
 import {
   getActiveExercises,
   getExercise,
@@ -30,6 +30,7 @@ import {
   type ExercisePerformanceEntry,
   type ExercisePerformanceMetric,
 } from "./exercisePerformance";
+import { FrameSection } from "../strength/FrameSection";
 import { ExerciseDemonstration } from "./ExerciseDemonstration";
 import "./ExerciseDetailScreen.css";
 
@@ -40,6 +41,8 @@ type LoadState =
       exercise: Exercise;
       allExercises: Exercise[];
       performanceHistory: ExercisePerformanceEntry[];
+      /** Séances terminées, pour la section « Cadre de progression » (lot 4B). */
+      completedWorkouts: WorkoutSession[];
     }
   | { status: "not-found" }
   | { status: "error"; message: string };
@@ -152,6 +155,7 @@ export function ExerciseDetailScreen() {
           exercise,
           allExercises,
           performanceHistory,
+          completedWorkouts: workouts,
         });
       } catch (error) {
         if (!cancelled) {
@@ -278,6 +282,7 @@ export function ExerciseDetailScreen() {
   const {
     exercise,
     performanceHistory,
+    completedWorkouts,
   } = state;
 
   const chartData = selectedMetric
@@ -523,6 +528,8 @@ export function ExerciseDetailScreen() {
             )}
         </section>
       )}
+
+      <FrameSection exercise={exercise} completedWorkouts={completedWorkouts} />
 
       {hasPerformance && selectedMetric && (
         <section className="exercise-detail__section">

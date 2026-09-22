@@ -1,0 +1,191 @@
+/* Section « Cadre de progression » de la fiche exercice (lot 4B) */
+
+.frame-section__muted,
+.frame-section__freeze,
+.frame-section__target,
+.frame-section__outcome,
+.frame-section__notice {
+  margin: 0 0 12px;
+  color: var(--color-text-soft, #667085);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.frame-section__summary {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 6px;
+}
+
+.frame-section__summary span {
+  color: var(--color-text-soft, #667085);
+  font-size: 0.9rem;
+}
+
+.frame-section__freeze--archived {
+  color: #b54708;
+}
+
+.frame-section__cards {
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+  .frame-section__cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.frame-section__empty {
+  color: var(--color-text-soft, #667085);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.frame-section__target strong,
+.frame-section__outcome strong {
+  color: var(--color-text, #1f2937);
+}
+
+.frame-section__outcome--ok {
+  color: #067647;
+}
+
+.frame-section__notice {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+}
+
+.frame-section__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.frame-section__primary,
+.frame-form__submit {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--color-accent, #2f6fed);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+}
+
+.frame-section__secondary,
+.frame-form__cancel {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+}
+
+.frame-section__primary:disabled,
+.frame-form__submit:disabled {
+  opacity: 0.45;
+}
+
+.frame-section__history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border, #e5e5e5);
+}
+
+.frame-section__history li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border, #e5e5e5);
+  font-size: 0.9rem;
+}
+
+.frame-section__history small {
+  color: var(--color-text-soft, #667085);
+}
+
+/* Formulaire d'une version */
+
+.frame-form {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 12px;
+  background: white;
+}
+
+.frame-form h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.frame-form__type {
+  margin: 0;
+  color: var(--color-text-soft, #667085);
+  font-size: 0.9rem;
+}
+
+.frame-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.frame-form__field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-soft, #667085);
+}
+
+.frame-form__field--wide {
+  grid-column: 1 / -1;
+}
+
+.frame-form__field input,
+.frame-form__field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--color-text, #1f2937);
+  background: white;
+}
+
+.frame-form__field small {
+  color: var(--color-text-soft, #667085);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.frame-form__error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+
+.frame-form__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.frame-form__submit {
+  flex: 1;
+}

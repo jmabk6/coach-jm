@@ -8,7 +8,9 @@ import type {
   PerformedExerciseBlock,
   PerformedSeries,
   RpeScaleVersion,
+  StrengthFrameVersion,
 } from "../../domain";
+import { formatFrameVersionSummary, formatStrengthValue, loadToWork } from "../../domain/rules/strengthRules";
 import type {
   SeriesValues,
   SimpleMeasurementValues,
@@ -61,6 +63,12 @@ interface ExerciseBlockCardProps {
    * affichée par l'aide dépliable du formulaire de série.
    */
   rpeTable?: RpeScaleVersion["table"] | undefined;
+  /**
+   * Version de cadre portée par la brique (v1.6, § 4.3), pour la ligne
+   * « Cadre : 3 × 10–12 · RPE ≤ 8 · charge à travailler 100 kg » et la
+   * saisie par côté quand la barre est connue.
+   */
+  frameVersion?: StrengthFrameVersion | undefined;
   onToggle: () => void;
   onOpenMenu: () => void;
   onUnskip: () => void;
@@ -96,6 +104,7 @@ export function ExerciseBlockCard({
   restCard,
   originalName,
   rpeTable,
+  frameVersion,
   onToggle,
   onOpenMenu,
   onUnskip,
@@ -189,7 +198,7 @@ export function ExerciseBlockCard({
       {expanded && !skipped && block.series && (
         <div className="wblock__content">
           {restCard}
-          <ReferenceBlock block={block} lastTime={lastTime} />
+          <ReferenceBlock block={block} lastTime={lastTime} frameVersion={frameVersion} />
 
           <ol className="wseries">
             {[...block.series]
@@ -203,6 +212,7 @@ export function ExerciseBlockCard({
                   exercise={exercise}
                   lastTime={lastTime}
                   rpeTable={rpeTable}
+                  barWeightKg={frameVersion?.barWeightKg}
                   editing={editingId === series.id}
                   busy={busy}
                   onEdit={() => setEditingId(series.id)}
@@ -345,9 +355,11 @@ function performedOrSkipped(block: PerformedExerciseBlock): boolean {
 function ReferenceBlock({
   block,
   lastTime,
+  frameVersion,
 }: {
   block: PerformedExerciseBlock;
   lastTime: LastPerformance | undefined;
+  frameVersion: StrengthFrameVersion | undefined;
 }) {
   const planned = formatPlannedLine(block);
   const instructions = block.snapshotInstructions;
@@ -355,11 +367,27 @@ function ReferenceBlock({
     instructions.shape === "reps"
       ? suggestLoad(lastTime, instructions.reps, instructions.targetRpe)
       : undefined;
+  /* Cadre (v1.6, § 4.2 bis) : règles de la version portée et charge à
+     travailler — objectif en cours, sinon dernière série de travail. */
+  const toWork = frameVersion ? loadToWork(frameVersion, lastTime?.allSeries) : undefined;
 
-  if (!planned && !lastTime) return null;
+  if (!planned && !lastTime && !frameVersion) return null;
 
   return (
     <dl className="wref">
+      {frameVersion && (
+        <div className="wref__frame">
+          <dt>Cadre</dt>
+          <dd>
+            {formatFrameVersionSummary(frameVersion)}
+            {toWork
+              ? ` · ${frameVersion.progressionType === "duree_croissante" ? "durée à tenir" : "charge à travailler"} ${formatStrengthValue(toWork.value, toWork.unit)}${
+                  toWork.source === "objectif" ? " (objectif)" : ""
+                }`
+              : ""}
+          </dd>
+        </div>
+      )}
       {planned && (
         <div>
           <dt>Prévu</dt>
@@ -392,6 +420,7 @@ interface SeriesRowProps {
   exercise: Exercise | undefined;
   lastTime: LastPerformance | undefined;
   rpeTable: RpeScaleVersion["table"] | undefined;
+  barWeightKg: number | undefined;
   editing: boolean;
   busy: boolean;
   onEdit: () => void;
@@ -407,6 +436,7 @@ function SeriesRow({
   exercise,
   lastTime,
   rpeTable,
+  barWeightKg,
   editing,
   busy,
   onEdit,
@@ -457,6 +487,7 @@ function SeriesRow({
               }}
               strengthFields={strengthFields}
               rpeTable={rpeTable}
+              barWeightKg={barWeightKg}
               submitLabel="Enregistrer"
               onSubmit={onSaveEdit}
               onCancel={onCancelEdit}
@@ -485,6 +516,7 @@ function SeriesRow({
             initial={{ ...proposed, ...(series.role !== undefined ? { role: series.role } : {}) }}
             strengthFields={strengthFields}
             rpeTable={rpeTable}
+            barWeightKg={barWeightKg}
             submitLabel={`Valider la série ${index + 1}`}
             onSubmit={onValidate}
             busy={busy}

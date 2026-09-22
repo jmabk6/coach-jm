@@ -15,8 +15,11 @@ import type {
 import {
   SERIES_SIDE_LIMITED_LABEL,
   SERIES_WARMUP_SHORT_LABEL,
+  formatStrengthValue,
+  frameValidationReasonLabels,
   isWorkSeries,
   summarizeSeriesRoles,
+  type FrameValidationResult,
   type SeriesRoleSummary,
 } from "../../domain/rules/strengthRules";
 import { calculateVolume, getLoadKg } from "../../domain/rules/workoutRules";
@@ -540,6 +543,61 @@ export interface WorkoutRecapLine {
   volumeKg?: number;
   rpe?: number;
   category?: Exercise["category"];
+  /**
+   * Sort du palier pour une brique ou un groupe cadré (v1.6, § 4.4) :
+   * « Validé — 100 kg » ou « Non validé — motif ». Absent hors cadre.
+   */
+  frameLine?: string;
+}
+
+/** « Validé — 100 kg » / « Non validé — répétitions insuffisantes ». */
+export function formatFrameOutcome(result: FrameValidationResult): string {
+  return result.validated
+    ? `Validé — ${formatStrengthValue(result.value, result.unit)}`
+    : `Non validé — ${frameValidationReasonLabels[result.reason]}`;
+}
+
+/**
+ * Pose la ligne de cadre sur chaque ligne du récap : la brique lit sa
+ * version, un groupe liste celles de ses tours (avec le nom de l'exercice
+ * s'il y en a plusieurs). Recalculé depuis les séries, même résultat
+ * qu'à la clôture.
+ */
+export function withFrameLines(
+  lines: WorkoutRecapLine[],
+  outcomes: ReadonlyMap<Id, FrameValidationResult>,
+  exerciseById: Map<Id, Exercise>,
+): WorkoutRecapLine[] {
+  if (outcomes.size === 0) return lines;
+
+  return lines.map((line) => {
+    const { block } = line;
+
+    if (block.kind === "exercise") {
+      const result = block.frameVersionId !== undefined ? outcomes.get(block.frameVersionId) : undefined;
+      return result ? { ...line, frameLine: formatFrameOutcome(result) } : line;
+    }
+
+    if (block.kind === "group") {
+      const seen = new Map<Id, Id>();
+      for (const round of block.rounds) {
+        for (const child of round.children) {
+          if (child.frameVersionId !== undefined && !seen.has(child.frameVersionId)) {
+            seen.set(child.frameVersionId, child.exerciseId);
+          }
+        }
+      }
+      const parts = [...seen]
+        .filter(([versionId]) => outcomes.has(versionId))
+        .map(([versionId, exerciseId]) => {
+          const text = formatFrameOutcome(outcomes.get(versionId)!);
+          return seen.size > 1 ? `${exerciseById.get(exerciseId)?.name ?? exerciseId} : ${text}` : text;
+        });
+      return parts.length > 0 ? { ...line, frameLine: parts.join(" · ") } : line;
+    }
+
+    return line;
+  });
 }
 
 /**

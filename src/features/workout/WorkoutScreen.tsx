@@ -476,6 +476,7 @@ export function WorkoutScreen() {
                     : undefined
                 }
                 rpeTable={rpeScale?.table}
+                frameVersion={block.frameVersionId ? frames.versionById.get(block.frameVersionId) : undefined}
                 onToggle={() => toggleBlock(block)}
                 onOpenMenu={() => setBlockMenu(block)}
                 onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}
