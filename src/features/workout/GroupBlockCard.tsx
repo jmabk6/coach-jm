@@ -8,6 +8,7 @@ import type {
   PerformedGroupRoundChild,
   PerformedSeries,
   RpeScaleVersion,
+  StrengthFrameVersion,
 } from "../../domain";
 import {
   formatGroupChildInstructionsRow,
@@ -18,7 +19,8 @@ import { proposeRoundChildValues } from "./engine/workoutBlocks";
 import { findSubstitutionRound } from "./engine/workoutEngine";
 import type { LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
-import { formatLoadSuggestion, suggestLoad } from "./suggestedLoad";
+import { formatFrameLoadSuggestion, formatLoadSuggestion, suggestFrameLoad, suggestLoad } from "./suggestedLoad";
+import { formatFrameVersionSummary } from "../../domain/rules/strengthRules";
 import { formatBlockStatus, formatMmSs, formatShortDate, seriesFieldLayout } from "./workoutDisplay";
 import { formatSeriesLine } from "./workoutRecap";
 
@@ -40,6 +42,8 @@ interface GroupBlockCardProps {
   restBand?: ReactNode;
   /** Table de l'échelle de RPE en vigueur (v1.6, § 4.5), pour l'aide dépliable. */
   rpeTable?: RpeScaleVersion["table"] | undefined;
+  /** Versions de cadre par identifiant (v1.6, § 4.3) : celle que porte le tour. */
+  versionById?: ReadonlyMap<Id, StrengthFrameVersion> | undefined;
   onToggle: () => void;
   onOpenMenu: () => void;
   onUnskip: () => void;
@@ -65,6 +69,7 @@ export function GroupBlockCard({
   restCard,
   restBand,
   rpeTable,
+  versionById,
   onToggle,
   onOpenMenu,
   onUnskip,
@@ -265,6 +270,7 @@ export function GroupBlockCard({
                                 <ChildReference
                                   child={child}
                                   lastTime={lastByExercise.get(roundChild.exerciseId)}
+                                  frameVersion={roundChild.frameVersionId ? versionById?.get(roundChild.frameVersionId) : undefined}
                                 />
                                 <SeriesForm
                                   key={`entry-${roundChild.id}`}
@@ -327,13 +333,16 @@ function roundChildAsSeries(child: PerformedGroupRoundChild): PerformedSeries {
 function ChildReference({
   child,
   lastTime,
+  frameVersion,
 }: {
   child: PerformedGroupChild;
   lastTime: LastPerformance | undefined;
+  frameVersion: StrengthFrameVersion | undefined;
 }) {
   const instructions = child.snapshotInstructions;
+  const frameSuggestion = frameVersion ? suggestFrameLoad(frameVersion, lastTime?.allSeries) : undefined;
   const suggestion =
-    instructions.shape === "reps"
+    !frameVersion && instructions.shape === "reps"
       ? suggestLoad(lastTime, instructions.reps, instructions.targetRpe)
       : undefined;
 
@@ -350,6 +359,18 @@ function ChildReference({
             {formatSeriesLine(lastTime.series)}
             <small>{formatShortDate(lastTime.date)}</small>
           </dd>
+        </div>
+      )}
+      {frameVersion && (
+        <div className="wref__frame">
+          <dt>Cadre</dt>
+          <dd>{formatFrameVersionSummary(frameVersion)}</dd>
+        </div>
+      )}
+      {frameSuggestion && (
+        <div className="wref__frame">
+          <dt>Conseillé</dt>
+          <dd>{formatFrameLoadSuggestion(frameSuggestion)}</dd>
         </div>
       )}
       {suggestion && (

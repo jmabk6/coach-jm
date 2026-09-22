@@ -114,6 +114,105 @@ describe("FrameSection — fiche exercice", () => {
     expect(await db.strengthFrames.count()).toBe(0);
   });
 
+  it("hausse proposée après un jalon : accepter pose un objectif daté ; rester n'écrit rien", async () => {
+    const framed = pastWorkout();
+    framed.id = "w1";
+    framed.kind = "training";
+    framed.date = "2026-09-23";
+    framed.startedAt = "2026-09-23T16:00:00.000Z";
+    (framed.blocks[0] as PerformedExerciseBlock).frameVersionId = "f1-v1";
+    await db.strengthFrames.put({ id: "f1", exerciseId: "presse", activeVersionId: "f1-v1", createdAt: T, updatedAt: T });
+    await db.strengthFrameVersions.put({
+      id: "f1-v1",
+      frameId: "f1",
+      number: 1,
+      status: "active",
+      progressionType: "charge_croissante",
+      workSets: 2,
+      repRange: { min: 10, max: 12 },
+      rpeTarget: 8,
+      restSec: 90,
+      increment: { unit: "kg", value: 5 },
+      firstOfficialWorkoutId: "w1",
+      frozenAt: "2026-09-23T16:40:00.000Z",
+      createdAt: T,
+      updatedAt: T,
+    });
+    await db.strengthMilestones.put({ id: "m1", frameVersionId: "f1-v1", workoutId: "w1", date: "2026-09-23", value: 120, unit: "kg", createdAt: "2026-09-23T16:40:00.000Z" });
+
+    const { unmount } = render(<FrameSection exercise={presse} completedWorkouts={[framed]} />);
+
+    const encart = await screen.findByRole("complementary", { name: "Hausse proposée" });
+    expect(encart.textContent).toMatch(/Palier 120 kg validé le 23\/09\/2026/);
+    expect(encart.textContent).toMatch(/Cran suivant : 125 kg, en repartant du bas de la plage \(10 répétitions\)/);
+    expect(screen.queryByRole("complementary", { name: "Stagnation à examiner" })).toBeNull();
+
+    /* Rester : rien en base, l'encart disparaît pour cette session du navigateur. */
+    fireEvent.click(within(encart).getByRole("button", { name: "Rester à 120 kg" }));
+    expect(screen.queryByRole("complementary", { name: "Hausse proposée" })).toBeNull();
+    expect(await db.strengthFrameVersions.get("f1-v1")).not.toHaveProperty("currentTarget");
+    unmount();
+    sessionStorage.clear();
+
+    /* Accepter : l'objectif en cours, daté, rattaché au jalon. */
+    render(<FrameSection exercise={presse} completedWorkouts={[framed]} />);
+    const again = await screen.findByRole("complementary", { name: "Hausse proposée" });
+    fireEvent.click(within(again).getByRole("button", { name: "Accepter le nouveau palier" }));
+
+    expect(await screen.findByText(/Objectif 125 kg enregistré/)).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("complementary", { name: "Hausse proposée" })).toBeNull());
+    expect(screen.getByText(/Objectif :/).textContent).toMatch(/125 kg — hausse acceptée le/);
+    expect((await db.strengthFrameVersions.get("f1-v1"))?.currentTarget).toMatchObject({ value: 125, unit: "kg", fromMilestoneId: "m1" });
+    expect(await db.strengthMilestones.count()).toBe(1);
+  });
+
+  it("stagnation : trois séances à la même charge sans progrès, listées avec leurs totaux, aucune écriture", async () => {
+    const sessions = ["2026-09-20", "2026-09-24", "2026-09-28"].map((date, index) => {
+      const w = pastWorkout();
+      w.id = `w${index}`;
+      w.kind = "training";
+      w.date = date;
+      w.startedAt = `${date}T16:00:00.000Z`;
+      const block = w.blocks[0] as PerformedExerciseBlock;
+      block.frameVersionId = "f1-v1";
+      block.series = [
+        { id: `${w.id}-a`, position: 0, status: "completed", role: "travail", load: { kind: "total", kg: 120 }, reps: 11 - index, rpe: 9 },
+        { id: `${w.id}-b`, position: 1, status: "completed", role: "travail", load: { kind: "total", kg: 120 }, reps: 10, rpe: 9 },
+      ];
+      return w;
+    });
+    await db.strengthFrames.put({ id: "f1", exerciseId: "presse", activeVersionId: "f1-v1", createdAt: T, updatedAt: T });
+    await db.strengthFrameVersions.put({
+      id: "f1-v1",
+      frameId: "f1",
+      number: 1,
+      status: "active",
+      progressionType: "charge_croissante",
+      workSets: 2,
+      repRange: { min: 10, max: 12 },
+      rpeTarget: 8,
+      restSec: 90,
+      increment: { unit: "kg", value: 5 },
+      firstOfficialWorkoutId: "w0",
+      frozenAt: T,
+      createdAt: T,
+      updatedAt: T,
+    });
+    const before = await db.strengthFrameVersions.get("f1-v1");
+
+    render(<FrameSection exercise={presse} completedWorkouts={sessions} />);
+
+    const encart = await screen.findByRole("complementary", { name: "Stagnation à examiner" });
+    expect(within(encart).getAllByRole("listitem").map((item) => item.textContent)).toEqual([
+      "20/09/2026 — total 21 reps",
+      "24/09/2026 — total 20 reps",
+      "28/09/2026 — total 19 reps",
+    ]);
+    expect(encart.textContent).toMatch(/revenir au cran précédent, poursuivre, vérifier le repos/);
+    expect(screen.queryByRole("complementary", { name: "Hausse proposée" })).toBeNull();
+    expect(await db.strengthFrameVersions.get("f1-v1")).toEqual(before);
+  });
+
   it("figée : modifier un paramètre crée la V2 ; archiver puis nouvelle version ; historique et jalon affichés", async () => {
     await db.strengthFrames.put({ id: "f1", exerciseId: "presse", activeVersionId: "f1-v1", createdAt: T, updatedAt: T });
     await db.strengthFrameVersions.put({

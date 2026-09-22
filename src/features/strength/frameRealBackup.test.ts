@@ -11,8 +11,11 @@ import { addExerciseBlocks, addSeries, finishBlock, validateSeries } from "../wo
 import { finishWorkout } from "../workout/finishWorkout";
 import { deleteWorkout } from "../workout/deleteWorkout";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
+import { detectStagnation, proposeRaise } from "../../domain/rules/strengthRules";
+import { listSeriesByExercise } from "../workout/lastPerformance";
+import { formatFrameLoadSuggestion, suggestFrameLoad } from "../workout/suggestedLoad";
 import { loadActiveFrameVersions } from "./activeFrameVersions";
-import { createFrame } from "./frameActions";
+import { acceptRaise, createFrame } from "./frameActions";
 import { currentLoadOf, proposeStartingLoad } from "./frameReadings";
 
 /**
@@ -21,8 +24,10 @@ import { currentLoadOf, proposeStartingLoad } from "./frameReadings";
  * un cadre créé sur un exercice de septembre, une séance faite et
  * validée → **un** jalon ; rien d'autre ne bouge : les 11 séances, les
  * 48 exercices, le modèle, les autres stores sont identiques au fichier.
- * Puis la séance est supprimée : le jalon disparaît, la version redevient
- * modifiable, et la base est de nouveau celle du fichier plus le cadre.
+ * Lot 4C : hausse proposée, acceptée, conseillée à la séance suivante,
+ * validée → second jalon et objectif effacé. Puis les séances sont
+ * supprimées : les jalons disparaissent, la version redevient modifiable,
+ * et la base est de nouveau celle du fichier plus le cadre.
  */
 describe("lot 4B sur la sauvegarde réelle", () => {
   const path = process.env.COACH_JM_BACKUP;
@@ -108,7 +113,48 @@ describe("lot 4B sur la sauvegarde réelle", () => {
     }
     expect(currentLoadOf("presse-cuisses", "kg", await db.workouts.toArray())).toMatchObject({ value: proposed!.value, workoutId: w.id });
 
-    /* Suppression de la séance : jalon retiré, version dé-figée, base = fichier + cadre. */
+    /* Lot 4C — la boucle : hausse proposée depuis le jalon, acceptée →
+       objectif daté ; la séance suivante conseille cet objectif ; validée à
+       l'objectif → second jalon, objectif effacé, hausse suivante proposée. */
+    const frozenVersion = (await db.strengthFrameVersions.get(version.id))!;
+    const raise = proposeRaise(frozenVersion, await db.strengthMilestones.toArray(), await db.workouts.toArray());
+    expect(raise).toMatchObject({ value: proposed!.value + 5, unit: "kg", repFloor: 10 });
+    await acceptRaise(frozenVersion, raise!, "2026-09-22T17:30:00.000Z");
+    const accepted = (await db.strengthFrameVersions.get(version.id))!;
+    expect(accepted.currentTarget).toEqual({ value: proposed!.value + 5, unit: "kg", acceptedAt: "2026-09-22T17:30:00.000Z", fromMilestoneId: `milestone-${w.id}-${version.id}` });
+    expect(proposeRaise(accepted, await db.strengthMilestones.toArray(), await db.workouts.toArray())).toBeUndefined();
+
+    const lastSeries = listSeriesByExercise(w).get("presse-cuisses");
+    expect(formatFrameLoadSuggestion(suggestFrameLoad(accepted, lastSeries))).toBe(
+      `${proposed!.value + 5} kg (objectif accepté) · pour valider : 2 × 12 · RPE ≤ 8`,
+    );
+
+    const started2 = await startFreeWorkout("2026-09-25", "2026-09-25T17:00:00.000Z");
+    const frames2 = await loadActiveFrameVersions();
+    let w2 = addExerciseBlocks(started2, [presse], "2026-09-25T17:01:00.000Z", () => "x2", frames2.versionIdByExercise);
+    const block2 = w2.blocks[0]!;
+    const load2 = { kind: "total" as const, kg: proposed!.value + 5 };
+    w2 = validateSeries(w2, block2.id, seriesOf(w2)[0]!.id, { load: load2, reps: 12, rpe: 8, role: "travail", sideLimited: false }, "2026-09-25T17:02:00.000Z", () => "y2");
+    w2 = addSeries(w2, block2.id, "2026-09-25T17:03:00.000Z", () => "z2");
+    w2 = validateSeries(w2, block2.id, seriesOf(w2).at(-1)!.id, { load: load2, reps: 12, rpe: 8, role: "travail", sideLimited: false }, "2026-09-25T17:05:00.000Z", () => "w2");
+    w2 = finishBlock(w2, block2.id, "2026-09-25T17:06:00.000Z");
+    await db.workouts.put(w2);
+    const second = await finishWorkout(w2.id, "2026-09-25T17:10:00.000Z");
+    expect(second.frames[0]).toMatchObject({ result: { validated: true, value: proposed!.value + 5 } });
+    const afterSecond = (await db.strengthFrameVersions.get(version.id))!;
+    expect(afterSecond).not.toHaveProperty("currentTarget");
+    expect(afterSecond.firstOfficialWorkoutId).toBe(w.id);
+    expect(await db.strengthMilestones.count()).toBe(2);
+    expect(proposeRaise(afterSecond, await db.strengthMilestones.toArray(), await db.workouts.toArray())).toMatchObject({ value: proposed!.value + 10 });
+    expect(detectStagnation(afterSecond, await db.workouts.toArray(), await db.strengthMilestones.toArray())).toBeUndefined();
+
+    /* Les 11 séances d'origine toujours identiques. */
+    const stillUntouched = ((await readStores(db)).stores.workouts as WorkoutSession[]).filter((item) => originalIds.has(item.id));
+    expect(canonicalStringify(stillUntouched)).toBe(canonicalStringify(initial.stores.workouts));
+
+    /* Suppression des deux séances : jalons retirés, version dé-figée, base = fichier + cadre. */
+    const removedSecond = await deleteWorkout(w2.id, "2026-09-25T18:00:00.000Z");
+    expect(removedSecond).toMatchObject({ removedMilestones: 1, unfrozenVersionIds: [] });
     const removed = await deleteWorkout(w.id, "2026-09-22T18:00:00.000Z");
     expect(removed).toMatchObject({ removedMilestones: 1, unfrozenVersionIds: [version.id] });
     const final = await readStores(db);

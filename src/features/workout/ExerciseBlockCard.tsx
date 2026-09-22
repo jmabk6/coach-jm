@@ -10,7 +10,7 @@ import type {
   RpeScaleVersion,
   StrengthFrameVersion,
 } from "../../domain";
-import { formatFrameVersionSummary, formatStrengthValue, loadToWork } from "../../domain/rules/strengthRules";
+import { formatFrameVersionSummary } from "../../domain/rules/strengthRules";
 import type {
   SeriesValues,
   SimpleMeasurementValues,
@@ -25,7 +25,7 @@ import type { LastComparableStep, LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
 import { SimpleMeasurementForm } from "./SimpleMeasurementForm";
 import { StepForm } from "./StepForm";
-import { formatLoadSuggestion, suggestLoad } from "./suggestedLoad";
+import { formatFrameLoadSuggestion, formatLoadSuggestion, suggestFrameLoad, suggestLoad } from "./suggestedLoad";
 import {
   formatBlockStatus,
   formatExerciseSubtitle,
@@ -363,13 +363,14 @@ function ReferenceBlock({
 }) {
   const planned = formatPlannedLine(block);
   const instructions = block.snapshotInstructions;
+  /* Exercice cadré (v1.6, § 4.2 bis, lot 4C) : le conseil vient du cadre
+     — charge à travailler et objectif pour valider ; sinon l'heuristique
+     existante sur la dernière fois. */
+  const frameSuggestion = frameVersion ? suggestFrameLoad(frameVersion, lastTime?.allSeries) : undefined;
   const suggestion =
-    instructions.shape === "reps"
+    !frameVersion && instructions.shape === "reps"
       ? suggestLoad(lastTime, instructions.reps, instructions.targetRpe)
       : undefined;
-  /* Cadre (v1.6, § 4.2 bis) : règles de la version portée et charge à
-     travailler — objectif en cours, sinon dernière série de travail. */
-  const toWork = frameVersion ? loadToWork(frameVersion, lastTime?.allSeries) : undefined;
 
   if (!planned && !lastTime && !frameVersion) return null;
 
@@ -378,14 +379,7 @@ function ReferenceBlock({
       {frameVersion && (
         <div className="wref__frame">
           <dt>Cadre</dt>
-          <dd>
-            {formatFrameVersionSummary(frameVersion)}
-            {toWork
-              ? ` · ${frameVersion.progressionType === "duree_croissante" ? "durée à tenir" : "charge à travailler"} ${formatStrengthValue(toWork.value, toWork.unit)}${
-                  toWork.source === "objectif" ? " (objectif)" : ""
-                }`
-              : ""}
-          </dd>
+          <dd>{formatFrameVersionSummary(frameVersion)}</dd>
         </div>
       )}
       {planned && (
@@ -401,6 +395,12 @@ function ReferenceBlock({
             {formatSeriesLine(lastTime.series)}
             <small>{formatShortDate(lastTime.date)}</small>
           </dd>
+        </div>
+      )}
+      {frameSuggestion && (
+        <div className="wref__frame">
+          <dt>Conseillé</dt>
+          <dd>{formatFrameLoadSuggestion(frameSuggestion)}</dd>
         </div>
       )}
       {suggestion && (

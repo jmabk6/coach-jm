@@ -189,3 +189,36 @@
 .frame-form__submit {
   flex: 1;
 }
+
+/* Encarts de suggestion : à part de l'état (spec § 7), jamais dans les cartes */
+
+.frame-section__suggestion {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-accent-soft, #eaf1ff);
+  border-radius: 12px;
+  background: var(--color-accent-soft, #eaf1ff);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.frame-section__suggestion p,
+.frame-section__suggestion ul {
+  margin: 0;
+  color: var(--color-text, #1f2937);
+}
+
+.frame-section__suggestion ul {
+  padding-left: 18px;
+}
+
+.frame-section__suggestion .frame-section__actions {
+  margin-bottom: 0;
+}
+
+.frame-section__suggestion--warn {
+  border-color: #fedf89;
+  background: #fffaeb;
+}
