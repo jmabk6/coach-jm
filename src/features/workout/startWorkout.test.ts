@@ -12,12 +12,18 @@ const {
   getSessionTemplate,
   getInProgressWorkout,
   saveWorkout,
+  getActiveRpeScaleVersion,
 } = vi.hoisted(() => ({
   getPlannedSession: vi.fn(),
   savePlannedSession: vi.fn(),
   getSessionTemplate: vi.fn(),
   getInProgressWorkout: vi.fn(),
   saveWorkout: vi.fn(),
+  getActiveRpeScaleVersion: vi.fn(),
+}));
+
+vi.mock("../../db/repositories/rpeScaleRepository", () => ({
+  getActiveRpeScaleVersion,
 }));
 
 vi.mock("../../db/repositories/programRepository", () => ({
@@ -78,6 +84,7 @@ describe("startWorkout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    getActiveRpeScaleVersion.mockResolvedValue({ id: "rpe-scale-v1" });
     getPlannedSession.mockResolvedValue(plannedSession);
     getSessionTemplate.mockResolvedValue(template);
     getInProgressWorkout.mockResolvedValue(undefined);
@@ -96,6 +103,7 @@ describe("startWorkout", () => {
       plannedSessionId: "weekly-2026-09-14",
       sessionTemplateId: "muscu-a",
       kind: "training",
+      rpeScaleVersionId: "rpe-scale-v1",
       source: "planned",
       status: "in_progress",
       date: "2026-09-14",
@@ -122,6 +130,15 @@ describe("startWorkout", () => {
       workoutId: result.id,
       updatedAt: now,
     });
+  });
+
+  it("sans échelle de RPE en base, la séance n'en référence aucune (clé absente)", async () => {
+    getActiveRpeScaleVersion.mockResolvedValue(undefined);
+
+    const result = await startWorkout(plannedSession.id, "2026-09-14T18:00:00.000Z");
+
+    expect(result).not.toHaveProperty("rpeScaleVersionId");
+    expect(result.kind).toBe("training");
   });
 
   it("pose kind depuis la catégorie du modèle, sans choix : un modèle « Bilan de mobilité » donne un bilan", async () => {

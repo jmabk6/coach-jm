@@ -12,6 +12,7 @@ import type {
   WorkoutSession,
 } from "../../../domain";
 import { defaultInstructionsFor } from "../../../domain/rules/blockInstructionRules";
+import { DEFAULT_SERIES_ROLE } from "../../../domain/rules/strengthRules";
 
 /**
  * Lecture et fabrication des briques d'une réalisation : tout ce qui ne
@@ -370,8 +371,13 @@ export function createAddedExerciseBlock(
   return block;
 }
 
+/**
+ * Une série neuve est une série de **travail** (décision 7, v1.6 § 4.4) ;
+ * le formulaire permet d'en faire un échauffement. Les séries antérieures
+ * au lot 4 n'ont pas de rôle et se lisent pareil (`seriesRoleOf`).
+ */
 export function createSeries(id: Id, position: number): PerformedSeries {
-  return { id, position, status: "upcoming" };
+  return { id, position, status: "upcoming", role: DEFAULT_SERIES_ROLE };
 }
 
 export function createStepFrom(

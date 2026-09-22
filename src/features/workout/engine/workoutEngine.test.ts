@@ -321,6 +321,65 @@ describe("séries", () => {
   });
 });
 
+describe("séries — rôle et drapeau (lot 4A, v1.6 § 4.4)", () => {
+  it("enregistre le rôle et le drapeau saisis ; une série antérieure sans rôle reste telle quelle", () => {
+    const start = activateBlock(workout([squatBlock()]), "squat-block", T0);
+    let w = validateSeries(
+      start,
+      "squat-block",
+      "s1",
+      { load: kg(20), reps: 10, role: "echauffement" },
+      at(1),
+      newId,
+    );
+    w = validateSeries(
+      w,
+      "squat-block",
+      "s2",
+      { load: kg(40), reps: 10, rpe: 8, role: "travail", sideLimited: true },
+      at(3),
+      newId,
+    );
+
+    const block = exerciseOf(w, "squat-block");
+    expect(block.series?.[0]).toMatchObject({ status: "completed", role: "echauffement" });
+    expect(block.series?.[0]).not.toHaveProperty("sideLimited");
+    expect(block.series?.[1]).toMatchObject({ status: "completed", role: "travail", sideLimited: true });
+    /* La série à venir du fixture n'a pas de rôle : le moteur n'en pose pas rétroactivement. */
+    expect(block.series?.[2]).not.toHaveProperty("role");
+  });
+
+  it("Modifier vers un échauffement retire le drapeau ; vers le travail, il se pose à nouveau", () => {
+    const start = activateBlock(workout([squatBlock()]), "squat-block", T0);
+    let w = validateSeries(start, "squat-block", "s1", { load: kg(40), reps: 10, role: "travail", sideLimited: true }, at(1), newId);
+
+    w = editSeries(w, "squat-block", "s1", { role: "echauffement" }, at(2));
+    expect(exerciseOf(w, "squat-block").series?.[0]).toMatchObject({ role: "echauffement", load: kg(40), reps: 10 });
+    expect(exerciseOf(w, "squat-block").series?.[0]).not.toHaveProperty("sideLimited");
+
+    w = editSeries(w, "squat-block", "s1", { role: "travail", sideLimited: false }, at(3));
+    expect(exerciseOf(w, "squat-block").series?.[0]).toMatchObject({ role: "travail", sideLimited: false });
+  });
+
+  it("Ajouter une série crée une série de travail", () => {
+    const w = addSeries(activateBlock(workout([squatBlock()]), "squat-block", T0), "squat-block", at(1), newId);
+    const added = exerciseOf(w, "squat-block").series?.at(-1);
+
+    expect(added).toMatchObject({ status: "upcoming", role: "travail" });
+  });
+
+  it("un enfant de tour ignore rôle et drapeau : il n'en porte pas", () => {
+    let w = activateBlock(workout([groupBlock()]), "group-block", T0);
+    w = validateRoundChild(w, "group-block", "round-1", "round-1-a", { load: kg(30), reps: 10, role: "echauffement", sideLimited: true }, at(1), newId);
+    w = editRoundChild(w, "group-block", "round-1", "round-1-a", { reps: 11, role: "travail", sideLimited: true }, at(2));
+
+    const child = groupOf(w, "group-block").rounds[0]?.children[0];
+    expect(child).toMatchObject({ load: kg(30), reps: 11 });
+    expect(child).not.toHaveProperty("role");
+    expect(child).not.toHaveProperty("sideLimited");
+  });
+});
+
 describe("repos", () => {
   it("Passer clôt le repos à l'instant du geste sans valider la série suivante", () => {
     let w = activateBlock(workout([squatBlock()]), "squat-block", T0);

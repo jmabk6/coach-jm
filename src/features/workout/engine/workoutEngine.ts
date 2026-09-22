@@ -9,6 +9,8 @@ import type {
   PerformedExerciseBlock,
   PerformedGroupBlock,
   PerformedGroupRound,
+  PerformedSeries,
+  PerformedSeriesRole,
   PerformedSideValue,
   RestKind,
   WorkoutSession,
@@ -395,6 +397,13 @@ export interface SeriesValues {
   durationSec?: number;
   sideValues?: PerformedSideValue[];
   rpe?: number;
+  /**
+   * Rôle et drapeau « limitée par un côté » (v1.6, § 4.4), saisis
+   * explicitement dans le formulaire ; jamais dérivés du RPE. Les enfants
+   * de tour n'en portent pas : ils sont ignorés pour eux.
+   */
+  role?: PerformedSeriesRole;
+  sideLimited?: boolean;
   note?: string;
 }
 
@@ -410,6 +419,29 @@ function definedOnly<T extends object>(values: T): Partial<T> {
   return Object.fromEntries(
     Object.entries(values).filter(([, value]) => value !== undefined),
   ) as Partial<T>;
+}
+
+/**
+ * Applique des valeurs à une série. Le drapeau n'a de sens que sur une
+ * série de travail : un échauffement n'en porte jamais, même après une
+ * modification qui change le rôle.
+ */
+function applySeriesValues(entry: PerformedSeries, values: SeriesValues): PerformedSeries {
+  const next: PerformedSeries = { ...entry, ...definedOnly(values) };
+
+  if (next.role === "echauffement") delete next.sideLimited;
+
+  return next;
+}
+
+/** Les valeurs d'un enfant de tour : sans rôle ni drapeau (v1.6, § 4.4). */
+function roundChildValues(values: SeriesValues): Omit<SeriesValues, "role" | "sideLimited"> {
+  const rest: SeriesValues = { ...values };
+
+  delete rest.role;
+  delete rest.sideLimited;
+
+  return rest;
 }
 
 function plannedRestAfterSeries(block: PerformedExerciseBlock): number {
@@ -461,8 +493,7 @@ export function validateSeries(
     series: (item.series ?? []).map((entry) =>
       entry.id === seriesId
         ? {
-            ...entry,
-            ...definedOnly(values),
+            ...applySeriesValues(entry, values),
             status: "completed" as const,
             completedAt: now,
           }
@@ -548,7 +579,7 @@ export function editSeries(
   const next = withExerciseBlock(workout, blockId, (item) => ({
     ...item,
     series: (item.series ?? []).map((entry) =>
-      entry.id === seriesId ? { ...entry, ...definedOnly(values) } : entry,
+      entry.id === seriesId ? applySeriesValues(entry, values) : entry,
     ),
   }));
 
@@ -934,7 +965,7 @@ export function validateRoundChild(
             ...entry,
             children: entry.children.map((roundChild) =>
               roundChild.id === roundChildId
-                ? { ...roundChild, ...definedOnly(values), completedAt: now }
+                ? { ...roundChild, ...definedOnly(roundChildValues(values)), completedAt: now }
                 : roundChild,
             ),
           },
@@ -1020,7 +1051,7 @@ export function editRoundChild(
             ...entry,
             children: entry.children.map((roundChild) =>
               roundChild.id === roundChildId
-                ? { ...roundChild, ...definedOnly(values) }
+                ? { ...roundChild, ...definedOnly(roundChildValues(values)) }
                 : roundChild,
             ),
           },

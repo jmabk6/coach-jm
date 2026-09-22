@@ -1,3 +1,4 @@
+import { getActiveRpeScaleVersion } from "../../db/repositories/rpeScaleRepository";
 import {
   getInProgressWorkout,
   saveWorkout,
@@ -37,10 +38,14 @@ export async function startFreeWorkout(
     );
   }
 
+  /* Échelle de RPE en vigueur, capturée au démarrage (v1.6, § 4.5). */
+  const rpeScale = await getActiveRpeScaleVersion();
+
   const workout: WorkoutSession = {
     id: `free-${date}-${now}`,
     ...(template ? { sessionTemplateId: template.id } : {}),
     kind: template ? kindForCategory(template.category) : (options.kind ?? "training"),
+    ...(rpeScale ? { rpeScaleVersionId: rpeScale.id } : {}),
     source: "free",
     status: "in_progress",
     date,

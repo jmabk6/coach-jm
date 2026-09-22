@@ -142,16 +142,19 @@ describe("createWorkoutSnapshot", () => {
         id: "workout-block-exercise-1-set-1",
         position: 0,
         status: "upcoming",
+        role: "travail",
       },
       {
         id: "workout-block-exercise-1-set-2",
         position: 1,
         status: "upcoming",
+        role: "travail",
       },
       {
         id: "workout-block-exercise-1-set-3",
         position: 2,
         status: "upcoming",
+        role: "travail",
       },
     ]);
   });

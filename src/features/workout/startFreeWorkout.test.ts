@@ -3,14 +3,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   getInProgressWorkout,
   saveWorkout,
+  getActiveRpeScaleVersion,
 } = vi.hoisted(() => ({
   getInProgressWorkout: vi.fn(),
   saveWorkout: vi.fn(),
+  getActiveRpeScaleVersion: vi.fn(),
 }));
 
 vi.mock("../../db/repositories/workoutRepository", () => ({
   getInProgressWorkout,
   saveWorkout,
+}));
+
+vi.mock("../../db/repositories/rpeScaleRepository", () => ({
+  getActiveRpeScaleVersion,
 }));
 
 import { startFreeWorkout } from "./startFreeWorkout";
@@ -19,6 +25,7 @@ describe("startFreeWorkout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getInProgressWorkout.mockResolvedValue(undefined);
+    getActiveRpeScaleVersion.mockResolvedValue({ id: "rpe-scale-v1" });
   });
 
   it("crée et sauvegarde une séance libre vide", async () => {
@@ -32,6 +39,7 @@ describe("startFreeWorkout", () => {
     expect(result).toEqual({
       id: "free-2026-09-14-2026-09-14T18:00:00.000Z",
       kind: "training",
+      rpeScaleVersionId: "rpe-scale-v1",
       source: "free",
       status: "in_progress",
       date: "2026-09-14",

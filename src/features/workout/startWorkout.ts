@@ -2,6 +2,7 @@ import {
   getPlannedSession,
   savePlannedSession,
 } from "../../db/repositories/programRepository";
+import { getActiveRpeScaleVersion } from "../../db/repositories/rpeScaleRepository";
 import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
 import {
   getInProgressWorkout,
@@ -63,12 +64,17 @@ export async function startWorkout(
     );
   }
 
+  /* Échelle de RPE en vigueur, capturée au démarrage (v1.6, § 4.5) :
+     absente seulement si aucune version n'existe encore. */
+  const rpeScale = await getActiveRpeScaleVersion();
+
   const workout: WorkoutSession = {
     id: `workout-${plannedSession.id}`,
     plannedSessionId: plannedSession.id,
     sessionTemplateId: template.id,
     /* Nature posée au démarrage, dérivée du modèle, sans choix (v1.5, § 11.3). */
     kind: kindForCategory(template.category),
+    ...(rpeScale ? { rpeScaleVersionId: rpeScale.id } : {}),
     source: "planned",
     status: "in_progress",
     date: plannedSession.date,

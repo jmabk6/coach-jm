@@ -5,6 +5,7 @@ import type {
   PerformedGroupBlock,
   SessionTemplate,
 } from "../../domain";
+import { DEFAULT_SERIES_ROLE } from "../../domain/rules/strengthRules";
 
 function createExerciseBlock(
   block: Extract<SessionTemplate["blocks"][number], { kind: "exercise" }>,
@@ -36,6 +37,7 @@ function createExerciseBlock(
         id: `${performedBlockId}-set-${index + 1}`,
         position: index,
         status: "upcoming" as const,
+        role: DEFAULT_SERIES_ROLE,
       }),
     );
   }
