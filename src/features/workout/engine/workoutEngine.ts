@@ -9,6 +9,7 @@ import type {
   PerformedExerciseBlock,
   PerformedGroupBlock,
   PerformedGroupRound,
+  PerformedGroupRoundChild,
   PerformedSeries,
   PerformedSeriesRole,
   PerformedSideValue,
@@ -1212,6 +1213,8 @@ export function substituteExercise(
   blockId: Id,
   replacement: Exercise,
   now: string,
+  /** Point de capture 3 (§ 4.3) : la version active du cadre du remplaçant, ou rien. */
+  frameVersionId?: Id,
 ): WorkoutSession {
   assertInProgress(workout);
 
@@ -1238,6 +1241,14 @@ export function substituteExercise(
       delete updated.originalExerciseId;
     } else {
       updated.originalExerciseId = originalExerciseId;
+    }
+
+    /* La version de cadre suit l'exercice réellement effectué : celle du
+       remplaçant, ou aucune s'il n'a pas de cadre. */
+    if (frameVersionId !== undefined) {
+      updated.frameVersionId = frameVersionId;
+    } else {
+      delete updated.frameVersionId;
     }
 
     return updated;
@@ -1282,6 +1293,8 @@ export function substituteGroupChild(
   groupChildId: Id,
   replacement: Exercise,
   now: string,
+  /** Point de capture 4 (§ 4.3) : la version du remplaçant, posée tour par tour. */
+  frameVersionId?: Id,
 ): WorkoutSession {
   assertInProgress(workout);
 
@@ -1313,7 +1326,15 @@ export function substituteGroupChild(
 
         changed = true;
 
-        return { ...roundChild, exerciseId: replacement.id };
+        const updated: PerformedGroupRoundChild = { ...roundChild, exerciseId: replacement.id };
+
+        if (frameVersionId !== undefined) {
+          updated.frameVersionId = frameVersionId;
+        } else {
+          delete updated.frameVersionId;
+        }
+
+        return updated;
       }),
     })),
   }));
@@ -1399,6 +1420,8 @@ export function addExerciseBlocks(
   exercises: Exercise[],
   now: string,
   newId: NewId = defaultNewId,
+  /** Versions actives par exercice (§ 4.3) : chargées par l'écran, jamais ici. */
+  frameVersionByExercise: ReadonlyMap<Id, Id> = new Map(),
 ): WorkoutSession {
   assertInProgress(workout);
 
@@ -1409,7 +1432,7 @@ export function addExerciseBlocks(
   const ordered = sortBlocks(workout.blocks);
   const index = findInsertionIndex(ordered);
   const added = exercises.map((exercise, offset) =>
-    createAddedExerciseBlock(exercise, index + offset, newId),
+    createAddedExerciseBlock(exercise, index + offset, newId, frameVersionByExercise.get(exercise.id)),
   );
 
   const blocks = [...ordered.slice(0, index), ...added, ...ordered.slice(index)].map(

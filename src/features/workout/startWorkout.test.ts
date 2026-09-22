@@ -13,6 +13,7 @@ const {
   getInProgressWorkout,
   saveWorkout,
   getActiveRpeScaleVersion,
+  loadActiveFrameVersions,
 } = vi.hoisted(() => ({
   getPlannedSession: vi.fn(),
   savePlannedSession: vi.fn(),
@@ -20,10 +21,15 @@ const {
   getInProgressWorkout: vi.fn(),
   saveWorkout: vi.fn(),
   getActiveRpeScaleVersion: vi.fn(),
+  loadActiveFrameVersions: vi.fn(),
 }));
 
 vi.mock("../../db/repositories/rpeScaleRepository", () => ({
   getActiveRpeScaleVersion,
+}));
+
+vi.mock("../strength/activeFrameVersions", () => ({
+  loadActiveFrameVersions,
 }));
 
 vi.mock("../../db/repositories/programRepository", () => ({
@@ -85,6 +91,7 @@ describe("startWorkout", () => {
     vi.clearAllMocks();
 
     getActiveRpeScaleVersion.mockResolvedValue({ id: "rpe-scale-v1" });
+    loadActiveFrameVersions.mockResolvedValue({ versionIdByExercise: new Map(), versionById: new Map() });
     getPlannedSession.mockResolvedValue(plannedSession);
     getSessionTemplate.mockResolvedValue(template);
     getInProgressWorkout.mockResolvedValue(undefined);
@@ -130,6 +137,20 @@ describe("startWorkout", () => {
       workoutId: result.id,
       updatedAt: now,
     });
+  });
+
+  it("point de capture 1 : la version active du cadre est portée par la brique au démarrage, absente sans cadre", async () => {
+    loadActiveFrameVersions.mockResolvedValue({
+      versionIdByExercise: new Map([["squat", "v-squat-1"]]),
+      versionById: new Map(),
+    });
+
+    const result = await startWorkout(plannedSession.id, "2026-09-14T18:00:00.000Z");
+    expect(result.blocks[0]).toMatchObject({ exerciseId: "squat", frameVersionId: "v-squat-1" });
+
+    loadActiveFrameVersions.mockResolvedValue({ versionIdByExercise: new Map(), versionById: new Map() });
+    const bare = await startWorkout(plannedSession.id, "2026-09-14T18:00:00.000Z");
+    expect(bare.blocks[0]).not.toHaveProperty("frameVersionId");
   });
 
   it("sans échelle de RPE en base, la séance n'en référence aucune (clé absente)", async () => {

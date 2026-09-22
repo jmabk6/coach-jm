@@ -1,5 +1,6 @@
 import type {
   GroupBlock,
+  Id,
   PerformedBlock,
   PerformedExerciseBlock,
   PerformedGroupBlock,
@@ -7,10 +8,20 @@ import type {
 } from "../../domain";
 import { DEFAULT_SERIES_ROLE } from "../../domain/rules/strengthRules";
 
+/**
+ * Version de cadre active par exercice (conception v1.6, § 4.3) : chargée
+ * par l'appelant, jamais lue ici. Absente pour un exercice sans cadre.
+ */
+export type FrameVersionByExercise = ReadonlyMap<Id, Id>;
+
+const NO_FRAMES: FrameVersionByExercise = new Map();
+
 function createExerciseBlock(
   block: Extract<SessionTemplate["blocks"][number], { kind: "exercise" }>,
+  frameVersionByExercise: FrameVersionByExercise,
 ): PerformedExerciseBlock {
   const performedBlockId = `workout-block-${block.id}`;
+  const frameVersionId = frameVersionByExercise.get(block.exerciseId);
 
   const base: PerformedExerciseBlock = {
     id: performedBlockId,
@@ -19,6 +30,8 @@ function createExerciseBlock(
     position: block.position,
     addedDuringWorkout: false,
     exerciseId: block.exerciseId,
+    /* Point de capture 1 : la version du cadre au démarrage (§ 4.3). */
+    ...(frameVersionId !== undefined ? { frameVersionId } : {}),
     status: "not_performed",
     snapshotInstructions: structuredClone(block.instructions),
   };
@@ -73,7 +86,10 @@ function createExerciseBlock(
   return base;
 }
 
-function createGroupBlock(block: GroupBlock): PerformedGroupBlock {
+function createGroupBlock(
+  block: GroupBlock,
+  frameVersionByExercise: FrameVersionByExercise,
+): PerformedGroupBlock {
   const performedBlockId = `workout-block-${block.id}`;
 
   const children = block.children.map((child) => {
@@ -105,11 +121,17 @@ function createGroupBlock(block: GroupBlock): PerformedGroupBlock {
         id: roundId,
         roundNumber,
         status: "upcoming" as const,
-        children: children.map((child) => ({
-          id: `${roundId}-child-${child.sourceChildId}`,
-          groupChildId: child.id,
-          exerciseId: child.exerciseId,
-        })),
+        children: children.map((child) => {
+          const frameVersionId = frameVersionByExercise.get(child.exerciseId);
+
+          return {
+            id: `${roundId}-child-${child.sourceChildId}`,
+            groupChildId: child.id,
+            exerciseId: child.exerciseId,
+            /* La version suit l'exercice de CE tour, jamais l'enfant prévu. */
+            ...(frameVersionId !== undefined ? { frameVersionId } : {}),
+          };
+        }),
       };
     },
   );
@@ -134,6 +156,7 @@ function createGroupBlock(block: GroupBlock): PerformedGroupBlock {
 
 export function createWorkoutSnapshot(
   template: SessionTemplate,
+  frameVersionByExercise: FrameVersionByExercise = NO_FRAMES,
 ): PerformedBlock[] {
   return template.blocks
     .slice()
@@ -154,10 +177,10 @@ export function createWorkoutSnapshot(
           };
 
         case "exercise":
-          return createExerciseBlock(block);
+          return createExerciseBlock(block, frameVersionByExercise);
 
         case "group":
-          return createGroupBlock(block);
+          return createGroupBlock(block, frameVersionByExercise);
       }
     });
 }

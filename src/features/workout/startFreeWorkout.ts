@@ -5,6 +5,7 @@ import {
 } from "../../db/repositories/workoutRepository";
 import type { SessionTemplate, WorkoutKind, WorkoutSession } from "../../domain";
 import { kindForCategory } from "../../domain/rules/workoutKindRules";
+import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { createWorkoutSnapshot } from "./createWorkoutSnapshot";
 
 export interface StartFreeWorkoutOptions {
@@ -38,8 +39,8 @@ export async function startFreeWorkout(
     );
   }
 
-  /* Échelle de RPE en vigueur, capturée au démarrage (v1.6, § 4.5). */
-  const rpeScale = await getActiveRpeScaleVersion();
+  /* Échelle de RPE et versions de cadre actives, capturées au démarrage (v1.6, § 4.3, § 4.5). */
+  const [rpeScale, frames] = await Promise.all([getActiveRpeScaleVersion(), loadActiveFrameVersions()]);
 
   const workout: WorkoutSession = {
     id: `free-${date}-${now}`,
@@ -52,7 +53,7 @@ export async function startFreeWorkout(
     startedAt: now,
     lastActionAt: now,
     activeDurationSec: 0,
-    blocks: template ? createWorkoutSnapshot(template) : [],
+    blocks: template ? createWorkoutSnapshot(template, frames.versionIdByExercise) : [],
     createdAt: now,
     updatedAt: now,
   };

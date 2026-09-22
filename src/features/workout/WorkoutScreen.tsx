@@ -138,18 +138,22 @@ export function WorkoutScreen() {
 
     if (exercises.length === 0) return;
 
+    /* Versions de cadre actives : capturées à l'ajout et à la substitution (v1.6, § 4.3). */
+    const versionIdByExercise = state.frames.versionIdByExercise;
+
     if (substituteBlockId) {
       const replacement = exercises[0]!;
+      const frameVersionId = versionIdByExercise.get(replacement.id);
 
       void apply((current, at) =>
         substituteChildId
-          ? substituteGroupChild(current, substituteBlockId, substituteChildId, replacement, at)
-          : substituteExercise(current, substituteBlockId, replacement, at),
+          ? substituteGroupChild(current, substituteBlockId, substituteChildId, replacement, at, frameVersionId)
+          : substituteExercise(current, substituteBlockId, replacement, at, frameVersionId),
       );
       return;
     }
 
-    void apply((current, at) => addExerciseBlocks(current, exercises, at));
+    void apply((current, at) => addExerciseBlocks(current, exercises, at, undefined, versionIdByExercise));
   }, [state, pendingAddIds, substituteBlockId, substituteChildId, apply, setSearchParams]);
 
   /* Une séance qui n'a pas encore de brique courante s'ouvre sur sa
@@ -195,7 +199,7 @@ export function WorkoutScreen() {
     );
   }
 
-  const { template, exerciseById, lastByExercise, completedWorkouts, rpeScale } = state;
+  const { template, exerciseById, lastByExercise, completedWorkouts, rpeScale, frames } = state;
   const name = template?.name ?? "Séance libre";
   const blocks = [...workout.blocks].sort((a, b) => a.position - b.position);
   const numbering = calculatePerformedNumbering(blocks);
@@ -607,11 +611,12 @@ export function WorkoutScreen() {
             : [];
           const applyReplacement = (replacement: Exercise) => {
             const target = substitution;
+            const frameVersionId = frames.versionIdByExercise.get(replacement.id);
             setSubstitution(undefined);
             void run((now, at) =>
               target.groupChildId
-                ? substituteGroupChild(now, target.block.id, target.groupChildId, replacement, at)
-                : substituteExercise(now, target.block.id, replacement, at),
+                ? substituteGroupChild(now, target.block.id, target.groupChildId, replacement, at, frameVersionId)
+                : substituteExercise(now, target.block.id, replacement, at, frameVersionId),
             );
           };
 

@@ -1,8 +1,7 @@
 import type { Id } from "./exercise";
 
 /**
- * Module Musculation (conception technique v1.5, § 4). Types seuls :
- * aucune règle, aucun repository, aucun écran dans le lot 1.
+ * Module Musculation (conception technique v1.6, § 4).
  */
 
 /* -------------------------------------------------------------------------- */
@@ -38,6 +37,15 @@ export type StrengthUnit =
   | "kg"
   | "sec";
 
+export interface StrengthCurrentTarget {
+  value: number;
+  unit: StrengthUnit;
+  /** ISO, date du choix. */
+  acceptedAt: string;
+  /** Jalon à l'origine de la hausse acceptée ; absent pour une charge de départ. */
+  fromMilestoneId?: Id;
+}
+
 /**
  * Version d'un cadre (§ 4.2). La charge n'en fait pas partie : elle se
  * déduit des séries. Tant que `firstOfficialWorkoutId` est absent, les
@@ -58,7 +66,20 @@ export interface StrengthFrameVersion {
   rpeTarget?: number;
   restSec: number;
   increment: { unit: StrengthUnit; value: number };
-  /** Figeage : première séance officielle validée sous cette version. */
+  /**
+   * Poids de la barre pour une saisie par côté (v1.6, décision 4). Aide
+   * à la saisie, hors figeage : les séries gardent leur propre `tareKg`.
+   */
+  barWeightKg?: number;
+  /**
+   * Objectif en cours (v1.6, décision 12) : la charge ou la durée à
+   * travailler à la prochaine séance, choix daté de l'utilisateur. Posé
+   * à la confirmation d'une charge de départ ou à l'acceptation d'une
+   * hausse ; effacé à tout nouveau jalon, à la suppression de la séance
+   * du jalon d'origine et à l'archivage. Hors figeage (§ 4.2 bis).
+   */
+  currentTarget?: StrengthCurrentTarget;
+  /** Figeage : première séance officielle terminée sous cette version. */
   firstOfficialWorkoutId?: Id;
   frozenAt?: string;
   archivedAt?: string;

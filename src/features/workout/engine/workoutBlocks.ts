@@ -334,6 +334,8 @@ export function createAddedExerciseBlock(
   exercise: Exercise,
   position: number,
   newId: () => Id,
+  /** Point de capture 2 (§ 4.3) : la version active du cadre de l'exercice ajouté. */
+  frameVersionId?: Id,
 ): PerformedExerciseBlock {
   const id = `added-${newId()}`;
   const instructions = addedBlockInstructions(exercise, newId);
@@ -344,6 +346,7 @@ export function createAddedExerciseBlock(
     position,
     addedDuringWorkout: true,
     exerciseId: exercise.id,
+    ...(frameVersionId !== undefined ? { frameVersionId } : {}),
     status: "not_performed",
     snapshotInstructions: instructions,
   };

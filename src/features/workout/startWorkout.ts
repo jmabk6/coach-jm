@@ -13,6 +13,7 @@ import type {
   WorkoutSession,
 } from "../../domain";
 import { kindForCategory } from "../../domain/rules/workoutKindRules";
+import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { createWorkoutSnapshot } from "./createWorkoutSnapshot";
 
 export async function startWorkout(
@@ -64,9 +65,10 @@ export async function startWorkout(
     );
   }
 
-  /* Échelle de RPE en vigueur, capturée au démarrage (v1.6, § 4.5) :
-     absente seulement si aucune version n'existe encore. */
-  const rpeScale = await getActiveRpeScaleVersion();
+  /* Échelle de RPE en vigueur et versions de cadre actives, capturées au
+     démarrage (v1.6, § 4.3 et § 4.5) ; l'échelle est absente seulement si
+     aucune version n'existe encore. */
+  const [rpeScale, frames] = await Promise.all([getActiveRpeScaleVersion(), loadActiveFrameVersions()]);
 
   const workout: WorkoutSession = {
     id: `workout-${plannedSession.id}`,
@@ -81,7 +83,7 @@ export async function startWorkout(
     startedAt: now,
     lastActionAt: now,
     activeDurationSec: 0,
-    blocks: createWorkoutSnapshot(template),
+    blocks: createWorkoutSnapshot(template, frames.versionIdByExercise),
     createdAt: now,
     updatedAt: now,
   };

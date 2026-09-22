@@ -159,6 +159,30 @@ describe("createWorkoutSnapshot", () => {
     ]);
   });
 
+  it("point de capture 1 : la version active est portée par la brique et par chaque tour, jamais par l'enfant prévu", () => {
+    const result = createWorkoutSnapshot(
+      template,
+      new Map([
+        ["squat", "v-squat-1"],
+        ["planche", "v-planche-1"],
+      ]),
+    );
+    const exerciseBlock = result.find((block) => block.kind === "exercise");
+    const group = result.find((block) => block.kind === "group");
+
+    expect(exerciseBlock).toMatchObject({ exerciseId: "squat", frameVersionId: "v-squat-1" });
+    if (group?.kind !== "group") throw new Error("groupe attendu");
+    for (const round of group.rounds) {
+      expect(round.children.find((child) => child.exerciseId === "rowing")).not.toHaveProperty("frameVersionId");
+      expect(round.children.find((child) => child.exerciseId === "planche")).toMatchObject({ frameVersionId: "v-planche-1" });
+    }
+    for (const child of group.children) expect(child).not.toHaveProperty("frameVersionId");
+
+    /* Sans carte : rien ne change par rapport à l'existant. */
+    const bare = createWorkoutSnapshot(template);
+    expect(JSON.stringify(bare)).not.toContain("frameVersionId");
+  });
+
   it("crée les enfants et les tours prévus d'un groupe", () => {
     const result = createWorkoutSnapshot(template);
     const block = result[2];

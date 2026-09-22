@@ -13,6 +13,7 @@ import {
   getCompletedWorkouts,
   getInProgressWorkout,
 } from "../../db/repositories/workoutRepository";
+import { loadActiveFrameVersions, type ActiveFrameVersions } from "../strength/activeFrameVersions";
 import { applyWorkoutAction, type WorkoutAction } from "./engine/persistWorkout";
 import { findLastPerformances, type LastPerformance } from "./lastPerformance";
 
@@ -32,6 +33,12 @@ export interface WorkoutSessionData {
    * seed ; absente si aucune n'existe. Sert à l'aide dépliable.
    */
   rpeScale: RpeScaleVersion | undefined;
+  /**
+   * Cadres de progression (v1.6, § 4.3) : versions actives par exercice
+   * pour les captures en séance (ajout, substitution) et toutes les
+   * versions par identifiant pour lire celle qu'une brique porte.
+   */
+  frames: ActiveFrameVersions;
 }
 
 export type WorkoutSessionState =
@@ -73,9 +80,10 @@ export function useWorkoutSession(): {
         return;
       }
 
-      const [template, rpeScale] = await Promise.all([
+      const [template, rpeScale, frames] = await Promise.all([
         workout.sessionTemplateId ? getSessionTemplate(workout.sessionTemplateId) : undefined,
         workout.rpeScaleVersionId ? getRpeScaleVersion(workout.rpeScaleVersionId) : getActiveRpeScaleVersion(),
+        loadActiveFrameVersions(),
       ]);
 
       if (cancelled) return;
@@ -88,6 +96,7 @@ export function useWorkoutSession(): {
         lastByExercise: findLastPerformances(completed, workout.id),
         completedWorkouts: completed,
         rpeScale,
+        frames,
       });
     }
 

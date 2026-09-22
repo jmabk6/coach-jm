@@ -940,6 +940,74 @@ describe("exercice ajouté, sans nombre de séries prévu", () => {
 /* Substitution                                                               */
 /* -------------------------------------------------------------------------- */
 
+describe("capture de la version de cadre (v1.6, § 4.3) — points 2, 3 et 4", () => {
+  const haltere = exercise("developpe-halteres", "load_reps");
+  const frames = new Map([
+    ["presse", "v-presse-1"],
+    ["developpe-halteres", "v-dev-1"],
+  ]);
+
+  it("point 2 : un exercice ajouté porte la version active de son cadre, rien sans cadre", () => {
+    const w = addExerciseBlocks(
+      workout([]),
+      [exercise("presse", "load_reps"), exercise("curl", "load_reps")],
+      T0,
+      newId,
+      frames,
+    );
+    const [presse, curl] = w.blocks as PerformedExerciseBlock[];
+
+    expect(presse).toMatchObject({ exerciseId: "presse", frameVersionId: "v-presse-1", addedDuringWorkout: true });
+    expect(curl?.exerciseId).toBe("curl");
+    expect(curl).not.toHaveProperty("frameVersionId");
+
+    /* Sans carte : aucune version, comme avant le lot 4. */
+    const bare = addExerciseBlocks(workout([]), [exercise("presse", "load_reps")], T0, newId);
+    expect(bare.blocks[0]).not.toHaveProperty("frameVersionId");
+  });
+
+  it("point 3 : la brique substituée prend la version du remplaçant, ou la perd s'il n'en a pas", () => {
+    const framed: PerformedExerciseBlock = { ...squatBlock(), frameVersionId: "v-squat-1" };
+    let w = activateBlock(workout([framed]), "squat-block", T0);
+
+    w = substituteExercise(w, "squat-block", haltere, at(1), frames.get(haltere.id));
+    expect(exerciseOf(w, "squat-block")).toMatchObject({ exerciseId: "developpe-halteres", frameVersionId: "v-dev-1" });
+
+    w = substituteExercise(w, "squat-block", exercise("curl", "load_reps"), at(2), undefined);
+    expect(exerciseOf(w, "squat-block").exerciseId).toBe("curl");
+    expect(exerciseOf(w, "squat-block")).not.toHaveProperty("frameVersionId");
+
+    /* Retour à l'origine : la version de l'origine, passée par l'appelant. */
+    w = substituteExercise(w, "squat-block", exercise("squat", "load_reps"), at(3), "v-squat-1");
+    expect(exerciseOf(w, "squat-block")).toMatchObject({ exerciseId: "squat", frameVersionId: "v-squat-1" });
+    expect(exerciseOf(w, "squat-block").originalExerciseId).toBeUndefined();
+  });
+
+  it("point 4 : un enfant de groupe substitué change de version tour par tour, jamais sur un tour terminé", () => {
+    const group = groupBlock();
+    for (const round of group.rounds) {
+      round.children[1] = { ...round.children[1]!, frameVersionId: "v-chest-1" };
+    }
+    let w = activateBlock(workout([group]), "group-block", T0);
+    w = validateRoundChild(w, "group-block", "round-1", "round-1-a", { reps: 10 }, at(1), newId);
+    w = validateRoundChild(w, "group-block", "round-1", "round-1-b", { reps: 10 }, at(2), newId);
+
+    w = substituteGroupChild(w, "group-block", "child-b", haltere, at(3), "v-dev-1");
+
+    const rounds = groupOf(w, "group-block").rounds;
+    expect(rounds[0]?.children[1]).toMatchObject({ exerciseId: "chest", frameVersionId: "v-chest-1" });
+    expect(rounds[1]?.children[1]).toMatchObject({ exerciseId: "developpe-halteres", frameVersionId: "v-dev-1" });
+    /* L'enfant prévu ne porte jamais de version. */
+    expect(groupOf(w, "group-block").children[1]).not.toHaveProperty("frameVersionId");
+
+    /* Remplaçant sans cadre : la version disparaît des tours restants. */
+    w = substituteGroupChild(w, "group-block", "child-b", exercise("curl", "load_reps"), at(4), undefined);
+    expect(groupOf(w, "group-block").rounds[1]?.children[1]?.exerciseId).toBe("curl");
+    expect(groupOf(w, "group-block").rounds[1]?.children[1]).not.toHaveProperty("frameVersionId");
+    expect(groupOf(w, "group-block").rounds[0]?.children[1]?.frameVersionId).toBe("v-chest-1");
+  });
+});
+
 describe("substitution", () => {
   const haltere = exercise("developpe-halteres", "load_reps");
   const planche = exercise("planche", "duration");

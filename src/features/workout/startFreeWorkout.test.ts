@@ -4,10 +4,16 @@ const {
   getInProgressWorkout,
   saveWorkout,
   getActiveRpeScaleVersion,
+  loadActiveFrameVersions,
 } = vi.hoisted(() => ({
   getInProgressWorkout: vi.fn(),
   saveWorkout: vi.fn(),
   getActiveRpeScaleVersion: vi.fn(),
+  loadActiveFrameVersions: vi.fn(),
+}));
+
+vi.mock("../strength/activeFrameVersions", () => ({
+  loadActiveFrameVersions,
 }));
 
 vi.mock("../../db/repositories/workoutRepository", () => ({
@@ -26,6 +32,7 @@ describe("startFreeWorkout", () => {
     vi.clearAllMocks();
     getInProgressWorkout.mockResolvedValue(undefined);
     getActiveRpeScaleVersion.mockResolvedValue({ id: "rpe-scale-v1" });
+    loadActiveFrameVersions.mockResolvedValue({ versionIdByExercise: new Map(), versionById: new Map() });
   });
 
   it("crée et sauvegarde une séance libre vide", async () => {
@@ -116,6 +123,11 @@ describe("startFreeWorkout depuis un modèle", () => {
 
   it("copie les consignes du modèle sans créer d'instance", async () => {
     const now = "2026-09-14T18:00:00.000Z";
+    /* Point de capture 1 pour une séance libre depuis un modèle : la version active du cadre. */
+    loadActiveFrameVersions.mockResolvedValue({
+      versionIdByExercise: new Map([["squat", "v-squat-1"]]),
+      versionById: new Map(),
+    });
 
     const result = await startFreeWorkout("2026-09-14", now, {
       id: "muscu-a",
@@ -150,6 +162,7 @@ describe("startFreeWorkout depuis un modèle", () => {
       exerciseId: "squat",
       sourceBlockId: "b1",
       addedDuringWorkout: false,
+      frameVersionId: "v-squat-1",
     });
   });
 });
