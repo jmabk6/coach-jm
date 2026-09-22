@@ -8,6 +8,7 @@ import type {
   TargetRpe,
   WorkoutSession,
 } from "../../domain";
+import { summarizeSeriesRoles, type SeriesRoleSummary } from "../../domain/rules/strengthRules";
 import { calculateVolume, getLoadKg } from "../../domain/rules/workoutRules";
 import { summarizeRests } from "./engine/workoutTime";
 import { listSeriesByExercise } from "./lastPerformance";
@@ -230,6 +231,8 @@ export type ExerciseDetailSummary =
       seriesDone: number;
       /** Absent pour un ajout : rien n'était prévu. */
       seriesPlanned?: number;
+      /** Rôles des séries réalisées (v1.6) : comptées, échauffements, limitées. */
+      roles: SeriesRoleSummary;
       volumeKg?: number;
       volumeVsLast?: VolumeVsLast;
       rpe?: RpeSummary;
@@ -421,6 +424,7 @@ export function summarizeExerciseBlock(
     kind: "series",
     seriesDone: done.length,
     ...(block.addedDuringWorkout ? {} : { seriesPlanned: block.series.length }),
+    roles: summarizeSeriesRoles(done),
     ...(volumeKg > 0 ? { volumeKg } : {}),
     ...(volumeVsLast ? { volumeVsLast } : {}),
     ...(rpe ? { rpe } : {}),

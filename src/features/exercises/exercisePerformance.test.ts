@@ -121,6 +121,39 @@ describe("exercisePerformance", () => {
     expect(history[0]?.repsMax).toBe(10);
   });
 
+  it("décision 10 : un échauffement et une série limitée par un côté restent dans « Mes performances »", () => {
+    const workout = makeWorkout({
+      blocks: [
+        {
+          id: "block-1",
+          kind: "exercise",
+          position: 0,
+          addedDuringWorkout: false,
+          exerciseId: "squat",
+          status: "performed",
+          snapshotInstructions: {
+            shape: "reps",
+            sets: 3,
+            reps: { min: 8, max: 12 },
+            restBetweenSetsSec: 90,
+          },
+          series: [
+            { id: "s1", position: 0, status: "completed", load: { kind: "total", kg: 60 }, reps: 10, role: "echauffement" },
+            { id: "s2", position: 1, status: "completed", load: { kind: "total", kg: 100 }, reps: 10, role: "travail", sideLimited: true },
+            { id: "s3", position: 2, status: "completed", load: { kind: "total", kg: 100 }, reps: 8, role: "travail", sideLimited: false },
+          ],
+        },
+      ],
+    });
+
+    const [entry] = buildExercisePerformanceHistory(squat, [workout]);
+
+    /* Volume 600 + 1 000 + 800, charge max et reps max toutes séries confondues. */
+    expect(entry?.volumeKg).toBe(2400);
+    expect(entry?.chargeMaxKg).toBe(100);
+    expect(entry?.repsMax).toBe(10);
+  });
+
   it("ignore une charge à vide dont la tare est inconnue", () => {
     const workout = makeWorkout({
       blocks: [

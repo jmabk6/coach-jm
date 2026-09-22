@@ -343,6 +343,91 @@
   color: var(--color-accent, #2f6fed);
 }
 
+/* RPE : le champ et son aide dépliable (échelle en vigueur, lot 4A) */
+
+.series-form__rpe {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.series-form__rpe .number-field {
+  flex: 1;
+}
+
+.series-form__rpe-help-toggle {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 7px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: 50%;
+  background: var(--color-surface, white);
+  color: var(--color-accent, #2f6fed);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.series-form__rpe-help-toggle[aria-expanded="true"] {
+  border-color: var(--color-accent, #2f6fed);
+  background: var(--color-accent-soft, #eaf1ff);
+}
+
+.series-form__rpe-help {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.series-form__rpe-help th,
+.series-form__rpe-help td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--color-border, #e4e7ec);
+  text-align: left;
+}
+
+.series-form__rpe-help thead th {
+  color: var(--color-text-soft, #666);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.series-form__rpe-help tbody th {
+  width: 5.5em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Rôle et drapeau d'une série de musculation (lot 4A) */
+
+.series-form__strength {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.series-form__strength .series-form__load-kinds {
+  flex: 1 1 180px;
+}
+
+.series-form__flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+}
+
+.series-form__flag input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-accent, #2f6fed);
+}
+
 .series-form__note {
   display: flex;
   flex-direction: column;

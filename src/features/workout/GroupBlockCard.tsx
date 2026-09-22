@@ -7,6 +7,7 @@ import type {
   PerformedGroupChild,
   PerformedGroupRoundChild,
   PerformedSeries,
+  RpeScaleVersion,
 } from "../../domain";
 import {
   formatGroupChildInstructionsRow,
@@ -37,6 +38,8 @@ interface GroupBlockCardProps {
    * sans ajustement ni barre basse.
    */
   restBand?: ReactNode;
+  /** Table de l'échelle de RPE en vigueur (v1.6, § 4.5), pour l'aide dépliable. */
+  rpeTable?: RpeScaleVersion["table"] | undefined;
   onToggle: () => void;
   onOpenMenu: () => void;
   onUnskip: () => void;
@@ -61,6 +64,7 @@ export function GroupBlockCard({
   busy,
   restCard,
   restBand,
+  rpeTable,
   onToggle,
   onOpenMenu,
   onUnskip,
@@ -243,6 +247,7 @@ export function GroupBlockCard({
                                   key={`edit-${roundChild.id}`}
                                   layout={seriesFieldLayout(exerciseById.get(roundChild.exerciseId))}
                                   initial={roundChildAsSeries(roundChild)}
+                                  rpeTable={rpeTable}
                                   submitLabel="Enregistrer"
                                   onSubmit={(values) => {
                                     setEditingId(undefined);
@@ -269,6 +274,7 @@ export function GroupBlockCard({
                                     child.id,
                                     lastByExercise.get(roundChild.exerciseId)?.series,
                                   )}
+                                  rpeTable={rpeTable}
                                   submitLabel={
                                     nextChild
                                       ? `Valider ${label(child)} → passer à ${label(nextChild)}`

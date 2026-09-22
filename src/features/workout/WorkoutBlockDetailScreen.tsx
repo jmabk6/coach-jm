@@ -26,6 +26,7 @@ import type {
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getCompletedWorkouts, getWorkout } from "../../db/repositories/workoutRepository";
 import { formatFullDate } from "../../domain/rules/programRules";
+import { formatSeriesRoleSummary } from "../../domain/rules/strengthRules";
 import { formatRange } from "../../domain/rules/blockInstructionRules";
 import {
   buildExerciseHistory,
@@ -359,6 +360,7 @@ function NoteCard({ note }: { note: string }) {
 function SummaryCards({ summary }: { summary: ExerciseDetailSummary }) {
   if (summary.kind === "series") {
     const missing = summary.seriesPlanned !== undefined ? summary.seriesPlanned - summary.seriesDone : 0;
+    const rolesLine = formatSeriesRoleSummary(summary.roles);
 
     return (
       <div className="recap__cards">
@@ -376,6 +378,7 @@ function SummaryCards({ summary }: { summary: ExerciseDetailSummary }) {
                 ? "toutes réalisées"
                 : "sans prévu"}
           </span>
+          {rolesLine && <span className="recap__card-meta">{rolesLine}</span>}
         </div>
 
         {summary.volumeKg !== undefined && (

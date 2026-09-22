@@ -1,5 +1,10 @@
-import { useState } from "react";
-import type { Load, PerformedSideValue } from "../../domain";
+import { useId, useState } from "react";
+import type { Load, PerformedSeriesRole, PerformedSideValue, RpeScaleVersion } from "../../domain";
+import {
+  DEFAULT_SERIES_ROLE,
+  formatRpeRowLabel,
+  seriesRoleLabels,
+} from "../../domain/rules/strengthRules";
 import type { SeriesValues } from "./engine/workoutEngine";
 import type { ProposedSeriesValues } from "./engine/workoutBlocks";
 import { NumberField } from "./NumberField";
@@ -13,14 +18,34 @@ interface SeriesFormProps {
   /**
    * Valeurs proposées (série précédente, dernière fois) ou valeurs de la
    * série que l'on modifie. RPE et note ne sont proposés que pour une
-   * modification : jamais préremplis à la saisie (§11).
+   * modification : jamais préremplis à la saisie (§11). Rôle et drapeau
+   * viennent de la série modifiée ; à la saisie, une série est de
+   * travail, non limitée (décision 7).
    */
-  initial: ProposedSeriesValues & { rpe?: number; note?: string };
+  initial: ProposedSeriesValues & {
+    rpe?: number;
+    note?: string;
+    role?: PerformedSeriesRole;
+    sideLimited?: boolean;
+  };
+  /**
+   * Rôle « travail / échauffement » et drapeau « limitée par un côté »
+   * (v1.6, § 4.4) : séries de musculation seulement ; les enfants de tour
+   * et les autres catégories n'en ont pas.
+   */
+  strengthFields?: boolean;
+  /**
+   * Table de l'échelle de RPE en vigueur, pour l'aide dépliable à côté
+   * du champ (spec Musculation § 6). Sans table, pas d'aide.
+   */
+  rpeTable?: RpeScaleVersion["table"] | undefined;
   submitLabel: string;
   onSubmit: (values: SeriesValues) => void;
   onCancel?: () => void;
   busy?: boolean;
 }
+
+const SERIES_ROLES: PerformedSeriesRole[] = ["travail", "echauffement"];
 
 const LOAD_KIND_LABELS: Record<LoadKind, string> = {
   total: "Total",
@@ -44,11 +69,14 @@ function sideValue(
 export function SeriesForm({
   layout,
   initial,
+  strengthFields = false,
+  rpeTable,
   submitLabel,
   onSubmit,
   onCancel,
   busy = false,
 }: SeriesFormProps) {
+  const helpId = useId();
   const [loadKind, setLoadKind] = useState<LoadKind>(initial.load?.kind ?? "total");
   const [load, setLoad] = useState(
     formatNumberInput(
@@ -76,8 +104,15 @@ export function SeriesForm({
     ),
   );
   const [rpe, setRpe] = useState(formatNumberInput(initial.rpe));
+  const [rpeHelpOpen, setRpeHelpOpen] = useState(false);
+  const [role, setRole] = useState<PerformedSeriesRole>(initial.role ?? DEFAULT_SERIES_ROLE);
+  const [sideLimited, setSideLimited] = useState(initial.sideLimited === true);
   const [noteOpen, setNoteOpen] = useState(Boolean(initial.note));
   const [note, setNote] = useState(initial.note ?? "");
+  /* Le drapeau ne se pose que sur une série de travail bilatérale : un
+     exercice mesuré par côté a déjà ses deux valeurs. */
+  const sideLimitedAvailable =
+    strengthFields && role === "travail" && layout !== "reps_per_side" && layout !== "duration_per_side";
 
   const measured =
     layout === "load_reps" || layout === "reps"
@@ -127,6 +162,13 @@ export function SeriesForm({
 
     const parsedRpe = parseNumber(rpe);
     if (parsedRpe !== undefined) values.rpe = parsedRpe;
+
+    if (strengthFields) {
+      values.role = role;
+      /* Présent, à faux par défaut, sur chaque série de travail (§ 4.4) ;
+         jamais sur un échauffement. */
+      if (role === "travail") values.sideLimited = sideLimitedAvailable && sideLimited;
+    }
 
     const trimmedNote = note.trim();
     if (trimmedNote) values.note = trimmedNote;
@@ -202,16 +244,77 @@ export function SeriesForm({
           </>
         )}
 
-        <NumberField
-          label="RPE (optionnel)"
-          value={rpe}
-          onChange={setRpe}
-          step={1}
-          min={1}
-          max={10}
-          optional
-        />
+        <div className="series-form__rpe">
+          <NumberField
+            label="RPE (optionnel)"
+            value={rpe}
+            onChange={setRpe}
+            step={1}
+            min={1}
+            max={10}
+            optional
+          />
+          {rpeTable && (
+            <button
+              type="button"
+              className="series-form__rpe-help-toggle"
+              aria-label="Échelle de RPE"
+              aria-expanded={rpeHelpOpen}
+              aria-controls={helpId}
+              onClick={() => setRpeHelpOpen((open) => !open)}
+            >
+              ?
+            </button>
+          )}
+        </div>
       </div>
+
+      {rpeTable && rpeHelpOpen && (
+        <table id={helpId} className="series-form__rpe-help" aria-label="Échelle de RPE : répétitions en réserve">
+          <thead>
+            <tr>
+              <th scope="col">RPE</th>
+              <th scope="col">Répétitions en réserve</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rpeTable.map((row) => (
+              <tr key={row.rpe}>
+                <th scope="row">{formatRpeRowLabel(row.rpe, rpeTable)}</th>
+                <td>{row.repsInReserveLabel}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {strengthFields && (
+        <div className="series-form__strength">
+          <div className="series-form__load-kinds" role="group" aria-label="Rôle de la série">
+            {SERIES_ROLES.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`series-form__kind ${role === item ? "series-form__kind--active" : ""}`}
+                aria-pressed={role === item}
+                onClick={() => setRole(item)}
+              >
+                {seriesRoleLabels[item]}
+              </button>
+            ))}
+          </div>
+          {sideLimitedAvailable && (
+            <label className="series-form__flag">
+              <input
+                type="checkbox"
+                checked={sideLimited}
+                onChange={(event) => setSideLimited(event.target.checked)}
+              />
+              <span>Limitée par un côté</span>
+            </label>
+          )}
+        </div>
+      )}
 
       {noteOpen ? (
         <label className="series-form__note">

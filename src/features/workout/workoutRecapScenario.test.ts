@@ -231,6 +231,7 @@ describe("Étape 7 — récapitulatif de bout en bout, sur base réelle", () => 
     expect(summarizeExerciseBlock(squatBlock, ex("squat"), history)).toEqual({
       kind: "series",
       seriesDone: 2,
+      roles: { total: 2, counted: 2, warmup: 0, sideLimited: 0 },
       volumeKg: 1140,
       rpe: { value: 7.5, count: 2, total: 2 },
       rest: { averageSec: 100, comparableCount: 1, totalCount: 2 },

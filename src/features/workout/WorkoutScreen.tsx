@@ -195,7 +195,7 @@ export function WorkoutScreen() {
     );
   }
 
-  const { template, exerciseById, lastByExercise, completedWorkouts } = state;
+  const { template, exerciseById, lastByExercise, completedWorkouts, rpeScale } = state;
   const name = template?.name ?? "Séance libre";
   const blocks = [...workout.blocks].sort((a, b) => a.position - b.position);
   const numbering = calculatePerformedNumbering(blocks);
@@ -437,6 +437,7 @@ export function WorkoutScreen() {
                   busy={locked}
                   restCard={block.id === currentBlock?.id && restCardInBlock ? restCard : undefined}
                   restBand={block.id === currentBlock?.id ? restBand : undefined}
+                  rpeTable={rpeScale?.table}
                   onToggle={() => toggleBlock(block)}
                   onOpenMenu={() => setBlockMenu(block)}
                   onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}
@@ -470,6 +471,7 @@ export function WorkoutScreen() {
                     ? exerciseById.get(block.originalExerciseId)?.name ?? "exercice supprimé"
                     : undefined
                 }
+                rpeTable={rpeScale?.table}
                 onToggle={() => toggleBlock(block)}
                 onOpenMenu={() => setBlockMenu(block)}
                 onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}

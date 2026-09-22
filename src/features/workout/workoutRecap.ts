@@ -12,6 +12,13 @@ import type {
   WorkoutPause,
   WorkoutSession,
 } from "../../domain";
+import {
+  SERIES_SIDE_LIMITED_LABEL,
+  SERIES_WARMUP_SHORT_LABEL,
+  isWorkSeries,
+  summarizeSeriesRoles,
+  type SeriesRoleSummary,
+} from "../../domain/rules/strengthRules";
 import { calculateVolume, getLoadKg } from "../../domain/rules/workoutRules";
 import { estimateSessionTemplateDurationSec } from "../../domain/rules/sessionTemplateRules";
 import { formatBlockCompletion, summarizeBlockCompletion } from "./engine/workoutBlocks";
@@ -83,7 +90,9 @@ export function formatLoad(load: Load | undefined): string {
 
 /**
  * `10 kg × 12 · RPE 10 · tremblement` : la ligne d'une série, sa note
- * comprise (§14), jamais reléguée ailleurs.
+ * comprise (§14), jamais reléguée ailleurs. Un échauffement et une série
+ * limitée par un côté se signalent (`éch.`, `limitée par un côté`) ; une
+ * série de travail ordinaire ne porte rien de plus (v1.6, § 4.4).
  */
 export function formatSeriesLine(series: PerformedSeries): string {
   const parts: string[] = [];
@@ -116,6 +125,8 @@ export function formatSeriesLine(series: PerformedSeries): string {
   const line = parts.join(" ");
   const extras: string[] = [];
 
+  if (!isWorkSeries(series)) extras.push(SERIES_WARMUP_SHORT_LABEL);
+  else if (series.sideLimited === true) extras.push(SERIES_SIDE_LIMITED_LABEL);
   if (series.rpe !== undefined) extras.push(`RPE ${series.rpe}`);
   if (series.note) extras.push(series.note);
 
@@ -249,6 +260,13 @@ export interface WorkoutRecapHead {
    * sautées — le dénominateur de `28 / 30`.
    */
   seriesPlanned: number;
+  /**
+   * Rôles des séries réalisées (v1.6, décisions 6 et 10) : `counted` =
+   * travail non limitées, ce qui entrera dans la validation d'un palier ;
+   * échauffements et séries limitées restent dans `seriesDone` et dans le
+   * volume. Les enfants de tour comptent comme des séries de travail.
+   */
+  roles: SeriesRoleSummary;
   rpe?: CoveredAverage;
   bpm?: { min: number; max: number; average: CoveredAverage };
   cardioSteps: number;
@@ -393,6 +411,7 @@ export function summarizeWorkout(
     volumeKg: calculateVolume(series),
     seriesDone: series.length,
     seriesPlanned: countPlannedSeries(workout.blocks),
+    roles: summarizeSeriesRoles(series),
     ...(rpeAverage ? { rpe: rpeAverage } : {}),
     ...(bpmAverage && knownBpm.length > 0
       ? {

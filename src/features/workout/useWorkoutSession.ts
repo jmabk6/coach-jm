@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import type {
   Exercise,
   Id,
+  RpeScaleVersion,
   SessionTemplate,
   WorkoutSession,
 } from "../../domain";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
+import { getActiveRpeScaleVersion, getRpeScaleVersion } from "../../db/repositories/rpeScaleRepository";
 import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
 import {
   getCompletedWorkouts,
@@ -24,6 +26,12 @@ export interface WorkoutSessionData {
    * (`Dernière fois comparable` d'un palier).
    */
   completedWorkouts: WorkoutSession[];
+  /**
+   * Échelle de RPE de la séance (v1.6, § 4.5) : celle capturée au
+   * démarrage, sinon la version active pour une séance antérieure au
+   * seed ; absente si aucune n'existe. Sert à l'aide dépliable.
+   */
+  rpeScale: RpeScaleVersion | undefined;
 }
 
 export type WorkoutSessionState =
@@ -65,9 +73,10 @@ export function useWorkoutSession(): {
         return;
       }
 
-      const template = workout.sessionTemplateId
-        ? await getSessionTemplate(workout.sessionTemplateId)
-        : undefined;
+      const [template, rpeScale] = await Promise.all([
+        workout.sessionTemplateId ? getSessionTemplate(workout.sessionTemplateId) : undefined,
+        workout.rpeScaleVersionId ? getRpeScaleVersion(workout.rpeScaleVersionId) : getActiveRpeScaleVersion(),
+      ]);
 
       if (cancelled) return;
 
@@ -78,6 +87,7 @@ export function useWorkoutSession(): {
         exerciseById: new Map(exercises.map((exercise) => [exercise.id, exercise])),
         lastByExercise: findLastPerformances(completed, workout.id),
         completedWorkouts: completed,
+        rpeScale,
       });
     }
 

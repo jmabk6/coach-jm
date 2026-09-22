@@ -7,6 +7,7 @@ import type {
   PerformedCardioStep,
   PerformedExerciseBlock,
   PerformedSeries,
+  RpeScaleVersion,
 } from "../../domain";
 import type {
   SeriesValues,
@@ -55,6 +56,11 @@ interface ExerciseBlockCardProps {
    * (§13) : la ligne `Prévu : <origine>`.
    */
   originalName?: string | undefined;
+  /**
+   * Table de l'échelle de RPE en vigueur pour cette séance (v1.6, § 4.5),
+   * affichée par l'aide dépliable du formulaire de série.
+   */
+  rpeTable?: RpeScaleVersion["table"] | undefined;
   onToggle: () => void;
   onOpenMenu: () => void;
   onUnskip: () => void;
@@ -89,6 +95,7 @@ export function ExerciseBlockCard({
   busy,
   restCard,
   originalName,
+  rpeTable,
   onToggle,
   onOpenMenu,
   onUnskip,
@@ -195,6 +202,7 @@ export function ExerciseBlockCard({
                   index={index}
                   exercise={exercise}
                   lastTime={lastTime}
+                  rpeTable={rpeTable}
                   editing={editingId === series.id}
                   busy={busy}
                   onEdit={() => setEditingId(series.id)}
@@ -383,6 +391,7 @@ interface SeriesRowProps {
   index: number;
   exercise: Exercise | undefined;
   lastTime: LastPerformance | undefined;
+  rpeTable: RpeScaleVersion["table"] | undefined;
   editing: boolean;
   busy: boolean;
   onEdit: () => void;
@@ -397,6 +406,7 @@ function SeriesRow({
   index,
   exercise,
   lastTime,
+  rpeTable,
   editing,
   busy,
   onEdit,
@@ -406,6 +416,8 @@ function SeriesRow({
 }: SeriesRowProps) {
   const label = `Série ${index + 1}`;
   const layout = seriesFieldLayout(exercise);
+  /* Rôle et drapeau : séries de musculation seulement (v1.6, § 4.4). */
+  const strengthFields = exercise?.category === "Musculation";
 
   if (series.status === "completed") {
     return (
@@ -440,7 +452,11 @@ function SeriesRow({
                 ...(series.sideValues ? { sideValues: series.sideValues } : {}),
                 ...(series.rpe !== undefined ? { rpe: series.rpe } : {}),
                 ...(series.note !== undefined ? { note: series.note } : {}),
+                ...(series.role !== undefined ? { role: series.role } : {}),
+                ...(series.sideLimited !== undefined ? { sideLimited: series.sideLimited } : {}),
               }}
+              strengthFields={strengthFields}
+              rpeTable={rpeTable}
               submitLabel="Enregistrer"
               onSubmit={onSaveEdit}
               onCancel={onCancelEdit}
@@ -466,7 +482,9 @@ function SeriesRow({
           <SeriesForm
             key={`entry-${series.id}`}
             layout={layout}
-            initial={proposed}
+            initial={{ ...proposed, ...(series.role !== undefined ? { role: series.role } : {}) }}
+            strengthFields={strengthFields}
+            rpeTable={rpeTable}
             submitLabel={`Valider la série ${index + 1}`}
             onSubmit={onValidate}
             busy={busy}

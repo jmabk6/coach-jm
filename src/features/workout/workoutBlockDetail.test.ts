@@ -335,6 +335,7 @@ describe("résumé d'un exercice en séries", () => {
     expect(summary).toEqual({
       kind: "series",
       seriesDone: 2,
+      roles: { total: 2, counted: 2, warmup: 0, sideLimited: 0 },
       volumeKg: 480,
       rpe: { value: 9, count: 2, total: 2 },
       rest: { averageSec: 60, comparableCount: 1, totalCount: 1 },

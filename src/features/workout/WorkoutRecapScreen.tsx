@@ -26,6 +26,7 @@ import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
 import { getCompletedWorkouts, getWorkout } from "../../db/repositories/workoutRepository";
 import { formatFullDate } from "../../domain/rules/programRules";
+import { formatSeriesRoleSummary } from "../../domain/rules/strengthRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { deleteWorkout } from "./deleteWorkout";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
@@ -150,6 +151,8 @@ export function WorkoutRecapScreen() {
 
   const { workout, template, exerciseById, volumeComparison } = state;
   const head = summarizeWorkout(workout, template);
+  /* `dont 4 comptées · 2 éch.` : rien quand toutes les séries comptent (v1.6). */
+  const rolesLine = formatSeriesRoleSummary(head.roles);
   const { planned, added } = splitRecapLines(
     buildWorkoutRecapLines(workout, exerciseById),
     workout.sessionTemplateId !== undefined,
@@ -295,6 +298,7 @@ export function WorkoutRecapScreen() {
                 <span className="recap__card-meta">sans charge</span>
               </>
             )}
+            {rolesLine && <span className="recap__card-meta">{rolesLine}</span>}
             {volumeComparison && head.volumeKg > 0 && (
               <span className="recap__card-meta recap__card-meta--compare">
                 {formatDelta(volumeComparison.deltaPercent)}
