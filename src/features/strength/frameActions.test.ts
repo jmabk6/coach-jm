@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Exercise } from "../../domain";
 import { db } from "../../db/database";
 import {
+  acceptRaise,
   archiveFrameVersion,
   createFrame,
   startNextVersion,
@@ -164,5 +165,32 @@ describe("archiveFrameVersion et startNextVersion", () => {
     expect(v2).toMatchObject({ id: "frame-id1-v2", number: 2, status: "active", increment: { unit: "kg", value: 5 }, currentTarget: { value: 90, unit: "kg", acceptedAt: T1 } });
     expect(await db.strengthFrames.get("frame-id1")).toMatchObject({ activeVersionId: "frame-id1-v2" });
     await expect(startNextVersion(presse, frame, input, undefined, T1)).rejects.toThrow(/déjà active/);
+  });
+});
+
+describe("acceptRaise — choix daté (décision 12, v1.6 événement 5)", () => {
+  it("pose l'objectif en cours rattaché au jalon, sans toucher au jalon ni à la séance ; refuse un jalon disparu ou une version archivée", async () => {
+    const { version } = await createFrame(presse, input, undefined, T0, newId);
+    const milestone = { id: "m1", frameVersionId: version.id, workoutId: "w1", date: "2026-09-23", value: 100, unit: "kg" as const, createdAt: T1 };
+    await db.strengthMilestones.put(milestone);
+    const proposal = { milestone, value: 102.5, unit: "kg" as const, repFloor: 10 };
+
+    const next = await acceptRaise(version, proposal, "2026-09-23T18:00:00.000Z");
+
+    expect(next.currentTarget).toEqual({ value: 102.5, unit: "kg", acceptedAt: "2026-09-23T18:00:00.000Z", fromMilestoneId: "m1" });
+    expect(await db.strengthFrameVersions.get(version.id)).toMatchObject({ currentTarget: { value: 102.5, fromMilestoneId: "m1" }, updatedAt: "2026-09-23T18:00:00.000Z" });
+    expect(await db.strengthMilestones.get("m1")).toEqual(milestone);
+    expect(await db.strengthMilestones.count()).toBe(1);
+
+    /* Une nouvelle acceptation remplace l'objectif. */
+    const again = await acceptRaise(version, { ...proposal, value: 105 }, "2026-09-24T18:00:00.000Z");
+    expect(again.currentTarget?.value).toBe(105);
+
+    await db.strengthMilestones.delete("m1");
+    await expect(acceptRaise(version, proposal)).rejects.toThrow(/n'existe plus/);
+
+    await db.strengthMilestones.put(milestone);
+    await db.strengthFrameVersions.update(version.id, { status: "archived" });
+    await expect(acceptRaise(version, proposal)).rejects.toThrow(/plus active/);
   });
 });

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { WorkoutSession } from "../../domain";
+import type { PerformedSeries, StrengthFrameVersion, WorkoutSession } from "../../domain";
 import { findLastComparableStep, findLastPerformances } from "./lastPerformance";
 import { formatCardioSettingsLine } from "./workoutRecap";
-import { formatLoadSuggestion, suggestLoad } from "./suggestedLoad";
+import { formatFrameLoadSuggestion, formatLoadSuggestion, suggestFrameLoad, suggestLoad } from "./suggestedLoad";
 import {
   calculatePerformedNumbering,
   describeNextUp,
@@ -315,5 +315,38 @@ describe("charge conseillée", () => {
 
   it("ne conseille rien sans historique", () => {
     expect(suggestLoad(undefined, { min: 8, max: 10 })).toBeUndefined();
+  });
+});
+
+describe("suggestFrameLoad — exercice cadré (lot 4C)", () => {
+  const version: StrengthFrameVersion = {
+    id: "v1",
+    frameId: "f1",
+    number: 1,
+    status: "active",
+    progressionType: "charge_croissante",
+    workSets: 3,
+    repRange: { min: 10, max: 12 },
+    rpeTarget: 8,
+    restSec: 90,
+    increment: { unit: "kg", value: 2.5 },
+    createdAt: "2026-09-22T10:00:00.000Z",
+    updatedAt: "2026-09-22T10:00:00.000Z",
+  };
+  const last: PerformedSeries[] = [
+    { id: "a", position: 0, status: "completed", role: "echauffement", load: { kind: "total", kg: 60 }, reps: 12, rpe: 4 },
+    { id: "b", position: 1, status: "completed", role: "travail", load: { kind: "total", kg: 100 }, reps: 12, rpe: 9 },
+  ];
+
+  it("charge de la dernière série de travail + objectif du cadre, sans heuristique sur le RPE", () => {
+    const suggestion = suggestFrameLoad(version, last);
+    expect(suggestion).toEqual({ toWork: { value: 100, unit: "kg", source: "derniere_seance" }, goal: "3 × 12 · RPE ≤ 8" });
+    expect(formatFrameLoadSuggestion(suggestion)).toBe("100 kg (dernière séance) · pour valider : 3 × 12 · RPE ≤ 8");
+  });
+
+  it("objectif accepté prioritaire ; sans historique, l'objectif de validation seul", () => {
+    const accepted = { ...version, currentTarget: { value: 102.5, unit: "kg" as const, acceptedAt: "2026-09-23T18:00:00.000Z", fromMilestoneId: "m1" } };
+    expect(formatFrameLoadSuggestion(suggestFrameLoad(accepted, last))).toBe("102,5 kg (objectif accepté) · pour valider : 3 × 12 · RPE ≤ 8");
+    expect(formatFrameLoadSuggestion(suggestFrameLoad(version, undefined))).toBe("pour valider : 3 × 12 · RPE ≤ 8");
   });
 });

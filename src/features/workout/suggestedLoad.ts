@@ -1,4 +1,5 @@
-import type { Load, NumberRange, TargetRpe } from "../../domain";
+import type { Load, NumberRange, PerformedSeries, StrengthFrameVersion, TargetRpe } from "../../domain";
+import { formatFrameGoal, formatStrengthValue, loadToWork, type LoadToWork } from "../../domain/rules/strengthRules";
 import {
   calculateSuggestedLoad,
   type SuggestedLoadAction,
@@ -54,4 +55,46 @@ const ACTION_LABELS: Record<SuggestedLoadAction, string> = {
  */
 export function formatLoadSuggestion(suggestion: LoadSuggestion): string {
   return `${formatLoad(suggestion.referenceLoad)} · ${ACTION_LABELS[suggestion.action]}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Exercice cadré : la double progression (lot 4C)                            */
+/* -------------------------------------------------------------------------- */
+
+export interface FrameLoadSuggestion {
+  /** La charge (ou la durée) à travailler : objectif accepté, sinon dernière séance. */
+  toWork?: LoadToWork;
+  /** Ce qu'il faut tenir pour valider : « 3 × 12 · RPE ≤ 8 ». */
+  goal: string;
+}
+
+/**
+ * `Conseillé` d'un exercice **cadré** (conception v1.6, § 4.2 bis, § 4.6) :
+ * plus d'heuristique sur le RPE de la dernière fois — la charge à
+ * travailler vient de l'objectif accepté, sinon de la dernière série de
+ * travail, et l'objectif de validation vient du cadre. Les exercices
+ * sans cadre gardent `suggestLoad`.
+ */
+export function suggestFrameLoad(
+  version: StrengthFrameVersion,
+  lastSeries: ReadonlyArray<PerformedSeries> | undefined,
+): FrameLoadSuggestion {
+  const toWork = loadToWork(version, lastSeries);
+
+  return { ...(toWork ? { toWork } : {}), goal: formatFrameGoal(version) };
+}
+
+/**
+ * `102,5 kg (objectif accepté) · pour valider : 3 × 12 · RPE ≤ 8`,
+ * `100 kg (dernière séance) · pour valider : …`, ou `pour valider : …`
+ * seul quand rien n'indique encore la charge.
+ */
+export function formatFrameLoadSuggestion(suggestion: FrameLoadSuggestion): string {
+  const goal = `pour valider : ${suggestion.goal}`;
+
+  if (!suggestion.toWork) return goal;
+
+  const source = suggestion.toWork.source === "objectif" ? "objectif accepté" : "dernière séance";
+
+  return `${formatStrengthValue(suggestion.toWork.value, suggestion.toWork.unit)} (${source}) · ${goal}`;
 }

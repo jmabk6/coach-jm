@@ -12,6 +12,7 @@ import {
   frameTypesFor,
   isVersionFrozen,
   type FrameParameters,
+  type RaiseProposal,
 } from "../../domain/rules/strengthRules";
 
 /**
@@ -275,5 +276,38 @@ export async function startNextVersion(
     await db.strengthFrames.put({ ...frame, activeVersionId: versionId, updatedAt: now });
 
     return version;
+  });
+}
+
+/**
+ * « Accepter le nouveau palier » (spec § 7, v1.6 § 4.2 bis événement 5) :
+ * le seul geste qui écrit une décision de progression. L'objectif en
+ * cours prend le cran suivant, daté, rattaché au jalon qui l'a proposé ;
+ * rien d'autre ne bouge — ni séance, ni jalon, ni version (hors figeage).
+ * « Rester sur le palier » n'appelle rien.
+ */
+export async function acceptRaise(
+  version: StrengthFrameVersion,
+  proposal: RaiseProposal,
+  now: string = new Date().toISOString(),
+): Promise<StrengthFrameVersion> {
+  return db.transaction("rw", [db.strengthFrameVersions, db.strengthMilestones], async () => {
+    const current = await db.strengthFrameVersions.get(version.id);
+
+    if (!current || current.status !== "active") throw new Error("Cette version n'est plus active");
+    if (proposal.milestone.frameVersionId !== current.id) throw new Error("Ce jalon n'appartient pas à cette version");
+
+    const milestone = await db.strengthMilestones.get(proposal.milestone.id);
+    if (!milestone) throw new Error("Le jalon à l'origine de cette hausse n'existe plus");
+
+    const next: StrengthFrameVersion = {
+      ...current,
+      currentTarget: { value: proposal.value, unit: proposal.unit, acceptedAt: now, fromMilestoneId: milestone.id },
+      updatedAt: now,
+    };
+
+    await db.strengthFrameVersions.put(next);
+
+    return next;
   });
 }

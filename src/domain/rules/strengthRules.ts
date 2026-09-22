@@ -6,6 +6,7 @@ import type {
   RpeScaleVersion,
   StrengthArchiveReason,
   StrengthFrameVersion,
+  StrengthMilestone,
   StrengthProgressionType,
   StrengthUnit,
   WorkoutSession,
@@ -453,4 +454,173 @@ export function loadToWork(
   const kg = getLoadKg(work.load);
 
   return kg !== undefined ? { value: kg, unit: "kg", source: "derniere_seance" } : undefined;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Suggestions (conception v1.6, § 4.6 ; spec § 7) — lot 4C                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Le cran suivant d'une valeur, selon le type : + incrément pour la
+ * charge et la durée, − incrément pour l'assistance (borné à 0).
+ */
+export function nextStep(version: Pick<StrengthFrameVersion, "progressionType" | "increment">, value: number): number {
+  if (version.progressionType === "assistance_decroissante") {
+    return Math.max(0, Math.round((value - version.increment.value) * 100) / 100);
+  }
+
+  return Math.round((value + version.increment.value) * 100) / 100;
+}
+
+/** « 3 × 12 · RPE ≤ 8 » / « 3 × 45 s » : ce qu'il faut tenir pour valider. */
+export function formatFrameGoal(version: StrengthFrameVersion): string {
+  const parts: string[] = [];
+
+  if (version.progressionType === "duree_croissante") {
+    const target = targetDurationInForce(version);
+    parts.push(`${version.workSets} × ${target !== undefined ? `${target} s` : "durée"}`);
+  } else if (version.repRange) {
+    parts.push(`${version.workSets} × ${version.repRange.max}`);
+  } else {
+    parts.push(`${version.workSets} séries`);
+  }
+
+  if (version.rpeTarget !== undefined) parts.push(`RPE ≤ ${version.rpeTarget}`);
+
+  return parts.join(" · ");
+}
+
+export interface RaiseProposal {
+  /** Le jalon qui déclenche la proposition. */
+  milestone: StrengthMilestone;
+  /** Le cran suivant. */
+  value: number;
+  unit: StrengthUnit;
+  /** Retour au bas de la plage annoncé avec la hausse (spec § 7) ; absent en durée. */
+  repFloor?: number;
+}
+
+/**
+ * « Hausse proposée » (spec § 7, v1.6 § 4.2 bis événements 5 et 6) —
+ * **dérivée, jamais stockée**. Proposée après le dernier jalon J de la
+ * version active tant que : la hausse issue de J n'a pas déjà été
+ * acceptée (`currentTarget.fromMilestoneId === J.id`), aucune séance
+ * terminée sous cette version n'est postérieure à la séance de J (c'est
+ * ainsi que « rester » s'exprime : sans rien écrire), et le plafond
+ * d'assistance n'est pas atteint (à zéro, c'est un nouveau cadre).
+ */
+export function proposeRaise(
+  version: StrengthFrameVersion,
+  milestones: ReadonlyArray<StrengthMilestone>,
+  workouts: ReadonlyArray<WorkoutSession>,
+): RaiseProposal | undefined {
+  if (version.status !== "active") return undefined;
+
+  const own = milestones.filter((milestone) => milestone.frameVersionId === version.id);
+  const last = [...own].sort(
+    (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+  )[0];
+
+  if (!last) return undefined;
+  if (last.ceilingReached) return undefined;
+  if (version.currentTarget?.fromMilestoneId === last.id) return undefined;
+
+  const milestoneWorkout = workouts.find((workout) => workout.id === last.workoutId);
+  const after = milestoneWorkout?.startedAt ?? `${last.date}T23:59:59.999Z`;
+  const laterSession = workouts.some(
+    (workout) =>
+      workout.status === "completed" &&
+      workout.id !== last.workoutId &&
+      !workout.id.startsWith("import-") &&
+      workout.startedAt > after &&
+      frameVersionIdsOf(workout).has(version.id),
+  );
+
+  if (laterSession) return undefined;
+
+  return {
+    milestone: last,
+    value: nextStep(version, last.value),
+    unit: last.unit,
+    ...(version.progressionType !== "duree_croissante" && version.repRange ? { repFloor: version.repRange.min } : {}),
+  };
+}
+
+export interface StagnationSession {
+  workoutId: Id;
+  date: string;
+  /** Charge (ou durée) travaillée : la plus basse des séries de travail, comme un jalon. */
+  load: number;
+  /** Total des répétitions (ou des secondes) des séries de travail. */
+  total: number;
+}
+
+export interface Stagnation {
+  sessions: [StagnationSession, StagnationSession, StagnationSession];
+  load: number;
+  unit: StrengthUnit;
+}
+
+/** Les séances terminées sous la version, de la plus ancienne à la plus récente, avec charge et total. */
+export function listVersionSessions(
+  version: StrengthFrameVersion,
+  workouts: ReadonlyArray<WorkoutSession>,
+): StagnationSession[] {
+  const duration = version.progressionType === "duree_croissante";
+  const result: StagnationSession[] = [];
+
+  for (const workout of [...workouts].sort((a, b) => a.startedAt.localeCompare(b.startedAt))) {
+    if (workout.status !== "completed" || workout.id.startsWith("import-")) continue;
+
+    const series = seriesByFrameVersion(workout).get(version.id);
+    if (!series) continue;
+
+    const work = series.filter((item) => isWorkSeries(item));
+    const loads = work
+      .map((item) => (duration ? item.durationSec : getLoadKg(item.load)))
+      .filter((value): value is number => value !== undefined);
+
+    if (work.length === 0 || loads.length < work.length) continue;
+
+    const total = work.reduce((sum, item) => sum + (duration ? (item.durationSec ?? 0) : (item.reps ?? 0)), 0);
+    const load = version.progressionType === "assistance_decroissante" ? Math.max(...loads) : Math.min(...loads);
+
+    result.push({ workoutId: workout.id, date: workout.date, load, total });
+  }
+
+  return result;
+}
+
+/**
+ * « Stagnation à examiner » (décision 8, spec § 7) — dérivée : les trois
+ * dernières séances terminées sous la version, à la **même charge**,
+ * sans qu'aucune n'ait dépassé le total de répétitions de la première
+ * des trois, et sans jalon sur aucune des trois (une validation est un
+ * progrès). Rien n'est décidé ni modifié : l'écran montre les trois
+ * totaux et des pistes.
+ */
+export function detectStagnation(
+  version: StrengthFrameVersion,
+  workouts: ReadonlyArray<WorkoutSession>,
+  milestones: ReadonlyArray<StrengthMilestone>,
+): Stagnation | undefined {
+  const sessions = listVersionSessions(version, workouts);
+
+  if (sessions.length < 3) return undefined;
+
+  const [a, b, c] = sessions.slice(-3) as [StagnationSession, StagnationSession, StagnationSession];
+
+  if (a.load !== b.load || b.load !== c.load) return undefined;
+  if (b.total > a.total || c.total > a.total) return undefined;
+
+  const validated = new Set(
+    milestones.filter((milestone) => milestone.frameVersionId === version.id).map((milestone) => milestone.workoutId),
+  );
+  if ([a, b, c].some((session) => validated.has(session.workoutId))) return undefined;
+
+  return {
+    sessions: [a, b, c],
+    load: a.load,
+    unit: version.progressionType === "duree_croissante" ? "sec" : "kg",
+  };
 }
