@@ -46,12 +46,9 @@ export {
 
 export {
   getAllGoals,
-  getActiveGoals,
-  getAchievedGoals,
   getGoal,
+  getGoalByKey,
   saveGoal,
-  updateGoal,
-  deleteGoal,
 } from "./repositories/goalRepository";
 
 export {

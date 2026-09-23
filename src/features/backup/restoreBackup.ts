@@ -1,4 +1,5 @@
 import type Dexie from "dexie";
+import { REMOVED_IN_V3 } from "../../db/database";
 import { hashCanonical } from "./canonicalJson";
 import { BACKUP_FORMAT, BACKUP_FORMAT_VERSION, readStores, type BackupEnvelope } from "./exportBackup";
 
@@ -70,8 +71,16 @@ export interface RestoreResult {
 export async function restoreBackup(envelope: BackupEnvelope, database: Dexie): Promise<RestoreResult> {
   const tableNames = new Set(database.tables.map((table) => table.name));
 
-  for (const name of Object.keys(envelope.stores)) {
-    if (!tableNames.has(name)) {
+  for (const [name, records] of Object.entries(envelope.stores)) {
+    if (tableNames.has(name)) continue;
+    /* Store supprimé par la v3 (cardio, mobilité) : ignoré s'il est vide,
+       refusé sinon — cette version ne sait pas porter ses données. */
+    if (REMOVED_IN_V3.includes(name) && records.length > 0) {
+      throw new BackupValidationError(
+        `Le fichier contient des données (${name}) que cette version ne sait pas porter`,
+      );
+    }
+    if (!REMOVED_IN_V3.includes(name)) {
       throw new BackupValidationError(`Le store ${name} du fichier n'existe pas dans la base cible`);
     }
   }
@@ -92,7 +101,7 @@ export async function restoreBackup(envelope: BackupEnvelope, database: Dexie): 
     }
 
     for (const [name, records] of Object.entries(envelope.stores)) {
-      if (records.length > 0) {
+      if (records.length > 0 && tableNames.has(name)) {
         await database.table(name).bulkAdd(records as object[]);
       }
     }

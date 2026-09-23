@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 
 import Dexie from "dexie";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DATABASE_VERSION, db, STORE_NAMES } from "../../db/database";
+import { DATABASE_VERSION, db, STORE_NAMES, VERSION_2_STORES } from "../../db/database";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
 import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
 import { buildImportedWorkouts } from "../history/importedWorkouts";
@@ -56,36 +56,42 @@ afterEach(async () => {
   vi.restoreAllMocks();
 });
 
-describe("schéma de l'application (lot 1 intégré)", () => {
+describe("schéma de l'application (lot C : version 3)", () => {
   afterEach(async () => {
     db.close();
     await db.delete();
   });
 
-  it("la base déclarée par l'application est la version 2 avec ses dix-neuf stores, et la sauvegarde les couvre tous", async () => {
+  it("la base déclarée par l'application est la version 3 avec ses quinze stores, et la sauvegarde les couvre tous", async () => {
     await db.delete();
     await db.open();
 
     expect(db.verno).toBe(DATABASE_VERSION);
-    expect(DATABASE_VERSION).toBe(2);
+    expect(DATABASE_VERSION).toBe(3);
     expect(db.tables.map((table) => table.name).sort()).toEqual([...STORE_NAMES].sort());
-    expect(db.tables).toHaveLength(19);
+    expect(db.tables).toHaveLength(15);
 
     const envelope = await readBackup(db, context);
-    expect(envelope.database.version).toBe(2);
+    expect(envelope.database.version).toBe(3);
     expect(Object.keys(envelope.stores).sort()).toEqual([...STORE_NAMES].sort());
-    expect(Object.keys(envelope.counts)).toHaveLength(19);
+    expect(Object.keys(envelope.counts)).toHaveLength(15);
     for (const name of STORE_NAMES) expect(envelope.counts[name], name).toBe(0);
   });
 
-  it("la base de test v2 reflète exactement le schéma de production ; la base de test v1 est celle des sauvegardes existantes", async () => {
+  it("la base de test v3 reflète exactement le schéma de production ; les bases de test v2 et v1 sont celles des sauvegardes existantes", async () => {
     await db.delete();
     await db.open();
+    const v3 = createTestDatabase("coach-jm-test", 3);
+    opened.push(v3);
+    await v3.open();
+    expect(describeSchema(v3)).toEqual(describeSchema(db));
+    expect(v3.verno).toBe(3);
+
     const v2 = createTestDatabase("coach-jm-test", 2);
     opened.push(v2);
     await v2.open();
-    expect(describeSchema(v2)).toEqual(describeSchema(db));
     expect(v2.verno).toBe(2);
+    expect(Object.keys(describeSchema(v2)).sort()).toEqual(Object.keys(VERSION_2_STORES).sort());
 
     const v1 = openTest();
     await v1.open();

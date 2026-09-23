@@ -18,13 +18,13 @@ import { buildImportedWorkouts } from "../features/history/importedWorkouts";
 import { buildEstablishedDataset } from "../features/progression/fixtures/establishedDataset";
 import { isCountedWorkout, listCountedWorkouts } from "../features/progression/overview";
 import { resolvePeriod } from "../features/progression/period";
-import {
-  CoachJmDatabase,
-  DATABASE_VERSION,
-  STORE_NAMES,
-  VERSION_1_STORES,
-  db,
-} from "./database";
+import { DATABASE_VERSION, VERSION_1_STORES, VERSION_2_STORES, db } from "./database";
+import { CoachJmDatabaseV2 } from "../features/backup/testDatabase";
+
+/* Lot C : ce fichier garde la migration v1 → v2 des lots 1 à B, sur la
+   classe v2 figée ; la migration v2 → v3 est dans migrationV3.test.ts. */
+const V2_VERSION = 2;
+const STORE_NAMES = Object.keys(VERSION_2_STORES) as Array<keyof typeof VERSION_2_STORES>;
 
 /**
  * Migration v1 → v2 (conception technique v1.5, § 7 et § 9), sur des
@@ -75,8 +75,8 @@ async function createLegacy(populate: (legacy: LegacyDatabase) => Promise<void>)
   return name;
 }
 
-async function openCurrent(name: string): Promise<CoachJmDatabase> {
-  const current = new CoachJmDatabase(name);
+async function openCurrent(name: string): Promise<CoachJmDatabaseV2> {
+  const current = new CoachJmDatabaseV2(name);
   await current.open();
   return current;
 }
@@ -134,8 +134,7 @@ describe("schéma v2 — base vide (scénario 1)", () => {
   it("crée la version 2 avec les dix-neuf stores, tous vides", async () => {
     const current = await openCurrent(uniqueName());
 
-    expect(current.verno).toBe(DATABASE_VERSION);
-    expect(DATABASE_VERSION).toBe(2);
+    expect(current.verno).toBe(V2_VERSION);
     expect(current.tables.map((table) => table.name).sort()).toEqual([...STORE_NAMES].sort());
     expect(current.tables).toHaveLength(19);
     expect(LEGACY_STORES).toHaveLength(7);
@@ -380,7 +379,8 @@ describe("migration v1 → v2 — par les fonctions de l'application (instance g
     });
 
     await db.open();
-    expect(db.verno).toBe(2);
+    /* Lot C : l'instance de l'application migre désormais jusqu'à la v3. */
+    expect(db.verno).toBe(DATABASE_VERSION);
     expect(await db.workouts.count()).toBe(9);
 
     const result = await importSeptember2026History();
@@ -416,7 +416,7 @@ describe("migration v1 → v2 — par les fonctions de l'application (instance g
     });
 
     await db.open();
-    expect(db.verno).toBe(2);
+    expect(db.verno).toBe(DATABASE_VERSION);
     await seedExerciseCatalog();
 
     const squat = await db.exercises.get("squat");
