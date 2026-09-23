@@ -3,7 +3,7 @@ import "fake-indexeddb/auto";
 import { readFile } from "node:fs/promises";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
-import type { Exercise, WorkoutSession } from "../../domain";
+import type { Exercise } from "../../domain";
 import { checkClassification } from "../../domain/rules/exerciseRules";
 import { parseBackup, restoreBackup } from "../backup/restoreBackup";
 import { readStores } from "../backup/exportBackup";
@@ -99,7 +99,7 @@ describe("seed du lot 3 sur la sauvegarde réelle", () => {
     console.info("[seed réel]", { exercices: after.counts.exercises, enrichis: enriched, seances: after.counts.workouts });
   });
 
-  it.skipIf(!path)("lot 4A : le seed de l'échelle RPE ajoute une V1 et ne touche à rien d'autre", async () => {
+  it.skipIf(!path)("lot 4A : le seed de l'échelle RPE pose une V1 si elle manque, n'écrit rien sinon, et ne touche à rien d'autre", async () => {
     await db.delete();
     await db.open();
     const envelope = parseBackup(await readFile(path!, "utf8"));
@@ -114,20 +114,25 @@ describe("seed du lot 3 sur la sauvegarde réelle", () => {
       if (store === "rpeScaleVersions") continue;
       expect(canonicalStringify(after.stores[store]), store).toBe(canonicalStringify(before.stores[store]));
     }
-    expect(before.counts.rpeScaleVersions).toBe(0);
+    /* Indépendant de l'âge de la sauvegarde : un fichier antérieur au
+       lot 4A (20/09) n'a aucune échelle et reçoit la V1 ; un fichier
+       postérieur (22/09) en a déjà une et le seed n'écrit rien. */
+    const scalesBefore = before.stores.rpeScaleVersions as Array<{ id: string; number: number; status: string }>;
+    expect(before.counts.rpeScaleVersions ?? 0).toBeLessThanOrEqual(1);
     expect(after.counts.rpeScaleVersions).toBe(1);
+    if (scalesBefore.length === 0) {
+      expect(after.stores.rpeScaleVersions).toMatchObject([{ id: "rpe-scale-v1", number: 1, status: "active", startDate: "2026-09-22" }]);
+    } else {
+      expect(canonicalStringify(after.stores.rpeScaleVersions)).toBe(canonicalStringify(before.stores.rpeScaleVersions));
+    }
     expect(after.counts.workouts).toBe(before.counts.workouts);
 
-    /* Les séances existantes gardent leurs séries sans rôle ni drapeau. */
-    for (const workout of after.stores.workouts as WorkoutSession[]) {
-      expect(workout).not.toHaveProperty("rpeScaleVersionId");
-      for (const block of workout.blocks) {
-        if (block.kind !== "exercise") continue;
-        for (const series of block.series ?? []) {
-          expect(series).not.toHaveProperty("role");
-          expect(series).not.toHaveProperty("sideLimited");
-        }
-      }
-    }
+    /* Les séances du fichier sont relues à l'identique : le seed ne pose ni
+       échelle, ni rôle, ni drapeau sur une séance existante. */
+    expect(canonicalStringify(after.stores.workouts)).toBe(canonicalStringify(envelope.stores.workouts));
+
+    /* Idempotence : une seconde passe n'écrit plus rien, quel que soit l'état de départ. */
+    await seedRpeScale(new Date("2026-09-30T10:00:00.000Z"));
+    expect(canonicalStringify((await readStores(db)).stores)).toBe(canonicalStringify(after.stores));
   });
 });

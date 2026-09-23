@@ -75,7 +75,13 @@ describe("lot 4B sur la sauvegarde réelle", () => {
     /* Une séance libre : la version active est capturée à l'ajout, deux
        séries de travail au haut de plage sous la cible → validée. */
     const started = await startFreeWorkout("2026-09-22", "2026-09-22T17:00:00.000Z");
-    expect(started.rpeScaleVersionId).toBeUndefined(); /* le fichier n'a pas d'échelle : clé absente */
+    /* L'échelle capturée au démarrage est celle du fichier : aucune avant le
+       lot 4A (sauvegarde du 20/09, clé absente), la V1 active après (22/09). */
+    const activeScale = (initial.stores.rpeScaleVersions as Array<{ id: string; status: string }>).find(
+      (scale) => scale.status === "active",
+    );
+    if (activeScale) expect(started.rpeScaleVersionId).toBe(activeScale.id);
+    else expect(started).not.toHaveProperty("rpeScaleVersionId");
     const frames = await loadActiveFrameVersions();
     let w = addExerciseBlocks(started, [presse], "2026-09-22T17:01:00.000Z", () => "x", frames.versionIdByExercise);
     const block = w.blocks[0]!;
