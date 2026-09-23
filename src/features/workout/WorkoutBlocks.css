@@ -563,6 +563,13 @@
   box-shadow: 0 -4px 16px rgba(16, 24, 40, 0.08);
 }
 
+/* Plein écran (lot B) : collée au bas de l'écran, elle couvre elle-même la
+   zone de sécurité, au lieu de laisser voir le contenu dessous. */
+.app-shell--no-tabbar .rest-bar {
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 .rest-bar__track {
   height: 4px;
   background: var(--color-surface-soft, #f2f4f7);

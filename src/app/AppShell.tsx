@@ -1,47 +1,35 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { CalendarDays, Ellipsis, Sun, BarChart3 } from "lucide-react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { ResumeWatcher } from "../features/workout/ResumeWatcher";
-import { paths, ROUTES } from "./paths";
+import { activeTabFor, isTabBarHidden, TABS } from "./tabs";
 import "./AppShell.css";
-
-const tabs = [
-  { to: "/", label: "Aujourd'hui", icon: Sun },
-  { to: paths.planning(), label: "Programme", icon: CalendarDays },
-  { to: paths.progression(), label: "Progression", icon: BarChart3 },
-  { to: paths.plus(), label: "Plus", icon: Ellipsis },
-];
 
 export function AppShell() {
   const location = useLocation();
 
-  /* Flux modaux (§18) : bibliothèque en mode sélection, sélection de briques. */
-  const params = new URLSearchParams(location.search);
-  const selectionMode =
-    (location.pathname.startsWith("/exercises") && params.get("mode") === "select") ||
-    (location.pathname.startsWith(`${ROUTES.sessions}/`) && params.get("select") === "1");
+  /* Séance en cours en plein écran (D5) et flux modaux (§18) : pas de barre. */
+  const hidden = isTabBarHidden(location.pathname, location.search);
+  const active = activeTabFor(location.pathname);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${hidden ? " app-shell--no-tabbar" : ""}`}>
       <main className="app-content">
         <Outlet />
       </main>
 
       <ResumeWatcher />
 
-      {!selectionMode && (
+      {!hidden && (
         <nav className="tab-bar" aria-label="Navigation principale">
-          {tabs.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
+          {TABS.map(({ key, to, label, icon: Icon }) => (
+            <Link
+              key={key}
               to={to}
-              end={to === "/"}
-              className={({ isActive }) =>
-                `tab-bar__item ${isActive ? "tab-bar__item--active" : ""}`
-              }
+              aria-current={active === key ? "page" : undefined}
+              className={`tab-bar__item${active === key ? " tab-bar__item--active" : ""}`}
             >
-              <Icon size={22} strokeWidth={2} />
+              <Icon size={22} strokeWidth={2} aria-hidden="true" />
               <span>{label}</span>
-            </NavLink>
+            </Link>
           ))}
         </nav>
       )}
