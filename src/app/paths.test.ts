@@ -7,6 +7,22 @@ import { isUnder, paths, routeSegment, ROUTES } from "./paths";
  * pour tout ce que l'application y met (identifiants, dates, chemins).
  */
 describe("chemins de l'application", () => {
+  it("adresses du lot B (conception V2 § 2.1)", () => {
+    expect(ROUTES).toEqual({
+      home: "/",
+      planning: "/planning",
+      weeklyProgram: "/planning/programmation",
+      goals: "/objectifs",
+      sessions: "/seances",
+      workoutLive: "/seance-en-cours",
+      quickExercise: "/seance-en-cours/exercice-rapide",
+      progression: "/progression",
+      history: "/historique",
+      plus: "/plus",
+    });
+    expect(paths.goals()).toBe("/objectifs");
+  });
+
   it("rend les adresses des écrans", () => {
     expect(paths.home()).toBe("/");
     expect(paths.planning()).toBe(ROUTES.planning);

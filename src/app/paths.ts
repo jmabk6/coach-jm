@@ -10,15 +10,28 @@
 
 export const ROUTES = {
   home: "/",
-  planning: "/programme",
-  weeklyProgram: "/programme/programmation",
-  sessions: "/sessions",
-  workoutLive: "/seance",
-  quickExercise: "/seance/exercice-rapide",
+  planning: "/planning",
+  weeklyProgram: "/planning/programmation",
+  goals: "/objectifs",
+  sessions: "/seances",
+  workoutLive: "/seance-en-cours",
+  quickExercise: "/seance-en-cours/exercice-rapide",
   progression: "/progression",
   history: "/historique",
   plus: "/plus",
 } as const;
+
+/**
+ * Anciennes adresses (avant le lot B), redirigées de façon permanente :
+ * le préfixe est remplacé, le reste du chemin et la requête sont gardés
+ * (`/sessions/abc/blocks/b1?add=x` → `/seances/abc/blocks/b1?add=x`).
+ * Elles protègent les liens mémorisés et les `returnTo` déjà construits.
+ */
+export const LEGACY_PREFIXES: ReadonlyArray<{ from: string; to: string }> = [
+  { from: "/programme", to: ROUTES.planning },
+  { from: "/sessions", to: ROUTES.sessions },
+  { from: "/seance", to: ROUTES.workoutLive },
+];
 
 type Query = URLSearchParams | Record<string, string | undefined>;
 
@@ -43,6 +56,8 @@ export function routeSegment(path: string): string {
 
 export const paths = {
   home: () => ROUTES.home,
+
+  goals: () => ROUTES.goals,
 
   planning: (query?: { date?: string; view?: "mois"; month?: string }) => withQuery(ROUTES.planning, query),
   weeklyProgram: () => ROUTES.weeklyProgram,

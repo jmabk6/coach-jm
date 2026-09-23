@@ -1,6 +1,8 @@
 import { createHashRouter } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { ROUTES, routeSegment } from "./paths";
+import { legacyRedirectRoutes } from "./legacyRedirects";
+import { GoalsPlaceholderScreen } from "../features/goals/GoalsPlaceholderScreen";
 import { ExercisesScreen } from "../features/exercises/ExercisesScreen";
 import { ExerciseDetailScreen } from "../features/exercises/ExerciseDetailScreen";
 import { ExerciseCreateScreen } from "../features/exercises/ExerciseCreateScreen";
@@ -44,6 +46,7 @@ export const router = createHashRouter([
       { path: routeSegment(ROUTES.progression), element: <ProgressionScreen /> },
       { path: routeSegment(ROUTES.history), element: <HistoryScreen /> },
       { path: `${routeSegment(ROUTES.progression)}/cardio/:exerciseId`, element: <CardioDetailScreen /> },
+      { path: routeSegment(ROUTES.goals), element: <GoalsPlaceholderScreen /> },
       { path: routeSegment(ROUTES.plus), element: <PlusScreen /> },
       { path: routeSegment(ROUTES.sessions), element: <SessionsScreen /> },
       { path: `${routeSegment(ROUTES.sessions)}/new`, element: <SessionCreateScreen /> },
@@ -75,6 +78,7 @@ export const router = createHashRouter([
         path: "exercises/:exerciseId",
         element: <ExerciseDetailScreen />,
       },
+      ...legacyRedirectRoutes,
     ],
   },
 ]);
