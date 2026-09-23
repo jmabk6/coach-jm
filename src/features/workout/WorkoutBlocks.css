@@ -554,7 +554,8 @@
 .rest-bar {
   position: fixed;
   right: 0;
-  bottom: var(--tabbar-height, 72px);
+  /* Juste au-dessus de la barre d'onglets, qui inclut la zone de sécurité. */
+  bottom: calc(var(--tabbar-height, 72px) + env(safe-area-inset-bottom));
   left: 0;
   z-index: 5;
   border-top: 1px solid var(--color-border, #e4e7ec);

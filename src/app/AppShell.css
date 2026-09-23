@@ -14,21 +14,30 @@
     calc(var(--tabbar-height) + 24px + env(safe-area-inset-bottom));
 }
 
+/*
+ * Barre d'onglets : fixée au bas de la fenêtre visible, zone de sécurité
+ * comprise. Sur iOS Safari (PWA écran d'accueil), un élément `fixed`
+ * porteur d'un `transform` ou d'un `backdrop-filter` est composé dans sa
+ * propre couche et peut se décrocher du bas pendant le défilement
+ * (il « remonte » puis redescend). La barre est donc centrée par
+ * `left/right + margin auto`, sans transform, et son fond est opaque,
+ * sans flou.
+ */
 .tab-bar {
   position: fixed;
-  left: 50%;
+  right: 0;
   bottom: 0;
+  left: 0;
   z-index: 100;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  width: min(100%, var(--content-max-width));
+  width: 100%;
+  max-width: var(--content-max-width);
   min-height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  margin: 0 auto;
   border-top: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--color-surface);
   padding-bottom: env(safe-area-inset-bottom);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .tab-bar__item {
