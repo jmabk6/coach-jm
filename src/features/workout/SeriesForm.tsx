@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
-import type { Load, PerformedSeriesRole, PerformedSideValue, RpeScaleVersion } from "../../domain";
+import type { Load, LoadSemantics, PerformedSeriesRole, PerformedSideValue, RpeScaleVersion } from "../../domain";
+import { loadLabelOf } from "../../domain/rules/loadSemanticsRules";
 import {
   DEFAULT_SERIES_ROLE,
   formatRpeRowLabel,
@@ -44,6 +45,11 @@ interface SeriesFormProps {
    * côté, la série garde la tare et le total est affiché.
    */
   barWeightKg?: number | undefined;
+  /**
+   * Sens de la charge de l'exercice (lot a) : « Assistance » au lieu de
+   * « Charge » pour une assistance. La valeur saisie est la même.
+   */
+  loadSemantics?: LoadSemantics;
   submitLabel: string;
   onSubmit: (values: SeriesValues) => void;
   onCancel?: () => void;
@@ -77,6 +83,7 @@ export function SeriesForm({
   strengthFields = false,
   rpeTable,
   barWeightKg,
+  loadSemantics = "external",
   submitLabel,
   onSubmit,
   onCancel,
@@ -207,7 +214,7 @@ export function SeriesForm({
         {layout === "load_reps" && (
           <div className="series-form__load">
             <NumberField
-              label="Charge"
+              label={loadLabelOf(loadSemantics)}
               unit={loadKind === "per_side" ? "kg / côté" : "kg"}
               value={load}
               onChange={setLoad}

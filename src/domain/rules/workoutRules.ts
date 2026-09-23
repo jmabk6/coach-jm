@@ -1,6 +1,18 @@
-import type { Exercise, Id, MuscleZone, PerformedBlock, PerformedSeries, SessionBlock } from "../models";
+import type { Exercise, Id, LoadSemantics, MuscleZone, PerformedBlock, PerformedSeries, SessionBlock } from "../models";
+import { loadSemanticsOf } from "./loadSemanticsRules";
 
-export function calculateVolume(series: PerformedSeries[]): number {
+/**
+ * Volume (tonnage) d'une liste de séries **d'un même exercice**.
+ * Une assistance n'est pas une charge soulevée : sa contribution est
+ * nulle (lot a, 23/09/2026). Une liste qui mêle plusieurs exercices
+ * passe par `calculateBlocksVolume` (`workoutRecap.ts`).
+ */
+export function calculateVolume(
+  series: ReadonlyArray<PerformedSeries>,
+  semantics: LoadSemantics = "external",
+): number {
+  if (semantics === "assistance") return 0;
+
   return series.reduce((total, item) => {
     if (!item.load || item.reps === undefined) {
       return total;
@@ -209,7 +221,7 @@ export function calculateZonesSummary(
           continue;
         }
 
-        if (exercise.category === "Musculation") {
+        if (exercise.category === "Musculation" && loadSemanticsOf(exercise) === "external") {
           volumeByZone[exercise.zone] += loadKg * series.reps;
         }
       }
@@ -239,7 +251,7 @@ export function calculateZonesSummary(
             continue;
           }
 
-          if (exercise.category === "Musculation") {
+          if (exercise.category === "Musculation" && loadSemanticsOf(exercise) === "external") {
             volumeByZone[exercise.zone] += loadKg * child.reps;
           }
         }

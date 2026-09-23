@@ -124,12 +124,14 @@ export function WorkoutRecapScreen() {
 
       if (cancelled) return;
 
+      const exerciseById = new Map(exercises.map((exercise) => [exercise.id, exercise]));
+
       setState({
         status: "success",
         workout,
         template,
-        exerciseById: new Map(exercises.map((exercise) => [exercise.id, exercise])),
-        volumeComparison: compareVolumeToPrevious(workout, completed),
+        exerciseById,
+        volumeComparison: compareVolumeToPrevious(workout, completed, exerciseById),
         frameOutcomes: frameOutcomesOf(workout, frames.versionById),
         versionById: frames.versionById,
       });
@@ -160,7 +162,7 @@ export function WorkoutRecapScreen() {
   }
 
   const { workout, template, exerciseById, volumeComparison, frameOutcomes, versionById } = state;
-  const head = summarizeWorkout(workout, template);
+  const head = summarizeWorkout(workout, template, exerciseById);
   /* `dont 4 comptées · 2 éch.` : rien quand toutes les séries comptent (v1.6). */
   const rolesLine = formatSeriesRoleSummary(head.roles);
   const { planned, added } = splitRecapLines(

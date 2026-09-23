@@ -12,6 +12,7 @@ import type {
   WorkoutSession,
 } from "../models";
 import { getLoadKg } from "./workoutRules";
+import { isAssistanceExercise } from "./loadSemanticsRules";
 
 /**
  * Règles pures du module Musculation (conception v1.6, § 4) : l'échelle
@@ -290,10 +291,17 @@ export const strengthArchiveReasonLabels: Record<StrengthArchiveReason, string> 
  * pour un exercice en durée. Les autres mesures n'ont pas de cadre en V1.
  */
 export function frameTypesFor(
-  exercise: Pick<Exercise, "category" | "measurementType">,
+  exercise: Pick<Exercise, "category" | "measurementType" | "loadSemantics">,
 ): StrengthProgressionType[] {
   if (exercise.category !== "Musculation") return [];
-  if (exercise.measurementType === "load_reps") return ["charge_croissante", "assistance_decroissante"];
+  /* Lot a : un exercice en assistance ne se cadre qu'en assistance
+     décroissante — le sens vient de l'exercice, le cadre ne l'inverse pas
+     une seconde fois. Un exercice `external` garde les deux choix. */
+  if (exercise.measurementType === "load_reps") {
+    return isAssistanceExercise(exercise)
+      ? ["assistance_decroissante"]
+      : ["charge_croissante", "assistance_decroissante"];
+  }
   if (exercise.measurementType === "duration") return ["duree_croissante"];
 
   return [];

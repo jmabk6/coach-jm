@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Info } from "lucide-react";
 import type { Exercise, WorkoutSession } from "../../domain";
+import { bestLoadMetricLabelOf, isAssistanceExercise } from "../../domain/rules/loadSemanticsRules";
 import type { Period } from "./period";
 import { formatMetricValue } from "./progressionFormat";
 import { TrendSparkline } from "./TrendSparkline";
@@ -45,6 +46,13 @@ function Dots({ count, required }: { count: number; required: number }) {
   );
 }
 
+/** « Assistance min · » devant la valeur d'un exercice en assistance (lot a). */
+function valuePrefix(metric: TrendMetric, exercise: Exercise): string {
+  return metric === "chargeMax" && isAssistanceExercise(exercise)
+    ? `${bestLoadMetricLabelOf("assistance")} · `
+    : "";
+}
+
 function WithoutTrendRow({ item, from }: { item: ExerciseWithoutTrend; from: string }) {
   return (
     <li>
@@ -59,7 +67,9 @@ function WithoutTrendRow({ item, from }: { item: ExerciseWithoutTrend; from: str
           {item.lastValue !== undefined && item.lastDate ? (
             <>
               <strong>{formatMetricValue(item.metric, item.lastValue)}</strong>
-              <small>dernière valeur · le {formatShortDay(item.lastDate)}</small>
+              <small>
+                {valuePrefix(item.metric, item.exercise)}dernière valeur · le {formatShortDay(item.lastDate)}
+              </small>
             </>
           ) : (
             <small>aucune valeur calculable</small>
@@ -89,7 +99,9 @@ function TrendRow({ trend, from }: { trend: ExerciseTrend; from: string }) {
         </span>
         <span className="trend-row__value">
           <strong>{formatMetricValue(trend.metric, trend.lastValue)}</strong>
-          <small>dernière · le {formatShortDay(trend.lastDate)}</small>
+          <small>
+            {valuePrefix(trend.metric, trend.exercise)}dernière · le {formatShortDay(trend.lastDate)}
+          </small>
         </span>
         <span className="trend-row__side">
           <TrendSparkline

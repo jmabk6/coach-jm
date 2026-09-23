@@ -11,6 +11,7 @@ import type {
   StrengthFrameVersion,
 } from "../../domain";
 import { formatFrameVersionSummary } from "../../domain/rules/strengthRules";
+import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import type {
   SeriesValues,
   SimpleMeasurementValues,
@@ -198,7 +199,7 @@ export function ExerciseBlockCard({
       {expanded && !skipped && block.series && (
         <div className="wblock__content">
           {restCard}
-          <ReferenceBlock block={block} lastTime={lastTime} frameVersion={frameVersion} />
+          <ReferenceBlock block={block} exercise={exercise} lastTime={lastTime} frameVersion={frameVersion} />
 
           <ol className="wseries">
             {[...block.series]
@@ -354,10 +355,12 @@ function performedOrSkipped(block: PerformedExerciseBlock): boolean {
 
 function ReferenceBlock({
   block,
+  exercise,
   lastTime,
   frameVersion,
 }: {
   block: PerformedExerciseBlock;
+  exercise: Exercise | undefined;
   lastTime: LastPerformance | undefined;
   frameVersion: StrengthFrameVersion | undefined;
 }) {
@@ -406,7 +409,7 @@ function ReferenceBlock({
       {suggestion && (
         <div>
           <dt>Conseillé</dt>
-          <dd>{formatLoadSuggestion(suggestion)}</dd>
+          <dd>{formatLoadSuggestion(suggestion, loadSemanticsOf(exercise))}</dd>
         </div>
       )}
     </dl>
@@ -488,6 +491,7 @@ function SeriesRow({
               strengthFields={strengthFields}
               rpeTable={rpeTable}
               barWeightKg={barWeightKg}
+              loadSemantics={loadSemanticsOf(exercise)}
               submitLabel="Enregistrer"
               onSubmit={onSaveEdit}
               onCancel={onCancelEdit}
@@ -517,6 +521,7 @@ function SeriesRow({
             strengthFields={strengthFields}
             rpeTable={rpeTable}
             barWeightKg={barWeightKg}
+            loadSemantics={loadSemanticsOf(exercise)}
             submitLabel={`Valider la série ${index + 1}`}
             onSubmit={onValidate}
             busy={busy}

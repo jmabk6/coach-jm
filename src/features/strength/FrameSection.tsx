@@ -298,7 +298,13 @@ export function FrameSection({ exercise, completedWorkouts }: FrameSectionProps)
           )}
         </article>
         <article className="exercise-detail__performance-card">
-          <small>{unit === "sec" ? "Durée en cours" : "Charge en cours"}</small>
+          <small>
+            {unit === "sec"
+              ? "Durée en cours"
+              : current.progressionType === "assistance_decroissante"
+                ? "Assistance en cours"
+                : "Charge en cours"}
+          </small>
           {currentLoad ? (
             <>
               <strong>{formatStrengthValue(currentLoad.value, currentLoad.unit)}</strong>

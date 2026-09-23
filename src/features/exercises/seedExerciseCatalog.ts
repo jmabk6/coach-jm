@@ -17,6 +17,8 @@ import { exerciseCatalog } from "./exerciseCatalog";
  *   conception v1.5 § 8.2) suit la même règle : **complétée seulement si
  *   absente en base**, jamais écrasée, jamais posée sur un exercice hors
  *   catalogue ; `updatedAt` n'est pas modifié ;
+ * - le sens de la charge (`loadSemantics`, lot a) suit la même règle :
+ *   complété seulement s'il est absent en base, jamais écrasé ;
  * - une classification invalide trouvée en base est signalée dans la
  *   console et laissée en l'état (§ 8.2) ;
  * - les médias officiels (vignette, photo) suivent toujours le catalogue :
@@ -104,6 +106,9 @@ export async function seedExerciseCatalog(): Promise<void> {
     const familyMissing =
       existing.movementFamily === undefined &&
       exercise.movementFamily !== undefined;
+    const semanticsMissing =
+      existing.loadSemantics === undefined &&
+      exercise.loadSemantics !== undefined;
 
     const needsCatalogUpgrade =
       (existing.technique === undefined &&
@@ -116,6 +121,7 @@ export async function seedExerciseCatalog(): Promise<void> {
         exercise.muscles !== undefined) ||
       groupMissing ||
       familyMissing ||
+      semanticsMissing ||
       mediaOutdated;
 
     if (!needsCatalogUpgrade) {
@@ -160,6 +166,7 @@ export async function seedExerciseCatalog(): Promise<void> {
          fortiori une modification personnelle — n'est jamais touchée. */
       ...(groupMissing ? { progressionGroup: exercise.progressionGroup } : {}),
       ...(familyMissing ? { movementFamily: exercise.movementFamily } : {}),
+      ...(semanticsMissing ? { loadSemantics: exercise.loadSemantics } : {}),
 
       ...(mediaOutdated && officialMedia !== undefined
         ? {

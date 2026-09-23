@@ -1,4 +1,4 @@
-import type { Load, NumberRange, PerformedSeries, StrengthFrameVersion, TargetRpe } from "../../domain";
+import type { Load, LoadSemantics, NumberRange, PerformedSeries, StrengthFrameVersion, TargetRpe } from "../../domain";
 import { formatFrameGoal, formatStrengthValue, loadToWork, type LoadToWork } from "../../domain/rules/strengthRules";
 import {
   calculateSuggestedLoad,
@@ -49,11 +49,30 @@ const ACTION_LABELS: Record<SuggestedLoadAction, string> = {
 };
 
 /**
+ * Assistance (lot a) : l'action décrit la difficulté — progresser, c'est
+ * **retirer** de l'assistance ; alléger, c'est en **ajouter**. « Réduction
+ * à envisager » serait lu à contresens.
+ */
+const ASSISTANCE_ACTION_LABELS: Record<SuggestedLoadAction, string> = {
+  increase: "moins d'assistance envisageable",
+  maintain: "maintien",
+  decrease: "plus d'assistance à envisager",
+};
+
+/**
  * `40 kg · progression envisageable`, `40 kg · maintien`,
  * `40 kg · réduction à envisager` — la référence et une indication,
- * pas une consigne chiffrée.
+ * pas une consigne chiffrée. Pour une assistance :
+ * `49 kg d'assistance · moins d'assistance envisageable`.
  */
-export function formatLoadSuggestion(suggestion: LoadSuggestion): string {
+export function formatLoadSuggestion(
+  suggestion: LoadSuggestion,
+  semantics: LoadSemantics = "external",
+): string {
+  if (semantics === "assistance") {
+    return `${formatLoad(suggestion.referenceLoad)} d'assistance · ${ASSISTANCE_ACTION_LABELS[suggestion.action]}`;
+  }
+
   return `${formatLoad(suggestion.referenceLoad)} · ${ACTION_LABELS[suggestion.action]}`;
 }
 

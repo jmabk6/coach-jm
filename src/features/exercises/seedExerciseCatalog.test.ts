@@ -287,4 +287,56 @@ describe("seedExerciseCatalog", () => {
     expect(archiveExercise).toHaveBeenCalledWith("ancien-exercice");
     expect(saveExercise).not.toHaveBeenCalled();
   });
+
+  it("sens de la charge (lot a) : complété sur la traction et les dips si absent, rien d'autre ne change", async () => {
+    const legacy = (id: string): Exercise => {
+      const copy: Exercise = {
+        ...exerciseCatalog.find((exercise) => exercise.id === id)!,
+        updatedAt: "2026-09-15T00:00:00.000Z",
+        technique: "Ma technique personnelle",
+      };
+      delete copy.loadSemantics;
+      return copy;
+    };
+
+    getExercise.mockImplementation(async (id: string) =>
+      id === "traction-assistee" || id === "dips-assistes"
+        ? legacy(id)
+        : exerciseCatalog.find((exercise) => exercise.id === id),
+    );
+
+    await seedExerciseCatalog();
+
+    expect(saveExercise).toHaveBeenCalledTimes(2);
+    for (const id of ["traction-assistee", "dips-assistes"]) {
+      const saved = saveExercise.mock.calls.find(([e]) => e.id === id)![0] as Exercise;
+      expect(saved).toEqual({ ...legacy(id), loadSemantics: "assistance" });
+    }
+  });
+
+  it("sens de la charge (lot a) : une valeur déjà présente n'est jamais écrasée", async () => {
+    const personal: Exercise = {
+      ...exerciseCatalog.find((exercise) => exercise.id === "traction-assistee")!,
+      loadSemantics: "external",
+    };
+
+    getExercise.mockImplementation(async (id: string) =>
+      id === "traction-assistee" ? personal : exerciseCatalog.find((exercise) => exercise.id === id),
+    );
+
+    await seedExerciseCatalog();
+
+    expect(saveExercise).not.toHaveBeenCalled();
+  });
+
+  it("sens de la charge (lot a) : rien n'est posé sur un exercice qui ne l'a pas au catalogue", async () => {
+    const squat = exerciseCatalog.find((exercise) => exercise.id === "squat")!;
+    expect(squat.loadSemantics).toBeUndefined();
+
+    getExercise.mockImplementation(async (id: string) => exerciseCatalog.find((exercise) => exercise.id === id));
+
+    await seedExerciseCatalog();
+
+    expect(saveExercise).not.toHaveBeenCalled();
+  });
 });

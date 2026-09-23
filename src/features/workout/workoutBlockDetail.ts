@@ -2,6 +2,7 @@ import { formatDurationShort, formatRange } from "../../domain/rules/blockInstru
 import type {
   Exercise,
   Id,
+  LoadSemantics,
   PerformedBlock,
   PerformedExerciseBlock,
   PerformedSeries,
@@ -10,6 +11,7 @@ import type {
 } from "../../domain";
 import { summarizeSeriesRoles, type SeriesRoleSummary } from "../../domain/rules/strengthRules";
 import { calculateVolume, getLoadKg } from "../../domain/rules/workoutRules";
+import { compareAssistedSeries, loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { summarizeRests } from "./engine/workoutTime";
 import { listSeriesByExercise } from "./lastPerformance";
 import { formatPlannedLine } from "./workoutDisplay";
@@ -52,9 +54,29 @@ export interface ExerciseHistoryEntry {
 /**
  * La meilleure série : la charge × reps la plus haute, sinon le plus de
  * reps, sinon la plus longue, sinon la dernière.
+ *
+ * Assistance (lot a) : l'assistance la plus **basse**, à égalité le plus
+ * de répétitions — 49 × 10 > 49 × 6 > 56 × 10. Les séries sans charge ou
+ * sans répétitions ne passent qu'à défaut, par la règle générale.
  */
-export function pickBestSeries(series: PerformedSeries[]): PerformedSeries | undefined {
+export function pickBestSeries(
+  series: PerformedSeries[],
+  semantics: LoadSemantics = "external",
+): PerformedSeries | undefined {
   if (series.length === 0) return undefined;
+
+  if (semantics === "assistance") {
+    const assisted = series.flatMap((item) => {
+      const kg = item.load ? getLoadKg(item.load) : undefined;
+      return kg !== undefined && item.reps !== undefined ? [{ item, kg, reps: item.reps }] : [];
+    });
+
+    if (assisted.length > 0) {
+      return assisted.reduce((best, candidate) =>
+        compareAssistedSeries(candidate, best) < 0 ? candidate : best,
+      ).item;
+    }
+  }
 
   const score = (item: PerformedSeries): number => {
     const kg = item.load ? getLoadKg(item.load) : undefined;
@@ -102,8 +124,9 @@ function describeWorkoutForExercise(
   const series = listSeriesByExercise(workout).get(exerciseId) ?? [];
 
   if (series.length > 0) {
-    const best = pickBestSeries(series)!;
-    const volume = calculateVolume(series);
+    const semantics = loadSemanticsOf(exercise);
+    const best = pickBestSeries(series, semantics)!;
+    const volume = calculateVolume(series, semantics);
     const ownBlocks = workout.blocks.filter(
       (block): block is PerformedExerciseBlock =>
         block.kind === "exercise" && block.exerciseId === exerciseId && block.status === "performed",
@@ -381,7 +404,7 @@ export function summarizeExerciseBlock(
   if (!block.series || block.series.length === 0) return { kind: "none" };
 
   const done = block.series.filter((item) => item.status === "completed");
-  const volumeKg = calculateVolume(done);
+  const volumeKg = calculateVolume(done, loadSemanticsOf(exercise));
   const target =
     instructions.shape === "reps" || instructions.shape === "duration" ? instructions.targetRpe : undefined;
   const plannedRest =

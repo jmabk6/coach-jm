@@ -1,7 +1,9 @@
 import { getLoadKg } from "../../domain/rules/workoutRules";
+import { compareAssistedSeries, loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import type {
   Exercise,
   Load,
+  LoadSemantics,
   PerformedGroupRoundChild,
   WorkoutSession,
 } from "../../domain";
@@ -13,7 +15,17 @@ export interface ExercisePerformanceEntry {
 
   series: PerformedSeriesLike[];
 
+  /**
+   * Meilleure charge du jour : la plus haute pour une charge, la plus
+   * **basse** pour une assistance (lot a) — métrique `chargeMax`,
+   * affichée « Assistance min » dans ce cas.
+   */
   chargeMaxKg?: number;
+  /**
+   * Assistance seulement : le plus de répétitions faites à la meilleure
+   * assistance du jour — départage deux jours à la même assistance.
+   */
+  repsAtBestLoad?: number;
   volumeKg?: number;
   repsMax?: number;
   durationMaxSec?: number;
@@ -207,7 +219,12 @@ function groupChildToSeriesLike(
 function calculatePerformanceEntry(
   workout: WorkoutSession,
   series: PerformedSeriesLike[],
+  semantics: LoadSemantics,
 ): ExercisePerformanceEntry {
+  if (semantics === "assistance") {
+    return calculateAssistedEntry(workout, series);
+  }
+
   const loads = series
     .map((item) => getComparableLoadKg(item.load))
     .filter((value): value is number => value !== undefined);
@@ -262,10 +279,61 @@ function calculatePerformanceEntry(
   };
 }
 
+/**
+ * Assistance (lot a) : la meilleure valeur est l'assistance la plus
+ * basse (à égalité, le plus de répétitions) ; aucun volume — un
+ * contrepoids n'est pas une charge soulevée. Répétitions et durée
+ * suivent la règle générale.
+ */
+function calculateAssistedEntry(
+  workout: WorkoutSession,
+  series: PerformedSeriesLike[],
+): ExercisePerformanceEntry {
+  const assisted = series.flatMap((item) => {
+    const kg = getComparableLoadKg(item.load);
+    const reps = getSeriesReps(item);
+    return kg !== undefined && reps !== undefined ? [{ kg, reps }] : [];
+  });
+  const best = assisted.length > 0
+    ? assisted.reduce((current, candidate) =>
+        compareAssistedSeries(candidate, current) < 0 ? candidate : current,
+      )
+    : undefined;
+  const loads = series
+    .map((item) => getComparableLoadKg(item.load))
+    .filter((value): value is number => value !== undefined);
+  const reps = series
+    .map(getSeriesReps)
+    .filter((value): value is number => value !== undefined);
+  const durations = series
+    .map(getSeriesDurationSec)
+    .filter((value): value is number => value !== undefined);
+
+  return {
+    workoutId: workout.id,
+    date: workout.date,
+    startedAt: workout.startedAt,
+    series,
+    ...(best
+      ? { chargeMaxKg: best.kg, repsAtBestLoad: best.reps }
+      : loads.length > 0
+        ? { chargeMaxKg: Math.min(...loads) }
+        : {}),
+    ...(reps.length > 0
+      ? { repsMax: Math.max(...reps) }
+      : {}),
+    ...(durations.length > 0
+      ? { durationMaxSec: Math.max(...durations) }
+      : {}),
+  };
+}
+
 export function buildExercisePerformanceHistory(
   exercise: Exercise,
   workouts: WorkoutSession[],
 ): ExercisePerformanceEntry[] {
+  const semantics = loadSemanticsOf(exercise);
+
   return workouts
     .filter((workout) => workout.status === "completed")
     .map((workout) => ({
@@ -284,7 +352,7 @@ export function buildExercisePerformanceHistory(
         series.length > 0 || distanceCm !== undefined,
     )
     .map(({ workout, series, distanceCm }) => ({
-      ...calculatePerformanceEntry(workout, series),
+      ...calculatePerformanceEntry(workout, series, semantics),
       ...(distanceCm !== undefined
         ? { distanceCm }
         : {}),
@@ -318,7 +386,10 @@ export function getCompatiblePerformanceMetrics(
 ): ExercisePerformanceMetric[] {
   switch (exercise.measurementType) {
     case "load_reps":
-      return ["chargeMax", "volume", "reps"];
+      /* Une assistance n'a pas de volume (lot a). */
+      return loadSemanticsOf(exercise) === "assistance"
+        ? ["chargeMax", "reps"]
+        : ["chargeMax", "volume", "reps"];
 
     case "reps":
     case "reps_per_side":
@@ -365,10 +436,27 @@ export function getPerformanceMetricValue(
   }
 }
 
+/**
+ * Sens d'une métrique : plus bas = mieux pour une distance en cm (tests
+ * de mobilité) et pour la meilleure assistance (lot a) ; plus haut = mieux
+ * partout ailleurs.
+ */
+export function isLowerBetterMetric(
+  metric: ExercisePerformanceMetric,
+  semantics: LoadSemantics = "external",
+): boolean {
+  return metric === "distanceCm" || (metric === "chargeMax" && semantics === "assistance");
+}
+
 export function buildExercisePerformanceSummary(
   history: ExercisePerformanceEntry[],
   metric: ExercisePerformanceMetric,
+  semantics: LoadSemantics = "external",
 ): ExercisePerformanceSummary | undefined {
+  const lowerIsBetter = isLowerBetterMetric(metric, semantics);
+  /* Assistance : à égalité, le plus de répétitions à cette assistance. */
+  const tieBreak = metric === "chargeMax" && semantics === "assistance";
+
   const comparable = history
     .map((entry) => ({
       entry,
@@ -401,8 +489,11 @@ export function buildExercisePerformanceSummary(
 
   const best = comparable.reduce((currentBest, item) => {
     const isBetter =
-      metric === "distanceCm"
-        ? item.value < currentBest.value
+      lowerIsBetter
+        ? item.value < currentBest.value ||
+          (tieBreak &&
+            item.value === currentBest.value &&
+            (item.entry.repsAtBestLoad ?? 0) > (currentBest.entry.repsAtBestLoad ?? 0))
         : item.value > currentBest.value;
 
     return isBetter ? item : currentBest;
@@ -410,7 +501,7 @@ export function buildExercisePerformanceSummary(
 
   const progressionPercent =
     first.value !== 0
-      ? metric === "distanceCm"
+      ? lowerIsBetter
         ? ((first.value - latest.value) / Math.abs(first.value)) * 100
         : ((latest.value - first.value) / first.value) * 100
       : undefined;

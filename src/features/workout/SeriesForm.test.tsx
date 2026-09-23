@@ -124,4 +124,15 @@ describe("SeriesForm — rôle, drapeau et aide RPE (lot 4A)", () => {
 
     expect((screen.getByLabelText("Limitée par un côté") as HTMLInputElement).checked).toBe(true);
   });
+
+  it("exercice en assistance (lot a) : le champ s'appelle Assistance, la valeur saisie ne change pas de forme", () => {
+    const onSubmit = vi.fn<(values: SeriesValues) => void>();
+    render(<SeriesForm layout="load_reps" initial={{}} loadSemantics="assistance" submitLabel="Valider" onSubmit={onSubmit} />);
+
+    expect(screen.queryByLabelText("Charge")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Assistance"), { target: { value: "49" } });
+    typeReps("10");
+    fireEvent.click(screen.getByRole("button", { name: "Valider" }));
+    expect(onSubmit).toHaveBeenLastCalledWith({ load: { kind: "total", kg: 49 }, reps: 10 });
+  });
 });

@@ -23,6 +23,7 @@ import {
   type SeriesRoleSummary,
 } from "../../domain/rules/strengthRules";
 import { calculateVolume, getLoadKg } from "../../domain/rules/workoutRules";
+import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { estimateSessionTemplateDurationSec } from "../../domain/rules/sessionTemplateRules";
 import { formatBlockCompletion, summarizeBlockCompletion } from "./engine/workoutBlocks";
 import { findSubstitutionRound } from "./engine/workoutEngine";
@@ -349,6 +350,43 @@ export function listCompletedRoundChildren(blocks: PerformedBlock[]): PerformedS
 }
 
 /**
+ * Volume (tonnage) de briques qui mêlent plusieurs exercices, sur le
+ * périmètre de `listCompletedSeries` + `listCompletedRoundChildren` :
+ * chaque série compte selon le sens de charge de l'exercice réellement
+ * effectué (brique, ou enfant de tour pour un groupe) — une assistance
+ * vaut 0 (lot a). Exercice absent de `exerciseById` = `external`.
+ */
+export function calculateBlocksVolume(
+  blocks: PerformedBlock[],
+  exerciseById?: ReadonlyMap<Id, Exercise>,
+): number {
+  let total = 0;
+
+  for (const block of blocks) {
+    if (block.kind === "exercise") {
+      total += calculateVolume(
+        listCompletedSeries([block]),
+        loadSemanticsOf(exerciseById?.get(block.exerciseId)),
+      );
+      continue;
+    }
+
+    if (block.kind !== "group") continue;
+
+    for (const round of block.rounds) {
+      for (const child of round.children) {
+        total += calculateVolume(
+          listCompletedRoundChildren([{ ...block, rounds: [{ ...round, children: [child] }] }]),
+          loadSemanticsOf(exerciseById?.get(child.exerciseId)),
+        );
+      }
+    }
+  }
+
+  return total;
+}
+
+/**
  * Séries attendues d'une réalisation : séries des exercices et tours ×
  * enfants des groupes, briques sautées exclues (elles sortent du
  * dénominateur, §11).
@@ -373,6 +411,7 @@ export function countPlannedSeries(blocks: PerformedBlock[]): number {
 export function summarizeWorkout(
   workout: WorkoutSession,
   template?: SessionTemplate,
+  exerciseById?: ReadonlyMap<Id, Exercise>,
 ): WorkoutRecapHead {
   const series = [...listCompletedSeries(workout.blocks), ...listCompletedRoundChildren(workout.blocks)];
   const steps = listCompletedSteps(workout.blocks);
@@ -411,7 +450,7 @@ export function summarizeWorkout(
       : {}),
     startedAt: workout.startedAt,
     ...(workout.completedAt ? { completedAt: workout.completedAt } : {}),
-    volumeKg: calculateVolume(series),
+    volumeKg: calculateBlocksVolume(workout.blocks, exerciseById),
     seriesDone: series.length,
     seriesPlanned: countPlannedSeries(workout.blocks),
     roles: summarizeSeriesRoles(series),
@@ -483,6 +522,7 @@ export interface VolumeComparison {
 export function compareVolumeToPrevious(
   workout: WorkoutSession,
   completedWorkouts: WorkoutSession[],
+  exerciseById?: ReadonlyMap<Id, Exercise>,
 ): VolumeComparison | undefined {
   if (!workout.sessionTemplateId || !isVolumePerimeterIntact(workout)) return undefined;
 
@@ -498,14 +538,8 @@ export function compareVolumeToPrevious(
 
   if (!previous || !isVolumePerimeterIntact(previous)) return undefined;
 
-  const previousVolumeKg = calculateVolume([
-    ...listCompletedSeries(previous.blocks),
-    ...listCompletedRoundChildren(previous.blocks),
-  ]);
-  const volumeKg = calculateVolume([
-    ...listCompletedSeries(workout.blocks),
-    ...listCompletedRoundChildren(workout.blocks),
-  ]);
+  const previousVolumeKg = calculateBlocksVolume(previous.blocks, exerciseById);
+  const volumeKg = calculateBlocksVolume(workout.blocks, exerciseById);
 
   if (previousVolumeKg <= 0) return undefined;
 
@@ -663,7 +697,7 @@ export function buildWorkoutRecapLines(
       const rounds = block.rounds.filter((round) => round.status === "completed");
       const roundSeries = listCompletedRoundChildren([block]);
       const groupRpes = roundSeries.map((item) => item.rpe).filter((v): v is number => v !== undefined);
-      const groupVolume = calculateVolume(roundSeries);
+      const groupVolume = calculateBlocksVolume([block], exerciseById);
       const substituted = block.children.filter(
         (child) => findSubstitutionRound(block, child.id) !== undefined,
       ).length;
@@ -726,7 +760,7 @@ export function buildWorkoutRecapLines(
       };
     }
 
-    const volume = calculateVolume(series);
+    const volume = calculateVolume(series, loadSemanticsOf(exercise));
     const hasLoad = series.some((item) => item.load && getLoadKg(item.load) !== undefined);
 
     return {

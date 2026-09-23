@@ -21,6 +21,7 @@ import {
 } from "../../db/repositories/exerciseRepository";
 import { getCompletedWorkouts } from "../../db/repositories/workoutRepository";
 import { formatClassification } from "../../domain/rules/exerciseRules";
+import { bestLoadMetricLabelOf, loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import {
   buildExercisePerformanceHistory,
   buildExercisePerformanceSummary,
@@ -57,6 +58,13 @@ const metricLabels: Record<
   durationMax: "Durée max",
   distanceCm: "Distance",
 };
+
+/** « Assistance min » au lieu de « Charge max » pour une assistance (lot a). */
+function metricLabelFor(metric: ExercisePerformanceMetric, exercise: Exercise): string {
+  return metric === "chargeMax"
+    ? bestLoadMetricLabelOf(loadSemanticsOf(exercise))
+    : metricLabels[metric];
+}
 
 function formatMetricValue(
   value: number,
@@ -235,6 +243,7 @@ export function ExerciseDetailScreen() {
     return buildExercisePerformanceSummary(
       state.performanceHistory,
       selectedMetric,
+      loadSemanticsOf(state.exercise),
     );
   }, [state, selectedMetric]);
 
@@ -402,7 +411,7 @@ export function ExerciseDetailScreen() {
                       key={metric}
                       value={metric}
                     >
-                      {metricLabels[metric]}
+                      {metricLabelFor(metric, exercise)}
                     </option>
                   ))}
                 </select>
@@ -435,6 +444,10 @@ export function ExerciseDetailScreen() {
                   performanceSummary.bestValue,
                   performanceSummary.metric,
                 )}
+                {/* Assistance : la meilleure série se lit assistance × reps (lot a). */}
+                {performanceSummary.metric === "chargeMax" &&
+                  performanceSummary.bestEntry.repsAtBestLoad !== undefined &&
+                  ` × ${performanceSummary.bestEntry.repsAtBestLoad}`}
               </strong>
 
               <span>
@@ -510,7 +523,7 @@ export function ExerciseDetailScreen() {
                           Number(value),
                           selectedMetric,
                         ),
-                        metricLabels[selectedMetric],
+                        metricLabelFor(selectedMetric, exercise),
                       ]}
                     />
 

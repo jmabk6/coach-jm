@@ -147,7 +147,7 @@ export function WorkoutBlockDetailScreen() {
         history,
         groupVolumeVsLast:
           line.block.kind === "group"
-            ? compareGroupVolumeToPrevious(workout, line.block, completed)
+            ? compareGroupVolumeToPrevious(workout, line.block, completed, exerciseById)
             : undefined,
         neighbours: findBlockNeighbours(lines.map((item) => item.block), blockId),
       });
@@ -730,7 +730,7 @@ function GroupDetail({
   exerciseById: Map<Id, Exercise>;
   volumeVsLast: GroupVolumeVsLast | undefined;
 }) {
-  const summary = summarizeGroupBlock(block, volumeVsLast);
+  const summary = summarizeGroupBlock(block, volumeVsLast, exerciseById);
   const structure = describeGroupStructure(block, blockNumber);
   const substitutions = listGroupSubstitutions(block);
   const rounds = describeGroupRounds(block);

@@ -63,12 +63,19 @@ describe("seed du lot 3 sur la sauvegarde réelle", () => {
       const strippedAfter: Partial<Exercise> = { ...exercise };
       delete strippedAfter.progressionGroup;
       delete strippedAfter.movementFamily;
+      delete strippedAfter.loadSemantics;
       const strippedBefore: Partial<Exercise> = { ...previous };
       delete strippedBefore.progressionGroup;
       delete strippedBefore.movementFamily;
+      delete strippedBefore.loadSemantics;
 
-      /* Seuls les deux champs peuvent différer ; updatedAt et createdAt sont intacts. */
+      /* Seuls les deux champs de classification — et, depuis le lot a, le
+         sens de la charge — peuvent différer ; updatedAt et createdAt sont intacts. */
       expect(strippedAfter, exercise.id).toEqual(strippedBefore);
+      expect(exercise.loadSemantics, exercise.id).toBe(
+        previous.loadSemantics ??
+          (exercise.id === "traction-assistee" || exercise.id === "dips-assistes" ? "assistance" : undefined),
+      );
       expect(exercise.updatedAt, exercise.id).toBe(previous.updatedAt);
       expect(checkClassification(exercise), exercise.id).toEqual([]);
 

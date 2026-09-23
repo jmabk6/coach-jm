@@ -7,6 +7,7 @@ import {
   type ExercisePerformanceEntry,
   type ExercisePerformanceMetric,
 } from "../exercises/exercisePerformance";
+import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { isCountedWorkout } from "./overview";
 import { isWithin, type Period } from "./period";
 import { roundPercent } from "./rounding";
@@ -56,6 +57,17 @@ export const trendMetricDirections: Record<TrendMetric, TrendDirection> = {
   reps: "higher-is-better",
   durationMax: "higher-is-better",
 };
+
+/**
+ * Sens d'une tendance **pour un exercice** (lot a) : la métrique décide,
+ * sauf `chargeMax` d'un exercice en assistance — moins d'assistance est
+ * une progression. Les exercices `external` gardent le sens de la métrique.
+ */
+export function trendDirectionFor(metric: TrendMetric, exercise: Exercise): TrendDirection {
+  if (metric === "chargeMax" && loadSemanticsOf(exercise) === "assistance") return "lower-is-better";
+
+  return trendMetricDirections[metric];
+}
 
 /**
  * Compatibilité stricte (§16) : le type de mesure de l'exercice doit
@@ -275,7 +287,7 @@ export function buildExerciseTrend(
     lastDate: last.date,
     line,
     percent,
-    status: classifyTrend(percent, trendMetricDirections[metric]),
+    status: classifyTrend(percent, trendDirectionFor(metric, exercise)),
   };
 }
 

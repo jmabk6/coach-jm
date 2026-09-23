@@ -165,7 +165,7 @@ export function FrameForm({
 
         {askStartingLoad && !duration && (
           <label className="frame-form__field frame-form__field--wide">
-            <span>Charge de départ (kg, facultatif)</span>
+            <span>{type === "assistance_decroissante" ? "Assistance de départ" : "Charge de départ"} (kg, facultatif)</span>
             <input type="text" inputMode="decimal" value={start} onChange={(event) => setStart(event.target.value)} />
             <small>
               {proposedStart && proposedStart.unit === "kg"

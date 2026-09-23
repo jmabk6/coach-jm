@@ -8,8 +8,7 @@ import type {
   PerformedSeries,
   WorkoutSession,
 } from "../../domain";
-import { calculateVolume } from "../../domain/rules/workoutRules";
-import { listCompletedRoundChildren, type CoveredAverage } from "./workoutRecap";
+import { calculateBlocksVolume, listCompletedRoundChildren, type CoveredAverage } from "./workoutRecap";
 
 /**
  * Détail d'un groupe dans une réalisation (§14, mockup 19.2) : la
@@ -272,10 +271,13 @@ export function compareGroupVolumeToPrevious(
   workout: WorkoutSession,
   block: PerformedGroupBlock,
   completedWorkouts: WorkoutSession[],
+  exerciseById?: ReadonlyMap<Id, Exercise>,
 ): GroupVolumeVsLast | undefined {
   if (!workout.sessionTemplateId || !block.sourceBlockId || !isGroupReference(block)) return undefined;
 
-  const volumeKg = calculateVolume(listCompletedRoundChildren([block]));
+  /* Une assistance ne pèse rien dans le volume (lot a) : chaque enfant
+     compte selon l'exercice réellement effectué. */
+  const volumeKg = calculateBlocksVolume([block], exerciseById);
 
   if (volumeKg <= 0) return undefined;
 
@@ -305,7 +307,7 @@ export function compareGroupVolumeToPrevious(
       return undefined;
     }
 
-    const previousVolumeKg = calculateVolume(listCompletedRoundChildren([match]));
+    const previousVolumeKg = calculateBlocksVolume([match], exerciseById);
 
     if (previousVolumeKg <= 0) return undefined;
 
@@ -323,10 +325,11 @@ export function compareGroupVolumeToPrevious(
 export function summarizeGroupBlock(
   block: PerformedGroupBlock,
   volumeVsLast: GroupVolumeVsLast | undefined,
+  exerciseById?: ReadonlyMap<Id, Exercise>,
 ): GroupDetailSummary {
   const rounds = describeGroupRounds(block);
   const done = listCompletedRoundChildren([block]);
-  const volumeKg = calculateVolume(done);
+  const volumeKg = calculateBlocksVolume([block], exerciseById);
   const rpes = done.map((item) => item.rpe).filter((v): v is number => v !== undefined);
 
   const rests = rounds.map((round) => round.restAfter).filter((rest): rest is RoundRestView => rest !== undefined && rest.actualSec !== undefined);

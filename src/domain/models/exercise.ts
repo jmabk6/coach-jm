@@ -103,6 +103,20 @@ export type MovementFamily =
   | "poussee_horizontale"
   | "poussee_verticale";
 
+/**
+ * Sens de la charge saisie (lot a, 23/09/2026) : `external` = une charge
+ * que l'on soulève (plus lourd = plus difficile) ; `assistance` = un
+ * contrepoids qui aide (traction assistée, dips assistés : moins
+ * d'assistance = plus difficile). Absent = `external`.
+ *
+ * Une assistance n'entre dans aucun volume, sa meilleure valeur est la
+ * plus basse, et sa tendance progresse quand elle baisse. Lue par
+ * `domain/rules/loadSemanticsRules.ts`, jamais interprétée ailleurs.
+ */
+export type LoadSemantics =
+  | "external"
+  | "assistance";
+
 export interface ExerciseMeasurementLabels {
   /**
    * Libellé d'une mesure simple.
@@ -208,6 +222,12 @@ interface ExerciseBase {
    */
   progressionGroup?: ProgressionGroup;
   movementFamily?: MovementFamily;
+
+  /**
+   * Sens de la charge, facultatif et non indexé : absent = `external`.
+   * Complété par le seed du catalogue s'il est absent, jamais écrasé.
+   */
+  loadSemantics?: LoadSemantics;
 
   status: ExerciseStatus;
 

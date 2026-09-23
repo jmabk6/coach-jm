@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronUp, EllipsisVertical, Hourglass, Plus } from
 import type {
   Exercise,
   Id,
+  LoadSemantics,
   PerformedGroupBlock,
   PerformedGroupChild,
   PerformedGroupRoundChild,
@@ -21,6 +22,7 @@ import type { LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
 import { formatFrameLoadSuggestion, formatLoadSuggestion, suggestFrameLoad, suggestLoad } from "./suggestedLoad";
 import { formatFrameVersionSummary } from "../../domain/rules/strengthRules";
+import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { formatBlockStatus, formatMmSs, formatShortDate, seriesFieldLayout } from "./workoutDisplay";
 import { formatSeriesLine } from "./workoutRecap";
 
@@ -253,6 +255,7 @@ export function GroupBlockCard({
                                   layout={seriesFieldLayout(exerciseById.get(roundChild.exerciseId))}
                                   initial={roundChildAsSeries(roundChild)}
                                   rpeTable={rpeTable}
+                                  loadSemantics={loadSemanticsOf(exerciseById.get(roundChild.exerciseId))}
                                   submitLabel="Enregistrer"
                                   onSubmit={(values) => {
                                     setEditingId(undefined);
@@ -269,6 +272,7 @@ export function GroupBlockCard({
                                 {restBand}
                                 <ChildReference
                                   child={child}
+                                  loadSemantics={loadSemanticsOf(exerciseById.get(roundChild.exerciseId))}
                                   lastTime={lastByExercise.get(roundChild.exerciseId)}
                                   frameVersion={roundChild.frameVersionId ? versionById?.get(roundChild.frameVersionId) : undefined}
                                 />
@@ -281,6 +285,7 @@ export function GroupBlockCard({
                                     lastByExercise.get(roundChild.exerciseId)?.series,
                                   )}
                                   rpeTable={rpeTable}
+                                  loadSemantics={loadSemanticsOf(exerciseById.get(roundChild.exerciseId))}
                                   submitLabel={
                                     nextChild
                                       ? `Valider ${label(child)} → passer à ${label(nextChild)}`
@@ -332,10 +337,13 @@ function roundChildAsSeries(child: PerformedGroupRoundChild): PerformedSeries {
  */
 function ChildReference({
   child,
+  loadSemantics,
   lastTime,
   frameVersion,
 }: {
   child: PerformedGroupChild;
+  /** Sens de la charge de l'exercice réellement effectué à ce tour (lot a). */
+  loadSemantics: LoadSemantics;
   lastTime: LastPerformance | undefined;
   frameVersion: StrengthFrameVersion | undefined;
 }) {
@@ -376,7 +384,7 @@ function ChildReference({
       {suggestion && (
         <div>
           <dt>Conseillé</dt>
-          <dd>{formatLoadSuggestion(suggestion)}</dd>
+          <dd>{formatLoadSuggestion(suggestion, loadSemantics)}</dd>
         </div>
       )}
     </dl>

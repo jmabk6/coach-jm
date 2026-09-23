@@ -11,6 +11,7 @@ import type {
 } from "../../domain";
 import { isAssessmentCategory, isMobilityAssessment } from "../../domain/rules/workoutKindRules";
 import { calculateVolume } from "../../domain/rules/workoutRules";
+import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { getImportedHistoryStart, isImportedWorkoutId } from "../history/importedWorkouts";
 import { isCardioExercise } from "./exerciseNature";
 import { listCompletedRoundChildren } from "../workout/workoutRecap";
@@ -163,11 +164,15 @@ export function listSeriesModeSeries(
  * Le volume total ne porte que sur les exercices `Charge + répétitions`
  * (§16) : un exercice au poids du corps n'y figure pas, même à zéro.
  * Un exercice supprimé est compté s'il porte une charge en kilos.
+ * Une assistance (traction, dips assistés) n'est pas une charge soulevée :
+ * elle n'entre jamais dans le volume (lot a, 23/09/2026).
  */
 function isVolumeEligible(exerciseId: Id, exerciseById: Map<Id, Exercise>): boolean {
   const exercise = exerciseById.get(exerciseId);
 
-  return exercise ? exercise.measurementType === "load_reps" : true;
+  return exercise
+    ? exercise.measurementType === "load_reps" && loadSemanticsOf(exercise) === "external"
+    : true;
 }
 
 export function calculateWorkoutVolumeKg(
