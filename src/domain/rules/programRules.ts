@@ -20,26 +20,41 @@ import type {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Lundi → dimanche : l'ordre de la règle et des grilles (§9).
+ * Premier jour de la semaine (lot B, conception V2 § 2.1.2) : le dimanche.
+ * Seule source de toute notion de semaine — règle hebdomadaire,
+ * génération, grilles, semaine en cours. Valeur de `date-fns` (0 = dimanche).
+ */
+export const WEEK_STARTS_ON = 0 as const;
+
+/**
+ * Dimanche → samedi : l'ordre de la règle et des grilles. Les journées
+ * sont stockées par nom, jamais par position : changer cet ordre ne
+ * réinterprète rien de ce qui est enregistré.
  */
 export const weekdays: Weekday[] = [
+  "sunday",
   "monday",
   "tuesday",
   "wednesday",
   "thursday",
   "friday",
   "saturday",
-  "sunday",
 ];
 
-const weekdayOffsets: Record<Weekday, number> = {
-  monday: 0,
-  tuesday: 1,
-  wednesday: 2,
-  thursday: 3,
-  friday: 4,
-  saturday: 5,
-  sunday: 6,
+/** Décalage de chaque journée depuis le début de semaine, dérivé de `weekdays`. */
+const weekdayOffsets = Object.fromEntries(
+  weekdays.map((weekday, offset) => [weekday, offset]),
+) as Record<Weekday, number>;
+
+/** Libellés courts, dans l'ordre de `weekdays` (en-tête de la grille Mois). */
+export const weekdayShortLabels: Record<Weekday, string> = {
+  sunday: "Dim",
+  monday: "Lun",
+  tuesday: "Mar",
+  wednesday: "Mer",
+  thursday: "Jeu",
+  friday: "Ven",
+  saturday: "Sam",
 };
 
 export const weekdayLabels: Record<Weekday, string> = {
@@ -65,10 +80,10 @@ export function formatLocalDate(date: Date): string {
 }
 
 /**
- * Lundi de la semaine contenant la date.
+ * Premier jour (dimanche) de la semaine contenant la date.
  */
 export function getWeekStartDate(date: string): string {
-  return formatLocalDate(startOfWeek(parseISO(date), { weekStartsOn: 1 }));
+  return formatLocalDate(startOfWeek(parseISO(date), { weekStartsOn: WEEK_STARTS_ON }));
 }
 
 export function getWeekdayOf(date: string): Weekday {
@@ -76,8 +91,14 @@ export function getWeekdayOf(date: string): Weekday {
     parseISO(date),
     parseISO(getWeekStartDate(date)),
   );
+  const weekday = weekdays[offset];
 
-  return weekdays[offset] ?? "monday";
+  /* L'écart est toujours de 0 à 6 : un repli silencieux masquerait un défaut. */
+  if (!weekday) {
+    throw new Error(`Jour de semaine introuvable pour ${date} (écart ${offset})`);
+  }
+
+  return weekday;
 }
 
 export function getWeekEndDate(weekStartDate: string): string {
@@ -372,7 +393,7 @@ export function createEmptyWeeklyProgram(
 
 /**
  * Affecte un modèle (ou aucun) à une journée de la règle, en gardant
- * toujours les sept journées dans l'ordre lundi → dimanche.
+ * toujours les sept journées dans l'ordre dimanche → samedi.
  */
 export function setWeeklyProgramDay(
   program: Omit<WeeklyProgram, "id">,

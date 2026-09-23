@@ -37,7 +37,7 @@ import {
  * bougent jamais. Base fermée puis rouverte : tout est relu à l'identique.
  */
 describe("critère de fin — le Programme de bout en bout", () => {
-  /* Mercredi 16 septembre 2026 : la semaine en cours va du 14 au 20. */
+  /* Mercredi 16 septembre 2026 : la semaine en cours va du dimanche 13 au samedi 19 (lot B). */
   const now = "2026-09-16T10:00:00.000Z";
 
   function template(id: string, name: string, position: number): SessionTemplate {
@@ -84,36 +84,36 @@ describe("critère de fin — le Programme de bout en bout", () => {
 
   it("génère, laisse l'utilisateur décider instance par instance, puis suit la règle", async () => {
     /* La semaine en cours ne reçoit rien de la règle ; la suivante, oui. */
-    expect(await generateProgramWeek("2026-09-14", now)).toEqual([]);
+    expect(await generateProgramWeek("2026-09-13", now)).toEqual([]);
     expect(
-      (await generateProgramWeek("2026-09-21", now)).map((s) => s.date),
+      (await generateProgramWeek("2026-09-20", now)).map((s) => s.date),
     ).toEqual(["2026-09-24", "2026-09-25"]);
 
     /* Ajout ponctuel sur la semaine en cours : l'instance seule. */
     await addPlannedSession("2026-09-18", "cardio", now);
-    expect(await listDates("2026-09-14", "2026-09-20")).toEqual([
+    expect(await listDates("2026-09-13", "2026-09-19")).toEqual([
       ["2026-09-18", "cardio", "upcoming"],
     ]);
 
     /* Déplacer le Cardio du 25 au 23 : le 25 n'est jamais recréé. */
     await movePlannedSession("weekly-2026-09-25", "2026-09-23");
-    expect(await generateProgramWeek("2026-09-21", now)).toEqual([]);
-    expect(await listDates("2026-09-21", "2026-09-27")).toEqual([
+    expect(await generateProgramWeek("2026-09-20", now)).toEqual([]);
+    expect(await listDates("2026-09-20", "2026-09-26")).toEqual([
       ["2026-09-23", "cardio", "upcoming"],
       ["2026-09-24", "muscu-a", "upcoming"],
     ]);
 
     /* Retirer du 24 : tombstone, jamais recréé non plus. */
     await removePlannedSession("weekly-2026-09-24");
-    expect(await generateProgramWeek("2026-09-21", now)).toEqual([]);
-    expect(await listDates("2026-09-21", "2026-09-27")).toEqual([
+    expect(await generateProgramWeek("2026-09-20", now)).toEqual([]);
+    expect(await listDates("2026-09-20", "2026-09-26")).toEqual([
       ["2026-09-23", "cardio", "upcoming"],
     ]);
 
-    /* Semaine du 28 : générée intacte, puis le jeudi remplacé à la main. */
-    await generateProgramWeek("2026-09-28", now);
+    /* Semaine du 27 : générée intacte, puis le jeudi remplacé à la main. */
+    await generateProgramWeek("2026-09-27", now);
     await replacePlannedSession("weekly-2026-10-01", "mobilite");
-    await generateProgramWeek("2026-10-05", now);
+    await generateProgramWeek("2026-10-04", now);
 
     /* Modification de la règle : jeudi → Mobilité, vendredi → aucune. */
     const current = await getWeeklyProgram();
@@ -123,25 +123,25 @@ describe("critère de fin — le Programme de bout en bout", () => {
     await applyWeeklyProgram(next, now);
 
     /* Semaine en cours et instances touchées : inchangées. */
-    expect(await listDates("2026-09-14", "2026-09-20")).toEqual([
+    expect(await listDates("2026-09-13", "2026-09-19")).toEqual([
       ["2026-09-18", "cardio", "upcoming"],
     ]);
-    expect(await listDates("2026-09-21", "2026-09-27")).toEqual([
+    expect(await listDates("2026-09-20", "2026-09-26")).toEqual([
       ["2026-09-23", "cardio", "upcoming"],
     ]);
     /* Le jeudi 1er remplacé à la main reste Mobilité ; le vendredi 2, intact, disparaît. */
-    expect(await listDates("2026-09-28", "2026-10-04")).toEqual([
+    expect(await listDates("2026-09-27", "2026-10-03")).toEqual([
       ["2026-10-01", "mobilite", "upcoming"],
     ]);
-    /* Semaine du 5 : intacte, elle suit la règle. */
-    expect(await listDates("2026-10-05", "2026-10-11")).toEqual([
+    /* Semaine du 4 : intacte, elle suit la règle. */
+    expect(await listDates("2026-10-04", "2026-10-10")).toEqual([
       ["2026-10-08", "mobilite", "upcoming"],
     ]);
 
     /* Une journée nouvellement affectée apparaît dans toutes les semaines déjà visitées. */
     const withMonday = setWeeklyProgramDay(next, "monday", "muscu-a", now);
     await applyWeeklyProgram(withMonday, now);
-    expect(await listDates("2026-10-05", "2026-10-11")).toEqual([
+    expect(await listDates("2026-10-04", "2026-10-10")).toEqual([
       ["2026-10-05", "muscu-a", "upcoming"],
       ["2026-10-08", "mobilite", "upcoming"],
     ]);
@@ -162,8 +162,8 @@ describe("critère de fin — le Programme de bout en bout", () => {
     await archiveSessionTemplate("mobilite");
     const afterArchive = await getWeeklyProgram();
     expect(afterArchive?.days.map((day) => day.sessionTemplateId)).toEqual([
-      "muscu-a",
       undefined,
+      "muscu-a",
       undefined,
       undefined,
       undefined,

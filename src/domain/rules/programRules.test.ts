@@ -8,7 +8,9 @@ import {
   generatePlannedSessionsForWeek,
   getWeekStartDate,
   getWeekdayOf,
+  isFutureWeek,
   isPlannedSessionPristine,
+  listWeekDates,
   listPlannedSessionActions,
   removeTemplateFromWeeklyProgram,
   resyncPlannedSessionsToProgram,
@@ -40,9 +42,9 @@ describe("generatePlannedSessionsForWeek", () => {
   it("génère les occurrences de la règle pour une semaine vide", () => {
     const result = generatePlannedSessionsForWeek({
       program,
-      weekStartDate: "2026-09-14",
+      weekStartDate: "2026-09-13",
       existingSessions: [],
-      now: "2026-09-13T10:00:00.000Z",
+      now: "2026-09-12T10:00:00.000Z",
     });
 
     expect(result).toEqual([
@@ -54,8 +56,8 @@ describe("generatePlannedSessionsForWeek", () => {
         sourceWeekday: "monday",
         sourceDate: "2026-09-14",
         source: "weekly_program",
-        createdAt: "2026-09-13T10:00:00.000Z",
-        updatedAt: "2026-09-13T10:00:00.000Z",
+        createdAt: "2026-09-12T10:00:00.000Z",
+        updatedAt: "2026-09-12T10:00:00.000Z",
       },
       {
         id: "weekly-2026-09-16",
@@ -65,8 +67,8 @@ describe("generatePlannedSessionsForWeek", () => {
         sourceWeekday: "wednesday",
         sourceDate: "2026-09-16",
         source: "weekly_program",
-        createdAt: "2026-09-13T10:00:00.000Z",
-        updatedAt: "2026-09-13T10:00:00.000Z",
+        createdAt: "2026-09-12T10:00:00.000Z",
+        updatedAt: "2026-09-12T10:00:00.000Z",
       },
       {
         id: "weekly-2026-09-18",
@@ -76,8 +78,8 @@ describe("generatePlannedSessionsForWeek", () => {
         sourceWeekday: "friday",
         sourceDate: "2026-09-18",
         source: "weekly_program",
-        createdAt: "2026-09-13T10:00:00.000Z",
-        updatedAt: "2026-09-13T10:00:00.000Z",
+        createdAt: "2026-09-12T10:00:00.000Z",
+        updatedAt: "2026-09-12T10:00:00.000Z",
       },
     ] satisfies PlannedSession[]);
   });
@@ -99,9 +101,9 @@ describe("generatePlannedSessionsForWeek", () => {
 
     const result = generatePlannedSessionsForWeek({
       program,
-      weekStartDate: "2026-09-14",
+      weekStartDate: "2026-09-13",
       existingSessions,
-      now: "2026-09-13T10:00:00.000Z",
+      now: "2026-09-12T10:00:00.000Z",
     });
 
     expect(result.map((session) => session.date)).toEqual([
@@ -125,9 +127,9 @@ describe("generatePlannedSessionsForWeek", () => {
 
     const result = generatePlannedSessionsForWeek({
       program,
-      weekStartDate: "2026-09-14",
+      weekStartDate: "2026-09-13",
       existingSessions,
-      now: "2026-09-13T10:00:00.000Z",
+      now: "2026-09-12T10:00:00.000Z",
     });
 
     expect(result.map((session) => session.date)).toEqual([
@@ -140,14 +142,14 @@ describe("generatePlannedSessionsForWeek", () => {
   it("ne génère rien pour la semaine en cours ou une semaine passée", () => {
     const currentWeek = generatePlannedSessionsForWeek({
       program,
-      weekStartDate: "2026-09-07",
+      weekStartDate: "2026-09-13",
       existingSessions: [],
       now: "2026-09-13T10:00:00.000Z",
     });
 
     const pastWeek = generatePlannedSessionsForWeek({
       program,
-      weekStartDate: "2026-08-31",
+      weekStartDate: "2026-09-06",
       existingSessions: [],
       now: "2026-09-13T10:00:00.000Z",
     });
@@ -158,18 +160,30 @@ describe("generatePlannedSessionsForWeek", () => {
 });
 
 describe("dates du Programme", () => {
-  it("trouve le lundi et le jour de la semaine d'une date", () => {
-    expect(getWeekStartDate("2026-09-10")).toBe("2026-09-07");
-    expect(getWeekStartDate("2026-09-13")).toBe("2026-09-07");
-    expect(getWeekStartDate("2026-09-14")).toBe("2026-09-14");
+  it("trouve le dimanche et le jour de la semaine d'une date (lot B : dimanche → samedi)", () => {
+    expect(getWeekStartDate("2026-09-10")).toBe("2026-09-06");
+    expect(getWeekStartDate("2026-09-12")).toBe("2026-09-06");
+    expect(getWeekStartDate("2026-09-13")).toBe("2026-09-13");
+    expect(getWeekStartDate("2026-09-14")).toBe("2026-09-13");
+    expect(getWeekStartDate("2026-09-26")).toBe("2026-09-20");
+    expect(getWeekStartDate("2026-09-27")).toBe("2026-09-27");
     expect(getWeekdayOf("2026-09-10")).toBe("thursday");
     expect(getWeekdayOf("2026-09-13")).toBe("sunday");
+    expect(getWeekdayOf("2026-09-19")).toBe("saturday");
+    expect(listWeekDates("2026-09-27")).toEqual([
+      "2026-09-27", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03",
+    ]);
+  });
+
+  it("la semaine du 27/09 est future le samedi 26, en cours dès le dimanche 27", () => {
+    expect(isFutureWeek("2026-09-27", "2026-09-26T23:00:00.000Z")).toBe(true);
+    expect(isFutureWeek("2026-09-27", "2026-09-27T08:00:00.000Z")).toBe(false);
   });
 
   it("libelle une semaine, avec les deux mois si elle les chevauche", () => {
-    expect(formatWeekRange("2026-09-07")).toBe("Du 7 au 13 septembre 2026");
-    expect(formatWeekRange("2026-09-28")).toBe(
-      "Du 28 septembre au 4 octobre 2026",
+    expect(formatWeekRange("2026-09-06")).toBe("Du 6 au 12 septembre 2026");
+    expect(formatWeekRange("2026-09-27")).toBe(
+      "Du 27 septembre au 3 octobre 2026",
     );
   });
 });
@@ -190,9 +204,9 @@ describe("génération et instances déplacées", () => {
 
     const result = generatePlannedSessionsForWeek({
       program,
-      weekStartDate: "2026-09-14",
+      weekStartDate: "2026-09-13",
       existingSessions: [moved],
-      now: "2026-09-13T10:00:00.000Z",
+      now: "2026-09-12T10:00:00.000Z",
     });
 
     expect(result.map((session) => session.date)).toEqual([
@@ -315,22 +329,22 @@ describe("édition de la règle", () => {
     const withTuesday = setWeeklyProgramDay(program, "tuesday", "cardio-a", "now");
 
     expect(withTuesday.days.map((d) => d.weekday)).toEqual([
+      "sunday",
       "monday",
       "tuesday",
       "wednesday",
       "thursday",
       "friday",
       "saturday",
-      "sunday",
     ]);
-    expect(withTuesday.days[1]).toEqual({
+    expect(withTuesday.days[2]).toEqual({
       weekday: "tuesday",
       sessionTemplateId: "cardio-a",
     });
 
     const cleared = setWeeklyProgramDay(withTuesday, "monday", undefined, "now");
 
-    expect(cleared.days[0]).toEqual({ weekday: "monday" });
+    expect(cleared.days[1]).toEqual({ weekday: "monday" });
   });
 
   it("retire un modèle archivé de toutes ses journées", () => {

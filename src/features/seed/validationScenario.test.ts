@@ -32,8 +32,9 @@ describe("scénario complet de validation V1", () => {
 
     await seedValidationData(seedNow);
 
+    /* Semaine du dimanche 20 au samedi 26 (lot B) : le lundi 21 porte Muscu A. */
     const generated = await generateProgramWeek(
-      "2026-09-21",
+      "2026-09-20",
       seedNow,
     );
 

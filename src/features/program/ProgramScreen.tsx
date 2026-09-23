@@ -19,6 +19,8 @@ import {
   getWeekStartDate,
   isFutureWeek,
   listWeekDates,
+  weekdays,
+  weekdayShortLabels,
   type PlannedSessionAction,
 } from "../../domain/rules/programRules";
 import { removePlannedSession } from "../../db/repositories/programRepository";
@@ -584,7 +586,7 @@ const legend: { status: DisplayedPlannedSessionStatus; label: string }[] = [
 ];
 
 /**
- * Grille lundi → dimanche (§9) : un marqueur neutre par séance, une seule
+ * Grille dimanche → samedi (lot B) : un marqueur neutre par séance, une seule
  * famille de formes, aucun agrégat. Aujourd'hui garde son contour quel
  * que soit son statut, même sélectionné.
  */
@@ -661,9 +663,9 @@ function MonthView({
 
       <div className="program-month" role="grid" aria-label={formatMonthTitle(monthStart)}>
         <div className="program-month__weekdays" role="row">
-          {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((label) => (
-            <span key={label} role="columnheader">
-              {label}
+          {weekdays.map((weekday) => (
+            <span key={weekday} role="columnheader">
+              {weekdayShortLabels[weekday]}
             </span>
           ))}
         </div>

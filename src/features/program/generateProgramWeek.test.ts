@@ -49,8 +49,8 @@ describe("generateProgramWeek", () => {
     getWeeklyProgram.mockResolvedValue(undefined);
 
     const result = await generateProgramWeek(
-      "2026-09-14",
-      "2026-09-13T10:00:00.000Z",
+      "2026-09-13",
+      "2026-09-12T10:00:00.000Z",
     );
 
     expect(result).toEqual([]);
@@ -62,9 +62,10 @@ describe("generateProgramWeek", () => {
     getWeeklyProgram.mockResolvedValue(program);
     getPlannedSessionsByDateIncludingRemoved.mockResolvedValue([]);
 
+    /* Semaine du dimanche 13 au samedi 19 (lot B), générée la veille. */
     const result = await generateProgramWeek(
-      "2026-09-14",
-      "2026-09-13T10:00:00.000Z",
+      "2026-09-13",
+      "2026-09-12T10:00:00.000Z",
     );
 
     expect(getPlannedSessionsByDateIncludingRemoved).toHaveBeenCalledTimes(7);
@@ -74,13 +75,13 @@ describe("generateProgramWeek", () => {
         ([date]) => date,
       ),
     ).toEqual([
+      "2026-09-13",
       "2026-09-14",
       "2026-09-15",
       "2026-09-16",
       "2026-09-17",
       "2026-09-18",
       "2026-09-19",
-      "2026-09-20",
     ]);
 
     expect(result.map((session: PlannedSession) => session.date)).toEqual([
