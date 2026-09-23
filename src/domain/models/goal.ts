@@ -1,14 +1,75 @@
-﻿import type { Id } from "./exercise";
+import type { Id } from "./exercise";
 
-export type GoalStatus =
-  | "active"
-  | "achieved";
+/* -------------------------------------------------------------------------- */
+/* Objectif V2 (conception V2 § 3.6) — store `goals` refondu en v3             */
+/* -------------------------------------------------------------------------- */
+
+export type GoalKey =
+  | "traction"
+  | "upper_body"
+  | "legs"
+  | "cardio"
+  | "core"
+  | "flexibility"
+  | "weight";
+
+/** Hausse = mieux (`increase`) ou baisse = mieux (`decrease`). */
+export type GoalDirection = "increase" | "decrease";
+
+export type GoalMeasure =
+  | { source: "test"; protocolId: Id; measureKey: string }
+  | { source: "weight_weekly_average" };
 
 /**
- * Métriques existantes de la progression par exercice.
- *
- * Leur compatibilité dépend du type de mesure
- * de l'exercice référencé.
+ * Un segment d'objectif (correction A) : seul le segment `final` fait
+ * réussir l'objectif ; atteindre un segment intermédiaire affiche
+ * « Palier atteint ». Les segments ne sont jamais raccordés sur la courbe.
+ */
+export interface GoalSegment {
+  id: Id;
+  role: "intermediate" | "final";
+  /** Absent = « — » (Jambes avant son choix d'indicateur). */
+  measure?: GoalMeasure;
+  direction?: GoalDirection;
+  target?: number;
+  dueDate?: string;
+  label: string;
+}
+
+export type GoalSecondaryIndicator =
+  | { kind: "exercise"; exerciseId: Id; metric: "chargeMax" | "reps" | "durationMax" | "volume" | "powerMax" }
+  | { kind: "test_measure"; protocolId: Id; measureKey: string };
+
+/**
+ * Rien de dérivé n'est stocké — ni départ, ni statut, ni atteinte : tout
+ * se recalcule à l'affichage, suppression de séance comprise.
+ */
+export interface Goal {
+  id: Id;
+  /** Unique (index `&key`). */
+  key: GoalKey;
+  position: number;
+  title: string;
+  /** Nom d'icône Lucide (D4). */
+  icon: string;
+  segments: GoalSegment[];
+  currentSegmentId: Id;
+  /** Repli si le segment courant n'a pas d'échéance. */
+  dueDate?: string;
+  linkedExercises: Array<{ exerciseId: Id }>;
+  secondaryIndicators: GoalSecondaryIndicator[];
+  adviceKey: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Forme v1, jamais écrite par l'application                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Métriques de la progression par exercice, héritées de la forme v1 ;
+ * encore lues par `workoutRules.isMetricCompatible`.
  */
 export type ExerciseGoalMetric =
   | "max_load"
@@ -16,87 +77,23 @@ export type ExerciseGoalMetric =
   | "reps"
   | "max_duration";
 
-export interface ExerciseGoalTarget {
-  kind: "exercise";
-
-  exerciseId: Id;
-
-  metric: ExerciseGoalMetric;
-
-  /**
-   * La cible porte la même unité que la métrique.
-   */
-  targetValue: number;
-}
-
 /**
- * Objectif BPM sur un palier de cardio comparable.
- *
- * Les trois réglages définissent l'effort de référence.
- * La durée est comparée avec la tolérance prévue
- * par les règles des paliers comparables.
+ * Objectif sous la forme des schémas v1 et v2 (cible unique). Aucun code
+ * ne l'a jamais écrit ; la migration v3 refuse une base qui en contient
+ * (SCHEMA_DEXIE_V3_MIGRATION § 4.2). Gardé pour les tests de migration et
+ * la lecture d'anciennes sauvegardes ; retiré au lot N.
  */
-export interface CardioBpmGoalTarget {
-  kind: "cardio_bpm";
-
-  exerciseId: Id;
-
-  durationSec: number;
-  speedKmh: number;
-  inclinePercent: number;
-
-  /**
-   * Exemple : <= 120 bpm.
-   */
-  targetBpm: number;
-}
-
-/**
- * Objectif de poids.
- *
- * Le sens est fixé une seule fois lors de la création :
- * - automatiquement depuis la dernière pesée si elle existe ;
- * - demandé à l'utilisateur s'il n'existe encore aucune pesée.
- */
-export interface WeightGoalTarget {
-  kind: "weight";
-
-  targetKg: number;
-
-  direction: "lose" | "gain";
-}
-
-export type GoalTarget =
-  | ExerciseGoalTarget
-  | CardioBpmGoalTarget
-  | WeightGoalTarget;
-
-export interface Goal {
+export interface LegacyGoalV1 {
   id: Id;
-
   name: string;
-
-  target: GoalTarget;
-
-  status: GoalStatus;
-
-  /**
-   * Date facultative YYYY-MM-DD.
-   *
-   * Une échéance dépassée reste une information neutre.
-   */
+  target:
+    | { kind: "exercise"; exerciseId: Id; metric: ExerciseGoalMetric; targetValue: number }
+    | { kind: "cardio_bpm"; exerciseId: Id; durationSec: number; speedKmh: number; inclinePercent: number; targetBpm: number }
+    | { kind: "weight"; targetKg: number; direction: "lose" | "gain" };
+  status: "active" | "achieved";
   dueDate?: string;
-
   note?: string;
-
-  /**
-   * Date de la première réalisation ayant atteint la cible.
-   *
-   * Cette valeur peut être recalculée après correction
-   * ou suppression rétroactive d'une donnée source.
-   */
   achievedAt?: string;
-
   createdAt: string;
   updatedAt: string;
 }

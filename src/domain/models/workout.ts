@@ -114,6 +114,19 @@ export interface WorkoutSession {
 
   activeRest?: ActiveRest;
 
+  /**
+   * « Terminer » (conception V2 § 2.6, D20) : chrono arrêté, séance en
+   * attente d'enregistrement tant que le statut reste `in_progress`.
+   * Absent = séance jamais terminée.
+   */
+  endedAt?: string;
+
+  /** Ressenti global, 1 = Très difficile … 5 = Très facile (M10). */
+  feeling?: 1 | 2 | 3 | 4 | 5;
+
+  /** Note de séance, distincte des notes de brique et de série. */
+  note?: string;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -171,6 +184,25 @@ export interface PerformedExerciseBlock extends PerformedBaseBlock {
    * exercice sans cadre au moment de l'exécution : aucune validation.
    */
   frameVersionId?: Id;
+
+  /**
+   * Brique d'échauffement (D14) : recopiée du modèle. Absent = travail.
+   */
+  role?: "warmup";
+
+  /**
+   * Moins de séries que le cadre n'en demande, par prescription (jour du
+   * test traction, leg curl de Muscu C) : ni validation du palier, ni
+   * stagnation (conception V2 § 2.5.1). Absent = prescription complète.
+   */
+  reducedPrescription?: true;
+
+  /** FC étendue (tapis, vélo), facultative en entraînement. */
+  heartRate?: {
+    samples?: Array<{ atSec: number; bpm: number }>;
+    maxBpm?: number;
+    recovery1MinBpm?: number;
+  };
 
   /**
    * Seules les consignes sont figées au démarrage.
@@ -330,6 +362,15 @@ export interface PerformedSeries {
    * cadre. Absent = faux.
    */
   sideLimited?: boolean;
+
+  /** Durée de chaque répétition, en secondes (traction négative, D25). */
+  repDurationsSec?: number[];
+
+  /** Résultat d'un effort court (sprint vélo, D17) : watts ou mètres. */
+  result?: { unit: "watts" | "meters"; value: number };
+
+  /** Résistance de la machine (niveau entier), si elle en a une. */
+  resistance?: number;
 
   note?: string;
 

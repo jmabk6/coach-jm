@@ -1,4 +1,5 @@
 import type { Id } from "./exercise";
+import type { PlannedTest } from "./testProtocol";
 
 export type Weekday =
   | "monday"
@@ -15,6 +16,11 @@ export interface WeeklyProgram {
   name: string;
 
   days: WeeklyProgramDay[];
+
+  /** Routines du soir, dans l'ordre de rotation (conception V2 § 3.4, lot K). */
+  eveningRotation?: Id[];
+  /** Date de la routine A de référence. */
+  eveningRotationAnchor?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -90,6 +96,12 @@ export interface PlannedSession {
    * ajout ponctuel depuis le Programme.
    */
   source: "weekly_program" | "manual";
+
+  /** Créneau de la journée (conception V2 § 3.5.1). Absent = journée. */
+  slot?: "morning" | "day" | "evening";
+
+  /** Tests attachés pendant une semaine de tests (lot G). */
+  tests?: PlannedTest[];
 
   /**
    * Marqueur technique de retrait.

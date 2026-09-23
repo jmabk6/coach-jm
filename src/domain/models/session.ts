@@ -30,6 +30,17 @@ export interface SessionTemplate {
 
   blocks: SessionBlock[];
 
+  /** Lettre du programme V1 (A, B, C) ; absente sur un modèle utilisateur. */
+  letter?: "A" | "B" | "C";
+  /** « Traction force / dos », « Endurance facile ». */
+  subtitle?: string;
+  /** « Haut du corps · Dos » (M2). */
+  tags?: string[];
+  /** Modèle installé par le seed du programme V1. */
+  origin?: "program_v1";
+  /** Bloc principal, remplacé par un test (Cardio A). */
+  mainBlockId?: Id;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -50,6 +61,9 @@ export interface BaseBlock {
    * Toutes les briques comptent ici, y compris les notes.
    */
   position: number;
+
+  /** Brique d'échauffement (D14). Absent = travail. */
+  role?: "warmup";
 }
 
 export interface ExerciseBlock extends BaseBlock {

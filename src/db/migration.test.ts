@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type {
   Exercise,
-  Goal,
+  LegacyGoalV1,
   PlannedSession,
   SessionTemplate,
   WeeklyProgram,
@@ -42,7 +42,7 @@ class LegacyDatabase extends Dexie {
   weeklyPrograms!: Table<WeeklyProgram, string>;
   plannedSessions!: Table<PlannedSession, string>;
   workouts!: Table<WorkoutSession, string>;
-  goals!: Table<Goal, string>;
+  goals!: Table<LegacyGoalV1, string>;
   weightEntries!: Table<WeightEntry, string>;
 
   constructor(name: string) {
@@ -243,7 +243,7 @@ describe("migration v1 → v2 — données existantes préservées", () => {
   });
 
   it("scénario 9 : `goals` et `weightEntries` sont préservés, l'index unique sur la date tient toujours", async () => {
-    const goal: Goal = {
+    const goal: LegacyGoalV1 = {
       id: "goal-1",
       name: "Presse 120 kg",
       target: { kind: "exercise", exerciseId: "presse-cuisses", metric: "max_load", targetValue: 120 },

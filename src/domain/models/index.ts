@@ -7,3 +7,5 @@ export * from "./weight";
 export * from "./strength";
 export * from "./cardioTest";
 export * from "./mobility";
+export * from "./testProtocol";
+export * from "./settings";
