@@ -46,8 +46,14 @@ describe("lot 4B sur la sauvegarde réelle", () => {
 
     /* 11 séances au 20/09 (0205), 12 depuis la séance libre du 20/09 (sauvegarde du 22/09) : le test suit le fichier. */
     expect(initial.counts.workouts).toBeGreaterThanOrEqual(11);
-    expect(initial.counts.strengthFrames).toBe(0);
-    expect(initial.counts.strengthMilestones).toBe(0);
+    /* Indépendant de l'âge de la sauvegarde : un fichier peut déjà porter des
+       cadres (23/09 : un cadre sur le tirage vertical) ; seule compte l'absence
+       de cadre sur l'exercice du test. Jalons et cadres se comptent ensuite
+       par rapport à l'état du fichier. */
+    expect(await db.strengthFrames.where("exerciseId").equals("presse-cuisses").count()).toBe(0);
+    const milestonesBefore = initial.counts.strengthMilestones ?? 0;
+    const framesBefore = initial.counts.strengthFrames ?? 0;
+    const versionsBefore = initial.counts.strengthFrameVersions ?? 0;
 
     /* La presse à cuisses des feuilles de septembre : la charge de départ
        proposée vient de la dernière séance réelle, elle n'est pas stockée. */
@@ -62,7 +68,7 @@ describe("lot 4B sur la sauvegarde réelle", () => {
       presse,
       { progressionType: "charge_croissante", workSets: 2, repRange: { min: 10, max: 12 }, rpeTarget: 8, restSec: 90, increment: { unit: "kg", value: 5 } },
       { value: proposed!.value, unit: "kg" },
-      "2026-09-22T10:00:00.000Z",
+      "2030-01-08T10:00:00.000Z",
       () => "reel",
     );
 
@@ -74,7 +80,10 @@ describe("lot 4B sur la sauvegarde réelle", () => {
 
     /* Une séance libre : la version active est capturée à l'ajout, deux
        séries de travail au haut de plage sous la cible → validée. */
-    const started = await startFreeWorkout("2026-09-22", "2026-09-22T17:00:00.000Z");
+    /* Dates fictives postérieures à toute séance réelle du fichier (une
+       sauvegarde récente contient des séances de presse, 23/09) : la séance
+       du test est toujours la plus récente. */
+    const started = await startFreeWorkout("2030-01-08", "2030-01-08T17:00:00.000Z");
     /* L'échelle capturée au démarrage est celle du fichier : aucune avant le
        lot 4A (sauvegarde du 20/09, clé absente), la V1 active après (22/09). */
     const activeScale = (initial.stores.rpeScaleVersions as Array<{ id: string; status: string }>).find(
@@ -83,7 +92,7 @@ describe("lot 4B sur la sauvegarde réelle", () => {
     if (activeScale) expect(started.rpeScaleVersionId).toBe(activeScale.id);
     else expect(started).not.toHaveProperty("rpeScaleVersionId");
     const frames = await loadActiveFrameVersions();
-    let w = addExerciseBlocks(started, [presse], "2026-09-22T17:01:00.000Z", () => "x", frames.versionIdByExercise);
+    let w = addExerciseBlocks(started, [presse], "2030-01-08T17:01:00.000Z", () => "x", frames.versionIdByExercise);
     const block = w.blocks[0]!;
     if (block.kind !== "exercise") throw new Error("brique exercice attendue");
     expect(block).toMatchObject({ exerciseId: "presse-cuisses", frameVersionId: version.id });
@@ -92,20 +101,20 @@ describe("lot 4B sur la sauvegarde réelle", () => {
       return current.kind === "exercise" ? current.series! : [];
     };
     const load = { kind: "total" as const, kg: proposed!.value };
-    w = validateSeries(w, block.id, seriesOf(w)[0]!.id, { load, reps: 12, rpe: 7, role: "travail", sideLimited: false }, "2026-09-22T17:02:00.000Z", () => "y");
+    w = validateSeries(w, block.id, seriesOf(w)[0]!.id, { load, reps: 12, rpe: 7, role: "travail", sideLimited: false }, "2030-01-08T17:02:00.000Z", () => "y");
     /* Le bloc ajouté n'a qu'une série prévue : on en ajoute une, puis on clôt l'exercice. */
-    w = addSeries(w, block.id, "2026-09-22T17:03:00.000Z", () => "z");
-    w = validateSeries(w, block.id, seriesOf(w).at(-1)!.id, { load, reps: 12, rpe: 8, role: "travail", sideLimited: false }, "2026-09-22T17:05:00.000Z", () => "w");
-    w = finishBlock(w, block.id, "2026-09-22T17:06:00.000Z");
+    w = addSeries(w, block.id, "2030-01-08T17:03:00.000Z", () => "z");
+    w = validateSeries(w, block.id, seriesOf(w).at(-1)!.id, { load, reps: 12, rpe: 8, role: "travail", sideLimited: false }, "2030-01-08T17:05:00.000Z", () => "w");
+    w = finishBlock(w, block.id, "2030-01-08T17:06:00.000Z");
     await db.workouts.put(w);
 
-    const { frames: outcomes } = await finishWorkout(w.id, "2026-09-22T17:10:00.000Z");
+    const { frames: outcomes } = await finishWorkout(w.id, "2030-01-08T17:10:00.000Z");
     expect(outcomes).toEqual([
       { frameVersionId: version.id, result: { validated: true, value: proposed!.value, unit: "kg" }, milestoneId: `milestone-${w.id}-${version.id}` },
     ]);
 
     const afterSession = await readStores(db);
-    expect(afterSession.counts.strengthMilestones).toBe(1);
+    expect(afterSession.counts.strengthMilestones).toBe(milestonesBefore + 1);
     expect(afterSession.counts.workouts).toBe((initial.counts.workouts ?? 0) + 1);
     const frozen = await db.strengthFrameVersions.get(version.id);
     expect(frozen).toMatchObject({ firstOfficialWorkoutId: w.id });
@@ -126,9 +135,9 @@ describe("lot 4B sur la sauvegarde réelle", () => {
     const frozenVersion = (await db.strengthFrameVersions.get(version.id))!;
     const raise = proposeRaise(frozenVersion, await db.strengthMilestones.toArray(), await db.workouts.toArray());
     expect(raise).toMatchObject({ value: proposed!.value + 5, unit: "kg", repFloor: 10 });
-    await acceptRaise(frozenVersion, raise!, "2026-09-22T17:30:00.000Z");
+    await acceptRaise(frozenVersion, raise!, "2030-01-08T17:30:00.000Z");
     const accepted = (await db.strengthFrameVersions.get(version.id))!;
-    expect(accepted.currentTarget).toEqual({ value: proposed!.value + 5, unit: "kg", acceptedAt: "2026-09-22T17:30:00.000Z", fromMilestoneId: `milestone-${w.id}-${version.id}` });
+    expect(accepted.currentTarget).toEqual({ value: proposed!.value + 5, unit: "kg", acceptedAt: "2030-01-08T17:30:00.000Z", fromMilestoneId: `milestone-${w.id}-${version.id}` });
     expect(proposeRaise(accepted, await db.strengthMilestones.toArray(), await db.workouts.toArray())).toBeUndefined();
 
     const lastSeries = listSeriesByExercise(w).get("presse-cuisses");
@@ -136,22 +145,22 @@ describe("lot 4B sur la sauvegarde réelle", () => {
       `${proposed!.value + 5} kg (objectif accepté) · pour valider : 2 × 12 · RPE ≤ 8`,
     );
 
-    const started2 = await startFreeWorkout("2026-09-25", "2026-09-25T17:00:00.000Z");
+    const started2 = await startFreeWorkout("2030-01-11", "2030-01-11T17:00:00.000Z");
     const frames2 = await loadActiveFrameVersions();
-    let w2 = addExerciseBlocks(started2, [presse], "2026-09-25T17:01:00.000Z", () => "x2", frames2.versionIdByExercise);
+    let w2 = addExerciseBlocks(started2, [presse], "2030-01-11T17:01:00.000Z", () => "x2", frames2.versionIdByExercise);
     const block2 = w2.blocks[0]!;
     const load2 = { kind: "total" as const, kg: proposed!.value + 5 };
-    w2 = validateSeries(w2, block2.id, seriesOf(w2)[0]!.id, { load: load2, reps: 12, rpe: 8, role: "travail", sideLimited: false }, "2026-09-25T17:02:00.000Z", () => "y2");
-    w2 = addSeries(w2, block2.id, "2026-09-25T17:03:00.000Z", () => "z2");
-    w2 = validateSeries(w2, block2.id, seriesOf(w2).at(-1)!.id, { load: load2, reps: 12, rpe: 8, role: "travail", sideLimited: false }, "2026-09-25T17:05:00.000Z", () => "w2");
-    w2 = finishBlock(w2, block2.id, "2026-09-25T17:06:00.000Z");
+    w2 = validateSeries(w2, block2.id, seriesOf(w2)[0]!.id, { load: load2, reps: 12, rpe: 8, role: "travail", sideLimited: false }, "2030-01-11T17:02:00.000Z", () => "y2");
+    w2 = addSeries(w2, block2.id, "2030-01-11T17:03:00.000Z", () => "z2");
+    w2 = validateSeries(w2, block2.id, seriesOf(w2).at(-1)!.id, { load: load2, reps: 12, rpe: 8, role: "travail", sideLimited: false }, "2030-01-11T17:05:00.000Z", () => "w2");
+    w2 = finishBlock(w2, block2.id, "2030-01-11T17:06:00.000Z");
     await db.workouts.put(w2);
-    const second = await finishWorkout(w2.id, "2026-09-25T17:10:00.000Z");
+    const second = await finishWorkout(w2.id, "2030-01-11T17:10:00.000Z");
     expect(second.frames[0]).toMatchObject({ result: { validated: true, value: proposed!.value + 5 } });
     const afterSecond = (await db.strengthFrameVersions.get(version.id))!;
     expect(afterSecond).not.toHaveProperty("currentTarget");
     expect(afterSecond.firstOfficialWorkoutId).toBe(w.id);
-    expect(await db.strengthMilestones.count()).toBe(2);
+    expect(await db.strengthMilestones.count()).toBe(milestonesBefore + 2);
     expect(proposeRaise(afterSecond, await db.strengthMilestones.toArray(), await db.workouts.toArray())).toMatchObject({ value: proposed!.value + 10 });
     expect(detectStagnation(afterSecond, await db.workouts.toArray(), await db.strengthMilestones.toArray())).toBeUndefined();
 
@@ -160,12 +169,16 @@ describe("lot 4B sur la sauvegarde réelle", () => {
     expect(canonicalStringify(stillUntouched)).toBe(canonicalStringify(initial.stores.workouts));
 
     /* Suppression des deux séances : jalons retirés, version dé-figée, base = fichier + cadre. */
-    const removedSecond = await deleteWorkout(w2.id, "2026-09-25T18:00:00.000Z");
+    const removedSecond = await deleteWorkout(w2.id, "2030-01-11T18:00:00.000Z");
     expect(removedSecond).toMatchObject({ removedMilestones: 1, unfrozenVersionIds: [] });
-    const removed = await deleteWorkout(w.id, "2026-09-22T18:00:00.000Z");
+    const removed = await deleteWorkout(w.id, "2030-01-08T18:00:00.000Z");
     expect(removed).toMatchObject({ removedMilestones: 1, unfrozenVersionIds: [version.id] });
     const final = await readStores(db);
-    expect(final.counts).toEqual({ ...initial.counts, strengthFrames: 1, strengthFrameVersions: 1 });
+    expect(final.counts).toEqual({
+      ...initial.counts,
+      strengthFrames: framesBefore + 1,
+      strengthFrameVersions: versionsBefore + 1,
+    });
     for (const store of Object.keys(initial.stores)) {
       if (store === "strengthFrames" || store === "strengthFrameVersions") continue;
       expect(canonicalStringify(final.stores[store]), store).toBe(canonicalStringify(initial.stores[store]));
