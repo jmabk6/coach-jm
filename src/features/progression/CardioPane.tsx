@@ -15,6 +15,7 @@ import {
   plural,
 } from "./cardioFormat";
 import type { Period } from "./period";
+import { paths } from "../../app/paths";
 
 /**
  * Onglet Cardio (§16, mockup 26) : analyse descriptive par exercice, une
@@ -27,7 +28,7 @@ function CardioCard({ report, period, returnTo }: { report: CardioExerciseReport
   const ranges = describeRanges(report);
   const bpm = describeBpm(report);
   const trend = report.trend ? describeDurationTrend(report.trend) : undefined;
-  const to = `/progression/cardio/${report.exercise.id}?period=${period.key}&returnTo=${encodeURIComponent(returnTo)}`;
+  const to = paths.cardioDetail(report.exercise.id, { period: period.key, returnTo });
 
   return (
     <li>

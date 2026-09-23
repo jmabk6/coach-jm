@@ -13,6 +13,7 @@ import { finishWorkout } from "./finishWorkout";
 import { formatMmSs } from "./workoutDisplay";
 import { formatClock, formatMinutes } from "./workoutRecap";
 import "./ResumeWatcher.css";
+import { paths } from "../../app/paths";
 
 interface FoundWorkout {
   workout: WorkoutSession;
@@ -114,7 +115,7 @@ export function ResumeWatcher() {
           tone: "primary",
           onSelect: () => {
             setFound(undefined);
-            navigate("/seance");
+            navigate(paths.workoutLive());
           },
         },
         {

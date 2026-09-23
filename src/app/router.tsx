@@ -1,5 +1,6 @@
 import { createHashRouter } from "react-router-dom";
 import { AppShell } from "./AppShell";
+import { ROUTES, routeSegment } from "./paths";
 import { ExercisesScreen } from "../features/exercises/ExercisesScreen";
 import { ExerciseDetailScreen } from "../features/exercises/ExerciseDetailScreen";
 import { ExerciseCreateScreen } from "../features/exercises/ExerciseCreateScreen";
@@ -34,31 +35,31 @@ export const router = createHashRouter([
         path: "aujourdhui/apercu/:plannedSessionId",
         element: <SessionPreviewScreen />,
       },
-      { path: "seance", element: <WorkoutScreen /> },
-      { path: "seance/exercice-rapide", element: <QuickExerciseScreen /> },
-      { path: "programme", element: <ProgramScreen /> },
-      { path: "programme/programmation", element: <WeeklyProgramScreen /> },
+      { path: routeSegment(ROUTES.workoutLive), element: <WorkoutScreen /> },
+      { path: routeSegment(ROUTES.quickExercise), element: <QuickExerciseScreen /> },
+      { path: routeSegment(ROUTES.planning), element: <ProgramScreen /> },
+      { path: routeSegment(ROUTES.weeklyProgram), element: <WeeklyProgramScreen /> },
       { path: "workouts/:workoutId", element: <WorkoutRecapScreen /> },
       { path: "workouts/:workoutId/blocks/:blockId", element: <WorkoutBlockDetailScreen /> },
-      { path: "progression", element: <ProgressionScreen /> },
-      { path: "historique", element: <HistoryScreen /> },
-      { path: "progression/cardio/:exerciseId", element: <CardioDetailScreen /> },
-      { path: "plus", element: <PlusScreen /> },
-      { path: "sessions", element: <SessionsScreen /> },
-      { path: "sessions/new", element: <SessionCreateScreen /> },
-      { path: "sessions/:sessionId/edit", element: <SessionEditScreen /> },
-      { path: "sessions/:sessionId", element: <SessionDetailScreen /> },
-      { path: "sessions/:sessionId/notes/:blockId", element: <SessionNoteScreen /> },
+      { path: routeSegment(ROUTES.progression), element: <ProgressionScreen /> },
+      { path: routeSegment(ROUTES.history), element: <HistoryScreen /> },
+      { path: `${routeSegment(ROUTES.progression)}/cardio/:exerciseId`, element: <CardioDetailScreen /> },
+      { path: routeSegment(ROUTES.plus), element: <PlusScreen /> },
+      { path: routeSegment(ROUTES.sessions), element: <SessionsScreen /> },
+      { path: `${routeSegment(ROUTES.sessions)}/new`, element: <SessionCreateScreen /> },
+      { path: `${routeSegment(ROUTES.sessions)}/:sessionId/edit`, element: <SessionEditScreen /> },
+      { path: `${routeSegment(ROUTES.sessions)}/:sessionId`, element: <SessionDetailScreen /> },
+      { path: `${routeSegment(ROUTES.sessions)}/:sessionId/notes/:blockId`, element: <SessionNoteScreen /> },
       {
-        path: "sessions/:sessionId/blocks/:blockId",
+        path: `${routeSegment(ROUTES.sessions)}/:sessionId/blocks/:blockId`,
         element: <BlockEditScreen />,
       },
       {
-        path: "sessions/:sessionId/groups/:groupId",
+        path: `${routeSegment(ROUTES.sessions)}/:sessionId/groups/:groupId`,
         element: <GroupEditScreen />,
       },
       {
-        path: "sessions/:sessionId/groups/:groupId/children/:childId",
+        path: `${routeSegment(ROUTES.sessions)}/:sessionId/groups/:groupId/children/:childId`,
         element: <BlockEditScreen />,
       },
       { path: "exercises", element: <ExercisesScreen /> },

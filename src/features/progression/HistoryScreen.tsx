@@ -12,6 +12,7 @@ import { isMobilityAssessment } from "../../domain/rules/workoutKindRules";
 import { describeWorkoutSummary, hasPerformedBlock, isCountedWorkout } from "./overview";
 import { groupWorkoutsByMonth, type HistoryMonth } from "./historyGroups";
 import "./Progression.css";
+import { paths } from "../../app/paths";
 
 type LoadState =
   | { status: "loading" }
@@ -56,7 +57,7 @@ export function HistoryScreen() {
   return (
     <section className="progression history">
       <header className="history__nav">
-        <Link to="/progression" className="history__back">‹ Progression</Link>
+        <Link to={paths.progression()} className="history__back">‹ Progression</Link>
         <h1>Historique</h1>
       </header>
 
@@ -88,7 +89,7 @@ export function HistoryScreen() {
 
                 return (
                   <li key={workout.id} className={counted || assessment ? undefined : "history__item--empty"}>
-                    <Link to={`/workouts/${workout.id}?returnTo=${encodeURIComponent("/historique")}`}>
+                    <Link to={`/workouts/${workout.id}?returnTo=${encodeURIComponent(paths.history())}`}>
                       <span className="progression-recent__date">
                         {label.weekday} {label.day}
                       </span>

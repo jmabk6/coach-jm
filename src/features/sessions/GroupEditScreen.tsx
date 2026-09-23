@@ -43,6 +43,7 @@ import {
 import { useSessionTemplate } from "./useSessionTemplate";
 import "./BlockEditScreen.css";
 import "./GroupEditScreen.css";
+import { paths } from "../../app/paths";
 
 /**
  * Modifier le groupe (§7, mockup p. 10) : nom libre, description, tours et
@@ -70,7 +71,7 @@ export function GroupEditScreen() {
   if (!group) {
     return (
       <section className="block-edit">
-        <Link to={`/sessions/${template.id}`} className="block-edit__back">
+        <Link to={paths.session(template.id)} className="block-edit__back">
           ‹ {template.name}
         </Link>
         <p className="block-edit__message">Groupe introuvable.</p>
@@ -125,7 +126,7 @@ function GroupEditForm({ template, group, exerciseById, save }: GroupEditFormPro
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
 
-  const backTo = `/sessions/${template.id}`;
+  const backTo = paths.session(template.id);
   const selfPath = `${backTo}/groups/${group.id}`;
   const numbering = calculateBlockNumbering(template.blocks);
   const groupNumber = numbering[group.id] ?? "";

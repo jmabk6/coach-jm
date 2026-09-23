@@ -48,6 +48,7 @@ import {
 } from "./sessionTemplateEdits";
 import { useSessionTemplate } from "./useSessionTemplate";
 import "./BlockEditScreen.css";
+import { paths } from "../../app/paths";
 
 /**
  * Un seul écran pour toutes les variantes (§8) : exercice autonome en
@@ -78,7 +79,7 @@ export function BlockEditScreen() {
   if (!target) {
     return (
       <section className="block-edit">
-        <Link to={`/sessions/${template.id}`} className="block-edit__back">
+        <Link to={paths.session(template.id)} className="block-edit__back">
           ‹ {template.name}
         </Link>
         <p className="block-edit__message">Brique introuvable.</p>
@@ -91,7 +92,7 @@ export function BlockEditScreen() {
   if (!exercise) {
     return (
       <section className="block-edit">
-        <Link to={`/sessions/${template.id}`} className="block-edit__back">
+        <Link to={paths.session(template.id)} className="block-edit__back">
           ‹ {template.name}
         </Link>
         <p className="block-edit__message">
@@ -187,7 +188,7 @@ function BlockEditForm({ template, exerciseById, target, exercise, save }: Block
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
 
-  const backTo = `/sessions/${template.id}`;
+  const backTo = paths.session(template.id);
   const selfPath =
     target.kind === "block"
       ? `${backTo}/blocks/${target.block.id}`

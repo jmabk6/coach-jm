@@ -5,6 +5,7 @@ import { CardioDetailView } from "./CardioDetailView";
 import { PERIOD_DAYS, resolvePeriod, type PeriodKey } from "./period";
 import { useProgressionData } from "./useProgressionData";
 import "./Progression.css";
+import { paths } from "../../app/paths";
 
 /**
  * `/progression/cardio/:exerciseId` : le détail d'un exercice cardio,
@@ -19,7 +20,7 @@ export function CardioDetailScreen() {
   const periodParam = searchParams.get("period");
   const periodKey: PeriodKey = periodParam && periodParam in PERIOD_DAYS ? (periodParam as PeriodKey) : "12w";
   const backTo =
-    searchParams.get("returnTo") ?? `/progression?tab=cardio${periodKey === "12w" ? "" : `&period=${periodKey}`}`;
+    searchParams.get("returnTo") ?? paths.progression({ tab: "cardio", period: periodKey === "12w" ? undefined : periodKey });
 
   const period = useMemo(
     () => (data.status === "ready" ? resolvePeriod(periodKey, data.today) : undefined),

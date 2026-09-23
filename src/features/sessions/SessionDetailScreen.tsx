@@ -40,6 +40,7 @@ import {
 } from "./sessionTemplateEdits";
 import { useSessionTemplate } from "./useSessionTemplate";
 import "./SessionDetailScreen.css";
+import { paths } from "../../app/paths";
 
 /**
  * Détail d'une séance (§5–§7, mockups p. 12–13) : la liste ordonnée des
@@ -107,7 +108,7 @@ export function SessionDetailScreen() {
   if (state.status === "missing") {
     return (
       <section className="session-detail">
-        <Link to="/sessions" className="session-detail__back">‹ Séances</Link>
+        <Link to={paths.sessions()} className="session-detail__back">‹ Séances</Link>
         <p className="session-detail__message">Séance introuvable.</p>
       </section>
     );
@@ -120,7 +121,7 @@ export function SessionDetailScreen() {
   function openLibrary() {
     const params = new URLSearchParams();
     params.set("mode", "select");
-    params.set("returnTo", `/sessions/${template.id}`);
+    params.set("returnTo", paths.session(template.id));
     listExerciseIds(template.blocks).forEach((id) =>
       params.append("alreadyAdded", id),
     );
@@ -182,7 +183,7 @@ export function SessionDetailScreen() {
 
     try {
       await start();
-      navigate("/seance");
+      navigate(paths.workoutLive());
     } catch (cause) {
       setSelectionNotice(cause instanceof Error ? cause.message : "Démarrage impossible");
     }
@@ -240,7 +241,7 @@ export function SessionDetailScreen() {
   async function handleArchive() {
     setMenuOpen(false);
     await archiveSessionTemplate(template.id);
-    navigate("/sessions", { replace: true });
+    navigate(paths.sessions(), { replace: true });
   }
 
   function blockMenuActions(block: SessionBlock): SheetAction[] {
@@ -258,7 +259,7 @@ export function SessionDetailScreen() {
       return [
         {
           label: "Modifier la note",
-          onSelect: () => navigate(`/sessions/${template.id}/notes/${block.id}`),
+          onSelect: () => navigate(paths.sessionNote(template.id, block.id)),
         },
         { ...remove, hint: "La note est retirée de cette séance" },
       ];
@@ -268,7 +269,7 @@ export function SessionDetailScreen() {
       return [
         {
           label: "Modifier le groupe",
-          onSelect: () => navigate(`/sessions/${template.id}/groups/${block.id}`),
+          onSelect: () => navigate(paths.sessionGroup(template.id, block.id)),
         },
         { ...remove, label: "Supprimer le groupe" },
       ];
@@ -277,7 +278,7 @@ export function SessionDetailScreen() {
     return [
       {
         label: "Modifier les consignes",
-        onSelect: () => navigate(`/sessions/${template.id}/blocks/${block.id}`),
+        onSelect: () => navigate(paths.sessionBlock(template.id, block.id)),
       },
       remove,
     ];
@@ -291,7 +292,7 @@ export function SessionDetailScreen() {
             Sélection
           </span>
         ) : (
-          <Link to="/sessions" className="session-detail__back">
+          <Link to={paths.sessions()} className="session-detail__back">
             ‹ Séances
           </Link>
         )}
@@ -353,7 +354,7 @@ export function SessionDetailScreen() {
                     block={block}
                     selecting={selecting}
                     onOpen={() =>
-                      navigate(`/sessions/${template.id}/notes/${block.id}`)
+                      navigate(paths.sessionNote(template.id, block.id))
                     }
                     onOpenMenu={() => setBlockMenu(block)}
                   />
@@ -369,11 +370,11 @@ export function SessionDetailScreen() {
                     exerciseById={exerciseById}
                     selecting={selecting}
                     onOpen={() =>
-                      navigate(`/sessions/${template.id}/groups/${block.id}`)
+                      navigate(paths.sessionGroup(template.id, block.id))
                     }
                     onOpenChild={(child) =>
                       navigate(
-                        `/sessions/${template.id}/groups/${block.id}/children/${child.id}`,
+                        paths.sessionGroupChild(template.id, block.id, child.id),
                       )
                     }
                     onOpenMenu={() => setBlockMenu(block)}
@@ -396,7 +397,7 @@ export function SessionDetailScreen() {
                       }
                     : {})}
                   onOpen={() =>
-                    navigate(`/sessions/${template.id}/blocks/${block.id}`)
+                    navigate(paths.sessionBlock(template.id, block.id))
                   }
                   onOpenMenu={() => setBlockMenu(block)}
                 />
@@ -505,7 +506,7 @@ export function SessionDetailScreen() {
               : []),
             {
               label: "Modifier le nom ou la catégorie",
-              onSelect: () => navigate(`/sessions/${template.id}/edit`),
+              onSelect: () => navigate(paths.sessionEdit(template.id)),
             },
             {
               label: "Archiver la séance",
@@ -634,7 +635,7 @@ function AddActions({ templateId, onAddExercise, onCreateGroup, compact }: AddAc
       <button
         type="button"
         className="session-detail__action"
-        onClick={() => navigate(`/sessions/${templateId}/notes/new`)}
+        onClick={() => navigate(paths.sessionNote(templateId, "new"))}
       >
         <FileText size={22} strokeWidth={2} aria-hidden="true" />
         <span>

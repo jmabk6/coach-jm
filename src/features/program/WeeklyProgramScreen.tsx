@@ -27,6 +27,7 @@ import { categoryClassName } from "../sessions/sessionCategoryClass";
 import { applyWeeklyProgram } from "./applyWeeklyProgram";
 import { TemplateSheet } from "./ProgramSheets";
 import "./ProgramScreen.css";
+import { paths } from "../../app/paths";
 
 type LoadState =
   | { status: "loading" }
@@ -129,7 +130,7 @@ export function WeeklyProgramScreen() {
   return (
     <section className="program-screen">
       <nav className="program-screen__nav">
-        <Link to="/programme" className="program-screen__back">
+        <Link to={paths.planning()} className="program-screen__back">
           ‹ Programme
         </Link>
       </nav>

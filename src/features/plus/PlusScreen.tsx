@@ -9,6 +9,7 @@ import {
   type ImportHistoryResult,
 } from "../history/importHistory";
 import "./PlusScreen.css";
+import { paths } from "../../app/paths";
 
 type ImportState =
   | { status: "idle" }
@@ -47,7 +48,7 @@ export function PlusScreen() {
       </header>
 
       <nav className="plus-list" aria-label="Outils">
-        <Link to="/sessions" className="plus-list__item">
+        <Link to={paths.sessions()} className="plus-list__item">
           <span className="plus-list__icon" aria-hidden="true">
             <ListChecks size={22} strokeWidth={2} />
           </span>

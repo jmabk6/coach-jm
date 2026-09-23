@@ -20,6 +20,7 @@ import {
 } from "../../domain/rules/sessionTemplateRules";
 import { SessionCategoryIcon } from "./sessionCategory";
 import { categoryClassName } from "./sessionCategoryClass";
+import { paths } from "../../app/paths";
 
 interface SessionCardProps {
   template: SessionTemplate;
@@ -48,7 +49,7 @@ export function SessionCard({
 
   return (
     <li className="session-card">
-      <Link to={`/sessions/${template.id}`} className="session-card__link">
+      <Link to={paths.session(template.id)} className="session-card__link">
         <SessionCardIcon template={template} />
 
         <span className="session-card__body">

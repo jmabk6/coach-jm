@@ -44,6 +44,7 @@ import {
   TemplateSheet,
 } from "./ProgramSheets";
 import "./ProgramScreen.css";
+import { paths } from "../../app/paths";
 
 type ProgramView = "week" | "month";
 
@@ -169,7 +170,7 @@ export function ProgramScreen() {
   function handleMenuAction(session: PlannedSession, action: PlannedSessionAction) {
     switch (action) {
       case "detail":
-        navigate(`/sessions/${session.sessionTemplateId}`);
+        navigate(paths.session(session.sessionTemplateId));
         return;
       case "move":
         setFlow({ kind: "move", session });
@@ -194,13 +195,13 @@ export function ProgramScreen() {
         return;
       case "start":
         if (session.status === "in_progress") {
-          navigate("/seance");
+          navigate(paths.workoutLive());
           return;
         }
 
         void run(async () => {
           await startWorkout(session.id);
-          navigate("/seance");
+          navigate(paths.workoutLive());
         });
         return;
     }
@@ -540,7 +541,7 @@ function WeekView({
         Ajouter une séance
       </button>
 
-      <Link to="/programme/programmation" className="program-screen__rule-link">
+      <Link to={paths.weeklyProgram()} className="program-screen__rule-link">
         <CalendarCog size={22} strokeWidth={2} aria-hidden="true" />
         <span>
           <span className="program-screen__rule-title">

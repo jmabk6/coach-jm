@@ -8,6 +8,7 @@ import {
   SessionTemplateForm,
   type SessionTemplateIdentity,
 } from "./SessionTemplateForm";
+import { paths } from "../../app/paths";
 
 /**
  * Nouvelle séance : identité seulement. Le modèle est créé sans brique,
@@ -30,7 +31,7 @@ export function SessionCreateScreen() {
     };
 
     await saveSessionTemplate(template);
-    navigate(`/sessions/${template.id}`, { replace: true });
+    navigate(paths.session(template.id), { replace: true });
   }
 
   return (
@@ -38,7 +39,7 @@ export function SessionCreateScreen() {
       title="Nouvelle séance"
       intro="Un modèle réutilisable. Ses briques viendront ensuite."
       backLabel="Séances"
-      backTo="/sessions"
+      backTo={paths.sessions()}
       submitLabel="Créer la séance"
       onSubmit={handleSubmit}
     />

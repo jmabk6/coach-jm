@@ -9,6 +9,7 @@ import {
   SessionTemplateForm,
   type SessionTemplateIdentity,
 } from "./SessionTemplateForm";
+import { paths } from "../../app/paths";
 
 type LoadState =
   | { status: "loading" }
@@ -75,7 +76,7 @@ export function SessionEditScreen() {
 
     await saveSessionTemplate(next);
 
-    navigate(`/sessions/${template.id}`, { replace: true });
+    navigate(paths.session(template.id), { replace: true });
   }
 
   return (
@@ -83,7 +84,7 @@ export function SessionEditScreen() {
       title="Modifier la séance"
       intro="Nom, catégorie et description du modèle."
       backLabel={template.name}
-      backTo={`/sessions/${template.id}`}
+      backTo={paths.session(template.id)}
       submitLabel="Enregistrer les modifications"
       initial={{
         name: template.name,

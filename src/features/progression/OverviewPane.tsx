@@ -8,6 +8,7 @@ import type { Breakdown, CategoryKey, Overview } from "./overview";
 import { periodBaseLabels, periodLabels } from "./period";
 import { formatTrendPercent } from "./trends";
 import { formatDurationTotal } from "./progressionFormat";
+import { paths } from "../../app/paths";
 
 /**
  * Vue générale (§16, mockup 24) : six blocs, dans cet ordre, et rien
@@ -210,7 +211,7 @@ export function OverviewPane({ overview }: { overview: Overview }) {
         <h2>
           <BarChart3 size={18} strokeWidth={2} aria-hidden="true" />
           Dernières séances réalisées
-          <Link to="/historique" className="progression-card__link">
+          <Link to={paths.history()} className="progression-card__link">
             Voir tout ›
           </Link>
         </h2>
@@ -223,7 +224,7 @@ export function OverviewPane({ overview }: { overview: Overview }) {
 
               return (
                 <li key={line.workoutId}>
-                  <Link to={`/workouts/${line.workoutId}?returnTo=${encodeURIComponent("/progression")}`}>
+                  <Link to={`/workouts/${line.workoutId}?returnTo=${encodeURIComponent(paths.progression())}`}>
                     <span className="progression-recent__date">
                       {label.weekday} {label.day}
                     </span>

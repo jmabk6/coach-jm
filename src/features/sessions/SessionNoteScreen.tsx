@@ -9,6 +9,7 @@ import {
 } from "./sessionTemplateEdits";
 import { useSessionTemplate } from "./useSessionTemplate";
 import "./SessionTemplateForm.css";
+import { paths } from "../../app/paths";
 
 /**
  * Une note est une brique sans numéro (§6) : un titre facultatif, un texte.
@@ -40,7 +41,7 @@ export function SessionNoteScreen() {
   if (blockId && blockId !== "new" && !existing) {
     return (
       <section className="session-form">
-        <Link to={`/sessions/${template.id}`} className="session-form__back">
+        <Link to={paths.session(template.id)} className="session-form__back">
           ‹ {template.name}
         </Link>
         <p className="session-form__message">Note introuvable.</p>
@@ -52,7 +53,7 @@ export function SessionNoteScreen() {
     <NoteForm
       key={existing?.id ?? "new"}
       templateName={template.name}
-      backTo={`/sessions/${template.id}`}
+      backTo={paths.session(template.id)}
       initial={
         existing?.kind === "note"
           ? { title: existing.title ?? "", text: existing.text }

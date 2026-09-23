@@ -63,6 +63,7 @@ import { calculatePerformedNumbering, describeNextUp } from "./workoutDisplay";
 import { formatClock } from "./workoutRecap";
 import "./WorkoutScreen.css";
 import "./WorkoutBlocks.css";
+import { paths } from "../../app/paths";
 
 /**
  * Séance en cours (§11, mockups 15–16) : liste déroulante de toutes les
@@ -250,7 +251,7 @@ export function WorkoutScreen() {
     setAdding(false);
     const params = new URLSearchParams();
     params.set("mode", "select");
-    params.set("returnTo", "/seance");
+    params.set("returnTo", paths.workoutLive());
     for (const block of blocks) {
       if (block.kind === "exercise") params.append("alreadyAdded", block.exerciseId);
       if (block.kind === "group") {
@@ -274,7 +275,7 @@ export function WorkoutScreen() {
     const params = new URLSearchParams();
     params.set("mode", "select");
     params.set("single", "1");
-    params.set("returnTo", `/seance?${returnTo.toString()}`);
+    params.set("returnTo", paths.workoutLive(returnTo));
     if (planned?.category === "Musculation") params.append("zone", planned.zone);
     navigate(`/exercises?${params.toString()}`);
   }
@@ -575,7 +576,7 @@ export function WorkoutScreen() {
                   },
                   {
                     label: "Voir la fiche",
-                    onSelect: () => navigate(`/exercises/${blockMenu.exerciseId}`, { state: { from: "/seance" } }),
+                    onSelect: () => navigate(`/exercises/${blockMenu.exerciseId}`, { state: { from: paths.workoutLive() } }),
                   },
                 ]
               : [...blockMenu.children]
@@ -706,7 +707,7 @@ export function WorkoutScreen() {
               hint: "Nom, zone, mouvement, équipement, type de mesure — il rejoint la bibliothèque",
               onSelect: () => {
                 setAdding(false);
-                navigate("/seance/exercice-rapide");
+                navigate(paths.quickExercise());
               },
             },
           ]}

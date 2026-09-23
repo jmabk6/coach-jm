@@ -51,6 +51,7 @@ import {
   type WorkoutRecapLine,
 } from "./workoutRecap";
 import "./WorkoutRecapScreen.css";
+import { paths } from "../../app/paths";
 
 type LoadState =
   | { status: "loading" }
@@ -91,7 +92,7 @@ export function WorkoutRecapScreen() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string>();
 
-  const returnTo = searchParams.get("returnTo") ?? "/programme";
+  const returnTo = searchParams.get("returnTo") ?? paths.planning();
 
   useEffect(() => {
     let cancelled = false;

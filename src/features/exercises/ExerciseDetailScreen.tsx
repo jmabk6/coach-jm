@@ -34,6 +34,7 @@ import {
 import { FrameSection } from "../strength/FrameSection";
 import { ExerciseDemonstration } from "./ExerciseDemonstration";
 import "./ExerciseDetailScreen.css";
+import { ROUTES } from "../../app/paths";
 
 type LoadState =
   | { status: "loading" }
@@ -113,7 +114,7 @@ export function ExerciseDetailScreen() {
     cameFrom ??
     (selectionMode ? `/exercises?${searchParams.toString()}` : "/exercises");
   /* Le libellé suit la provenance : depuis Progression, on y retourne. */
-  const backLabel = cameFrom?.startsWith("/progression") ? "← Progression" : "← Exercices";
+  const backLabel = cameFrom?.startsWith(ROUTES.progression) ? "← Progression" : "← Exercices";
 
   const [state, setState] = useState<LoadState>({
     status: "loading",

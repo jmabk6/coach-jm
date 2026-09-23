@@ -42,6 +42,7 @@ import { SessionCard, SortableSessionCard } from "./SessionCard";
 import { SessionCategoryIcon } from "./sessionCategory";
 import { sessionCategories } from "./sessionCategories";
 import "./SessionsScreen.css";
+import { paths } from "../../app/paths";
 
 type LoadState =
   | { status: "loading" }
@@ -269,7 +270,7 @@ export function SessionsScreen() {
           <button
             type="button"
             className="sessions-screen__primary"
-            onClick={() => navigate("/sessions/new")}
+            onClick={() => navigate(paths.sessionNew())}
           >
             <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
             Nouvelle séance
@@ -342,7 +343,7 @@ export function SessionsScreen() {
           <button
             type="button"
             className="sessions-screen__primary"
-            onClick={() => navigate("/sessions/new")}
+            onClick={() => navigate(paths.sessionNew())}
           >
             <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
             Nouvelle séance
@@ -499,12 +500,12 @@ export function SessionsScreen() {
               : [
                   {
                     label: "Ouvrir la séance",
-                    onSelect: () => navigate(`/sessions/${menuTemplate.id}`),
+                    onSelect: () => navigate(paths.session(menuTemplate.id)),
                   },
                   {
                     label: "Modifier le nom ou la catégorie",
                     onSelect: () =>
-                      navigate(`/sessions/${menuTemplate.id}/edit`),
+                      navigate(paths.sessionEdit(menuTemplate.id)),
                   },
                   {
                     label: "Archiver",

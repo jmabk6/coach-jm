@@ -65,6 +65,7 @@ import {
   type WorkoutRecapLine,
 } from "./workoutRecap";
 import "./WorkoutRecapScreen.css";
+import { paths } from "../../app/paths";
 
 type LoadState =
   | { status: "loading" }
@@ -95,7 +96,7 @@ export function WorkoutBlockDetailScreen() {
   const [searchParams] = useSearchParams();
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
-  const returnTo = searchParams.get("returnTo") ?? "/programme";
+  const returnTo = searchParams.get("returnTo") ?? paths.planning();
   const search = `?returnTo=${encodeURIComponent(returnTo)}`;
   const backTo = workoutId ? `/workouts/${workoutId}${search}` : returnTo;
 

@@ -34,6 +34,7 @@ import { startWorkout } from "../workout/startWorkout";
 import { categoryForWorkout } from "../program/freeWorkouts";
 import { useTodayData, type TodayData } from "./useTodayData";
 import "./TodayScreen.css";
+import { paths } from "../../app/paths";
 
 /**
  * Aujourd'hui (§10, mockups 21–22) : la journée telle qu'elle est
@@ -84,13 +85,13 @@ export function TodayScreen() {
   const startPlanned = (session: PlannedSession) =>
     run(
       () => startWorkout(session.id),
-      () => navigate("/seance"),
+      () => navigate(paths.workoutLive()),
     );
 
   const startFree = (template?: SessionTemplate, kind?: WorkoutKind) =>
     run(
       () => startFreeWorkout(data.today, new Date().toISOString(), template, kind ? { kind } : {}),
-      () => navigate("/seance"),
+      () => navigate(paths.workoutLive()),
     );
 
   return (
@@ -161,7 +162,7 @@ function TodayHeader({ date }: { date?: string }) {
         {date && <p className="today__date">{formatTodayTitle(date)}</p>}
       </div>
       <Link
-        to="/programme"
+        to={paths.planning()}
         className="today__calendar"
         aria-label="Voir le programme"
       >
@@ -384,7 +385,7 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
       )}
 
       {running ? (
-        <Link to="/seance" className="today__primary">
+        <Link to={paths.workoutLive()} className="today__primary">
           <Play size={18} strokeWidth={2.2} aria-hidden="true" />
           {openPause ? "Ouvrir la séance" : "Reprendre la séance"}
         </Link>
@@ -420,7 +421,7 @@ function NextSessions({ data }: { data: TodayData }) {
     <section className="today-card">
       <div className="today-card__row">
         <h2 className="today-card__title">Prochaines séances</h2>
-        <Link to="/programme" className="today__link">
+        <Link to={paths.planning()} className="today__link">
           Voir le programme
         </Link>
       </div>
@@ -439,7 +440,7 @@ function NextSessions({ data }: { data: TodayData }) {
             return (
               <li key={session.id}>
                 <Link
-                  to={`/programme?date=${session.date}`}
+                  to={paths.planning({ date: session.date })}
                   className="today-next__row"
                 >
                   <span className="today-next__day">

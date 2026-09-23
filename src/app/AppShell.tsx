@@ -1,13 +1,14 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CalendarDays, Ellipsis, Sun, BarChart3 } from "lucide-react";
 import { ResumeWatcher } from "../features/workout/ResumeWatcher";
+import { paths, ROUTES } from "./paths";
 import "./AppShell.css";
 
 const tabs = [
   { to: "/", label: "Aujourd'hui", icon: Sun },
-  { to: "/programme", label: "Programme", icon: CalendarDays },
-  { to: "/progression", label: "Progression", icon: BarChart3 },
-  { to: "/plus", label: "Plus", icon: Ellipsis },
+  { to: paths.planning(), label: "Programme", icon: CalendarDays },
+  { to: paths.progression(), label: "Progression", icon: BarChart3 },
+  { to: paths.plus(), label: "Plus", icon: Ellipsis },
 ];
 
 export function AppShell() {
@@ -17,7 +18,7 @@ export function AppShell() {
   const params = new URLSearchParams(location.search);
   const selectionMode =
     (location.pathname.startsWith("/exercises") && params.get("mode") === "select") ||
-    (location.pathname.startsWith("/sessions/") && params.get("select") === "1");
+    (location.pathname.startsWith(`${ROUTES.sessions}/`) && params.get("select") === "1");
 
   return (
     <div className="app-shell">

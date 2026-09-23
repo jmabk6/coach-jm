@@ -44,6 +44,7 @@ import { categoryClassName } from "../sessions/sessionCategoryClass";
 import { startWorkout } from "../workout/startWorkout";
 import { todayLocalDate } from "./useTodayData";
 import "./TodayScreen.css";
+import { paths } from "../../app/paths";
 
 type LoadState =
   | { status: "loading" }
@@ -154,7 +155,7 @@ export function SessionPreviewScreen() {
     try {
       setError(undefined);
       await startWorkout(session.id);
-      navigate("/seance", { replace: true });
+      navigate(paths.workoutLive(), { replace: true });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Démarrage impossible");
     }

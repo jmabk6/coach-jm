@@ -10,6 +10,7 @@ import type {
 import { saveExercise } from "../../db/repositories/exerciseRepository";
 import { buildExercise, type DurationDistanceMode } from "../exercises/buildExercise";
 import "../exercises/ExerciseCreateScreen.css";
+import { paths } from "../../app/paths";
 
 const zones: MuscleZone[] = ["Jambes", "Dos", "Pecs", "Épaules", "Bras", "Core"];
 const movements: Movement[] = ["Tirage", "Poussée", "Squat", "Charnière", "Isolation", "Gainage"];
@@ -100,7 +101,7 @@ export function QuickExerciseScreen() {
       );
 
       await saveExercise(exercise);
-      navigate(`/seance?add=${encodeURIComponent(exercise.id)}`, { replace: true });
+      navigate(paths.workoutLive({ add: exercise.id }), { replace: true });
     } catch (cause) {
       setSaving(false);
       setError(cause instanceof Error ? cause.message : "Création impossible");
@@ -109,7 +110,7 @@ export function QuickExerciseScreen() {
 
   return (
     <main className="exercise-create">
-      <Link to="/seance" className="exercise-create__back">
+      <Link to={paths.workoutLive()} className="exercise-create__back">
         ‹ Séance en cours
       </Link>
 
