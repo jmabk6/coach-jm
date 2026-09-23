@@ -131,7 +131,7 @@ export function WeeklyProgramScreen() {
     <section className="program-screen">
       <nav className="program-screen__nav">
         <Link to={paths.planning()} className="program-screen__back">
-          ‹ Programme
+          ‹ Planning
         </Link>
       </nav>
 

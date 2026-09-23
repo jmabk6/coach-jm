@@ -158,13 +158,13 @@ function TodayHeader({ date }: { date?: string }) {
   return (
     <header className="today__header">
       <div>
-        <h1>Aujourd'hui</h1>
+        <h1>Accueil</h1>
         {date && <p className="today__date">{formatTodayTitle(date)}</p>}
       </div>
       <Link
         to={paths.planning()}
         className="today__calendar"
-        aria-label="Voir le programme"
+        aria-label="Voir le planning"
       >
         <CalendarDays size={24} strokeWidth={2} aria-hidden="true" />
       </Link>
@@ -422,7 +422,7 @@ function NextSessions({ data }: { data: TodayData }) {
       <div className="today-card__row">
         <h2 className="today-card__title">Prochaines séances</h2>
         <Link to={paths.planning()} className="today__link">
-          Voir le programme
+          Voir le planning
         </Link>
       </div>
 
@@ -501,7 +501,7 @@ function ChooseSessionSheet({ data, onChoose, onDismiss }: ChooseSessionSheetPro
   return (
     <BottomSheet
       title="Choisir une séance"
-      message="La séance démarre tout de suite. Le Programme n'est pas modifié."
+      message="La séance démarre tout de suite. Le planning n'est pas modifié."
       actions={[
         ...data.activeTemplates.map((template) => ({
           label: template.name,

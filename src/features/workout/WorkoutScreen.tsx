@@ -194,7 +194,7 @@ export function WorkoutScreen() {
   if (state.status === "none" || !workout) {
     return (
       <section className="workout">
-        <Link to="/" className="workout__back">‹ Aujourd'hui</Link>
+        <Link to="/" className="workout__back">‹ Accueil</Link>
         <p className="workout__message">Aucune séance en cours.</p>
       </section>
     );
@@ -350,7 +350,7 @@ export function WorkoutScreen() {
     <section className={`workout ${workout.activeRest && !intraRoundRest ? "workout--resting" : ""}`}>
       <header className="workout__header">
         <div className="workout__topline">
-          <Link to="/" className="workout__back">‹ Aujourd'hui</Link>
+          <Link to="/" className="workout__back">‹ Accueil</Link>
           <button
             type="button"
             className="workout__menu"

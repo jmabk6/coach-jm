@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { DatabaseBackup, Dumbbell, ListChecks } from "lucide-react";
+import { BarChart3, DatabaseBackup, Dumbbell } from "lucide-react";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { db } from "../../db/database";
 import { BackupSection } from "../backup/BackupSection";
@@ -19,8 +19,10 @@ type ImportState =
   | { status: "error"; message: string };
 
 /**
- * Écran Plus : réglages et outils secondaires.
- * Séances et bibliothèque d'exercices s'ouvrent d'ici (§18 : Plus = gestion).
+ * Écran Plus : réglages et outils secondaires. La bibliothèque d'exercices
+ * s'ouvre d'ici (§18 : Plus = gestion) ; Séances est un onglet depuis le
+ * lot B. « Statistiques » ouvre l'ancien écran Progression, provisoire
+ * jusqu'au lot N (conception V2 § 2.1.3, D6).
  */
 export function PlusScreen() {
   const [importState, setImportState] = useState<ImportState>({ status: "idle" });
@@ -48,21 +50,6 @@ export function PlusScreen() {
       </header>
 
       <nav className="plus-list" aria-label="Outils">
-        <Link to={paths.sessions()} className="plus-list__item">
-          <span className="plus-list__icon" aria-hidden="true">
-            <ListChecks size={22} strokeWidth={2} />
-          </span>
-          <span className="plus-list__content">
-            <span className="plus-list__title">Séances</span>
-            <span className="plus-list__meta">
-              Modèles de séance, briques et groupes
-            </span>
-          </span>
-          <span className="plus-list__chevron" aria-hidden="true">
-            ›
-          </span>
-        </Link>
-
         <Link to="/exercises" className="plus-list__item">
           <span className="plus-list__icon" aria-hidden="true">
             <Dumbbell size={22} strokeWidth={2} />
@@ -71,6 +58,21 @@ export function PlusScreen() {
             <span className="plus-list__title">Exercices</span>
             <span className="plus-list__meta">
               Bibliothèque, fiches et création d'exercices
+            </span>
+          </span>
+          <span className="plus-list__chevron" aria-hidden="true">
+            ›
+          </span>
+        </Link>
+
+        <Link to={paths.progression()} className="plus-list__item">
+          <span className="plus-list__icon" aria-hidden="true">
+            <BarChart3 size={22} strokeWidth={2} />
+          </span>
+          <span className="plus-list__content">
+            <span className="plus-list__title">Statistiques</span>
+            <span className="plus-list__meta">
+              Ancien écran Progression, provisoire
             </span>
           </span>
           <span className="plus-list__chevron" aria-hidden="true">

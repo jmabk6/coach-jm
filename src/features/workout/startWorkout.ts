@@ -30,7 +30,7 @@ export async function startWorkout(
 
   if (plannedSession.removedAt) {
     throw new Error(
-      "Cette séance a été retirée du Programme",
+      "Cette séance a été retirée du Planning",
     );
   }
 

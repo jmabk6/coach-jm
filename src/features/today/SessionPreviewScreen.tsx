@@ -120,7 +120,7 @@ export function SessionPreviewScreen() {
   if (state.status === "loading") {
     return (
       <section className="today preview">
-        <Link to="/" className="preview__back">‹ Aujourd'hui</Link>
+        <Link to="/" className="preview__back">‹ Accueil</Link>
         <p className="today__message">Chargement…</p>
       </section>
     );
@@ -129,7 +129,7 @@ export function SessionPreviewScreen() {
   if (state.status === "missing") {
     return (
       <section className="today preview">
-        <Link to="/" className="preview__back">‹ Aujourd'hui</Link>
+        <Link to="/" className="preview__back">‹ Accueil</Link>
         <p className="today__message">Séance introuvable.</p>
       </section>
     );
@@ -163,7 +163,7 @@ export function SessionPreviewScreen() {
 
   return (
     <section className="today preview">
-      <Link to="/" className="preview__back">‹ Aujourd'hui</Link>
+      <Link to="/" className="preview__back">‹ Accueil</Link>
 
       <header className="today-card__head preview__head">
         <span

@@ -143,7 +143,7 @@ export function useProgramData(
           message:
             error instanceof Error
               ? error.message
-              : "Impossible de charger le Programme",
+              : "Impossible de charger le Planning",
         });
       }
     }

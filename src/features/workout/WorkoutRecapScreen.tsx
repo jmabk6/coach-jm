@@ -251,7 +251,7 @@ export function WorkoutRecapScreen() {
           onDismiss={() => setConfirmingDelete(false)}
         >
           <ul className="recap__consequences">
-            <li>La séance disparaît de l'historique et du Programme.</li>
+            <li>La séance disparaît de l'historique et du Planning.</li>
             <li>La progression, les moyennes de durée et « Dernière fois » sont recalculées sur ce qui reste.</li>
             {workout.plannedSessionId && (
               <li>
@@ -426,8 +426,8 @@ export function WorkoutRecapScreen() {
           <Info size={18} strokeWidth={2} aria-hidden="true" />
           <span>
             {template
-              ? `Séance supplémentaire : réalisée hors Programme à partir du modèle ${template.name}, qui n'est pas modifié. La règle hebdomadaire n'est pas concernée.`
-              : "Séance libre : réalisée hors Programme, sans modèle rattaché. La règle hebdomadaire n'est pas concernée."}
+              ? `Séance supplémentaire : réalisée hors programme à partir du modèle ${template.name}, qui n'est pas modifié. La règle hebdomadaire n'est pas concernée.`
+              : "Séance libre : réalisée hors programme, sans modèle rattaché. La règle hebdomadaire n'est pas concernée."}
           </span>
         </p>
       )}

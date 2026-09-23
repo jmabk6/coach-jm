@@ -207,7 +207,7 @@ export function FreeWorkoutMenu({
   return (
     <BottomSheet
       title={formatPlannedSessionTitle("Séance libre", workout.date)}
-      message="Faite · réalisée hors Programme, la règle hebdomadaire n'est pas concernée"
+      message="Faite · réalisée hors programme, la règle hebdomadaire n'est pas concernée"
       actions={[
         {
           label: "Voir le récapitulatif",

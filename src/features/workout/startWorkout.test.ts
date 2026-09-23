@@ -192,7 +192,7 @@ describe("startWorkout", () => {
     expect(savePlannedSession).not.toHaveBeenCalled();
   });
 
-  it("refuse une occurrence retirée du Programme", async () => {
+  it("refuse une occurrence retirée du Planning", async () => {
     getPlannedSession.mockResolvedValue({
       ...plannedSession,
       removedAt: "2026-09-13T10:00:00.000Z",
@@ -204,7 +204,7 @@ describe("startWorkout", () => {
         "2026-09-14T18:00:00.000Z",
       ),
     ).rejects.toThrow(
-      "Cette séance a été retirée du Programme",
+      "Cette séance a été retirée du Planning",
     );
 
     expect(saveWorkout).not.toHaveBeenCalled();

@@ -149,7 +149,7 @@ export async function updatePlannedSession(
   }
 
   if (plannedSession.removedAt) {
-    throw new Error("Cette séance a été retirée du Programme");
+    throw new Error("Cette séance a été retirée du Planning");
   }
 
   await db.plannedSessions.update(id, {
@@ -169,7 +169,7 @@ export async function updatePlannedSessionStatus(
   }
 
   if (plannedSession.removedAt) {
-    throw new Error("Cette séance a été retirée du Programme");
+    throw new Error("Cette séance a été retirée du Planning");
   }
 
   await db.plannedSessions.update(id, {
@@ -201,7 +201,7 @@ export async function removePlannedSession(
     plannedSession.status === "done"
   ) {
     throw new Error(
-      "Une séance commencée ou réalisée ne peut pas être retirée du Programme",
+      "Une séance commencée ou réalisée ne peut pas être retirée du Planning",
     );
   }
 

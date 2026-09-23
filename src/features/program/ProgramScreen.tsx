@@ -218,7 +218,7 @@ export function ProgramScreen() {
   return (
     <section className="program-screen">
       <header className="program-screen__header">
-        <h1>Programme</h1>
+        <h1>Planning</h1>
         <div
           role="group"
           aria-label="Vue"
@@ -253,7 +253,7 @@ export function ProgramScreen() {
       )}
 
       {state.status === "loading" && (
-        <p className="program-screen__message">Chargement du Programme…</p>
+        <p className="program-screen__message">Chargement du Planning…</p>
       )}
 
       {state.status === "error" && (
