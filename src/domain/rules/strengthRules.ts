@@ -360,7 +360,13 @@ export function frameVersionIdsOf(workout: Pick<WorkoutSession, "blocks">): Set<
 /**
  * Les séries d'une séance par version de cadre : les séries validées des
  * briques réalisées et les enfants de tour validés, vus comme des séries
- * de travail. C'est l'entrée de `validateFrame` à la clôture.
+ * de travail. C'est l'entrée de `validateFrame` à la clôture, des
+ * lectures du cadre et de la stagnation.
+ *
+ * Une brique à **prescription réduite** (conception V2 § 2.5.1) n'y entre
+ * pas : ni jalon, ni motif « séries manquantes », ni stagnation. Ses
+ * séries restent des données d'entraînement ordinaires ailleurs
+ * (tonnage, historique, records), qui ne passent pas par ici.
  */
 export function seriesByFrameVersion(workout: Pick<WorkoutSession, "blocks">): Map<Id, PerformedSeries[]> {
   const result = new Map<Id, PerformedSeries[]>();
@@ -371,6 +377,7 @@ export function seriesByFrameVersion(workout: Pick<WorkoutSession, "blocks">): M
   for (const block of workout.blocks) {
     if (block.kind === "exercise") {
       if (block.frameVersionId === undefined || block.status !== "performed") continue;
+      if (block.reducedPrescription === true) continue;
       for (const series of block.series ?? []) {
         if (series.status === "completed") push(block.frameVersionId, series);
       }

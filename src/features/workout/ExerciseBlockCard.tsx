@@ -156,6 +156,7 @@ export function ExerciseBlockCard({
               {name}
             </span>
             <span className="wblock__meta">
+              {block.role === "warmup" && <span className="wblock__role">Échauffement</span>}
               {formatExerciseSubtitle(block)}
               {block.addedDuringWorkout && (
                 <span className="wblock__added">Ajouté pendant la séance</span>

@@ -5,6 +5,7 @@ import type {
   PerformedExerciseBlock,
   PerformedGroupBlock,
   SessionTemplate,
+  StrengthFrameVersion,
 } from "../../domain";
 import { DEFAULT_SERIES_ROLE } from "../../domain/rules/strengthRules";
 import { lowOf } from "../../domain/rules/rangeRules";
@@ -17,12 +18,36 @@ export type FrameVersionByExercise = ReadonlyMap<Id, Id>;
 
 const NO_FRAMES: FrameVersionByExercise = new Map();
 
+/** Versions de cadre chargées par l'appelant, pour comparer séries prévues et `workSets`. */
+export type FrameVersionById = ReadonlyMap<Id, StrengthFrameVersion>;
+
+const NO_VERSIONS: FrameVersionById = new Map();
+
+/**
+ * Prescription réduite (conception V2 § 2.5.1, D2) : la consigne prévoit
+ * moins de séries que le cadre capturé n'en demande — leg curl de Muscu C
+ * (2 séries contre 3), jour du test traction (lot G). La brique ne
+ * validera jamais le palier et n'entrera pas dans la stagnation.
+ */
+function isReducedPrescription(
+  instructions: Extract<SessionTemplate["blocks"][number], { kind: "exercise" }>["instructions"],
+  version: StrengthFrameVersion | undefined,
+): boolean {
+  if (!version) return false;
+  if (instructions.shape !== "reps" && instructions.shape !== "duration") return false;
+
+  return instructions.sets < version.workSets;
+}
+
 function createExerciseBlock(
   block: Extract<SessionTemplate["blocks"][number], { kind: "exercise" }>,
   frameVersionByExercise: FrameVersionByExercise,
+  versionById: FrameVersionById,
 ): PerformedExerciseBlock {
   const performedBlockId = `workout-block-${block.id}`;
   const frameVersionId = frameVersionByExercise.get(block.exerciseId);
+  const reduced =
+    frameVersionId !== undefined && isReducedPrescription(block.instructions, versionById.get(frameVersionId));
 
   const base: PerformedExerciseBlock = {
     id: performedBlockId,
@@ -33,6 +58,9 @@ function createExerciseBlock(
     exerciseId: block.exerciseId,
     /* Point de capture 1 : la version du cadre au démarrage (§ 4.3). */
     ...(frameVersionId !== undefined ? { frameVersionId } : {}),
+    /* Échauffement (D14) : recopié du modèle, il reste une vraie brique. */
+    ...(block.role === "warmup" ? { role: "warmup" as const } : {}),
+    ...(reduced ? { reducedPrescription: true } : {}),
     status: "not_performed",
     snapshotInstructions: structuredClone(block.instructions),
   };
@@ -159,6 +187,7 @@ function createGroupBlock(
 export function createWorkoutSnapshot(
   template: SessionTemplate,
   frameVersionByExercise: FrameVersionByExercise = NO_FRAMES,
+  versionById: FrameVersionById = NO_VERSIONS,
 ): PerformedBlock[] {
   return template.blocks
     .slice()
@@ -179,7 +208,7 @@ export function createWorkoutSnapshot(
           };
 
         case "exercise":
-          return createExerciseBlock(block, frameVersionByExercise);
+          return createExerciseBlock(block, frameVersionByExercise, versionById);
 
         case "group":
           return createGroupBlock(block, frameVersionByExercise);

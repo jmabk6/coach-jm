@@ -53,7 +53,7 @@ export async function startFreeWorkout(
     startedAt: now,
     lastActionAt: now,
     activeDurationSec: 0,
-    blocks: template ? createWorkoutSnapshot(template, frames.versionIdByExercise) : [],
+    blocks: template ? createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById) : [],
     createdAt: now,
     updatedAt: now,
   };

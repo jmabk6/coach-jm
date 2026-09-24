@@ -167,6 +167,8 @@ export function updateExerciseBlock(
   blockId: Id,
   changes: Pick<ExerciseBlock, "exerciseId" | "instructions"> & {
     notes?: string;
+    /** Échauffement (D14) ; absent = inchangé. */
+    warmup?: boolean;
   },
 ): SessionTemplate {
   return withBlocks(
@@ -184,6 +186,9 @@ export function updateExerciseBlock(
 
       if (changes.notes) next.notes = changes.notes;
       else delete next.notes;
+
+      if (changes.warmup === true) next.role = "warmup";
+      else if (changes.warmup === false) delete next.role;
 
       return next;
     }),

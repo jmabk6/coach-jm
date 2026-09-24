@@ -83,7 +83,7 @@ export async function startWorkout(
     startedAt: now,
     lastActionAt: now,
     activeDurationSec: 0,
-    blocks: createWorkoutSnapshot(template, frames.versionIdByExercise),
+    blocks: createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById),
     createdAt: now,
     updatedAt: now,
   };

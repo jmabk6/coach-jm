@@ -673,3 +673,27 @@
   color: var(--color-text-soft, #666);
   font-size: 0.8rem;
 }
+
+/* Lot D.3 : brique d'échauffement (D14). */
+.block-edit__warmup {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.block-edit__warmup input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+}
+
+.block-edit__warmup span {
+  display: grid;
+  gap: 2px;
+  font-weight: 600;
+}
+
+.block-edit__warmup small {
+  color: var(--color-text-soft, #666);
+  font-weight: 400;
+}

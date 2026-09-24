@@ -156,7 +156,7 @@ interface BlockEditFormProps {
 }
 
 type Draft =
-  | { kind: "block"; instructions: ExerciseInstructions; notes: string }
+  | { kind: "block"; instructions: ExerciseInstructions; notes: string; warmup: boolean }
   | {
       kind: "child";
       instructions: GroupChildInstructions;
@@ -170,6 +170,7 @@ function initialDraft(target: Target): Draft {
         kind: "block",
         instructions: target.block.instructions,
         notes: target.block.notes ?? "",
+        warmup: target.block.role === "warmup",
       }
     : {
         kind: "child",
@@ -284,6 +285,7 @@ function BlockEditForm({ template, exerciseById, target, exercise, save }: Block
             exerciseId: exercise.id,
             instructions: draft.instructions,
             ...(notes ? { notes } : {}),
+            warmup: draft.warmup,
           }),
         );
       } else if (draft.kind === "child" && target.kind === "child") {
@@ -405,6 +407,20 @@ function BlockEditForm({ template, exerciseById, target, exercise, save }: Block
         </div>
 
         <InstructionFields draft={draft} exercise={exercise} onChange={setDraft} />
+
+        {draft.kind === "block" && (
+          <label className="block-edit__warmup">
+            <input
+              type="checkbox"
+              checked={draft.warmup}
+              onChange={(event) => setDraft({ ...draft, warmup: event.target.checked })}
+            />
+            <span>
+              Échauffement
+              <small>Brique réelle, notée à part : elle ne compte pas comme une séance cardio.</small>
+            </span>
+          </label>
+        )}
 
         <label className="block-edit__notes">
           <span>
