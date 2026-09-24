@@ -1926,3 +1926,21 @@ export function discardBlock(workout: WorkoutSession, blockId: Id, now: string):
 
   return touch(next, now);
 }
+
+/**
+ * `Corriger la durée` (décision du 24/09/2026) : entre `Terminer` et
+ * `Enregistrer` seulement. `undefined` revient à la durée calculée.
+ */
+export function correctDuration(workout: WorkoutSession, durationSec: number | undefined, now: string): WorkoutSession {
+  assertCorrectable(workout);
+  if (!isAwaitingConfirmation(workout)) throw new Error("La durée se corrige une fois la séance terminée");
+  if (durationSec !== undefined && (!Number.isFinite(durationSec) || durationSec <= 0)) {
+    throw new Error("Durée invalide");
+  }
+
+  const next: WorkoutSession = { ...workout };
+  if (durationSec === undefined) delete next.correctedDurationSec;
+  else next.correctedDurationSec = Math.round(durationSec);
+
+  return touch(next, now);
+}

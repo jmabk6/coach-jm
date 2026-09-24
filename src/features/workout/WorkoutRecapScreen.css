@@ -790,6 +790,33 @@
   font-weight: 600;
 }
 
+/* Durée corrigeable entre Terminer et Enregistrer (24/09/2026). */
+.end-stats__correct {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent, #2f6fed);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.end-duration {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.end-duration input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-md, 14px);
+  font: inherit;
+  font-size: 1.1rem;
+}
+
 /* Lot E.4 : fin de séance en trois vues (M10). */
 .recap__back--button {
   justify-self: start;

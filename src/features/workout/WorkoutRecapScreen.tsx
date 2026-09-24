@@ -51,6 +51,9 @@ import { frameOutcomesOf } from "../strength/frameReadings";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { deleteWorkout } from "./deleteWorkout";
 import { confirmWorkout, isAwaitingConfirmation, saveWorkoutFeedback } from "./finishWorkout";
+import { applyWorkoutAction } from "./engine/persistWorkout";
+import { correctDuration } from "./engine/workoutEngine";
+import { durationRuleOf } from "./engine/workoutTime";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
 import { categoryClassName } from "../sessions/sessionCategoryClass";
 import {
@@ -288,6 +291,12 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
     window.scrollTo?.(0, 0);
   }
 
+  /* Durée corrigée entre Terminer et Enregistrer (décision du 24/09/2026). */
+  async function changeDuration(durationSec: number | undefined) {
+    const updated = await applyWorkoutAction(workout.id, (current, at) => correctDuration(current, durationSec, at));
+    setState((previous) => (previous.status === "success" ? { ...previous, workout: updated } : previous));
+  }
+
   async function chooseFeeling(value: WorkoutFeeling) {
     setFeeling(value);
     try {
@@ -425,7 +434,7 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
       )}
 
       {view === 1 && (
-        <SummaryView state={state} pending={pending}>
+        <SummaryView state={state} pending={pending} {...(pending ? { onCorrectDuration: changeDuration } : {})}>
           <NextButton onClick={() => goTo(2)}>Voir le détail de la séance</NextButton>
         </SummaryView>
       )}
@@ -513,13 +522,27 @@ function NextButton({ onClick, children }: { onClick: () => void; children: Reac
 /* Vue 1 — terminée et records                                                */
 /* -------------------------------------------------------------------------- */
 
-function SummaryView({ state, pending, children }: { state: Loaded; pending: boolean; children: ReactNode }) {
+function SummaryView({
+  state,
+  pending,
+  onCorrectDuration,
+  children,
+}: {
+  state: Loaded;
+  pending: boolean;
+  onCorrectDuration?: (durationSec: number | undefined) => Promise<void>;
+  children: ReactNode;
+}) {
   const { workout, template, exerciseById, records, referenceCount, goals, tests } = state;
   const head = summarizeWorkout(workout, template, exerciseById);
   const end = workoutEndOf(workout);
-  const totalSec = end
+  /* L'amplitude n'a de sens que si la durée active en découle : une durée
+     de paliers cardio ou corrigée la remplace (décision du 24/09/2026). */
+  const rule = durationRuleOf(workout);
+  const totalSec = end && rule === "clock"
     ? Math.max(0, Math.round((new Date(end).getTime() - new Date(workout.startedAt).getTime()) / 1000))
     : undefined;
+  const [editingDuration, setEditingDuration] = useState(false);
   const assistance = formatAssistanceNotIncluded(assistedExerciseNames(workout, exerciseById));
   const showTonnage = head.volumeKg > 0 || assistance !== undefined;
 
@@ -531,7 +554,11 @@ function SummaryView({ state, pending, children }: { state: Loaded; pending: boo
         <p>
           {head.performed} exercice{head.performed > 1 ? "s" : ""} réalisé{head.performed > 1 ? "s" : ""}
         </p>
-        {totalSec !== undefined && <p>Durée totale : {formatHoursMinutes(totalSec)}</p>}
+        {totalSec !== undefined ? (
+          <p>Durée totale : {formatHoursMinutes(totalSec)}</p>
+        ) : (
+          rule !== "clock" && <p>Durée : {formatHoursMinutes(head.activeDurationSec)}</p>
+        )}
         <p className="end-hero__when">
           {capitalize(formatFullDate(workout.date))} · {formatClock(workout.startedAt)}
           {end && ` – ${formatClock(end)}`}
@@ -551,6 +578,13 @@ function SummaryView({ state, pending, children }: { state: Loaded; pending: boo
           <Clock size={20} strokeWidth={2} aria-hidden="true" />
           <span className="end-stats__label">Durée active</span>
           <strong>{formatHoursMinutes(head.activeDurationSec)}</strong>
+          {rule === "cardio_steps" && <span className="end-stats__meta">(somme des paliers validés)</span>}
+          {rule === "corrected" && <span className="end-stats__meta">(corrigée)</span>}
+          {onCorrectDuration && (
+            <button type="button" className="end-stats__correct" onClick={() => setEditingDuration(true)}>
+              Corriger la durée
+            </button>
+          )}
         </div>
         {totalSec !== undefined && (
           <div className="end-stats__cell">
@@ -613,6 +647,17 @@ function SummaryView({ state, pending, children }: { state: Loaded; pending: boo
       )}
 
       {children}
+      {editingDuration && onCorrectDuration && (
+        <DurationSheet
+          initialSec={head.activeDurationSec}
+          corrected={rule === "corrected"}
+          onSave={(durationSec) => {
+            setEditingDuration(false);
+            void onCorrectDuration(durationSec);
+          }}
+          onDismiss={() => setEditingDuration(false)}
+        />
+      )}
     </>
   );
 }
@@ -927,5 +972,54 @@ function RecapLine({ line, to }: { line: WorkoutRecapLine; to: string }) {
         <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
       </Link>
     </li>
+  );
+}
+
+/** Saisie de la durée active en minutes, entre Terminer et Enregistrer. */
+function DurationSheet({
+  initialSec,
+  corrected,
+  onSave,
+  onDismiss,
+}: {
+  initialSec: number;
+  corrected: boolean;
+  onSave: (durationSec: number | undefined) => void;
+  onDismiss: () => void;
+}) {
+  const [minutes, setMinutes] = useState(String(Math.round(initialSec / 60)));
+  const value = Number(minutes.replace(",", "."));
+  const valid = Number.isFinite(value) && value > 0 && value <= 600;
+
+  return (
+    <BottomSheet
+      title="Corriger la durée"
+      message="Durée active de la séance, en minutes. Elle remplace la durée calculée."
+      actions={[
+        {
+          label: "Enregistrer la durée",
+          tone: "primary",
+          disabled: !valid,
+          hint: valid ? undefined : "Entre 1 et 600 minutes",
+          onSelect: () => onSave(Math.round(value * 60)),
+        },
+        ...(corrected
+          ? [{ label: "Revenir à la durée calculée", onSelect: () => onSave(undefined) }]
+          : []),
+      ]}
+      onDismiss={onDismiss}
+    >
+      <label className="end-duration">
+        <span>Minutes</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={600}
+          value={minutes}
+          onChange={(event) => setMinutes(event.target.value)}
+        />
+      </label>
+    </BottomSheet>
   );
 }

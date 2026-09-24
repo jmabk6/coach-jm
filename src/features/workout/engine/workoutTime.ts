@@ -58,13 +58,77 @@ export function totalPausedSec(workout: WorkoutSession, now: string): number {
 }
 
 /**
- * Durée active = amplitude − pauses explicites (§12). Pour une séance
- * terminée, l'amplitude s'arrête à `completedAt`.
+ * Règle qui donne la durée active d'une séance (décision du 24/09/2026) :
+ * - `corrected` : corrigée à la main avant l'enregistrement ;
+ * - `cardio_steps` : séance terminée entièrement cardio, somme des
+ *   durées des paliers validés — l'horloge compterait aussi un palier
+ *   oublié ouvert pendant des heures ;
+ * - `clock` : amplitude − pauses explicites (§12).
+ */
+export type DurationRule = "corrected" | "cardio_steps" | "clock";
+
+/**
+ * Somme des paliers validés d'une séance terminée **entièrement cardio**
+ * — seules des briques à paliers portent des validations, les briques
+ * sautées ne comptent pas — ou `undefined` si la séance ne l'est pas.
+ */
+export function validatedCardioStepsSec(workout: WorkoutSession): number | undefined {
+  if (workout.completedAt === undefined && workout.endedAt === undefined) return undefined;
+
+  let total = 0;
+  let steps = 0;
+
+  for (const block of workout.blocks) {
+    if (block.kind === "note" || block.status === "skipped") continue;
+
+    if (block.kind === "group") {
+      if (block.rounds.some((round) => round.status === "completed" || round.children.some((child) => child.completedAt !== undefined))) {
+        return undefined;
+      }
+      continue;
+    }
+
+    if (block.kind === "test") {
+      if (block.status === "performed" || block.draft !== undefined) return undefined;
+      continue;
+    }
+
+    if (block.series?.some((series) => series.status === "completed")) return undefined;
+
+    for (const step of block.cardioSteps ?? []) {
+      if (step.status !== "completed") continue;
+      total += step.settings.durationSec;
+      steps += 1;
+    }
+  }
+
+  return steps > 0 ? total : undefined;
+}
+
+/**
+ * Règle appliquée à la durée active **enregistrée** : une séance close
+ * avant la règle (antérieure au 24/09/2026) garde sa durée à l'horloge.
+ */
+export function durationRuleOf(workout: WorkoutSession): DurationRule {
+  if (workout.correctedDurationSec !== undefined) return "corrected";
+  const cardioSec = validatedCardioStepsSec(workout);
+  return cardioSec !== undefined && cardioSec === workout.activeDurationSec ? "cardio_steps" : "clock";
+}
+
+/**
+ * Durée active : la correction manuelle, sinon la somme des paliers d'une
+ * séance terminée entièrement cardio, sinon amplitude − pauses explicites
+ * (§12). Pour une séance terminée, l'amplitude s'arrête à `completedAt`.
  */
 export function calculateActiveDurationSec(
   workout: WorkoutSession,
   now: string,
 ): number {
+  if (workout.correctedDurationSec !== undefined) return workout.correctedDurationSec;
+
+  const cardioSec = validatedCardioStepsSec(workout);
+  if (cardioSec !== undefined) return cardioSec;
+
   /* Terminée (D20) : la durée s'arrête à `endedAt`, même avant l'enregistrement. */
   const end = workout.completedAt ?? workout.endedAt ?? now;
 

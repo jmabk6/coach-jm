@@ -98,6 +98,12 @@ export interface WorkoutSession {
   pauses?: WorkoutPause[];
 
   /**
+   * Durée active corrigée à la main entre `Terminer` et `Enregistrer`
+   * (décision du 24/09/2026) : elle prime sur toute règle de calcul.
+   */
+  correctedDurationSec?: number;
+
+  /**
    * Dernière présence enregistrée de l'application (battement pendant
    * qu'elle est visible, écriture à la mise en arrière-plan). Ne sert
    * qu'à mesurer une absence au retour (§15) — jamais aux chronos.
