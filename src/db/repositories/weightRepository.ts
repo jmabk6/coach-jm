@@ -43,26 +43,30 @@ export async function getWeightEntry(
 }
 
 /**
- * Crée ou remplace une pesée.
+ * Crée ou remplace une pesée. Une seule par jour : une seconde saisie le
+ * même jour remplace la valeur de la première (même id, même
+ * `createdAt`). Lecture et écriture dans une transaction (lot I.1).
  */
 export async function saveWeightEntry(
   entry: WeightEntry,
 ): Promise<void> {
-  const existing = await db.weightEntries
-    .where("date")
-    .equals(entry.date)
-    .first();
+  await db.transaction("rw", db.weightEntries, async () => {
+    const existing = await db.weightEntries
+      .where("date")
+      .equals(entry.date)
+      .first();
 
-  if (existing && existing.id !== entry.id) {
-    await db.weightEntries.update(existing.id, {
-      kg: entry.kg,
-      updatedAt: entry.updatedAt,
-    });
+    if (existing && existing.id !== entry.id) {
+      await db.weightEntries.update(existing.id, {
+        kg: entry.kg,
+        updatedAt: entry.updatedAt,
+      });
 
-    return;
-  }
+      return;
+    }
 
-  await db.weightEntries.put(entry);
+    await db.weightEntries.put(entry);
+  });
 }
 
 /**
@@ -72,26 +76,28 @@ export async function updateWeightEntry(
   id: Id,
   changes: Omit<Partial<WeightEntry>, "id" | "createdAt" | "updatedAt">,
 ): Promise<void> {
-  const entry = await db.weightEntries.get(id);
+  await db.transaction("rw", db.weightEntries, async () => {
+    const entry = await db.weightEntries.get(id);
 
-  if (!entry) {
-    throw new Error("Pesée introuvable");
-  }
-
-  if (changes.date && changes.date !== entry.date) {
-    const existingForDate = await db.weightEntries
-      .where("date")
-      .equals(changes.date)
-      .first();
-
-    if (existingForDate && existingForDate.id !== id) {
-      throw new Error("Une pesée existe déjà à cette date");
+    if (!entry) {
+      throw new Error("Pesée introuvable");
     }
-  }
 
-  await db.weightEntries.update(id, {
-    ...changes,
-    updatedAt: new Date().toISOString(),
+    if (changes.date && changes.date !== entry.date) {
+      const existingForDate = await db.weightEntries
+        .where("date")
+        .equals(changes.date)
+        .first();
+
+      if (existingForDate && existingForDate.id !== id) {
+        throw new Error("Une pesée existe déjà à cette date");
+      }
+    }
+
+    await db.weightEntries.update(id, {
+      ...changes,
+      updatedAt: new Date().toISOString(),
+    });
   });
 }
 
