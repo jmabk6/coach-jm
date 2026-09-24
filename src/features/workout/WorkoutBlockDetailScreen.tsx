@@ -69,6 +69,7 @@ import {
   type WorkoutRecapLine,
 } from "./workoutRecap";
 import "./WorkoutRecapScreen.css";
+import { TestBlockCard } from "../tests/TestBlockCard";
 import { paths } from "../../app/paths";
 
 type LoadState =
@@ -243,7 +244,9 @@ export function WorkoutBlockDetailScreen() {
 
       {correctable && (
         <p className="recap-detail__correctable">
-          Séance terminée, pas encore enregistrée : une série peut encore être corrigée.
+          {block.kind === "test"
+            ? "Séance terminée, pas encore enregistrée : les essais et mesures du test peuvent encore être corrigés."
+            : "Séance terminée, pas encore enregistrée : une série peut encore être corrigée."}
         </p>
       )}
       {correctionError && <p className="recap__message recap__message--error">{correctionError}</p>}
@@ -276,6 +279,18 @@ export function WorkoutBlockDetailScreen() {
               }
             : {})}
         />
+      )}
+
+      {block.kind === "test" && (
+        <ul className="recap-detail__test">
+          <TestBlockCard
+            block={block}
+            expanded
+            busy={false}
+            editable={correctable}
+            apply={(action) => correct(action)}
+          />
+        </ul>
       )}
 
       {block.kind === "group" && block.note && <NoteCard note={block.note} />}

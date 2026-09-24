@@ -1025,3 +1025,10 @@
   font-size: 16px;
   resize: vertical;
 }
+
+/* Lot G.4 : brique test dans le détail d'une réalisation. */
+.recap-detail__test {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}

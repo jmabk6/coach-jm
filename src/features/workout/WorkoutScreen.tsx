@@ -17,7 +17,6 @@ import type {
   PerformedExerciseBlock,
   PerformedGroupBlock,
   PerformedNoteBlock,
-  PerformedTestBlock,
 } from "../../domain";
 import { fixExercisePowerUnit } from "../../db/repositories/exerciseRepository";
 import { listExerciseAlternatives } from "../exercises/exerciseAlternatives";
@@ -53,6 +52,7 @@ import { formatSeriesLine } from "./workoutRecap";
 import { formatShortDate } from "./workoutDisplay";
 import { getOpenPause, getRestCountdown } from "./engine/workoutTime";
 import { ExerciseBlockCard } from "./ExerciseBlockCard";
+import { TestBlockCard } from "../tests/TestBlockCard";
 import { GroupBlockCard } from "./GroupBlockCard";
 import { RestBand } from "./RestBand";
 import { endWorkout } from "./finishWorkout";
@@ -442,11 +442,16 @@ export function WorkoutScreen() {
 
             if (block.kind === "test") {
               return (
-                <TestRow
+                <TestBlockCard
                   key={block.id}
                   block={block}
                   number={numbering[block.id]}
+                  expanded={isExpanded(block)}
                   busy={locked}
+                  editable
+                  onToggle={() => toggleBlock(block)}
+                  apply={(action) => run(action)}
+                  onFinish={() => void run((current, at) => finishBlock(current, block.id, at))}
                   onSkip={() => void run((current, at) => skipBlock(current, block.id, at))}
                   onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}
                 />
@@ -805,48 +810,6 @@ function countBlockStatuses(blocks: PerformedBlock[]) {
   }
 
   return counts;
-}
-
-/**
- * Brique test (lot G.3) : sa place dans la séance, et le saut. L'écran de
- * saisie (essais, relevés, mesures) arrive au lot G.4.
- */
-function TestRow({
-  block,
-  number,
-  busy,
-  onSkip,
-  onUnskip,
-}: {
-  block: PerformedTestBlock;
-  number: number | string | undefined;
-  busy: boolean;
-  onSkip: () => void;
-  onUnskip: () => void;
-}) {
-  return (
-    <li className="wblock wblock--note">
-      <div className="wblock__head wblock__head--static">
-        <span className="wblock__body">
-          <span className="wblock__name">
-            {number !== undefined ? `${number}. ` : ""}Test
-          </span>
-          <span className="wblock__meta wblock__meta--wrap">
-            {block.status === "skipped" ? "Test sauté" : "La saisie du test arrive avec son écran (lot G.4)."}
-          </span>
-        </span>
-        {block.status === "skipped" ? (
-          <button type="button" className="wblock__unskip" disabled={busy} onClick={onUnskip}>
-            Annuler
-          </button>
-        ) : (
-          <button type="button" className="wblock__unskip" disabled={busy} onClick={onSkip}>
-            Sauter
-          </button>
-        )}
-      </div>
-    </li>
-  );
 }
 
 function NoteRow({ block }: { block: PerformedNoteBlock }) {
