@@ -100,7 +100,7 @@ describe("traction : essais dégressifs", () => {
   it("un seul essai réussi, puis un seul échec : résultat incomplet avec la raison", async () => {
     render(<Harness keyName="traction" />);
     fireEvent.click(await screen.findByRole("button", { name: "Réussi" }));
-    await within(result()).findByText("Le test va jusqu'au premier échec");
+    await within(result()).findByText("Le test va jusqu'au premier échec, ou jusqu'à une réussite au réglage le plus bas");
     expect(within(result()).getByRole("heading").textContent).toBe("Résultat incomplet");
     expect(within(result()).getByText("Nombre d'essais").nextSibling?.textContent).toBe("1 essai");
 
@@ -108,6 +108,22 @@ describe("traction : essais dégressifs", () => {
     await waitFor(() => expect(draft()?.trials).toBeUndefined());
     fireEvent.click(screen.getByRole("button", { name: "Échec" }));
     await within(result()).findByText("Aucun essai réussi : recalibrer le premier essai");
+  });
+});
+
+describe("traction : réglage le plus bas de la machine", () => {
+  it("un essai réussi au réglage le plus bas termine le test, sans échec", async () => {
+    render(<Harness keyName="traction" />);
+    const field = await screen.findByRole("textbox", { name: /assistance \(kg\)/ });
+    fireEvent.change(field, { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Réglage le plus bas de la machine" }));
+    fireEvent.click(screen.getByRole("button", { name: "Réussi" }));
+
+    await screen.findByText("Réussi au réglage le plus bas de la machine : le test est fini.");
+    expect(draft()?.trials).toMatchObject([{ value: 5, outcome: "success", atLowestSetting: true }]);
+    expect(within(result()).getByRole("heading").textContent).toBe("Résultat");
+    expect(within(result()).getByText("Assistance minimale").nextSibling?.textContent).toBe("5 kg");
+    expect(screen.queryByRole("button", { name: "Réussi" })).toBeNull();
   });
 });
 

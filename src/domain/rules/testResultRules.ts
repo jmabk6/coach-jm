@@ -38,6 +38,15 @@ const round = (value: number, step: number) => Math.round(value / step) * step;
 /** Évite 0.30000000000000004 : arrondi au pas, puis au nombre de décimales du pas. */
 const roundTo = (value: number, step: number) => Number(round(value, step).toFixed(Math.max(0, -Math.floor(Math.log10(step)))));
 
+/**
+ * Un test à essais dégressifs est fini au premier échec, ou sur une
+ * réussite au réglage le plus bas de la machine.
+ */
+export function isTrialsTestFinished(trials: ReadonlyArray<TestTrial>): boolean {
+  const last = [...trials].sort((a, b) => a.order - b.order).at(-1);
+  return last !== undefined && (last.outcome === "failure" || last.atLowestSetting === true);
+}
+
 /** Dernier essai réussi dans l'ordre des essais (§ 5.3, traction). */
 export function lastSuccessfulTrial(trials: ReadonlyArray<TestTrial>): TestTrial | undefined {
   return [...trials].sort((a, b) => a.order - b.order).filter((trial) => trial.outcome === "success").at(-1);
@@ -118,10 +127,11 @@ export function computeTestResult(
     if (trials.length > 0 && !lastSuccessfulTrial(trials)) {
       complete = false;
       messages.push("Aucun essai réussi : recalibrer le premier essai");
-    } else if (trials.length > 0 && trials.at(-1)!.outcome !== "failure") {
-      /* « Jusqu'au premier échec » : sans échec, le test n'est pas allé au bout. */
+    } else if (trials.length > 0 && !isTrialsTestFinished(trials)) {
+      /* « Jusqu'au premier échec » : sans échec, le test n'est pas allé au
+         bout — sauf réussite au réglage le plus bas de la machine. */
       complete = false;
-      messages.push("Le test va jusqu'au premier échec");
+      messages.push("Le test va jusqu'au premier échec, ou jusqu'à une réussite au réglage le plus bas");
     } else if (trials.length === 0) {
       complete = false;
       messages.push("Aucun essai");

@@ -66,6 +66,11 @@ export interface TestTrial {
   order: number;
   value: number;
   outcome: "success" | "failure";
+  /**
+   * Essai fait au réglage le plus bas de la machine : réussi, il termine
+   * le test sans échec (décision du 24/09/2026).
+   */
+  atLowestSetting?: true;
   restSec?: number;
   completedAt: string;
 }

@@ -42,7 +42,20 @@ describe("traction (essais dégressifs)", () => {
     const result = computeTestResult(traction, { trials: [trial(1, 40, "success")] });
     expect(result.status).toBe("incomplete");
     expect(valueOf(result, "assistance_min_kg")).toBe(40);
-    expect(result.messages).toContain("Le test va jusqu'au premier échec");
+    expect(result.messages).toContain("Le test va jusqu'au premier échec, ou jusqu'à une réussite au réglage le plus bas");
+  });
+
+  it("réussi au réglage le plus bas de la machine : complet, même sans échec", () => {
+    const lowest = { ...trial(3, 5, "success"), atLowestSetting: true as const };
+    const result = computeTestResult(traction, { trials: [trial(1, 10, "success"), trial(2, 7, "success"), lowest] });
+    expect(result.status).toBe("complete");
+    expect(valueOf(result, "assistance_min_kg")).toBe(5);
+    expect(result.messages).toEqual([]);
+
+    /* Un échec au réglage le plus bas reste un échec : c'est l'essai d'avant qui compte. */
+    const failed = computeTestResult(traction, { trials: [trial(1, 7, "success"), { ...trial(2, 5, "failure"), atLowestSetting: true }] });
+    expect(failed.status).toBe("complete");
+    expect(valueOf(failed, "assistance_min_kg")).toBe(7);
   });
 
   it("aucun essai : incomplet", () => {

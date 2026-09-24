@@ -1734,6 +1734,8 @@ export interface TestTrialValues {
   value: number;
   outcome: TestTrial["outcome"];
   restSec?: number;
+  /** Réglage le plus bas de la machine. */
+  atLowestSetting?: boolean;
 }
 
 function checkTrialValue(value: number): void {
@@ -1748,6 +1750,7 @@ export function addTestTrial(workout: WorkoutSession, blockId: Id, values: TestT
     const trials = draft.trials ?? [];
     const trial: TestTrial = { order: trials.length + 1, value: values.value, outcome: values.outcome, completedAt: now };
     if (values.restSec !== undefined) trial.restSec = values.restSec;
+    if (values.atLowestSetting) trial.atLowestSetting = true;
     return { ...draft, trials: [...trials, trial] };
   }, now);
 }

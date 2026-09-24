@@ -307,3 +307,15 @@
   color: var(--color-text-soft, #666);
   font-weight: 600;
 }
+
+.test-card__lowest-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.test-card__lowest {
+  color: var(--color-text-soft, #666);
+  font-weight: 400;
+}

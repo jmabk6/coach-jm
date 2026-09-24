@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { Check, ChevronDown, ChevronUp, ClipboardCheck, X } from "lucide-react";
 import type { PerformedTestBlock, TestMeasureSpec, TestProtocolVersion, TestResult } from "../../domain";
 import { getTestResult } from "../../db/repositories/testRepository";
-import { computeTestResult, draftFromResult, measureUnit, primaryValue, type ComputedTestResult } from "../../domain/rules/testResultRules";
+import {
+  computeTestResult,
+  draftFromResult,
+  isTrialsTestFinished,
+  measureUnit,
+  primaryValue,
+  type ComputedTestResult,
+} from "../../domain/rules/testResultRules";
 import { hasTestInput } from "../workout/engine/workoutBlocks";
 import {
   addTestTrial,
@@ -262,20 +269,22 @@ function TrialsPanel({
   const proposal = last ? Math.max(0, last.value - (last.outcome === "success" ? stepKg : 0)) : firstKg;
   const [value, setValue] = useState(formatNumberInput(proposal));
   const [proposedFor, setProposedFor] = useState(trials.length);
-  const finished = last?.outcome === "failure";
+  const [lowest, setLowest] = useState(false);
+  const finished = isTrialsTestFinished(trials);
   const elapsed = useSecondsSince(last && !finished ? last.completedAt : undefined);
 
   /* Nouvelle proposition après chaque essai. */
   if (proposedFor !== trials.length) {
     setProposedFor(trials.length);
     setValue(formatNumberInput(proposal));
+    setLowest(false);
   }
 
   const kg = parseNumber(value);
 
   function add(outcome: "success" | "failure") {
     if (kg === undefined) return;
-    void apply((current, at) => addTestTrial(current, block.id, { value: kg, outcome, restSec }, at));
+    void apply((current, at) => addTestTrial(current, block.id, { value: kg, outcome, restSec, atLowestSetting: lowest }, at));
   }
 
   return (
@@ -297,6 +306,7 @@ function TrialsPanel({
                 <td>{formatDecimal(trial.value)} kg</td>
                 <td className={trial.outcome === "success" ? "test-card__ok" : "test-card__ko"}>
                   {trial.outcome === "success" ? "Réussi" : "Échec"}
+                  {trial.atLowestSetting && <small className="test-card__lowest"> · réglage le plus bas</small>}
                 </td>
                 <td>
                   {canEdit && (
@@ -334,6 +344,10 @@ function TrialsPanel({
             step={0.5}
             decimal
           />
+          <label className="test-card__lowest-check">
+            <input type="checkbox" checked={lowest} onChange={(event) => setLowest(event.target.checked)} />
+            <span>Réglage le plus bas de la machine</span>
+          </label>
           <div className="test-card__outcomes">
             <button type="button" className="test-card__success" disabled={kg === undefined} onClick={() => add("success")}>
               Réussi
@@ -344,7 +358,13 @@ function TrialsPanel({
           </div>
         </div>
       )}
-      {finished && <p className="test-card__done">Premier échec atteint : le test est fini.</p>}
+      {finished && (
+        <p className="test-card__done">
+          {last?.outcome === "failure"
+            ? "Premier échec atteint : le test est fini."
+            : "Réussi au réglage le plus bas de la machine : le test est fini."}
+        </p>
+      )}
     </div>
   );
 }
@@ -475,7 +495,7 @@ function ValueField({
         />
         {unit && <span>{unit}</span>}
       </span>
-      {spec.signed && <small>0 = contact ; négatif = au-delà du sol</small>}
+      {spec.signed && <small>0 = niveau des pieds ; négatif = au-delà</small>}
     </label>
   );
 }
