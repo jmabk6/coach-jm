@@ -98,6 +98,8 @@ afterEach(async () => {
 
 describe("vue 1 — terminée et records", () => {
   it("tonnage hors assistance, records, références posées ; objectifs masqués sans objectif", async () => {
+    /* Depuis le lot H, le seed installe les 7 objectifs : on les retire pour ce cas. */
+    await db.goals.clear();
     renderEnd();
 
     expect(await screen.findByText("Séance terminée !")).toBeDefined();
@@ -117,7 +119,15 @@ describe("vue 1 — terminée et records", () => {
     expect(screen.queryByText("Volume total")).toBeNull();
   });
 
+  it("objectifs installés (lot H) : Traction et Jambes sont travaillés, les autres non", async () => {
+    renderEnd();
+    expect(await screen.findByText("Objectifs travaillés")).toBeDefined();
+    const titles = Array.from(document.querySelectorAll(".end-goals__item span")).map((node) => node.textContent);
+    expect(titles).toEqual(["Traction", "Jambes"]);
+  });
+
   it("un objectif lié à un exercice effectué apparaît dans « Objectifs travaillés »", async () => {
+    await db.goals.clear();
     await db.goals.put(jambes);
     renderEnd();
 
