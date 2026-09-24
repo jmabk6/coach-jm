@@ -4,6 +4,7 @@ import {
   saveWorkout,
 } from "../../db/repositories/workoutRepository";
 import type { SessionTemplate, WorkoutKind, WorkoutSession } from "../../domain";
+import { assertRoutineStartable } from "../../domain/rules/sessionTemplateRules";
 import { kindForCategory } from "../../domain/rules/workoutKindRules";
 import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { createWorkoutSnapshot } from "./createWorkoutSnapshot";
@@ -38,6 +39,8 @@ export async function startFreeWorkout(
       "Une séance est déjà en cours",
     );
   }
+
+  if (template) assertRoutineStartable(template);
 
   /* Échelle de RPE et versions de cadre actives, capturées au démarrage (v1.6, § 4.3, § 4.5). */
   const [rpeScale, frames] = await Promise.all([getActiveRpeScaleVersion(), loadActiveFrameVersions()]);

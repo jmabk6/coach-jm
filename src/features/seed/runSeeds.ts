@@ -1,5 +1,6 @@
 import { db } from "../../db/database";
 import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
+import { seedProgramV1, seedRoutines } from "../program/seedProgramV1";
 import { seedRpeScale } from "../strength/seedRpeScale";
 import { seedSettingsDefaults } from "./seedSettingsDefaults";
 
@@ -13,8 +14,8 @@ import { seedSettingsDefaults } from "./seedSettingsDefaults";
  * s'exécutent pas, et l'application démarre quand même ; il sera retenté
  * au lancement suivant.
  *
- * Les seeds 4 à 8 (protocoles, programme, routines, cadres, objectifs)
- * s'ajoutent ici avec leurs lots (G, D, H).
+ * Les seeds 4 (protocoles, lot G), 7 (cadres, lot D.6) et 8 (objectifs,
+ * lot H) s'ajoutent ici avec leurs lots.
  */
 
 export interface SeedStep {
@@ -27,6 +28,8 @@ export const SEEDS: SeedStep[] = [
   { name: "settingsDefaults", run: () => seedSettingsDefaults() },
   { name: "exerciseCatalog", run: () => db.transaction("rw", db.exercises, () => seedExerciseCatalog()) },
   { name: "rpeScale", run: () => db.transaction("rw", db.rpeScaleVersions, () => seedRpeScale()) },
+  { name: "programV1", dependsOn: ["exerciseCatalog"], run: () => seedProgramV1() },
+  { name: "routines", run: () => seedRoutines() },
 ];
 
 export interface SeedReport {

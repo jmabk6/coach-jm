@@ -16,6 +16,7 @@ import {
   formatSessionTemplateCardioLine,
   formatSessionTemplateDuration,
   formatSessionTemplateSummary,
+  startBlockedReason,
   summarizeSessionTemplate,
 } from "../../domain/rules/sessionTemplateRules";
 import {
@@ -503,11 +504,17 @@ function ChooseSessionSheet({ data, onChoose, onDismiss }: ChooseSessionSheetPro
       title="Choisir une séance"
       message="La séance démarre tout de suite. Le planning n'est pas modifié."
       actions={[
-        ...data.activeTemplates.map((template) => ({
-          label: template.name,
-          hint: `${template.category} · ${durationLabel(template.id)}`,
-          onSelect: () => onChoose(template),
-        })),
+        ...data.activeTemplates.map((template) => {
+          /* Routine vide : proposée, grisée, avec sa raison (jamais masquée, §9). */
+          const blocked = template.category === "Routine" ? startBlockedReason(template) : undefined;
+
+          return {
+            label: template.name,
+            hint: blocked ?? `${template.category} · ${durationLabel(template.id)}`,
+            ...(blocked ? { disabled: true } : {}),
+            onSelect: () => onChoose(template),
+          };
+        }),
         {
           label: "Bilan de mobilité (séance libre)",
           hint: "Part vide ; n'entre pas dans les statistiques d'entraînement",

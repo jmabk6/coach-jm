@@ -52,18 +52,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "programV1", "routines"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "programV1", "routines"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
-    expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle"]);
+    expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
-    expect(settings.install).toEqual({ settingsDefaults: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) });
+    const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
+    expect(settings.install).toEqual({ settingsDefaults: iso, programV1: iso, routines: iso });
     expect(await db.exercises.count()).toBeGreaterThan(0);
     expect(await db.rpeScaleVersions.count()).toBe(1);
 
@@ -155,8 +156,17 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     expect(await runSeeds()).toMatchObject({ failed: [], skipped: [] });
     const seeded = await readStores(db);
 
-    expect(Object.keys(await settingsByKey()).sort()).toEqual(["install", "preferences", "testCycle"]);
-    const untouched = ["workouts", "plannedSessions", "weeklyPrograms", "sessionTemplates", "weightEntries", "strengthFrames", "strengthFrameVersions", "strengthMilestones", "goals"];
+    /* Lots C et D : réglages, place des tests, modèles V1 et routines ajoutés ; rien d'existant n'est réécrit. */
+    const settingsKeys = Object.keys(await settingsByKey()).sort();
+    expect(settingsKeys).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
+    const untouched = ["workouts", "plannedSessions", "weightEntries", "strengthFrames", "strengthFrameVersions", "strengthMilestones", "goals"];
+    const fileTemplates = (file.stores.sessionTemplates ?? []) as Array<{ id: string }>;
+    const seededTemplates = seeded.stores.sessionTemplates as Array<{ id: string }>;
+    for (const template of fileTemplates) {
+      expect(canonicalStringify(seededTemplates.find((item) => item.id === template.id)), template.id).toBe(canonicalStringify(template));
+    }
+    expect(seededTemplates.filter((item) => !fileTemplates.some((t) => t.id === item.id)).every((item) => item.id.startsWith("v1-"))).toBe(true);
+    if ((file.stores.weeklyPrograms ?? []).length > 0) untouched.push("weeklyPrograms");
     if ((file.stores.rpeScaleVersions ?? []).length > 0) untouched.push("rpeScaleVersions");
     for (const name of untouched) expect(canonicalStringify(seeded.stores[name]), name).toBe(canonicalStringify(file.stores[name] ?? []));
     /* Le catalogue ne fait que compléter des champs absents : mêmes exercices. */

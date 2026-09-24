@@ -126,6 +126,24 @@ export function listTemplateExercises(
   return exercises;
 }
 
+/** Raison affichée d'une routine sans contenu (conception V2 § 2.5, correction B). */
+export const EMPTY_ROUTINE_REASON = "Contenu à définir : cette routine n'a encore aucun exercice.";
+
+/**
+ * Pourquoi un modèle ne peut pas démarrer, ou rien. Un modèle vide ne
+ * démarre pas ; une routine vide le dit à sa façon (« Contenu à définir »).
+ */
+export function startBlockedReason(template: Pick<SessionTemplate, "category" | "blocks">): string | undefined {
+  if (template.blocks.length > 0) return undefined;
+
+  return template.category === "Routine" ? EMPTY_ROUTINE_REASON : "Ajoutez au moins une brique pour démarrer";
+}
+
+/** Garde-fou des démarrages : une routine vide ne se démarre jamais, d'où qu'on vienne. */
+export function assertRoutineStartable(template: Pick<SessionTemplate, "category" | "blocks">): void {
+  if (template.category === "Routine" && template.blocks.length === 0) throw new Error(EMPTY_ROUTINE_REASON);
+}
+
 export function summarizeSessionTemplate(
   blocks: SessionBlock[],
   exerciseById: Map<Id, Exercise>,

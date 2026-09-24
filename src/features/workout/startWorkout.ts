@@ -12,6 +12,7 @@ import type {
   Id,
   WorkoutSession,
 } from "../../domain";
+import { assertRoutineStartable } from "../../domain/rules/sessionTemplateRules";
 import { kindForCategory } from "../../domain/rules/workoutKindRules";
 import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { createWorkoutSnapshot } from "./createWorkoutSnapshot";
@@ -64,6 +65,8 @@ export async function startWorkout(
       "Modèle de séance introuvable",
     );
   }
+
+  assertRoutineStartable(template);
 
   /* Échelle de RPE en vigueur et versions de cadre actives, capturées au
      démarrage (v1.6, § 4.3 et § 4.5) ; l'échelle est absente seulement si

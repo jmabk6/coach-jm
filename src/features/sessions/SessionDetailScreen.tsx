@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { PlannedSession, SessionBlock } from "../../domain";
-import { calculateBlockNumbering } from "../../domain/rules/sessionTemplateRules";
+import { calculateBlockNumbering, startBlockedReason } from "../../domain/rules/sessionTemplateRules";
 import { formatLocalDate, formatPlannedSessionTitle } from "../../domain/rules/programRules";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import * as startFromTemplate from "../workout/startFromTemplate";
@@ -487,11 +487,8 @@ export function SessionDetailScreen() {
           actions={[
             {
               label: "Démarrer la séance",
-              hint:
-                blocks.length === 0
-                  ? "Ajoutez au moins une brique pour démarrer"
-                  : "Les consignes sont copiées ; le modèle n'est pas modifié",
-              disabled: blocks.length === 0,
+              hint: startBlockedReason(template) ?? "Les consignes sont copiées ; le modèle n'est pas modifié",
+              disabled: startBlockedReason(template) !== undefined,
               tone: "primary" as const,
               onSelect: () => void handleStart(),
             },
