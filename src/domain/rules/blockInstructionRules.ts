@@ -4,9 +4,11 @@ import type {
   GroupBlock,
   GroupChildInstructions,
   NumberRange,
+  RangeOrValue,
   SessionStepInstruction,
   TargetRpe,
 } from "../models";
+import { highOf, isRange, lowOf, sumRanges } from "./rangeRules";
 
 /* -------------------------------------------------------------------------- */
 /* Formats élémentaires                                                       */
@@ -41,6 +43,30 @@ export function formatRange(range: NumberRange | TargetRpe): string {
   return range.min === range.max
     ? String(range.min)
     : `${range.min}–${range.max}`;
+}
+
+/**
+ * Durée d'une consigne, valeur ou plage (D16) : `45 s`, `20–30 s`,
+ * `8–10 min`, `45 s à 1 min 30`.
+ */
+export function formatDurationRange(value: RangeOrValue): string {
+  if (!isRange(value) || value.min === value.max) return formatDurationShort(lowOf(value));
+
+  const { min, max } = value;
+  if (max < 60) return `${min}–${max} s`;
+  if (min % 60 === 0 && max % 60 === 0) return `${min / 60}–${max / 60} min`;
+
+  return `${formatDurationShort(min)} à ${formatDurationShort(max)}`;
+}
+
+/** `6 %`, `6–8 %`, `4,5 km/h`. */
+export function formatValueRange(value: RangeOrValue, unit: string): string {
+  const text =
+    !isRange(value) || value.min === value.max
+      ? formatNumberFr(lowOf(value))
+      : `${formatNumberFr(value.min)}–${formatNumberFr(value.max)}`;
+
+  return `${text} ${unit}`;
 }
 
 /**
@@ -94,17 +120,18 @@ function formatSteps(steps: SessionStepInstruction[]): string {
     return "Paliers à définir";
   }
 
-  const totalSec = steps.reduce((sum, step) => sum + step.durationSec, 0);
+  const total = sumRanges(steps.map((step) => step.durationSec));
   const parts = [
     steps.length === 1 ? "1 palier" : `${steps.length} paliers`,
-    formatDurationShort(totalSec),
+    formatDurationRange(total),
   ];
 
+  /* Une plage étend l'éventail : ses deux bornes y entrent (D16). */
   const speeds = steps.flatMap((step) =>
-    "speedKmh" in step ? [step.speedKmh] : [],
+    "speedKmh" in step ? [lowOf(step.speedKmh), highOf(step.speedKmh)] : [],
   );
   const inclines = steps.flatMap((step) =>
-    "inclinePercent" in step ? [step.inclinePercent] : [],
+    "inclinePercent" in step ? [lowOf(step.inclinePercent), highOf(step.inclinePercent)] : [],
   );
   const distances = steps.flatMap((step) =>
     "distanceKm" in step ? [step.distanceKm] : [],
@@ -138,7 +165,7 @@ export function formatExerciseInstructionsRow(
     case "duration":
       return [
         formatSets(instructions.sets),
-        formatDurationShort(instructions.durationSec),
+        formatDurationRange(instructions.durationSec),
         formatRpe(instructions.targetRpe),
         `repos ${formatDurationShort(instructions.restBetweenSetsSec)}`,
       ]
@@ -190,6 +217,27 @@ export function formatExerciseInstructionsRow(
 }
 
 /**
+ * Consigne d'un palier quand elle porte une plage ou un RPE cible (D16) :
+ * `35 min · 5 km/h · pente 6–8 %`, `1 min · RPE 7–8`. Absente pour un
+ * palier à valeurs uniques sans RPE : ses réglages suffisent.
+ */
+export function formatStepPrescription(step: SessionStepInstruction): string | undefined {
+  if (!("speedKmh" in step)) return undefined;
+
+  const ranged = isRange(step.durationSec) || isRange(step.speedKmh) || isRange(step.inclinePercent);
+  if (!ranged && step.targetRpe === undefined) return undefined;
+
+  return [
+    formatDurationRange(step.durationSec),
+    formatValueRange(step.speedKmh, "km/h"),
+    `pente ${formatValueRange(step.inclinePercent, "%")}`,
+    formatRpe(step.targetRpe),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/**
  * Rangée d'un enfant de groupe : ni séries ni repos, absorbés par le groupe (§7).
  */
 export function formatGroupChildInstructionsRow(
@@ -198,7 +246,7 @@ export function formatGroupChildInstructionsRow(
   const target =
     instructions.shape === "reps"
       ? `${formatRange(instructions.reps)} reps`
-      : formatDurationShort(instructions.durationSec);
+      : formatDurationRange(instructions.durationSec);
 
   return [target, formatRpe(instructions.targetRpe)].filter(Boolean).join(" · ");
 }

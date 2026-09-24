@@ -7,6 +7,7 @@ import type {
   SessionTemplate,
 } from "../../domain";
 import { DEFAULT_SERIES_ROLE } from "../../domain/rules/strengthRules";
+import { lowOf } from "../../domain/rules/rangeRules";
 
 /**
  * Version de cadre active par exercice (conception v1.6, § 4.3) : chargée
@@ -63,12 +64,13 @@ function createExerciseBlock(
       settings:
         "speedKmh" in step
           ? {
-              durationSec: step.durationSec,
-              speedKmh: step.speedKmh,
-              inclinePercent: step.inclinePercent,
+              /* Consigne en plage (D16) : le palier réalisé part du bas. */
+              durationSec: lowOf(step.durationSec),
+              speedKmh: lowOf(step.speedKmh),
+              inclinePercent: lowOf(step.inclinePercent),
             }
           : {
-              durationSec: step.durationSec,
+              durationSec: lowOf(step.durationSec),
               distanceKm: step.distanceKm,
             },
     }));

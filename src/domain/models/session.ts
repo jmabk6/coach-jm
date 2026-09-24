@@ -154,6 +154,15 @@ export interface NumberRange {
   max: number;
 }
 
+/**
+ * Consigne en plage (D16) : une vraie plage min/max quand la prescription
+ * en est une (« pente 6-8 % », « 8-10 min ») ; une valeur unique reste
+ * permise quand la prescription en est une. Le réalisé, lui, reste
+ * toujours une valeur unique. Les consignes antérieures (nombres) restent
+ * valides telles quelles.
+ */
+export type RangeOrValue = number | NumberRange;
+
 export interface TargetRpe {
   min: number;
   max: number;
@@ -225,7 +234,7 @@ export interface DurationShapeInstructions {
   shape: "duration";
 
   sets: number;
-  durationSec: number;
+  durationSec: RangeOrValue;
 
   targetRpe?: TargetRpe;
 
@@ -247,9 +256,12 @@ export interface SpeedInclineStepInstruction {
 
   position: number;
 
-  durationSec: number;
-  speedKmh: number;
-  inclinePercent: number;
+  durationSec: RangeOrValue;
+  speedKmh: RangeOrValue;
+  inclinePercent: RangeOrValue;
+
+  /** Effort visé sur ce palier (« RPE 7-8 », Cardio B). */
+  targetRpe?: NumberRange;
 }
 
 export interface DistanceStepInstruction {
@@ -368,7 +380,7 @@ export interface GroupRepsShapeInstructions {
 export interface GroupDurationShapeInstructions {
   shape: "duration";
 
-  durationSec: number;
+  durationSec: RangeOrValue;
 
   targetRpe?: TargetRpe;
 

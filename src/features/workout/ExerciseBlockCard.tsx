@@ -8,8 +8,10 @@ import type {
   PerformedExerciseBlock,
   PerformedSeries,
   RpeScaleVersion,
+  SessionStepInstruction,
   StrengthFrameVersion,
 } from "../../domain";
+import { formatStepPrescription } from "../../domain/rules/blockInstructionRules";
 import { formatFrameVersionSummary } from "../../domain/rules/strengthRules";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { effectivePowerUnit } from "../../domain/rules/powerRules";
@@ -260,6 +262,11 @@ export function ExerciseBlockCard({
                 <StepRow
                   key={step.id}
                   step={step}
+                  prescription={
+                    block.snapshotInstructions.shape === "steps"
+                      ? formatPlannedStep(block.snapshotInstructions.steps, step.id)
+                      : undefined
+                  }
                   index={index}
                   editing={editingId === step.id}
                   busy={busy}
@@ -586,8 +593,17 @@ function StepReference({
   );
 }
 
+/** La consigne prévue d'un palier réalisé : son id porte celui du palier du modèle. */
+function formatPlannedStep(steps: SessionStepInstruction[], performedStepId: string): string | undefined {
+  const planned = steps.find((item) => performedStepId.endsWith(`-step-${item.id}`));
+
+  return planned ? formatStepPrescription(planned) : undefined;
+}
+
 interface StepRowProps {
   step: PerformedCardioStep;
+  /** Consigne en plage ou avec RPE cible (D16), lue sous le palier. */
+  prescription: string | undefined;
   index: number;
   editing: boolean;
   busy: boolean;
@@ -605,6 +621,7 @@ interface StepRowProps {
  */
 function StepRow({
   step,
+  prescription,
   index,
   editing,
   busy,
@@ -616,6 +633,7 @@ function StepRow({
 }: StepRowProps) {
   const label = `Palier ${index + 1}`;
   const line = formatCardioSettingsLine(step.settings);
+  const planned = prescription ? <span className="wseries__rest">Consigne : {prescription}</span> : null;
   const adapted = step.originalSettings ? (
     <span className="wseries__rest">
       Adapté pendant la séance · initialement {formatCardioSettingsLine(step.originalSettings)}
@@ -666,6 +684,7 @@ function StepRow({
         <span className="wseries__body">
           <span className="wseries__title">{label}</span>
           <span className="wseries__meta">En cours · {line}</span>
+          {planned}
           {adapted}
         </span>
         <div className="wseries__form">
@@ -688,6 +707,7 @@ function StepRow({
       <span className="wseries__body">
         <span className="wseries__title">{label}</span>
         <span className="wseries__meta">{line}</span>
+        {planned}
         {adapted}
       </span>
       {!editing && step.status !== "not_performed" && (

@@ -1,6 +1,7 @@
 import { Minus, Plus } from "lucide-react";
-import type { NumberRange, TargetRpe } from "../../domain";
+import type { NumberRange, RangeOrValue, TargetRpe } from "../../domain";
 import { formatDurationShort } from "../../domain/rules/blockInstructionRules";
+import { isRange, lowOf, widenToRange } from "../../domain/rules/rangeRules";
 
 /**
  * Champs partagés par les variantes de `Modifier l'exercice` (§8).
@@ -209,6 +210,116 @@ export function SecondsInput({ value, onChange, label }: SecondsInputProps) {
       />
       <span>s</span>
     </label>
+  );
+}
+
+interface RangeToggleProps {
+  active: boolean;
+  onToggle: () => void;
+  label: string;
+}
+
+/** « Plage » : passe d'une valeur unique à une plage min–max, et retour (D16). */
+export function RangeToggle({ active, onToggle, label }: RangeToggleProps) {
+  return (
+    <button
+      type="button"
+      className={`range-toggle ${active ? "range-toggle--active" : ""}`}
+      aria-pressed={active}
+      aria-label={`${label} en plage`}
+      onClick={onToggle}
+    >
+      Plage
+    </button>
+  );
+}
+
+interface SecondsRangeInputProps {
+  value: RangeOrValue;
+  onChange: (value: RangeOrValue) => void;
+  label: string;
+}
+
+/**
+ * Durée d'une consigne, valeur ou plage (D16) : le champ habituel, plus
+ * un second « à … » quand la prescription est une plage (« 20–30 s »).
+ */
+export function SecondsRangeInput({ value, onChange, label }: SecondsRangeInputProps) {
+  const range = isRange(value) ? value : undefined;
+
+  return (
+    <div className="seconds-range">
+      <SecondsInput
+        label={label}
+        value={lowOf(value)}
+        onChange={(min) => onChange(range ? { min, max: Math.max(min, range.max) } : min)}
+      />
+      {range && (
+        <>
+          <span aria-hidden="true">–</span>
+          <SecondsInput
+            label={`${label}, maximum`}
+            value={range.max}
+            onChange={(max) => onChange({ min: Math.min(range.min, max), max })}
+          />
+        </>
+      )}
+      <RangeToggle
+        active={range !== undefined}
+        label={label}
+        onToggle={() => onChange(range ? range.min : widenToRange(lowOf(value), 10))}
+      />
+    </div>
+  );
+}
+
+interface DecimalRangeFieldsProps {
+  value: NumberRange;
+  min: number;
+  max: number;
+  step: number;
+  label: string;
+  /** Affichage dans une autre unité que le stockage (minutes pour des secondes). */
+  scale?: number;
+  onChange: (value: NumberRange) => void;
+}
+
+/** Deux bornes décimales reliées par un tiret, comme toute fourchette (§8). */
+export function DecimalRangeFields({ value, min, max, step, label, scale = 1, onChange }: DecimalRangeFieldsProps) {
+  function read(text: string): number | undefined {
+    const parsed = Number(text.replace(",", "."));
+    if (!Number.isFinite(parsed) || text.trim() === "") return undefined;
+    return Math.min(max, Math.max(min, Math.round(parsed * scale * 100) / 100));
+  }
+
+  const shown = (stored: number) => Math.round((stored / scale) * 100) / 100;
+
+  return (
+    <div className="range-fields">
+      <input
+        type="number"
+        inputMode="decimal"
+        step={step}
+        aria-label={`${label}, minimum`}
+        value={shown(value.min)}
+        onChange={(event) => {
+          const next = read(event.target.value);
+          if (next !== undefined) onChange({ min: next, max: Math.max(next, value.max) });
+        }}
+      />
+      <span aria-hidden="true">–</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        step={step}
+        aria-label={`${label}, maximum`}
+        value={shown(value.max)}
+        onChange={(event) => {
+          const next = read(event.target.value);
+          if (next !== undefined) onChange({ min: Math.min(next, value.min), max: next });
+        }}
+      />
+    </div>
   );
 }
 

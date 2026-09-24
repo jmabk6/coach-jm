@@ -14,12 +14,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { SessionStepInstruction } from "../../domain";
+import { useState } from "react";
+import type { NumberRange, RangeOrValue, SessionStepInstruction } from "../../domain";
 import {
-  formatDurationShort,
+  formatDurationRange,
   formatNumberFr,
 } from "../../domain/rules/blockInstructionRules";
-import { Stepper } from "./instructionFields";
+import { isRange, lowOf, sumRanges, widenToRange } from "../../domain/rules/rangeRules";
+import { DecimalRangeFields, RangeToggle, RpeFields, Stepper } from "./instructionFields";
 
 interface StepsEditorProps {
   steps: SessionStepInstruction[];
@@ -38,7 +40,7 @@ export function StepsEditor({ steps, onChange }: StepsEditorProps) {
   const ordered = [...steps].sort((a, b) => a.position - b.position);
   const kind: "speed_incline" | "distance" =
     ordered[0] && "distanceKm" in ordered[0] ? "distance" : "speed_incline";
-  const totalSec = ordered.reduce((sum, step) => sum + step.durationSec, 0);
+  const total = sumRanges(ordered.map((step) => step.durationSec));
 
   function commit(next: SessionStepInstruction[]) {
     onChange(next.map((step, index) => ({ ...step, position: index })));
@@ -61,7 +63,7 @@ export function StepsEditor({ steps, onChange }: StepsEditorProps) {
       kind === "distance"
         ? {
             ...base,
-            durationSec: last?.durationSec ?? 300,
+            durationSec: last ? lowOf(last.durationSec) : 300,
             distanceKm: last && "distanceKm" in last ? last.distanceKm : 1,
           }
         : {
@@ -144,9 +146,15 @@ export function StepsEditor({ steps, onChange }: StepsEditorProps) {
         Ajouter un palier
       </button>
 
+      {kind === "speed_incline" && (
+        <p className="steps-editor__hint">
+          Touchez le numéro d'un palier pour saisir une plage (« pente 6–8 % ») ou un RPE cible.
+        </p>
+      )}
+
       <p className="steps-editor__total">
         <strong>Total</strong>
-        <span>{formatDurationShort(totalSec)}</span>
+        <span>{formatDurationRange(total)}</span>
         <span>
           {ordered.length === 1 ? "1 palier" : `${ordered.length} paliers`}
         </span>
@@ -164,10 +172,106 @@ interface StepRowProps {
   onRemove: () => void;
 }
 
+/**
+ * Une valeur de palier : le compteur habituel, ou sa plage affichée
+ * « 6–8 » quand la consigne en est une (D16) ; la plage se règle dans le
+ * panneau du palier.
+ */
+function StepValue({
+  value,
+  label,
+  min,
+  max,
+  step,
+  scale = 1,
+  format = formatNumberFr,
+  onChange,
+}: {
+  value: RangeOrValue;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  scale?: number;
+  format?: (value: number) => string;
+  onChange: (value: number) => void;
+}) {
+  if (isRange(value)) {
+    return (
+      <output className="steps-editor__range" aria-label={label}>
+        {format(value.min / scale)}–{format(value.max / scale)}
+      </output>
+    );
+  }
+
+  return (
+    <Stepper
+      label={label}
+      value={value / scale}
+      min={min}
+      max={max}
+      step={step}
+      format={format}
+      onChange={(next) => onChange(Math.round(next * scale * 100) / 100)}
+    />
+  );
+}
+
+function RangeLine({
+  name,
+  value,
+  gap,
+  min,
+  max,
+  step,
+  scale,
+  onChange,
+}: {
+  name: string;
+  value: RangeOrValue;
+  gap: number;
+  min: number;
+  max: number;
+  step: number;
+  scale?: number;
+  onChange: (value: RangeOrValue) => void;
+}) {
+  const range: NumberRange | undefined = isRange(value) ? value : undefined;
+
+  return (
+    <div className="steps-editor__range-line">
+      <span className="steps-editor__range-name">{name}</span>
+      {range ? (
+        <DecimalRangeFields
+          value={range}
+          min={min}
+          max={max}
+          step={step}
+          label={name}
+          {...(scale !== undefined ? { scale } : {})}
+          onChange={onChange}
+        />
+      ) : (
+        <span className="steps-editor__range-single">valeur unique</span>
+      )}
+      <RangeToggle
+        active={range !== undefined}
+        label={name}
+        onToggle={() => onChange(range ? range.min : widenToRange(lowOf(value), gap))}
+      />
+    </div>
+  );
+}
+
 function StepRow({ step, index, kind, canRemove, onChange, onRemove }: StepRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: step.id });
   const label = `palier ${index + 1}`;
+  const [panelOpen, setPanelOpen] = useState(false);
+  const speedIncline = kind === "speed_incline" && "speedKmh" in step;
+  const hasRanges =
+    isRange(step.durationSec) ||
+    ("speedKmh" in step && (isRange(step.speedKmh) || isRange(step.inclinePercent) || step.targetRpe !== undefined));
 
   return (
     <li
@@ -185,30 +289,41 @@ function StepRow({ step, index, kind, canRemove, onChange, onRemove }: StepRowPr
         <GripVertical size={18} strokeWidth={2} aria-hidden="true" />
       </button>
 
-      <span className="steps-editor__index">{index + 1}</span>
+      {speedIncline ? (
+        <button
+          type="button"
+          className={`steps-editor__index steps-editor__index--button ${hasRanges ? "steps-editor__index--ranged" : ""}`}
+          aria-label={`Plages et RPE du ${label}`}
+          aria-expanded={panelOpen}
+          onClick={() => setPanelOpen((open) => !open)}
+        >
+          {index + 1}
+        </button>
+      ) : (
+        <span className="steps-editor__index">{index + 1}</span>
+      )}
 
-      <Stepper
+      <StepValue
         label={`durée du ${label}`}
-        value={step.durationSec / 60}
+        value={step.durationSec}
         min={0.5}
         max={120}
-        step={step.durationSec < 120 ? 0.5 : 1}
-        format={(minutes) => formatNumberFr(minutes)}
-        onChange={(minutes) => onChange({ durationSec: Math.round(minutes * 60) })}
+        step={lowOf(step.durationSec) < 120 ? 0.5 : 1}
+        scale={60}
+        onChange={(durationSec) => onChange({ durationSec: Math.round(durationSec) })}
       />
 
       {kind === "speed_incline" && "speedKmh" in step ? (
         <>
-          <Stepper
+          <StepValue
             label={`vitesse du ${label}`}
             value={step.speedKmh}
             min={0.5}
             max={25}
             step={0.5}
-            format={formatNumberFr}
             onChange={(speedKmh) => onChange({ speedKmh })}
           />
-          <Stepper
+          <StepValue
             label={`pente du ${label}`}
             value={step.inclinePercent}
             min={0}
@@ -238,6 +353,51 @@ function StepRow({ step, index, kind, canRemove, onChange, onRemove }: StepRowPr
       >
         <X size={16} strokeWidth={2.2} aria-hidden="true" />
       </button>
+
+      {panelOpen && "speedKmh" in step && (
+        <div className="steps-editor__panel" role="group" aria-label={`Plages et RPE du ${label}`}>
+          <RangeLine
+            name={`Durée du ${label} (min)`}
+            value={step.durationSec}
+            gap={120}
+            min={30}
+            max={7200}
+            step={0.5}
+            scale={60}
+            onChange={(durationSec) => onChange({ durationSec })}
+          />
+          <RangeLine
+            name={`Vitesse du ${label} (km/h)`}
+            value={step.speedKmh}
+            gap={0.5}
+            min={0.5}
+            max={25}
+            step={0.5}
+            onChange={(speedKmh) => onChange({ speedKmh })}
+          />
+          <RangeLine
+            name={`Pente du ${label} (%)`}
+            value={step.inclinePercent}
+            gap={2}
+            min={0}
+            max={15}
+            step={1}
+            onChange={(inclinePercent) => onChange({ inclinePercent })}
+          />
+          <div className="steps-editor__range-line">
+            <span className="steps-editor__range-name">RPE cible</span>
+            <RpeFields
+              value={step.targetRpe}
+              onChange={(targetRpe) => {
+                const next = { ...step };
+                if (targetRpe) next.targetRpe = targetRpe;
+                else delete next.targetRpe;
+                onChange(next);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </li>
   );
 }

@@ -35,7 +35,7 @@ import {
   RangeFields,
   RestSelect,
   RpeFields,
-  SecondsInput,
+  SecondsRangeInput,
   Stepper,
 } from "./instructionFields";
 import { StepsEditor } from "./StepsEditor";
@@ -576,7 +576,7 @@ function InstructionFields({ draft, exercise, onChange }: InstructionFieldsProps
             label="Durée cible"
             hint={perSide ? "Par côté, à chaque tour" : "À chaque tour"}
           >
-            <SecondsInput
+            <SecondsRangeInput
               label="Durée cible"
               value={instructions.durationSec}
               onChange={(durationSec) => set({ ...instructions, durationSec })}
@@ -649,7 +649,7 @@ function InstructionFields({ draft, exercise, onChange }: InstructionFieldsProps
               label="Durée cible par série"
               {...(perSide ? { hint: "Par côté" } : {})}
             >
-              <SecondsInput
+              <SecondsRangeInput
                 label="Durée cible par série"
                 value={instructions.durationSec}
                 onChange={(durationSec) => set({ ...instructions, durationSec })}

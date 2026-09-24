@@ -584,3 +584,92 @@
     padding-inline: 10px;
   }
 }
+
+/* Lot D.2 : consignes en plage (D16). */
+.range-toggle {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: 999px;
+  background: var(--color-surface, white);
+  color: var(--color-text-soft, #666);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.range-toggle--active {
+  border-color: var(--color-accent, #2f6fed);
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+}
+
+.seconds-range {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-soft, #666);
+}
+
+.steps-editor__index--button {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.steps-editor__index--ranged {
+  background: var(--color-accent, #2f6fed);
+  color: white;
+}
+
+.steps-editor__range {
+  display: grid;
+  place-items: center;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.steps-editor__panel {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--color-surface-soft, #f2f4f7);
+}
+
+.steps-editor__range-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.steps-editor__range-name {
+  flex: 1 1 100%;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.steps-editor__range-single {
+  color: var(--color-text-soft, #666);
+  font-size: 0.85rem;
+}
+
+.steps-editor__hint {
+  margin: 0;
+  padding: 0 4px;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+}

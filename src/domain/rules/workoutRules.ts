@@ -1,5 +1,6 @@
 import type { Exercise, Id, LoadSemantics, MuscleZone, PerformedBlock, PerformedSeries, SessionBlock } from "../models";
 import { loadSemanticsOf } from "./loadSemanticsRules";
+import { midOf } from "./rangeRules";
 
 /**
  * Volume (tonnage) d'une liste de séries **d'un même exercice**.
@@ -101,15 +102,16 @@ export function calculateSessionDuration(
           break;
 
         case "duration":
+          /* Plage (D16) : estimation au milieu de la plage. */
           totalSec +=
-            instructions.sets * instructions.durationSec +
+            instructions.sets * midOf(instructions.durationSec) +
             Math.max(0, instructions.sets - 1) *
               instructions.restBetweenSetsSec;
           break;
 
         case "steps":
           totalSec += instructions.steps.reduce(
-            (sum, step) => sum + step.durationSec,
+            (sum, step) => sum + midOf(step.durationSec),
             0,
           );
           break;
@@ -129,7 +131,7 @@ export function calculateSessionDuration(
       (sum, child) => {
         const exerciseDuration =
           child.instructions.shape === "duration"
-            ? child.instructions.durationSec
+            ? midOf(child.instructions.durationSec)
             : 0;
 
         return (

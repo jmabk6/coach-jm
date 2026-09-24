@@ -13,6 +13,7 @@ import type {
 } from "../../../domain";
 import { defaultInstructionsFor } from "../../../domain/rules/blockInstructionRules";
 import { DEFAULT_SERIES_ROLE } from "../../../domain/rules/strengthRules";
+import { lowOf } from "../../../domain/rules/rangeRules";
 
 /**
  * Lecture et fabrication des briques d'une réalisation : tout ce qui ne
@@ -361,11 +362,11 @@ export function createAddedExerciseBlock(
       settings:
         "speedKmh" in step
           ? {
-              durationSec: step.durationSec,
-              speedKmh: step.speedKmh,
-              inclinePercent: step.inclinePercent,
+              durationSec: lowOf(step.durationSec),
+              speedKmh: lowOf(step.speedKmh),
+              inclinePercent: lowOf(step.inclinePercent),
             }
-          : { durationSec: step.durationSec, distanceKm: step.distanceKm },
+          : { durationSec: lowOf(step.durationSec), distanceKm: step.distanceKm },
     }));
   } else {
     block.simpleMeasurement = {};
@@ -440,7 +441,8 @@ export function proposeSeriesValues(
 
     if (block.addedDuringWorkout) return {};
     if (instructions.shape === "reps") return { reps: instructions.reps.max };
-    if (instructions.shape === "duration") return { durationSec: instructions.durationSec };
+    /* Durée en plage (D16) : le bas de la plage. */
+    if (instructions.shape === "duration") return { durationSec: lowOf(instructions.durationSec) };
 
     return {};
   }
@@ -481,7 +483,7 @@ export function proposeRoundChildValues(
     if (!instructions) return {};
     if (instructions.shape === "reps") return { reps: instructions.reps.max };
 
-    return { durationSec: instructions.durationSec };
+    return { durationSec: lowOf(instructions.durationSec) };
   }
 
   return {

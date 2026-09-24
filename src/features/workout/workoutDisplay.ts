@@ -8,6 +8,7 @@ import type {
   WorkoutSession,
 } from "../../domain";
 import {
+  formatDurationRange,
   formatDurationShort,
   formatGroupChildInstructionsRow,
   formatRange,
@@ -91,7 +92,7 @@ export function formatPlannedLine(block: PerformedExerciseBlock): string | undef
   if (instructions.shape === "reps") {
     parts.push(`${formatRange(instructions.reps)} reps`);
   } else if (instructions.shape === "duration") {
-    parts.push(formatDurationShort(instructions.durationSec));
+    parts.push(formatDurationRange(instructions.durationSec));
   } else {
     return undefined;
   }
@@ -123,7 +124,7 @@ export function formatSeriesTarget(block: PerformedExerciseBlock): string {
   }
 
   if (instructions.shape === "duration") {
-    return formatDurationShort(instructions.durationSec);
+    return formatDurationRange(instructions.durationSec);
   }
 
   return "";
