@@ -27,7 +27,7 @@ describe("nature d'une séance (kind)", () => {
   });
 
   it("chaque catégorie affichable a une classe CSS et un slug sans espace ni accent", () => {
-    expect(sessionCategories).toEqual(["Musculation", "Cardio", "Mobilité", "Bilan de mobilité"]);
+    expect(sessionCategories).toEqual(["Musculation", "Cardio", "Mobilité", "Bilan de mobilité", "Routine"]);
     for (const category of sessionCategories) {
       const className = categoryClassName("session-card__icon", category);
       expect(className).toMatch(/^session-card__icon--[a-z]+$/);

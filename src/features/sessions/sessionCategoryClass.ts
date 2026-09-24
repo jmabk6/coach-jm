@@ -10,6 +10,7 @@ const classNames = {
   Cardio: "cardio",
   Mobilité: "mobilite",
   "Bilan de mobilité": "bilan",
+  Routine: "routine",
 } satisfies Record<SessionCategory, string>;
 
 export function categoryClassName(prefix: string, category: SessionCategory): string {

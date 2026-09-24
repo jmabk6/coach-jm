@@ -58,13 +58,16 @@ describe("règles de classification (v1.5, § 2.1)", () => {
 describe("catalogue officiel — classification validée le 20/09/2026", () => {
   const catalog = exerciseCatalog as readonly Exercise[];
 
-  it("les 30 exercices de musculation ont un groupe cohérent avec leur zone ; les 18 autres n'ont ni groupe ni famille", () => {
+  it("les 36 exercices de musculation (30 + 6 du lot D) ont un groupe cohérent avec leur zone ; les 19 autres n'ont ni groupe ni famille", () => {
     const strength = catalog.filter((e) => e.category === "Musculation");
     const others = catalog.filter((e) => e.category !== "Musculation");
-    expect(strength).toHaveLength(30);
-    expect(others).toHaveLength(18);
+    expect(strength).toHaveLength(36);
+    expect(others).toHaveLength(19);
+    /* Lot D : mollets debout n'a pas de groupe — la table n'en prévoit aucun pour les mollets. */
+    const withoutGroup = ["mollets-debout"];
     for (const exercise of strength) {
-      expect(exercise.progressionGroup, exercise.id).toBeDefined();
+      if (withoutGroup.includes(exercise.id)) expect(exercise.progressionGroup, exercise.id).toBeUndefined();
+      else expect(exercise.progressionGroup, exercise.id).toBeDefined();
       expect(checkClassification(exercise), exercise.id).toEqual([]);
     }
     for (const exercise of others) {
@@ -81,12 +84,16 @@ describe("catalogue officiel — classification validée le 20/09/2026", () => {
     expect([g("squat"), g("presse-cuisses")]).toEqual(["Quadriceps", "Quadriceps"]);
     expect([g("leg-curl-assis"), g("souleve-terre-roumain")]).toEqual(["Ischio-jambiers", "Ischio-jambiers"]);
     expect(g("hip-thrust")).toBe("Fessiers");
+    /* Lot D. */
+    expect([g("montee-banc"), g("chaise-60"), g("marche-laterale-elastique")]).toEqual(["Quadriceps", "Quadriceps", "Fessiers"]);
     for (const id of ["planche", "planche-laterale", "dead-bug", "pallof-press", "crunch-poulie"]) expect(g(id), id).toBe("Abdominaux");
 
     const families = Object.fromEntries(catalog.filter((e) => e.movementFamily).map((e) => [e.id, e.movementFamily]));
     expect(families).toEqual({
       "tirage-vertical": "tirage_vertical",
       "traction-assistee": "tirage_vertical",
+      "traction-negative": "tirage_vertical",
+      "suspension-omoplates": "tirage_vertical",
       "rowing-poulie-basse": "tirage_horizontal",
       "rowing-haltere-unilateral": "tirage_horizontal",
       "face-pull": "tirage_horizontal",

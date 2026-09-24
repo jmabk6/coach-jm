@@ -1,4 +1,4 @@
-import { ClipboardCheck, Dumbbell, HeartPulse, PersonStanding } from "lucide-react";
+import { ClipboardCheck, Dumbbell, HeartPulse, MoonStar, PersonStanding } from "lucide-react";
 import type { SessionCategory } from "../../domain";
 
 const icons = {
@@ -6,6 +6,7 @@ const icons = {
   Cardio: HeartPulse,
   Mobilité: PersonStanding,
   "Bilan de mobilité": ClipboardCheck,
+  Routine: MoonStar,
 } satisfies Record<SessionCategory, typeof Dumbbell>;
 
 interface SessionCategoryIconProps {

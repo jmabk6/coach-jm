@@ -80,7 +80,7 @@ describe("sauvegarde et sens de la charge", () => {
     await db.delete();
     await db.open();
     const result = await restoreBackup(parseBackup(text), db);
-    expect(result.counts.exercises).toBe(48);
+    expect(result.counts.exercises).toBe(exerciseCatalog.length);
 
     const restored = await db.table("exercises").get("traction-assistee");
     expect(restored.loadSemantics).toBeUndefined();

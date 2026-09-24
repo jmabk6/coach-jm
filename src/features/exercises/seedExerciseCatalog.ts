@@ -4,6 +4,7 @@ import {
   getExercise,
   saveExercise,
 } from "../../db/repositories/exerciseRepository";
+import type { Exercise } from "../../domain";
 import { classificationErrors } from "../../domain/rules/exerciseRules";
 import { exerciseCatalog } from "./exerciseCatalog";
 
@@ -19,6 +20,8 @@ import { exerciseCatalog } from "./exerciseCatalog";
  *   catalogue ; `updatedAt` n'est pas modifié ;
  * - le sens de la charge (`loadSemantics`, lot a) suit la même règle :
  *   complété seulement s'il est absent en base, jamais écrasé ;
+ * - les libellés de mesure (`measurementLabels`, lot D : « pas » de la
+ *   marche latérale) aussi : complétés s'ils sont absents, jamais écrasés ;
  * - une classification invalide trouvée en base est signalée dans la
  *   console et laissée en l'état (§ 8.2) ;
  * - les médias officiels (vignette, photo) suivent toujours le catalogue :
@@ -109,6 +112,10 @@ export async function seedExerciseCatalog(): Promise<void> {
     const semanticsMissing =
       existing.loadSemantics === undefined &&
       exercise.loadSemantics !== undefined;
+    const officialLabels = (exercise as Exercise).measurementLabels;
+    const labelsMissing =
+      existing.measurementLabels === undefined &&
+      officialLabels !== undefined;
 
     const needsCatalogUpgrade =
       (existing.technique === undefined &&
@@ -122,6 +129,7 @@ export async function seedExerciseCatalog(): Promise<void> {
       groupMissing ||
       familyMissing ||
       semanticsMissing ||
+      labelsMissing ||
       mediaOutdated;
 
     if (!needsCatalogUpgrade) {
@@ -167,6 +175,7 @@ export async function seedExerciseCatalog(): Promise<void> {
       ...(groupMissing ? { progressionGroup: exercise.progressionGroup } : {}),
       ...(familyMissing ? { movementFamily: exercise.movementFamily } : {}),
       ...(semanticsMissing ? { loadSemantics: exercise.loadSemantics } : {}),
+      ...(labelsMissing ? { measurementLabels: officialLabels } : {}),
 
       ...(mediaOutdated && officialMedia !== undefined
         ? {

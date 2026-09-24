@@ -256,6 +256,7 @@ export function GroupBlockCard({
                                   initial={roundChildAsSeries(roundChild)}
                                   rpeTable={rpeTable}
                                   loadSemantics={loadSemanticsOf(exerciseById.get(roundChild.exerciseId))}
+                                  sideRepsUnit={exerciseById.get(roundChild.exerciseId)?.measurementLabels?.value}
                                   submitLabel="Enregistrer"
                                   onSubmit={(values) => {
                                     setEditingId(undefined);
@@ -286,6 +287,7 @@ export function GroupBlockCard({
                                   )}
                                   rpeTable={rpeTable}
                                   loadSemantics={loadSemanticsOf(exerciseById.get(roundChild.exerciseId))}
+                                  sideRepsUnit={exerciseById.get(roundChild.exerciseId)?.measurementLabels?.value}
                                   submitLabel={
                                     nextChild
                                       ? `Valider ${label(child)} → passer à ${label(nextChild)}`

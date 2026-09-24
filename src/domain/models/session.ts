@@ -8,7 +8,9 @@ export type SessionCategory =
   | "Musculation"
   | "Cardio"
   | "Mobilité"
-  | "Bilan de mobilité";
+  | "Bilan de mobilité"
+  /** Routines du soir (conception V2 § 2.5, lot D). */
+  | "Routine";
 
 export type SessionStatus =
   | "active"

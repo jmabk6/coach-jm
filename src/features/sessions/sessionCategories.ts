@@ -10,4 +10,5 @@ export const sessionCategories: SessionCategory[] = [
   "Cardio",
   "Mobilité",
   "Bilan de mobilité",
+  "Routine",
 ];

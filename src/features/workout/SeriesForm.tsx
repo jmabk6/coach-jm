@@ -57,6 +57,8 @@ interface SeriesFormProps {
    * choisit watts ou mètres ; présente, elle est imposée.
    */
   powerUnit?: PowerUnit | undefined;
+  /** Unité d'une saisie par côté en répétitions : « pas » pour la marche latérale. */
+  sideRepsUnit?: string | undefined;
   submitLabel: string;
   onSubmit: (values: SeriesValues) => void;
   onCancel?: () => void;
@@ -97,6 +99,7 @@ export function SeriesForm({
   barWeightKg,
   loadSemantics = "external",
   powerUnit,
+  sideRepsUnit = "reps",
   submitLabel,
   onSubmit,
   onCancel,
@@ -347,7 +350,7 @@ export function SeriesForm({
           <>
             <NumberField
               label="Gauche"
-              unit={layout === "reps_per_side" ? "reps" : "s"}
+              unit={layout === "reps_per_side" ? sideRepsUnit : "s"}
               value={left}
               onChange={setLeft}
               step={layout === "reps_per_side" ? 1 : 5}
@@ -355,7 +358,7 @@ export function SeriesForm({
             />
             <NumberField
               label="Droite"
-              unit={layout === "reps_per_side" ? "reps" : "s"}
+              unit={layout === "reps_per_side" ? sideRepsUnit : "s"}
               value={right}
               onChange={setRight}
               step={layout === "reps_per_side" ? 1 : 5}

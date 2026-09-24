@@ -208,7 +208,7 @@ describe("lecture en vue de sauvegarde — enveloppe", () => {
     const database = openTest();
     await database.table("exercises").bulkAdd(exerciseCatalog);
     const envelope = await readBackup(database, context);
-    expect(envelope.counts.exercises).toBe(48);
+    expect(envelope.counts.exercises).toBe(exerciseCatalog.length);
     expect(envelope.warnings).toEqual([]);
   });
 });

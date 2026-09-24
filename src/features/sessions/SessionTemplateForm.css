@@ -116,6 +116,12 @@
   color: #2a6f97;
 }
 
+.session-form__category--active.session-form__category--routine {
+  border-color: #5b3fa8;
+  background: #efeafb;
+  color: #5b3fa8;
+}
+
 .session-form__error {
   margin: 0;
   color: var(--color-danger, #b42318);

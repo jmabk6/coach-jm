@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { exerciseCatalog } from "./exerciseCatalog";
 
 describe("exerciseCatalog", () => {
-  it("contient les 48 exercices officiels", () => {
-    expect(exerciseCatalog).toHaveLength(48);
+  it("contient les 55 exercices officiels : les 48 d'origine et les 7 du programme V1 (lot D)", () => {
+    expect(exerciseCatalog).toHaveLength(55);
+    const programV1 = ["traction-negative", "suspension-omoplates", "montee-banc", "chaise-60", "marche-laterale-elastique", "mollets-debout", "sprint-velo"];
+    expect(exerciseCatalog.filter((exercise) => programV1.includes(exercise.id))).toHaveLength(7);
   });
 
   it("utilise uniquement des identifiants uniques", () => {
@@ -25,8 +27,8 @@ describe("exerciseCatalog", () => {
     }, {});
 
     expect(counts).toEqual({
-      Musculation: 30,
-      Cardio: 5,
+      Musculation: 36,
+      Cardio: 6,
       Mobilité: 10,
       "Test mobilité": 3,
     });
@@ -52,6 +54,8 @@ describe("exerciseCatalog", () => {
       cardio.map((exercise) => exercise.equipment),
     ).toEqual([
       "Tapis",
+      "Vélo",
+      /* Sprints vélo (lot D). */
       "Vélo",
       "Vélo elliptique",
       "Rameur",

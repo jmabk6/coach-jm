@@ -38,6 +38,7 @@ const categoryLabels: Record<CategoryKey, string> = {
   Cardio: "Cardio",
   Mobilité: "Mobilité",
   "Bilan de mobilité": "Bilan de mobilité",
+  Routine: "Routine",
   "Sans catégorie": "Sans catégorie",
 };
 

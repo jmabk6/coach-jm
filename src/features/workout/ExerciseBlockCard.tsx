@@ -507,6 +507,7 @@ function SeriesRow({
               barWeightKg={barWeightKg}
               loadSemantics={loadSemanticsOf(exercise)}
               powerUnit={powerUnit}
+              sideRepsUnit={exercise?.measurementLabels?.value}
               submitLabel="Enregistrer"
               onSubmit={onSaveEdit}
               onCancel={onCancelEdit}
@@ -538,6 +539,7 @@ function SeriesRow({
             barWeightKg={barWeightKg}
             loadSemantics={loadSemanticsOf(exercise)}
             powerUnit={powerUnit}
+            sideRepsUnit={exercise?.measurementLabels?.value}
             submitLabel={`Valider la série ${index + 1}`}
             onSubmit={onValidate}
             busy={busy}

@@ -17,6 +17,7 @@ import { seedRpeScale } from "../strength/seedRpeScale";
    du lot 3. */
 vi.stubEnv("BASE_URL", "/coach-jm/");
 const { seedExerciseCatalog } = await import("./seedExerciseCatalog");
+const { exerciseCatalog } = await import("./exerciseCatalog");
 
 /**
  * Le seed du lot 3 rejoué sur une **copie** de la sauvegarde réelle
@@ -54,12 +55,19 @@ describe("seed du lot 3 sur la sauvegarde réelle", () => {
       if (store === "exercises") continue;
       expect(canonicalStringify(after.stores[store]), store).toBe(canonicalStringify(before.stores[store]));
     }
-    expect(after.counts).toEqual(before.counts);
-
     const beforeById = new Map((before.stores.exercises as Exercise[]).map((e) => [e.id, e]));
+    /* Lot D : les exercices du catalogue absents de la sauvegarde sont
+       ajoutés, identiques au catalogue ; rien d'autre ne change de compte. */
+    const missing = exerciseCatalog.filter((exercise) => !beforeById.has(exercise.id));
+    expect(after.counts).toEqual({ ...before.counts, exercises: (before.counts.exercises ?? 0) + missing.length });
+
     let enriched = 0;
     for (const exercise of after.stores.exercises as Exercise[]) {
-      const previous = beforeById.get(exercise.id)!;
+      const previous = beforeById.get(exercise.id);
+      if (!previous) {
+        expect(exercise, exercise.id).toEqual(exerciseCatalog.find((entry) => entry.id === exercise.id));
+        continue;
+      }
       const strippedAfter: Partial<Exercise> = { ...exercise };
       delete strippedAfter.progressionGroup;
       delete strippedAfter.movementFamily;
@@ -96,7 +104,7 @@ describe("seed du lot 3 sur la sauvegarde réelle", () => {
     await seedExerciseCatalog();
     expect(canonicalStringify((await readStores(db)).stores)).toBe(canonicalStringify(again.stores));
 
-    console.info("[seed réel]", { exercices: after.counts.exercises, enrichis: enriched, seances: after.counts.workouts });
+    console.info("[seed réel]", { exercices: after.counts.exercises, ajoutes: missing.length, enrichis: enriched, seances: after.counts.workouts });
   });
 
   it.skipIf(!path)("lot 4A : le seed de l'échelle RPE pose une V1 si elle manque, n'écrit rien sinon, et ne touche à rien d'autre", async () => {

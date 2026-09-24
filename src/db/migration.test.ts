@@ -12,6 +12,7 @@ import type {
   WeightEntry,
   WorkoutSession,
 } from "../domain";
+import { exerciseCatalog } from "../features/exercises/exerciseCatalog";
 import { seedExerciseCatalog } from "../features/exercises/seedExerciseCatalog";
 import { importSeptember2026History } from "../features/history/importHistory";
 import { buildImportedWorkouts } from "../features/history/importedWorkouts";
@@ -433,10 +434,12 @@ describe("migration v1 → v2 — par les fonctions de l'application (instance g
 
     const all = await db.exercises.toArray();
     expect(new Set(all.map((e) => e.id)).size).toBe(all.length);
-    expect(all.filter((e) => e.status === "active")).toHaveLength(48);
+    expect(all.filter((e) => e.status === "active")).toHaveLength(exerciseCatalog.length);
     /* Depuis le lot 3, le seed complète la classification des exercices de
-       musculation du catalogue (champs vides seulement) ; rien ailleurs. */
-    expect(all.filter((e) => e.status === "active" && e.category === "Musculation").every((e) => e.progressionGroup !== undefined)).toBe(true);
+       musculation du catalogue (champs vides seulement) ; rien ailleurs.
+       Mollets debout (lot D) n'a pas de groupe : aucun n'existe pour eux. */
+    const catalogGroup = new Map(exerciseCatalog.map((e) => [e.id, "progressionGroup" in e ? e.progressionGroup : undefined]));
+    expect(all.filter((e) => e.status === "active" && e.category === "Musculation").every((e) => e.progressionGroup === catalogGroup.get(e.id))).toBe(true);
     expect(all.filter((e) => e.category !== "Musculation").every((e) => e.progressionGroup === undefined && e.movementFamily === undefined)).toBe(true);
     expect(perso?.progressionGroup).toBeUndefined();
   });

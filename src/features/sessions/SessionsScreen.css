@@ -246,6 +246,11 @@
   color: #2a6f97;
 }
 
+.session-card__icon--routine {
+  background: #efeafb;
+  color: #5b3fa8;
+}
+
 .session-card__body {
   display: flex;
   min-width: 0;
