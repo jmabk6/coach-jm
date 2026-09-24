@@ -104,6 +104,22 @@
 
 **Risque** : le comportement de Safari (D2 § 3.3). Il est traité en C.8, avant tout code du lot D.
 
+**Rapport du lot C (24/09/2026) : terminé, non poussé.**
+
+| Étape | Commit | Résultat |
+|---|---|---|
+| C.1 | `2ef8016` | Dexie 4.4.6 exact ; E1 à E7 en test permanent |
+| C.2 | `97931b2` | types v3, aucun changement de comportement (écarts : `increment` reste obligatoire jusqu'à D.6, brique test hors de l'union jusqu'au lot G) |
+| C.3 | `4235285` | schéma v3 à 15 stores, `guardV3Migration` ; T-1 à T-7, T-3 (R) sur les trois sauvegardes |
+| C.4 | `8c2c66f` | ouverture explicite, `MigrationFailureScreen`, export de secours format 1 (T-17) |
+| C.5 | `d186923` | format de sauvegarde 2, `verify-backup` formats 1 et 2 et mode comparaison (T-11, T-20) |
+| C.6 | `d46598f` | `restoreInto` validé avant écriture, relu dans la transaction (T-9 (R), T-10, T-12 à T-16) |
+| C.7 | `ddb1b31` | `runSeeds` (réglages en premier), seed 3, import et effacement dans Plus (T-8 (R)) |
+| C.7 bis | `03afb77` | import atomique : vidage, écriture et relecture dans une seule transaction ; un échec laisse l'ancienne base intacte (D2 § 7.4 révisé) |
+| C.8 | `4c914ae` | page de recette ; 6/6 OK sur Chromium et sur Safari iOS 18.7 (D2 § 3.3) |
+
+Suite complète : 654 tests passent et 8 sont ignorés sans sauvegarde ; 662/662 avec chacune des sauvegardes du 20, du 22 et du 23/09. Recette PC à 375 px par de vrais gestes.
+
 ---
 
 ## 3. Lot D — Catalogue, mesures, programme V1
