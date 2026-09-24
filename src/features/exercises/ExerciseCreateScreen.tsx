@@ -85,12 +85,20 @@ const measurementOptions: Array<{
     label: "Répétitions par côté",
   },
   {
+    value: "reps_duration",
+    label: "Répétitions + durée de chaque répétition",
+  },
+  {
     value: "duration_speed_incline",
     label: "Durée + vitesse + pente",
   },
   {
     value: "duration_distance",
     label: "Durée + distance",
+  },
+  {
+    value: "duration_power",
+    label: "Durée + puissance ou distance",
   },
   {
     value: "distance",
@@ -116,10 +124,12 @@ const measurementTypesByCategory: Record<
     "duration",
     "duration_per_side",
     "reps_per_side",
+    "reps_duration",
   ],
   Cardio: [
     "duration_speed_incline",
     "duration_distance",
+    "duration_power",
   ],
   Mobilité: [
     "reps",
@@ -196,6 +206,8 @@ export function ExerciseCreateScreen() {
       case "duration":
       case "duration_per_side":
       case "reps_per_side":
+      case "reps_duration":
+      case "duration_power":
         return "Séries";
 
       case "duration_speed_incline":

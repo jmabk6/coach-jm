@@ -52,8 +52,9 @@ export interface ExerciseHistoryEntry {
 }
 
 /**
- * La meilleure série : la charge × reps la plus haute, sinon le plus de
- * reps, sinon la plus longue, sinon la dernière.
+ * La meilleure série : le meilleur résultat d'un effort en puissance,
+ * sinon la charge × reps la plus haute, sinon le plus de reps, sinon la
+ * plus longue, sinon la dernière.
  *
  * Assistance (lot a) : l'assistance la plus **basse**, à égalité le plus
  * de répétitions — 49 × 10 > 49 × 6 > 56 × 10. Les séries sans charge ou
@@ -79,6 +80,8 @@ export function pickBestSeries(
   }
 
   const score = (item: PerformedSeries): number => {
+    /* Effort en puissance (D17) : le meilleur résultat. */
+    if (item.result) return 2_000_000 + item.result.value;
     const kg = item.load ? getLoadKg(item.load) : undefined;
     if (kg !== undefined && item.reps !== undefined) return 1_000_000 + kg * item.reps * 1000 + kg;
     if (item.reps !== undefined) return 10_000 + item.reps;

@@ -89,12 +89,20 @@ const measurementOptions: Array<{
     label: "Répétitions par côté",
   },
   {
+    value: "reps_duration",
+    label: "Répétitions + durée de chaque répétition",
+  },
+  {
     value: "duration_speed_incline",
     label: "Durée + vitesse + pente",
   },
   {
     value: "duration_distance",
     label: "Durée + distance",
+  },
+  {
+    value: "duration_power",
+    label: "Durée + puissance ou distance",
   },
   {
     value: "distance",
@@ -120,10 +128,12 @@ const measurementTypesByCategory: Record<
     "duration",
     "duration_per_side",
     "reps_per_side",
+    "reps_duration",
   ],
   Cardio: [
     "duration_speed_incline",
     "duration_distance",
+    "duration_power",
   ],
   Mobilité: [
     "reps",
@@ -274,6 +284,13 @@ function updateExercise(
             pinnedAlternativeIds,
         }
       : {}),
+
+    /* Unité fixée à la première saisie (D17) : conservée tant que la
+       mesure reste `duration_power`. */
+    ...(measurementType === "duration_power" &&
+    current.powerUnit !== undefined
+      ? { powerUnit: current.powerUnit }
+      : {}),
   };
 
   const base =
@@ -328,6 +345,8 @@ function updateExercise(
       };
 
     case "reps_per_side":
+    case "reps_duration":
+    case "duration_power":
       return {
         ...base,
         mode: "series",
@@ -574,6 +593,8 @@ export function ExerciseEditScreen() {
       case "duration":
       case "duration_per_side":
       case "reps_per_side":
+      case "reps_duration":
+      case "duration_power":
         return "Séries";
 
       case "duration_speed_incline":

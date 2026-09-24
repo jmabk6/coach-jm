@@ -824,3 +824,64 @@
 .wref__frame dd {
   font-weight: 600;
 }
+
+/* Lot D : effort en puissance (D17) et durée de chaque répétition (D25). */
+.series-form__power {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.series-form__hint {
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+}
+
+.series-form__rep-durations {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.series-form__rep-durations legend {
+  margin-bottom: 6px;
+  padding: 0;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+}
+
+.series-form__rep-durations-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.series-form__rep-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.series-form__rep-index {
+  color: var(--color-text-soft, #666);
+  font-size: 0.75rem;
+}
+
+.series-form__rep-duration input {
+  width: 3.2em;
+  min-height: 36px;
+  padding: 0 4px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: 8px;
+  background: var(--color-surface, white);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+}
+
+.series-form__rep-unit {
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+}

@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Exercise, WorkoutSession } from "../../domain";
+import type { Exercise, PowerUnit, WorkoutSession } from "../../domain";
 import {
   getActiveExercises,
   getExercise,
@@ -58,6 +58,7 @@ const metricLabels: Record<
   reps: "Répétitions",
   durationMax: "Durée max",
   distanceCm: "Distance",
+  powerMax: "Meilleur résultat",
 };
 
 /** « Assistance min » au lieu de « Charge max » pour une assistance (lot a). */
@@ -70,6 +71,7 @@ function metricLabelFor(metric: ExercisePerformanceMetric, exercise: Exercise): 
 function formatMetricValue(
   value: number,
   metric: ExercisePerformanceMetric,
+  unit?: PowerUnit,
 ): string {
   switch (metric) {
     case "chargeMax":
@@ -86,6 +88,9 @@ function formatMetricValue(
 
     case "distanceCm":
       return `${Math.round(value * 10) / 10} cm`;
+
+    case "powerMax":
+      return `${Math.round(value)}${unit === "meters" ? " m" : " W"}`;
   }
 }
 
@@ -427,6 +432,7 @@ export function ExerciseDetailScreen() {
                 {formatMetricValue(
                   performanceSummary.latestValue,
                   performanceSummary.metric,
+                  exercise.powerUnit,
                 )}
               </strong>
 
@@ -444,6 +450,7 @@ export function ExerciseDetailScreen() {
                 {formatMetricValue(
                   performanceSummary.bestValue,
                   performanceSummary.metric,
+                  exercise.powerUnit,
                 )}
                 {/* Assistance : la meilleure série se lit assistance × reps (lot a). */}
                 {performanceSummary.metric === "chargeMax" &&
@@ -483,6 +490,7 @@ export function ExerciseDetailScreen() {
                 {formatMetricValue(
                   performanceSummary.firstValue,
                   performanceSummary.metric,
+                  exercise.powerUnit,
                 )}
               </span>
             </article>
@@ -523,6 +531,7 @@ export function ExerciseDetailScreen() {
                         formatMetricValue(
                           Number(value),
                           selectedMetric,
+                          exercise.powerUnit,
                         ),
                         metricLabelFor(selectedMetric, exercise),
                       ]}
@@ -592,6 +601,7 @@ export function ExerciseDetailScreen() {
                       {formatMetricValue(
                         value,
                         selectedMetric,
+                        exercise.powerUnit,
                       )}
                     </strong>
                   </div>

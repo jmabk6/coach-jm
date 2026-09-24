@@ -30,6 +30,14 @@ export interface ExercisePerformanceEntry {
   repsMax?: number;
   durationMaxSec?: number;
   distanceCm?: number;
+  /**
+   * Effort en puissance (D17) : le meilleur résultat du jour, avec la
+   * durée de cet effort et son unité. Deux jours ne se comparent qu'à
+   * même unité et même durée.
+   */
+  powerMax?: number;
+  powerDurationSec?: number;
+  powerUnit?: "watts" | "meters";
 }
 
 export interface PerformedSeriesLike {
@@ -43,6 +51,7 @@ export interface PerformedSeriesLike {
   }>;
   rpe?: number;
   completedAt?: string;
+  result?: { unit: "watts" | "meters"; value: number };
 }
 
 
@@ -259,11 +268,25 @@ function calculatePerformanceEntry(
     );
   }
 
+  const bestPower = series
+    .filter((item) => item.result !== undefined)
+    .reduce<PerformedSeriesLike | undefined>(
+      (current, item) => (current === undefined || item.result!.value > current.result!.value ? item : current),
+      undefined,
+    );
+
   return {
     workoutId: workout.id,
     date: workout.date,
     startedAt: workout.startedAt,
     series,
+    ...(bestPower?.result
+      ? {
+          powerMax: bestPower.result.value,
+          powerUnit: bestPower.result.unit,
+          ...(bestPower.durationSec !== undefined ? { powerDurationSec: bestPower.durationSec } : {}),
+        }
+      : {}),
     ...(loads.length > 0
       ? { chargeMaxKg: Math.max(...loads) }
       : {}),
@@ -369,7 +392,8 @@ export type ExercisePerformanceMetric =
   | "volume"
   | "reps"
   | "durationMax"
-  | "distanceCm";
+  | "distanceCm"
+  | "powerMax";
 
 export interface ExercisePerformanceSummary {
   metric: ExercisePerformanceMetric;
@@ -394,6 +418,13 @@ export function getCompatiblePerformanceMetrics(
     case "reps":
     case "reps_per_side":
       return ["reps"];
+
+    /* Traction négative (D25) : `durationSec` porte la répétition la plus lente. */
+    case "reps_duration":
+      return ["reps", "durationMax"];
+
+    case "duration_power":
+      return ["powerMax"];
 
     case "duration":
     case "duration_per_side":
@@ -433,6 +464,9 @@ export function getPerformanceMetricValue(
 
     case "distanceCm":
       return entry.distanceCm;
+
+    case "powerMax":
+      return entry.powerMax;
   }
 }
 
@@ -457,7 +491,7 @@ export function buildExercisePerformanceSummary(
   /* Assistance : à égalité, le plus de répétitions à cette assistance. */
   const tieBreak = metric === "chargeMax" && semantics === "assistance";
 
-  const comparable = history
+  const measured = history
     .map((entry) => ({
       entry,
       value: getPerformanceMetricValue(entry, metric),
@@ -470,6 +504,18 @@ export function buildExercisePerformanceSummary(
         value: number;
       } => item.value !== undefined,
     );
+
+  /* Puissance (D17) : seulement les jours de même unité et de même durée
+     d'effort que le plus récent ; un sprint de 12 s ne se compare pas à
+     un sprint de 20 s. */
+  const reference = measured[0]?.entry;
+  const comparable =
+    metric === "powerMax" && reference
+      ? measured.filter(
+          ({ entry }) =>
+            entry.powerUnit === reference.powerUnit && entry.powerDurationSec === reference.powerDurationSec,
+        )
+      : measured;
 
   if (comparable.length === 0) {
     return undefined;

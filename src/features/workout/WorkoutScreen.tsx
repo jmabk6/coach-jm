@@ -18,6 +18,7 @@ import type {
   PerformedGroupBlock,
   PerformedNoteBlock,
 } from "../../domain";
+import { fixExercisePowerUnit } from "../../db/repositories/exerciseRepository";
 import { listExerciseAlternatives } from "../exercises/exerciseAlternatives";
 import { calculateExecutionProgress } from "../../domain/rules/workoutRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
@@ -483,7 +484,10 @@ export function WorkoutScreen() {
                 onOpenMenu={() => setBlockMenu(block)}
                 onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}
                 onValidateSeries={(seriesId, values) =>
-                  void run((current, at) => validateSeries(current, block.id, seriesId, values, at))
+                  void run((current, at) => validateSeries(current, block.id, seriesId, values, at)).then(() =>
+                    /* Première saisie d'un effort en puissance : l'unité est fixée (D17). */
+                    values.result ? fixExercisePowerUnit(block.exerciseId, values.result.unit) : undefined,
+                  )
                 }
                 onEditSeries={(seriesId, values) =>
                   void run((current, at) => editSeries(current, block.id, seriesId, values, at))

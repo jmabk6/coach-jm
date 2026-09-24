@@ -63,7 +63,14 @@ export type MeasurementType =
   | "duration_distance"
   | "distance"
   | "distance_cm"
-  | "distance_cm_per_side";
+  | "distance_cm_per_side"
+  /** Répétitions + durée de chaque répétition (traction négative, D25). */
+  | "reps_duration"
+  /** Durée + résultat en watts ou en mètres + résistance (sprints vélo, D17). */
+  | "duration_power";
+
+/** Unité du résultat d'un effort `duration_power` (D17). */
+export type PowerUnit = "watts" | "meters";
 
 export type SpeedDisplay =
   | "speed_kmh"
@@ -165,7 +172,9 @@ export type ExerciseMeasurement =
         | "reps"
         | "duration"
         | "duration_per_side"
-        | "reps_per_side";
+        | "reps_per_side"
+        | "reps_duration"
+        | "duration_power";
       speedDisplay?: never;
     }
   | {
@@ -228,6 +237,13 @@ interface ExerciseBase {
    * Complété par le seed du catalogue s'il est absent, jamais écrasé.
    */
   loadSemantics?: LoadSemantics;
+
+  /**
+   * `duration_power` seulement (D17) : unité du résultat, **fixée à la
+   * première saisie** puis imposée. Changer de machine ou d'unité passe
+   * par un nouvel exercice. Absente tant que rien n'a été saisi.
+   */
+  powerUnit?: PowerUnit;
 
   status: ExerciseStatus;
 

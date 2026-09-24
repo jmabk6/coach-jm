@@ -378,6 +378,7 @@ export function isMetricCompatible(
 
     case "reps":
     case "reps_per_side":
+    case "reps_duration":
       return metric === "reps";
 
     case "duration":
@@ -385,6 +386,7 @@ export function isMetricCompatible(
       return metric === "max_duration";
     case "duration_speed_incline":
     case "duration_distance":
+    case "duration_power":
     case "distance":
     case "distance_cm":
     case "distance_cm_per_side":

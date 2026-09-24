@@ -397,6 +397,11 @@ export interface SeriesValues {
   reps?: number;
   durationSec?: number;
   sideValues?: PerformedSideValue[];
+  /** Durée de chaque répétition (`reps_duration`, D25). */
+  repDurationsSec?: number[];
+  /** Résultat et résistance d'un effort court (`duration_power`, D17). */
+  result?: { unit: "watts" | "meters"; value: number };
+  resistance?: number;
   rpe?: number;
   /**
    * Rôle et drapeau « limitée par un côté » (v1.6, § 4.4), saisis
@@ -412,6 +417,7 @@ function hasMeasuredValue(values: SeriesValues): boolean {
   return (
     values.reps !== undefined ||
     values.durationSec !== undefined ||
+    values.result !== undefined ||
     (values.sideValues !== undefined && values.sideValues.length > 0)
   );
 }

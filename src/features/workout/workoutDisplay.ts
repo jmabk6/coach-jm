@@ -144,7 +144,9 @@ export type SeriesFieldLayout =
   | "reps"
   | "duration"
   | "reps_per_side"
-  | "duration_per_side";
+  | "duration_per_side"
+  | "reps_duration"
+  | "duration_power";
 
 export function seriesFieldLayout(exercise: Exercise | undefined): SeriesFieldLayout {
   switch (exercise?.measurementType) {
@@ -156,6 +158,10 @@ export function seriesFieldLayout(exercise: Exercise | undefined): SeriesFieldLa
       return "reps_per_side";
     case "duration_per_side":
       return "duration_per_side";
+    case "reps_duration":
+      return "reps_duration";
+    case "duration_power":
+      return "duration_power";
     default:
       return "load_reps";
   }

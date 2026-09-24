@@ -12,6 +12,7 @@ import type {
 } from "../../domain";
 import { formatFrameVersionSummary } from "../../domain/rules/strengthRules";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
+import { effectivePowerUnit } from "../../domain/rules/powerRules";
 import type {
   SeriesValues,
   SimpleMeasurementValues,
@@ -451,6 +452,8 @@ function SeriesRow({
   const layout = seriesFieldLayout(exercise);
   /* Rôle et drapeau : séries de musculation seulement (v1.6, § 4.4). */
   const strengthFields = exercise?.category === "Musculation";
+  /* Effort en puissance (D17) : l'unité déjà saisie est imposée. */
+  const powerUnit = effectivePowerUnit(exercise, [...(block.series ?? []), ...(lastTime?.allSeries ?? [])]);
 
   if (series.status === "completed") {
     return (
@@ -483,6 +486,9 @@ function SeriesRow({
                 ...(series.reps !== undefined ? { reps: series.reps } : {}),
                 ...(series.durationSec !== undefined ? { durationSec: series.durationSec } : {}),
                 ...(series.sideValues ? { sideValues: series.sideValues } : {}),
+                ...(series.repDurationsSec ? { repDurationsSec: series.repDurationsSec } : {}),
+                ...(series.result ? { result: series.result } : {}),
+                ...(series.resistance !== undefined ? { resistance: series.resistance } : {}),
                 ...(series.rpe !== undefined ? { rpe: series.rpe } : {}),
                 ...(series.note !== undefined ? { note: series.note } : {}),
                 ...(series.role !== undefined ? { role: series.role } : {}),
@@ -492,6 +498,7 @@ function SeriesRow({
               rpeTable={rpeTable}
               barWeightKg={barWeightKg}
               loadSemantics={loadSemanticsOf(exercise)}
+              powerUnit={powerUnit}
               submitLabel="Enregistrer"
               onSubmit={onSaveEdit}
               onCancel={onCancelEdit}
@@ -522,6 +529,7 @@ function SeriesRow({
             rpeTable={rpeTable}
             barWeightKg={barWeightKg}
             loadSemantics={loadSemanticsOf(exercise)}
+            powerUnit={powerUnit}
             submitLabel={`Valider la série ${index + 1}`}
             onSubmit={onValidate}
             busy={busy}

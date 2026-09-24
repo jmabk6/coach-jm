@@ -242,6 +242,22 @@ export function defaultInstructionsFor(
         restBetweenSetsSec: 90,
       };
 
+    case "reps_duration":
+      return {
+        shape: "reps",
+        sets: 3,
+        reps: { min: 3, max: 5 },
+        restBetweenSetsSec: 120,
+      };
+
+    case "duration_power":
+      return {
+        shape: "duration",
+        sets: 6,
+        durationSec: 12,
+        restBetweenSetsSec: 48,
+      };
+
     case "duration":
     case "duration_per_side":
       return {
@@ -291,7 +307,13 @@ export function defaultInstructionsFor(
  * les paliers et les mesures simples n'ont ni tours ni repos à absorber.
  */
 export function canJoinGroup(exercise: Exercise): boolean {
-  return exercise.mode === "series";
+  /* Durée par répétition et effort en puissance : un enfant de tour ne
+     porte pas ces champs (lot D). */
+  return (
+    exercise.mode === "series" &&
+    exercise.measurementType !== "reps_duration" &&
+    exercise.measurementType !== "duration_power"
+  );
 }
 
 export function defaultGroupChildInstructionsFor(
@@ -322,6 +344,8 @@ const measurementTypeLabels: Record<Exercise["measurementType"], string> = {
   distance: "Distance",
   distance_cm: "Distance en cm",
   distance_cm_per_side: "Distance en cm par côté",
+  reps_duration: "Répétitions + durée de chaque répétition",
+  duration_power: "Durée + puissance ou distance",
 };
 
 export function formatMeasurementType(exercise: Exercise): string {

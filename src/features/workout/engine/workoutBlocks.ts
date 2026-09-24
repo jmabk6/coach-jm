@@ -411,6 +411,10 @@ export interface ProposedSeriesValues {
   reps?: number;
   durationSec?: number;
   sideValues?: PerformedSideValue[];
+  /* `duration_power` (D17) ; la durée de chaque répétition n'est jamais
+     proposée : ses champs s'affichent vides (D25). */
+  result?: { unit: "watts" | "meters"; value: number };
+  resistance?: number;
 }
 
 /**
@@ -448,6 +452,8 @@ export function proposeSeriesValues(
     ...(source.sideValues !== undefined
       ? { sideValues: structuredClone(source.sideValues) }
       : {}),
+    ...(source.result !== undefined ? { result: { ...source.result } } : {}),
+    ...(source.resistance !== undefined ? { resistance: source.resistance } : {}),
   };
 }
 

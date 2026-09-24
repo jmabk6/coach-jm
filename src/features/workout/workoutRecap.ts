@@ -24,6 +24,7 @@ import {
 } from "../../domain/rules/strengthRules";
 import { calculateVolume, getLoadKg } from "../../domain/rules/workoutRules";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
+import { POWER_UNIT_LABELS } from "../../domain/rules/powerRules";
 import { estimateSessionTemplateDurationSec } from "../../domain/rules/sessionTemplateRules";
 import { formatBlockCompletion, summarizeBlockCompletion } from "./engine/workoutBlocks";
 import { findSubstitutionRound } from "./engine/workoutEngine";
@@ -107,7 +108,18 @@ export function formatSeriesLine(series: PerformedSeries): string {
     parts.push(series.load ? `× ${series.reps}` : `${series.reps} reps`);
   }
 
-  if (series.durationSec !== undefined) parts.push(formatSeconds(series.durationSec));
+  if (series.repDurationsSec && series.repDurationsSec.length > 0) {
+    /* D25 : chaque répétition ; `durationSec` (la plus lente) n'est pas redit. */
+    parts.push(`· ${series.repDurationsSec.map(formatDecimal).join("-")} s par rép.`);
+  } else if (series.durationSec !== undefined) {
+    parts.push(formatSeconds(series.durationSec));
+  }
+
+  if (series.result) {
+    parts.push(`· ${formatDecimal(series.result.value)} ${POWER_UNIT_LABELS[series.result.unit].short}`);
+  }
+
+  if (series.resistance !== undefined) parts.push(`· résistance ${formatDecimal(series.resistance)}`);
 
   if (series.sideValues && series.sideValues.length > 0) {
     const left = series.sideValues.find((value) => value.side === "left");

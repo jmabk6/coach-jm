@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
-import type { Load, LoadSemantics, PerformedSeriesRole, PerformedSideValue, RpeScaleVersion } from "../../domain";
+import type { Load, LoadSemantics, PerformedSeriesRole, PerformedSideValue, PowerUnit, RpeScaleVersion } from "../../domain";
 import { loadLabelOf } from "../../domain/rules/loadSemanticsRules";
+import { POWER_UNIT_LABELS, slowestRepSec } from "../../domain/rules/powerRules";
 import {
   DEFAULT_SERIES_ROLE,
   formatRpeRowLabel,
@@ -24,6 +25,7 @@ interface SeriesFormProps {
    * travail, non limitée (décision 7).
    */
   initial: ProposedSeriesValues & {
+    repDurationsSec?: number[];
     rpe?: number;
     note?: string;
     role?: PerformedSeriesRole;
@@ -50,6 +52,11 @@ interface SeriesFormProps {
    * « Charge » pour une assistance. La valeur saisie est la même.
    */
   loadSemantics?: LoadSemantics;
+  /**
+   * `duration_power` : unité déjà fixée (D17). Absente, l'utilisateur
+   * choisit watts ou mètres ; présente, elle est imposée.
+   */
+  powerUnit?: PowerUnit | undefined;
   submitLabel: string;
   onSubmit: (values: SeriesValues) => void;
   onCancel?: () => void;
@@ -57,6 +64,11 @@ interface SeriesFormProps {
 }
 
 const SERIES_ROLES: PerformedSeriesRole[] = ["travail", "echauffement"];
+
+/** Au-delà, la rangée de durées n'a plus de sens (saisie d'une série de négatives). */
+const MAX_REP_DURATION_FIELDS = 20;
+
+const POWER_UNITS: PowerUnit[] = ["watts", "meters"];
 
 const LOAD_KIND_LABELS: Record<LoadKind, string> = {
   total: "Total",
@@ -84,6 +96,7 @@ export function SeriesForm({
   rpeTable,
   barWeightKg,
   loadSemantics = "external",
+  powerUnit,
   submitLabel,
   onSubmit,
   onCancel,
@@ -118,6 +131,13 @@ export function SeriesForm({
         : sideValue(initial.sideValues, "right", "durationSec"),
     ),
   );
+  const [repDurations, setRepDurations] = useState<string[]>(
+    (initial.repDurationsSec ?? []).map((value) => formatNumberInput(value)),
+  );
+  const [resultValue, setResultValue] = useState(formatNumberInput(initial.result?.value));
+  const [chosenUnit, setChosenUnit] = useState<PowerUnit>(initial.result?.unit ?? powerUnit ?? "watts");
+  const resultUnit = powerUnit ?? chosenUnit;
+  const [resistance, setResistance] = useState(formatNumberInput(initial.resistance));
   const [rpe, setRpe] = useState(formatNumberInput(initial.rpe));
   const [rpeHelpOpen, setRpeHelpOpen] = useState(false);
   const [role, setRole] = useState<PerformedSeriesRole>(initial.role ?? DEFAULT_SERIES_ROLE);
@@ -129,12 +149,20 @@ export function SeriesForm({
   const sideLimitedAvailable =
     strengthFields && role === "travail" && layout !== "reps_per_side" && layout !== "duration_per_side";
 
+  const parsedReps = parseNumber(reps);
+  const repFieldCount =
+    layout === "reps_duration" && parsedReps !== undefined
+      ? Math.max(0, Math.min(MAX_REP_DURATION_FIELDS, Math.floor(parsedReps)))
+      : 0;
+
   const measured =
-    layout === "load_reps" || layout === "reps"
-      ? parseNumber(reps) !== undefined
+    layout === "load_reps" || layout === "reps" || layout === "reps_duration"
+      ? parsedReps !== undefined
       : layout === "duration"
         ? parseNumber(duration) !== undefined
-        : parseNumber(left) !== undefined || parseNumber(right) !== undefined;
+        : layout === "duration_power"
+          ? parseNumber(resultValue) !== undefined
+          : parseNumber(left) !== undefined || parseNumber(right) !== undefined;
 
   function buildLoad(): Load | undefined {
     if (layout !== "load_reps") return undefined;
@@ -164,14 +192,35 @@ export function SeriesForm({
 
     if (builtLoad) values.load = builtLoad;
 
-    if (layout === "load_reps" || layout === "reps") {
+    if (layout === "load_reps" || layout === "reps" || layout === "reps_duration") {
       const parsed = parseNumber(reps);
       if (parsed !== undefined) values.reps = parsed;
     }
 
-    if (layout === "duration") {
+    if (layout === "reps_duration") {
+      /* Les champs remplis, dans l'ordre ; aucun n'est obligatoire (D25).
+         La plus lente devient `durationSec`, lue par les métriques. */
+      const filled = repDurations
+        .slice(0, repFieldCount)
+        .map((value) => parseNumber(value))
+        .filter((value): value is number => value !== undefined && value > 0);
+      if (filled.length > 0) {
+        values.repDurationsSec = filled;
+        const slowest = slowestRepSec(filled);
+        if (slowest !== undefined) values.durationSec = slowest;
+      }
+    }
+
+    if (layout === "duration" || layout === "duration_power") {
       const parsed = parseNumber(duration);
       if (parsed !== undefined) values.durationSec = parsed;
+    }
+
+    if (layout === "duration_power") {
+      const parsedResult = parseNumber(resultValue);
+      if (parsedResult !== undefined) values.result = { unit: resultUnit, value: parsedResult };
+      const parsedResistance = parseNumber(resistance);
+      if (parsedResistance !== undefined) values.resistance = parsedResistance;
     }
 
     if (layout === "reps_per_side" || layout === "duration_per_side") {
@@ -245,12 +294,53 @@ export function SeriesForm({
           </div>
         )}
 
-        {(layout === "load_reps" || layout === "reps") && (
+        {(layout === "load_reps" || layout === "reps" || layout === "reps_duration") && (
           <NumberField label="Reps" value={reps} onChange={setReps} step={1} min={0} />
         )}
 
         {layout === "duration" && (
           <NumberField label="Durée" unit="s" value={duration} onChange={setDuration} step={5} min={0} />
+        )}
+
+        {layout === "duration_power" && (
+          <>
+            <NumberField label="Durée" unit="s" value={duration} onChange={setDuration} step={1} min={0} />
+            <div className="series-form__power">
+              <NumberField
+                label="Résultat"
+                unit={POWER_UNIT_LABELS[resultUnit].short}
+                value={resultValue}
+                onChange={setResultValue}
+                step={resultUnit === "watts" ? 10 : 5}
+                min={0}
+              />
+              {powerUnit === undefined ? (
+                <div className="series-form__load-kinds" role="group" aria-label="Unité du résultat">
+                  {POWER_UNITS.map((unit) => (
+                    <button
+                      key={unit}
+                      type="button"
+                      className={`series-form__kind ${resultUnit === unit ? "series-form__kind--active" : ""}`}
+                      aria-pressed={resultUnit === unit}
+                      onClick={() => setChosenUnit(unit)}
+                    >
+                      {POWER_UNIT_LABELS[unit].long}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="series-form__hint">Unité fixée : {POWER_UNIT_LABELS[powerUnit].long.toLowerCase()}</span>
+              )}
+            </div>
+            <NumberField
+              label="Résistance (optionnel)"
+              value={resistance}
+              onChange={setResistance}
+              step={1}
+              min={0}
+              optional
+            />
+          </>
         )}
 
         {(layout === "reps_per_side" || layout === "duration_per_side") && (
@@ -272,6 +362,34 @@ export function SeriesForm({
               min={0}
             />
           </>
+        )}
+
+        {layout === "reps_duration" && repFieldCount > 0 && (
+          <fieldset className="series-form__rep-durations">
+            <legend>Durée de chaque répétition (optionnel)</legend>
+            <div className="series-form__rep-durations-row">
+              {Array.from({ length: repFieldCount }, (_, index) => (
+                <label key={index} className="series-form__rep-duration">
+                  <span className="series-form__rep-index">{index + 1}</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    aria-label={`Durée de la répétition ${index + 1}, en secondes`}
+                    value={repDurations[index] ?? ""}
+                    onChange={(event) => {
+                      const text = event.target.value;
+                      setRepDurations((current) => {
+                        const next = [...current];
+                        next[index] = text;
+                        return next;
+                      });
+                    }}
+                  />
+                  <span className="series-form__rep-unit">s</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
         )}
 
         <div className="series-form__rpe">

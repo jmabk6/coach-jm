@@ -115,6 +115,8 @@ export function buildExercise(
       };
 
     case "reps_per_side":
+    case "reps_duration":
+    case "duration_power":
       return {
         ...base,
         mode: "series",
