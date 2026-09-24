@@ -59,7 +59,11 @@ describe("T-17 — export de secours d'une base restée en v2", () => {
     const proto = writePrototypeOf(legacy);
     const spies = WRITE_METHODS.map((method) => vi.spyOn(proto, method));
 
-    const envelope = await readBackup(legacy, { now: new Date("2026-09-24T08:00:00Z"), buildTime: "t", userAgent: "t", standalone: false });
+    const envelope = await readBackup(
+      legacy,
+      { now: new Date("2026-09-24T08:00:00Z"), buildTime: "t", userAgent: "t", standalone: false },
+      { formatVersion: 1 },
+    );
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
 
     expect(envelope.formatVersion).toBe(1);

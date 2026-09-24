@@ -1,7 +1,7 @@
 import type Dexie from "dexie";
 import { REMOVED_IN_V3 } from "../../db/database";
 import { hashCanonical } from "./canonicalJson";
-import { BACKUP_FORMAT, BACKUP_FORMAT_VERSION, readStores, type BackupEnvelope } from "./exportBackup";
+import { BACKUP_FORMAT, BACKUP_FORMAT_VERSION, readStores, storeHashesOf, type BackupEnvelope } from "./exportBackup";
 
 /**
  * Restauration d'une sauvegarde dans une base **passée en paramètre**
@@ -35,7 +35,12 @@ export function parseBackup(text: string): BackupEnvelope {
   if (envelope.format !== BACKUP_FORMAT) {
     throw new BackupValidationError(`Format inattendu : ${String(envelope.format)}`);
   }
-  if (envelope.formatVersion !== BACKUP_FORMAT_VERSION) {
+  if (typeof envelope.formatVersion === "number" && envelope.formatVersion > BACKUP_FORMAT_VERSION) {
+    throw new BackupValidationError(
+      `Sauvegarde d'une version plus récente de l'application (format ${envelope.formatVersion}) : mettez l'application à jour`,
+    );
+  }
+  if (envelope.formatVersion !== 1 && envelope.formatVersion !== 2) {
     throw new BackupValidationError(`Version de format inconnue : ${String(envelope.formatVersion)}`);
   }
   if (!envelope.stores || typeof envelope.stores !== "object" || !envelope.counts || !envelope.integrity?.hash) {
@@ -55,11 +60,31 @@ export function parseBackup(text: string): BackupEnvelope {
   return envelope as BackupEnvelope;
 }
 
-/** Recalcule l'empreinte et la compare à celle embarquée. */
-export async function verifyBackupIntegrity(envelope: BackupEnvelope): Promise<{ ok: boolean; computed: string; embedded: string }> {
+/**
+ * Recalcule l'empreinte globale et la compare à celle embarquée ; en
+ * format 2, recalcule aussi l'empreinte de chaque store et nomme ceux
+ * qui diffèrent.
+ */
+export async function verifyBackupIntegrity(
+  envelope: BackupEnvelope,
+): Promise<{ ok: boolean; computed: string; embedded: string; mismatchedStores: string[] }> {
   const computed = await hashCanonical(envelope.stores);
+  const mismatchedStores: string[] = [];
 
-  return { ok: computed === envelope.integrity.hash, computed, embedded: envelope.integrity.hash };
+  if (envelope.integrity.storeHashes) {
+    const recomputed = await storeHashesOf(envelope.stores);
+    const names = new Set([...Object.keys(recomputed), ...Object.keys(envelope.integrity.storeHashes)]);
+    for (const name of names) {
+      if (recomputed[name] !== envelope.integrity.storeHashes[name]) mismatchedStores.push(name);
+    }
+  }
+
+  return {
+    ok: computed === envelope.integrity.hash && mismatchedStores.length === 0,
+    computed,
+    embedded: envelope.integrity.hash,
+    mismatchedStores,
+  };
 }
 
 export interface RestoreResult {

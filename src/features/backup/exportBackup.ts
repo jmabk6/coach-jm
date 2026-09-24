@@ -10,28 +10,63 @@ import { auditStores, describeIssue, type SerializationIssue } from "./serializa
  */
 
 export const BACKUP_FORMAT = "coach-jm-backup";
-export const BACKUP_FORMAT_VERSION = 1;
+/**
+ * Format 2 (lot C, SCHEMA_DEXIE_V3_MIGRATION.md § 6) : empreinte par store
+ * et empreinte des sept stores d'origine en plus de l'empreinte globale.
+ * Le format 1 reste produit par l'export de secours d'une base restée en
+ * v2 (§ 4.4), et reste lisible.
+ */
+export const BACKUP_FORMAT_VERSION = 2;
+export type BackupFormatVersion = 1 | 2;
 
 export interface BackupContext {
   now: Date;
   buildTime: string;
   userAgent: string;
   standalone: boolean;
+  /** Version de l'application (`package.json`), format 2. */
+  appVersion?: string;
 }
 
 export interface BackupEnvelope {
   format: typeof BACKUP_FORMAT;
-  formatVersion: typeof BACKUP_FORMAT_VERSION;
+  formatVersion: BackupFormatVersion;
   exportedAt: string;
-  app: { buildTime: string };
+  app: { buildTime: string; version?: string };
   device: { userAgent: string; standalone: boolean };
   /** `version` = `db.verno` telle que lue : c'est le fichier qui dit le schéma, pas une hypothèse. */
   database: { name: string; version: number };
   counts: Record<string, number>;
   /** Avertissements de sérialisation sans perte d'information (voir `serializationAudit`). */
   warnings: SerializationIssue[];
-  integrity: { algorithm: "SHA-256"; canonical: typeof CANONICAL_RULE; hash: string };
+  integrity: {
+    algorithm: "SHA-256";
+    canonical: typeof CANONICAL_RULE;
+    /** Empreinte de l'objet `stores` entier, et de rien d'autre. */
+    hash: string;
+    /** Format 2 : empreinte de chaque store, pour prouver store par store qu'une migration n'a rien changé. */
+    storeHashes?: Record<string, string>;
+  };
+  /** Format 2 : empreinte des sept stores d'origine, si le fichier les contient tous. */
+  legacyIntegrity?: { hash7: string };
   stores: Record<string, unknown[]>;
+}
+
+/**
+ * Empreinte des sept stores d'origine (`LEGACY_STORE_ORDER`, plus bas),
+ * comparable d'une version de schéma à l'autre ; `undefined` si l'un manque.
+ */
+export async function legacyHash7(stores: Record<string, unknown[]>): Promise<string | undefined> {
+  if (!LEGACY_STORE_ORDER.every((name) => Array.isArray(stores[name]))) return undefined;
+
+  return hashCanonical(Object.fromEntries(LEGACY_STORE_ORDER.map((name) => [name, stores[name]])));
+}
+
+/** Empreinte de chaque store. */
+export async function storeHashesOf(stores: Record<string, unknown[]>): Promise<Record<string, string>> {
+  const hashes: Record<string, string> = {};
+  for (const [name, records] of Object.entries(stores)) hashes[name] = await hashCanonical(records);
+  return hashes;
 }
 
 export class BackupSerializationError extends Error {
@@ -88,7 +123,12 @@ export async function readStores(database: Dexie): Promise<{ stores: Record<stri
  * recoupés, empreinte, puis contrôle aller-retour du JSON. Lève si une
  * valeur n'a pas de forme JSON fidèle ou si les comptes divergent.
  */
-export async function readBackup(database: Dexie, context: BackupContext): Promise<BackupEnvelope> {
+export async function readBackup(
+  database: Dexie,
+  context: BackupContext,
+  options: { formatVersion?: BackupFormatVersion } = {},
+): Promise<BackupEnvelope> {
+  const formatVersion = options.formatVersion ?? BACKUP_FORMAT_VERSION;
   const { stores, counts } = await readStores(database);
 
   for (const [name, records] of Object.entries(stores)) {
@@ -116,16 +156,34 @@ export async function readBackup(database: Dexie, context: BackupContext): Promi
     throw new Error("Sauvegarde interrompue : la relecture du JSON ne rend pas les mêmes données");
   }
 
+  if (formatVersion === 1) {
+    return {
+      format: BACKUP_FORMAT,
+      formatVersion,
+      exportedAt: context.now.toISOString(),
+      app: { buildTime: context.buildTime },
+      device: { userAgent: context.userAgent, standalone: context.standalone },
+      database: { name: database.name, version: database.verno },
+      counts,
+      warnings: issues.filter((issue) => issue.severity === "lossy"),
+      integrity: { algorithm: "SHA-256", canonical: CANONICAL_RULE, hash },
+      stores,
+    };
+  }
+
+  const hash7 = await legacyHash7(stores);
+
   return {
     format: BACKUP_FORMAT,
-    formatVersion: BACKUP_FORMAT_VERSION,
+    formatVersion,
     exportedAt: context.now.toISOString(),
-    app: { buildTime: context.buildTime },
+    app: { buildTime: context.buildTime, ...(context.appVersion ? { version: context.appVersion } : {}) },
     device: { userAgent: context.userAgent, standalone: context.standalone },
     database: { name: database.name, version: database.verno },
     counts,
     warnings: issues.filter((issue) => issue.severity === "lossy"),
-    integrity: { algorithm: "SHA-256", canonical: CANONICAL_RULE, hash },
+    integrity: { algorithm: "SHA-256", canonical: CANONICAL_RULE, hash, storeHashes: await storeHashesOf(stores) },
+    ...(hash7 ? { legacyIntegrity: { hash7 } } : {}),
     stores,
   };
 }
@@ -164,6 +222,10 @@ export const STORE_LABELS: Record<string, string> = {
   mobilityAssessments: "Bilans de mobilité",
   mobilityMeasures: "Mesures de mobilité",
   mobilityObservations: "Observations de mobilité",
+  testProtocols: "Protocoles de tests",
+  testProtocolVersions: "Versions de protocole de test",
+  testResults: "Résultats de tests",
+  settings: "Réglages",
 };
 
 /** Les sept stores d'origine, dans l'ordre d'affichage : toujours montrés, même à zéro. */

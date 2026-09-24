@@ -70,7 +70,7 @@ export function MigrationFailureScreen({ error, blocked = false, openAsIs = () =
 
       {legacy ? (
         <div className="plus-list">
-          <BackupSection database={legacy} />
+          <BackupSection database={legacy} formatVersion={1} />
         </div>
       ) : (
         <button type="button" className="migration-failure__primary" onClick={() => void prepareExport()}>

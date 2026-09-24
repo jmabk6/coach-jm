@@ -76,7 +76,13 @@ describe("restauration dans une base de test indépendante", () => {
     /* Sans le catalogue, chaque brique importée pointe vers un exercice absent : signalé, pas bloquant. */
     const stripped = { ...envelope, stores: { ...envelope.stores, exercises: dataset.exercises } };
     const partial = scriptVerify(JSON.parse(JSON.stringify(stripped)));
-    expect(partial.problems).toEqual([expect.stringMatching(/^empreinte DIFFÉRENTE/), "exercises : " + envelope.counts.exercises + " annoncés, " + dataset.exercises.length + " présents"]);
+    /* Format 2 : l'empreinte du store touché et celle des sept stores d'origine le signalent aussi. */
+    expect(partial.problems).toEqual([
+      expect.stringMatching(/^empreinte DIFFÉRENTE/),
+      "empreinte du store exercises DIFFÉRENTE",
+      "empreinte des sept stores d'origine (hash7) DIFFÉRENTE",
+      "exercises : " + envelope.counts.exercises + " annoncés, " + dataset.exercises.length + " présents",
+    ]);
     expect(partial.notes.length).toBeGreaterThan(0);
     expect(partial.notes.every((note) => note.startsWith("workouts · import-"))).toBe(true);
   });
@@ -101,7 +107,8 @@ describe("restauration dans une base de test indépendante", () => {
 
     expect(() => parseBackup("{")).toThrow(/pas un JSON lisible/);
     expect(() => parseBackup(JSON.stringify({ ...base, format: "autre" }))).toThrow(/Format inattendu/);
-    expect(() => parseBackup(JSON.stringify({ ...base, formatVersion: 2 }))).toThrow(/Version de format inconnue/);
+    expect(() => parseBackup(JSON.stringify({ ...base, formatVersion: 3 }))).toThrow(/version plus récente/);
+    expect(() => parseBackup(JSON.stringify({ ...base, formatVersion: 0 }))).toThrow(/Version de format inconnue/);
 
     const stores = { ...(base.stores as Record<string, unknown[]>) };
     delete stores.goals;

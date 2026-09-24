@@ -35,7 +35,7 @@ export function verifyBackup(envelope) {
   const notes = [];
 
   if (envelope.format !== "coach-jm-backup") problems.push(`format inattendu : ${envelope.format}`);
-  if (envelope.formatVersion !== 1) problems.push(`version de format inconnue : ${envelope.formatVersion}`);
+  if (envelope.formatVersion !== 1 && envelope.formatVersion !== 2) problems.push(`version de format inconnue : ${envelope.formatVersion}`);
   if (!envelope.stores || !envelope.counts || !envelope.integrity) {
     problems.push("enveloppe incomplète (stores, counts ou integrity)");
     return { ok: false, problems, notes, computed: undefined };
@@ -46,12 +46,26 @@ export function verifyBackup(envelope) {
     problems.push(`empreinte DIFFÉRENTE : fichier ${envelope.integrity.hash}, recalculée ${computed}`);
   }
 
+  /* Format 2 : empreinte de chaque store. */
+  const storeHashes = storeHashesOf(envelope.stores);
+  if (envelope.integrity.storeHashes) {
+    const names = new Set([...Object.keys(storeHashes), ...Object.keys(envelope.integrity.storeHashes)]);
+    for (const name of names) {
+      if (storeHashes[name] !== envelope.integrity.storeHashes[name]) {
+        problems.push(`empreinte du store ${name} DIFFÉRENTE`);
+      }
+    }
+  }
+
   /* Empreinte des sept stores d'origine seuls : permet de comparer une
      sauvegarde prise après migration (19 stores) à celle prise avant (7). */
   const legacyStores = Object.fromEntries(
     LEGACY_STORE_ORDER.filter((name) => Array.isArray(envelope.stores[name])).map((name) => [name, envelope.stores[name]]),
   );
   const legacyHash = Object.keys(legacyStores).length === LEGACY_STORE_ORDER.length ? sha256Hex(canonicalStringify(legacyStores)) : undefined;
+  if (envelope.legacyIntegrity?.hash7 && legacyHash && envelope.legacyIntegrity.hash7 !== legacyHash) {
+    problems.push("empreinte des sept stores d'origine (hash7) DIFFÉRENTE");
+  }
 
   for (const [name, count] of Object.entries(envelope.counts)) {
     const records = envelope.stores[name];
@@ -64,10 +78,11 @@ export function verifyBackup(envelope) {
 
   for (const [name, records] of Object.entries(envelope.stores)) {
     if (!Array.isArray(records)) continue;
-    const ids = records.map((record) => record?.id);
+    const key = primaryKeyOf(name);
+    const ids = records.map((record) => record?.[key]);
     const unique = new Set(ids);
     if (unique.size !== ids.length) problems.push(`${name} : identifiants en double (${ids.length - unique.size})`);
-    if (ids.some((id) => typeof id !== "string")) problems.push(`${name} : enregistrement sans identifiant`);
+    if (ids.some((id) => typeof id !== "string")) problems.push(`${name} : enregistrement sans identifiant (${key})`);
   }
 
   const idsOf = (name) => new Set((envelope.stores[name] ?? []).map((record) => record?.id));
@@ -97,9 +112,42 @@ export function verifyBackup(envelope) {
       }
     }
   }
+  const protocols = idsOf("testProtocols");
   for (const session of envelope.stores.plannedSessions ?? []) {
     if (!templates.has(session.sessionTemplateId)) {
       notes.push(`plannedSessions · ${session.id} : sessionTemplateId ${session.sessionTemplateId} sans modèle`);
+    }
+    for (const test of session.tests ?? []) {
+      if (!protocols.has(test.protocolId)) {
+        notes.push(`plannedSessions · ${session.id} : test ${test.protocolId} sans protocole`);
+      }
+    }
+  }
+
+  /* Tests (v3, D27) : résultat et séance se répondent, source unique. */
+  const workoutIds = idsOf("workouts");
+  const results = idsOf("testResults");
+  for (const result of envelope.stores.testResults ?? []) {
+    if (result.origin === "workout" && !workoutIds.has(result.workoutId)) {
+      notes.push(`testResults · ${result.id} : workoutId ${result.workoutId} sans séance`);
+    }
+  }
+  for (const workout of envelope.stores.workouts ?? []) {
+    for (const block of workout.blocks ?? []) {
+      if (block.kind !== "test") continue;
+      if (block.testResultId && !results.has(block.testResultId)) {
+        notes.push(`workouts · ${workout.id} · ${block.id} : testResultId ${block.testResultId} sans résultat`);
+      }
+      if (workout.status === "completed" && block.draft) {
+        notes.push(`workouts · ${workout.id} · ${block.id} : brique test confirmée avec une saisie (draft) restante`);
+      }
+    }
+  }
+  for (const goal of envelope.stores.goals ?? []) {
+    for (const segment of goal.segments ?? []) {
+      if (segment.measure?.source === "test" && !protocols.has(segment.measure.protocolId)) {
+        notes.push(`goals · ${goal.id} : segment ${segment.id} sur un protocole absent (${segment.measure.protocolId})`);
+      }
     }
   }
   for (const template of envelope.stores.sessionTemplates ?? []) {
@@ -110,7 +158,62 @@ export function verifyBackup(envelope) {
     }
   }
 
-  return { ok: problems.length === 0, problems, notes, computed, legacyHash };
+  return { ok: problems.length === 0, problems, notes, computed, legacyHash, storeHashes };
+}
+
+/** Clé primaire d'un store : `key` pour les réglages (v3), `id` partout ailleurs. */
+export function primaryKeyOf(store) {
+  return store === "settings" ? "key" : "id";
+}
+
+export function storeHashesOf(stores) {
+  return Object.fromEntries(Object.entries(stores ?? {}).map(([name, records]) => [name, sha256Hex(canonicalStringify(records))]));
+}
+
+/**
+ * Compare deux sauvegardes store par store (recette d'une migration,
+ * SCHEMA_DEXIE_V3_MIGRATION.md § 10) : identique, ou différent avec les
+ * enregistrements ajoutés, retirés et modifiés, par clé primaire.
+ */
+export function compareBackups(before, after) {
+  const names = [...new Set([...Object.keys(before.stores ?? {}), ...Object.keys(after.stores ?? {})])].sort();
+  return names.map((name) => {
+    const key = primaryKeyOf(name);
+    const left = new Map((before.stores?.[name] ?? []).map((record) => [record?.[key], canonicalStringify(record)]));
+    const right = new Map((after.stores?.[name] ?? []).map((record) => [record?.[key], canonicalStringify(record)]));
+    const added = [...right.keys()].filter((id) => !left.has(id));
+    const removed = [...left.keys()].filter((id) => !right.has(id));
+    const modified = [...right.keys()].filter((id) => left.has(id) && left.get(id) !== right.get(id));
+    const presence = !(name in (before.stores ?? {})) ? "absent avant" : !(name in (after.stores ?? {})) ? "absent après" : undefined;
+    const identical = added.length + removed.length + modified.length === 0 && !presence;
+    return { store: name, identical, presence, added, removed, modified };
+  });
+}
+
+async function compareMain(pathBefore, pathAfter) {
+  const before = JSON.parse(await readFile(pathBefore, "utf8"));
+  const after = JSON.parse(await readFile(pathAfter, "utf8"));
+  for (const [label, envelope] of [["avant", before], ["après", after]]) {
+    const result = verifyBackup(envelope);
+    const state = result.ok ? "cohérente" : "PROBLÈMES : " + result.problems.join(" ; ");
+    console.log(`${label.padEnd(6)} : ${state} — format ${envelope.formatVersion}, schéma ${envelope.database?.version}`);
+  }
+  console.log("Comparaison store par store :");
+  for (const row of compareBackups(before, after)) {
+    if (row.identical) {
+      console.log(`  = ${row.store}`);
+      continue;
+    }
+    const parts = [
+      row.presence,
+      row.added.length ? `+${row.added.length} ajouté(s)` : undefined,
+      row.removed.length ? `-${row.removed.length} retiré(s)` : undefined,
+      row.modified.length ? `~${row.modified.length} modifié(s)` : undefined,
+    ].filter(Boolean);
+    console.log(`  ≠ ${row.store} : ${parts.join(", ")}`);
+    for (const id of row.modified.slice(0, 20)) console.log(`      modifié : ${id}`);
+    for (const id of row.removed.slice(0, 20)) console.log(`      retiré  : ${id}`);
+  }
 }
 
 const LEGACY_STORE_ORDER = ["exercises", "sessionTemplates", "weeklyPrograms", "plannedSessions", "workouts", "goals", "weightEntries"];
@@ -130,7 +233,10 @@ async function main(path) {
   console.log(`Base         : ${envelope.database?.name ?? "?"} — schéma version ${envelope.database?.version ?? "?"}`);
   console.log(`Empreinte    : ${result.ok && !result.problems.length ? "OK" : "voir ci-dessous"} — ${envelope.integrity?.hash?.slice(0, 8) ?? "?"} (fichier) / ${result.computed?.slice(0, 8) ?? "?"} (recalculée)`);
   if (result.legacyHash) {
-    console.log(`Sept stores d'origine : ${result.legacyHash.slice(0, 8)} (empreinte des 7 stores seuls, comparable entre v1 et v2)`);
+    console.log(`Sept stores d'origine : ${result.legacyHash.slice(0, 8)} (empreinte des 7 stores seuls, comparable d'un schéma à l'autre)`);
+  }
+  if (envelope.integrity?.storeHashes) {
+    console.log(`Empreintes par store : ${Object.keys(envelope.integrity.storeHashes).length} vérifiées (format 2)`);
   }
   console.log(`Stores       : ${Object.keys(envelope.stores ?? {}).length}`);
   console.log("Comptes      :");
@@ -164,7 +270,7 @@ async function main(path) {
 
 const invokedDirectly = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "/").split("/").pop());
 if (invokedDirectly) {
-  main(process.argv[2]).catch((error) => {
+  (process.argv[3] ? compareMain(process.argv[2], process.argv[3]) : main(process.argv[2])).catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exit(1);
   });

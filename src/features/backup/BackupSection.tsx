@@ -18,6 +18,7 @@ import {
   splitCountsForDisplay,
   storeLabel,
   type BackupEnvelope,
+  type BackupFormatVersion,
 } from "./exportBackup";
 import { describeIssue } from "./serializationAudit";
 import "./BackupSection.css";
@@ -69,6 +70,9 @@ export interface BackupSectionProps {
   buildTime?: string;
   navigator?: Navigator;
   window?: Window;
+  /** Format 1 pour l'export de secours d'une base restée en v2 (écran d'échec). */
+  formatVersion?: BackupFormatVersion;
+  appVersion?: string;
 }
 
 export function BackupSection({
@@ -77,6 +81,8 @@ export function BackupSection({
   buildTime = __BUILD_TIME__,
   navigator: nav = window.navigator,
   window: win = window,
+  formatVersion,
+  appVersion = __APP_VERSION__,
 }: BackupSectionProps) {
   const [state, setState] = useState<BackupState>({ status: "idle" });
   const [showText, setShowText] = useState(false);
@@ -91,7 +97,8 @@ export function BackupSection({
         buildTime,
         userAgent: nav.userAgent,
         standalone: isStandaloneDisplay(win as Window & { navigator: Navigator & { standalone?: boolean } }),
-      });
+        appVersion,
+      }, formatVersion ? { formatVersion } : {});
       const text = serializeBackup(envelope);
       const file = buildBackupFile(text, backupFileName(at));
 

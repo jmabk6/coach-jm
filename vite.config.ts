@@ -56,6 +56,8 @@ export default defineConfig(({ mode }) => ({
   define: {
     /* Horodatage de build, affiché dans Plus pour savoir quelle version tourne. */
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    /* Version de l'application (package.json), portée par les sauvegardes. */
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? "0.0.0"),
   },
   ...(mode === "lan" ? { server: lanServer() } : {}),
   /* Mode `tunnel` (npm run preview:tunnel) : le build de production servi en

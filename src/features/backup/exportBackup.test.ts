@@ -143,7 +143,8 @@ describe("lecture en vue de sauvegarde — enveloppe", () => {
     const envelope = await readBackup(database, context);
 
     expect(envelope.format).toBe("coach-jm-backup");
-    expect(envelope.formatVersion).toBe(1);
+    /* Lot C : format 2 par défaut (empreinte par store et des sept stores d'origine). */
+    expect(envelope.formatVersion).toBe(2);
     expect(envelope.exportedAt).toBe("2026-09-19T08:42:17.512Z");
     expect(envelope.app.buildTime).toBe(context.buildTime);
     expect(envelope.database).toEqual({ name: database.name, version: 1 });
@@ -159,7 +160,13 @@ describe("lecture en vue de sauvegarde — enveloppe", () => {
     });
     expect(envelope.stores.goals).toEqual([]);
     expect(envelope.warnings).toEqual([]);
-    expect(envelope.integrity).toEqual({ algorithm: "SHA-256", canonical: "sorted-keys-json-v1", hash: expect.stringMatching(/^[0-9a-f]{64}$/) });
+    expect(envelope.integrity).toEqual({
+      algorithm: "SHA-256",
+      canonical: "sorted-keys-json-v1",
+      hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      storeHashes: Object.fromEntries(Object.keys(TEST_V1_STORES).map((name) => [name, expect.stringMatching(/^[0-9a-f]{64}$/)])),
+    });
+    expect(envelope.legacyIntegrity).toEqual({ hash7: expect.stringMatching(/^[0-9a-f]{64}$/) });
     expect((envelope.stores.workouts as Array<{ id: string }>).map((w) => w.id)).toEqual(
       [...(envelope.stores.workouts as Array<{ id: string }>)].map((w) => w.id).sort((a, b) => (a < b ? -1 : 1)),
     );
