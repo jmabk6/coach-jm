@@ -1,17 +1,19 @@
 import type Dexie from "dexie";
+import type { Table } from "dexie";
 import { REMOVED_IN_V3 } from "../../db/database";
-import { hashCanonical } from "./canonicalJson";
+import { canonicalStringify, hashCanonical } from "./canonicalJson";
 import { BACKUP_FORMAT, BACKUP_FORMAT_VERSION, readStores, storeHashesOf, type BackupEnvelope } from "./exportBackup";
 
 /**
  * Restauration d'une sauvegarde dans une base **passée en paramètre**
- * (conception lot 0, § 7). Dans ce lot, elle n'est appelée que par les
- * tests et par la console de développement : aucun écran ne l'expose,
- * et rien ne permet de viser la base personnelle depuis l'interface.
- *
- * Règles : enveloppe valide, empreinte recalculée égale, base cible
- * entièrement vide, écriture atomique, puis relecture et comparaison
- * d'empreinte (export → restauration → export doit rendre la même).
+ * (SCHEMA_DEXIE_V3_MIGRATION.md § 7). Restaurer = remplacer, jamais
+ * fusionner, jamais à moitié :
+ * - toute la validation précède toute écriture (format, comptes,
+ *   empreintes, stores connus, données anciennes interdites) ;
+ * - la base cible doit être vide ;
+ * - l'écriture se fait dans **une** transaction, qui relit chaque store
+ *   écrit et compare sa forme canonique à celle du fichier avant de se
+ *   valider : au premier écart, tout est annulé.
  */
 
 export class BackupValidationError extends Error {
@@ -89,34 +91,89 @@ export async function verifyBackupIntegrity(
 
 export interface RestoreResult {
   counts: Record<string, number>;
-  /** Empreinte relue depuis la base après restauration. */
+  /** Empreinte relue depuis la base après restauration, sur les stores du fichier. */
   hash: string;
+  /** Stores du fichier écrits dans la base. */
+  written: string[];
+  /** Stores anciens du fichier, vides, ignorés (supprimés en v3). */
+  skipped: string[];
 }
 
-export async function restoreBackup(envelope: BackupEnvelope, database: Dexie): Promise<RestoreResult> {
+export interface RestorePlan {
+  written: string[];
+  skipped: string[];
+}
+
+function hasIndex(table: Table | undefined, name: string): boolean {
+  return table?.schema.indexes.some((index) => index.name === name) ?? false;
+}
+
+/**
+ * Valide un fichier pour une base cible, **sans rien écrire** (cas A à F
+ * de la matrice) : stores connus de la cible, stores supprimés en v3
+ * vides, pas d'objectif de l'ancienne forme dans une base v3, empreintes
+ * exactes. Rend les stores à écrire et ceux ignorés.
+ */
+export async function validateBackupForRestore(envelope: BackupEnvelope, database: Dexie): Promise<RestorePlan> {
   const tableNames = new Set(database.tables.map((table) => table.name));
+  const written: string[] = [];
+  const skipped: string[] = [];
+  const forbidden: string[] = [];
 
   for (const [name, records] of Object.entries(envelope.stores)) {
-    if (tableNames.has(name)) continue;
-    /* Store supprimé par la v3 (cardio, mobilité) : ignoré s'il est vide,
-       refusé sinon — cette version ne sait pas porter ses données. */
-    if (REMOVED_IN_V3.includes(name) && records.length > 0) {
-      throw new BackupValidationError(
-        `Le fichier contient des données (${name}) que cette version ne sait pas porter`,
-      );
+    if (tableNames.has(name)) {
+      written.push(name);
+      continue;
     }
     if (!REMOVED_IN_V3.includes(name)) {
       throw new BackupValidationError(`Le store ${name} du fichier n'existe pas dans la base cible`);
     }
+    if (records.length > 0) forbidden.push(`${name} (${records.length})`);
+    else skipped.push(name);
+  }
+
+  /* Objectifs : une base v3 (index « key ») ne reprend pas l'ancienne forme. */
+  const goals = envelope.stores.goals ?? [];
+  const goalsTable = tableNames.has("goals") ? database.table("goals") : undefined;
+  if (goals.length > 0 && hasIndex(goalsTable, "key") && goals.some((goal) => !(goal as { key?: unknown }).key)) {
+    forbidden.push(`goals (${goals.length}, ancienne forme)`);
+  }
+
+  if (forbidden.length > 0) {
+    throw new BackupValidationError(
+      `Ce fichier contient des données que cette version ne sait pas porter : ${forbidden.join(", ")}. Rien n'a été écrit.`,
+    );
   }
 
   const integrity = await verifyBackupIntegrity(envelope);
 
   if (!integrity.ok) {
     throw new BackupValidationError(
-      `Empreinte différente : fichier ${integrity.embedded.slice(0, 8)}, recalculée ${integrity.computed.slice(0, 8)}`,
+      integrity.mismatchedStores.length > 0
+        ? `Empreinte différente pour : ${integrity.mismatchedStores.join(", ")}. Le fichier a été modifié ou abîmé.`
+        : `Empreinte différente : fichier ${integrity.embedded.slice(0, 8)}, recalculée ${integrity.computed.slice(0, 8)}`,
     );
   }
+
+  return { written, skipped };
+}
+
+function sortedCanonical(records: unknown[], key: string): string {
+  const sorted = [...records].sort((a, b) => {
+    const left = String((a as Record<string, unknown>)[key]);
+    const right = String((b as Record<string, unknown>)[key]);
+    return left < right ? -1 : left > right ? 1 : 0;
+  });
+  return canonicalStringify(sorted);
+}
+
+/**
+ * Restaure dans une base **vide**. En cas d'échec — validation, base non
+ * vide, écriture, relecture —, la base reste telle qu'elle était : aucune
+ * base à moitié restaurée.
+ */
+export async function restoreInto(envelope: BackupEnvelope, database: Dexie): Promise<RestoreResult> {
+  const plan = await validateBackupForRestore(envelope, database);
 
   await database.transaction("rw", database.tables, async () => {
     for (const table of database.tables) {
@@ -125,31 +182,31 @@ export async function restoreBackup(envelope: BackupEnvelope, database: Dexie): 
       }
     }
 
-    for (const [name, records] of Object.entries(envelope.stores)) {
-      if (records.length > 0 && tableNames.has(name)) {
-        await database.table(name).bulkAdd(records as object[]);
+    for (const name of plan.written) {
+      const records = envelope.stores[name] ?? [];
+      if (records.length > 0) await database.table(name).bulkAdd(records as object[]);
+    }
+
+    /* Contrôle dans la transaction : formes canoniques relues = fichier.
+       On compare des chaînes, pas des SHA-256 : attendre crypto.subtle
+       validerait la transaction avant la fin du contrôle. */
+    for (const name of plan.written) {
+      const table = database.table(name);
+      const key = String(table.schema.primKey.keyPath);
+      const readBack = sortedCanonical(await table.toArray(), key);
+      if (readBack !== sortedCanonical(envelope.stores[name] ?? [], key)) {
+        throw new BackupValidationError(`Relecture différente du fichier pour ${name} : restauration annulée`);
       }
     }
   });
 
-  /* La base cible peut avoir plus de stores que le fichier (sauvegarde v1
-     restaurée dans une base v2) : l'empreinte de contrôle porte sur les
-     stores du fichier ; les autres doivent simplement être restés vides. */
   const { stores, counts } = await readStores(database);
-  const restoredOnly = Object.fromEntries(
-    Object.keys(envelope.stores).map((name) => [name, stores[name] ?? []]),
+  const hash = await hashCanonical(
+    Object.fromEntries(Object.keys(envelope.stores).map((name) => [name, stores[name] ?? []])),
   );
-  const hash = await hashCanonical(restoredOnly);
 
-  if (hash !== envelope.integrity.hash) {
-    throw new BackupValidationError("Après restauration, la base ne rend pas l'empreinte du fichier");
-  }
-
-  for (const [name, count] of Object.entries(counts)) {
-    if (!(name in envelope.stores) && count !== 0) {
-      throw new BackupValidationError(`Après restauration, le store ${name} (absent du fichier) n'est pas vide`);
-    }
-  }
-
-  return { counts, hash };
+  return { counts, hash, written: plan.written, skipped: plan.skipped };
 }
+
+/** Nom historique (lots 0 et 1), conservé pour les appels existants. */
+export const restoreBackup = restoreInto;
