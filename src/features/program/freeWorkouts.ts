@@ -56,7 +56,7 @@ export function formatFreeWorkoutSummary(
  * **bilan de mobilité** d'abord (`kind` prime sur toute inférence, v1.5
  * § 11.4 — l'inférence ne connaît pas « Test mobilité » et classerait un
  * bilan improvisé en Musculation), puis cardio seul → Cardio, mobilité
- * seule → Mobilité, sinon Musculation.
+ * seule → Mobilité, sinon Musculation. Les briques `warmup` ne comptent pas.
  */
 export function inferFreeWorkoutCategory(
   workout: WorkoutSession,
@@ -68,6 +68,8 @@ export function inferFreeWorkoutCategory(
 
   for (const block of workout.blocks) {
     if (block.kind !== "exercise" || block.status !== "performed") continue;
+    /* Une brique d'échauffement ne fait jamais d'une séance une séance cardio (§ 5.8). */
+    if (block.role === "warmup") continue;
 
     const category = exerciseById.get(block.exerciseId)?.category;
 

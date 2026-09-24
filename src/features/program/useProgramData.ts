@@ -34,6 +34,8 @@ export interface ProgramData {
   templateById: Map<Id, SessionTemplate>;
   exerciseById: Map<Id, Exercise>;
   program: WeeklyProgram | undefined;
+  /** Séances confirmées, toutes dates : résumé du mois (§ 5.8). */
+  completedWorkouts: WorkoutSession[];
   /**
    * `Moyenne 45 min` ou `Estimé 20 min` pour un modèle (§5), la même
    * valeur qu'ailleurs dans l'application.
@@ -122,6 +124,7 @@ export function useProgramData(
             exercises.map((exercise) => [exercise.id, exercise]),
           ),
           program,
+          completedWorkouts,
           durationLabel: (templateId) => {
             const template = templateById.get(templateId);
 

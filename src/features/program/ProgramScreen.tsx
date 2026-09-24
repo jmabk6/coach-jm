@@ -1,14 +1,18 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
+  BarChart3,
   CalendarCog,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  History,
   Plus,
 } from "lucide-react";
 import { addDays, addMonths, parseISO } from "date-fns";
-import type { Id, PlannedSession, SessionTemplate, WorkoutSession } from "../../domain";
+import type { Id, PlannedSession, SessionBlock, SessionTemplate, WorkoutSession } from "../../domain";
+import { estimateSessionTemplateDurationSec } from "../../domain/rules/sessionTemplateRules";
+import { summarizeMonth } from "./monthSummary";
 import {
   formatDayLabel,
   formatFullDate,
@@ -607,7 +611,6 @@ const legend: { status: DisplayedPlannedSessionStatus; label: string }[] = [
   { status: "in_progress", label: "En cours" },
   { status: "today", label: "Aujourd'hui" },
   { status: "upcoming", label: "À venir" },
-  { status: "not_performed", label: "Non réalisée" },
   { status: "skipped", label: "Sautée" },
 ];
 
@@ -643,7 +646,9 @@ function MonthView({
 
   const entriesByDate = new Map<string, ProgramEntry[]>();
 
-  for (const entry of data.entries) {
+  /* M3 : le passé montre les séances réalisées, le futur les planifiées,
+     aujourd'hui les deux. */
+  for (const entry of data.entries.filter((item) => isVisibleInMonth(item, today))) {
     const list = entriesByDate.get(entry.date) ?? [];
     list.push(entry);
     entriesByDate.set(entry.date, list);
@@ -753,13 +758,15 @@ function MonthView({
         <h2>{capitalize(formatFullDate(selectedDate))}</h2>
 
         {selectedEntries.map((entry) => (
-          <EntryRow
-            key={entryKey(entry)}
-            entry={entry}
-            data={data}
-            onOpenMenu={onOpenMenu}
-            onOpenFreeMenu={onOpenFreeMenu}
-          />
+          <div key={entryKey(entry)} className="program-selected__entry">
+            <EntryRow
+              entry={entry}
+              data={data}
+              onOpenMenu={onOpenMenu}
+              onOpenFreeMenu={onOpenFreeMenu}
+            />
+            <DayCard entry={entry} data={data} />
+          </div>
         ))}
 
         {selectedEntries.length === 0 && (
@@ -776,7 +783,117 @@ function MonthView({
           <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
         </button>
       </section>
+
+      <MonthSummaryCard data={data} monthStart={monthStart} today={today} />
     </>
+  );
+}
+
+/** M3 : passé = réalisées (confirmées), futur = planifiées, aujourd'hui les deux. */
+function isVisibleInMonth(entry: ProgramEntry, today: string): boolean {
+  if (entry.date >= today) return true;
+  return entry.kind === "free" || entry.session.status === "done";
+}
+
+function blockName(block: SessionBlock, data: ProgramData, index: number): string {
+  if (block.kind === "exercise") return data.exerciseById.get(block.exerciseId)?.name ?? "Exercice";
+  if (block.kind === "group") return block.name || `Groupe ${index + 1}`;
+  return "Note";
+}
+
+/**
+ * Fiche d'un jour (M3) : une séance à faire montre ses blocs avec leur
+ * durée estimée et « Voir le détail » ; une séance faite, son récapitulatif.
+ */
+function DayCard({ entry, data }: { entry: ProgramEntry; data: ProgramData }) {
+  const location = useLocation();
+  const here = `${location.pathname}${location.search}`;
+
+  if (entry.kind === "free" || entry.session.status === "done" || entry.session.status === "in_progress") {
+    const workoutId = entry.kind === "free" ? entry.workout.id : entry.session.workoutId;
+    return workoutId ? (
+      <Link className="program-day-card__link" to={`/workouts/${workoutId}?returnTo=${encodeURIComponent(here)}`}>
+        <span>Voir le récapitulatif</span>
+        <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+      </Link>
+    ) : null;
+  }
+
+  const template = data.templateById.get(entry.session.sessionTemplateId);
+  if (!template) return null;
+  const blocks = [...template.blocks].sort((a, b) => a.position - b.position).filter((block) => block.kind !== "note");
+
+  return (
+    <div className="program-day-card">
+      {blocks.length > 0 ? (
+        <ol className="program-day-card__blocks" aria-label="Blocs de la séance">
+          {blocks.map((block, index) => (
+            <li key={block.id}>
+              <span className="program-day-card__number">{index + 1}</span>
+              <span className="program-day-card__name">{blockName(block, data, index)}</span>
+              <span className="program-day-card__duration">
+                ≈ {Math.max(1, Math.round(estimateSessionTemplateDurationSec([block]) / 60))} min
+              </span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="program-selected__empty">Contenu à définir.</p>
+      )}
+      <Link className="program-day-card__link" to={paths.session(template.id)}>
+        <span>Voir le détail de cette séance</span>
+        <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+      </Link>
+    </div>
+  );
+}
+
+/** Résumé du mois (§ 5.8, N8) et accès à l'historique. */
+function MonthSummaryCard({ data, monthStart, today }: { data: ProgramData; monthStart: string; today: string }) {
+  const summary = summarizeMonth(data.completedWorkouts, monthStart, today, data.templateById, data.exerciseById);
+  const plural = (count: number) => (count > 1 ? "s" : "");
+
+  return (
+    <section className="program-summary" aria-label="Résumé du mois">
+      <h2 className="program-summary__title">
+        <BarChart3 size={20} strokeWidth={2} aria-hidden="true" />
+        Résumé de {formatMonthTitle(monthStart).toLocaleLowerCase("fr-FR")}
+      </h2>
+      <div className="program-summary__grid">
+        <p className="program-summary__figure">
+          <strong>{summary.total}</strong>
+          <span>séance{plural(summary.total)} réalisée{plural(summary.total)}</span>
+        </p>
+        <p className="program-summary__figure">
+          <strong>{summary.daysWithoutSession}</strong>
+          <span>jour{plural(summary.daysWithoutSession)} sans séance</span>
+        </p>
+        <ul className="program-summary__lines" aria-label="Types de séances">
+          <li>
+            <span className="program-summary__dot program-summary__dot--musculation" />
+            Musculation <strong>{summary.musculation}</strong>
+          </li>
+          <li>
+            <span className="program-summary__dot program-summary__dot--cardio" />
+            Cardio <strong>{summary.cardio}</strong>
+          </li>
+          <li>
+            <span className="program-summary__dot program-summary__dot--routine" />
+            Routine <strong>{summary.routine}</strong>
+          </li>
+        </ul>
+      </div>
+      {summary.mobility > 0 && (
+        <p className="program-summary__note">
+          Dont {summary.mobility} séance{plural(summary.mobility)} de mobilité, comptée{plural(summary.mobility)} au total seulement.
+        </p>
+      )}
+      <Link to={paths.history()} className="program-summary__history">
+        <History size={18} strokeWidth={2} aria-hidden="true" />
+        <span>Voir l'historique</span>
+        <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+      </Link>
+    </section>
   );
 }
 

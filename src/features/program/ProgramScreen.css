@@ -772,3 +772,160 @@
   color: inherit;
   font: inherit;
 }
+
+/* Mois (lot F.3, M3) : fiche d'un jour, résumé du mois. */
+.program-selected__entry {
+  display: grid;
+  gap: 6px;
+}
+
+.program-day-card {
+  display: grid;
+  gap: 6px;
+}
+
+.program-day-card__blocks {
+  display: grid;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-soft, #f2f4f7);
+  list-style: none;
+}
+
+.program-day-card__blocks li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  font-size: 0.9rem;
+}
+
+.program-day-card__blocks li + li {
+  border-top: 1px solid var(--color-border, #e4e7ec);
+}
+
+.program-day-card__number {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.program-day-card__duration {
+  color: var(--color-text-soft, #666);
+  white-space: nowrap;
+}
+
+.program-day-card__link,
+.program-summary__history {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent, #2f6fed);
+  font-weight: 600;
+}
+
+.program-day-card__link span,
+.program-summary__history span {
+  flex: 1;
+}
+
+.program-summary {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface, white);
+}
+
+.program-summary__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+.program-summary__title svg {
+  color: var(--color-accent, #2f6fed);
+}
+
+.program-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.program-summary__figure {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 10px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-soft, #f2f4f7);
+  font-size: 0.8rem;
+}
+
+.program-summary__figure strong {
+  font-size: 1.5rem;
+}
+
+.program-summary__lines {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 4px;
+  margin: 0;
+  padding: 10px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-soft, #f2f4f7);
+  font-size: 0.85rem;
+  list-style: none;
+}
+
+.program-summary__lines li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.program-summary__lines strong {
+  margin-left: auto;
+}
+
+.program-summary__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.program-summary__dot--musculation {
+  background: #e5484d;
+}
+
+.program-summary__dot--cardio {
+  background: #30a46c;
+}
+
+.program-summary__dot--routine {
+  background: #8e4ec6;
+}
+
+.program-summary__note {
+  margin: 8px 0;
+  color: var(--color-text-soft, #666);
+  font-size: 0.8rem;
+}
+
+.program-summary__history {
+  margin-top: 10px;
+}
