@@ -522,12 +522,11 @@ Il n'y a pas d'autre chemin. Une app qui tourne n'a **jamais** une base vide : l
 |---|---|
 | 1 | **Validation complète du fichier** (§ 7.3, colonne « Validation »). Échec → arrêt, rien n'est touché |
 | 2 | **Export de sécurité** de la base actuelle, proposé et fortement recommandé ; double confirmation de l'effacement (conception § 2.9) |
-| 3 | `db.close()` ; `Dexie.delete("coach-jm")` ; `db.open()` : base v3 **vide**, sans seed (drapeau `suspendSeeds` en mémoire) |
-| 4 | `restoreInto(db, envelope)` : transaction unique avec contrôle interne (§ 7.2) |
-| 5 | Échec en 4 → la transaction est annulée, la base est **vide** et cohérente. L'app affiche l'échec et propose de réimporter l'export de sécurité de l'étape 2 (même chemin) |
-| 6 | Succès → `location.reload()` : `bootstrap` s'exécute normalement, les seeds complètent ce qui manque |
+| 3 | `replaceWith(envelope, db)` (C.7 bis) : **une seule transaction** qui vide les 15 tables, écrit les stores du fichier, relit chacun et compare sa forme canonique au fichier, et vérifie que les stores absents du fichier sont vides. La base n'est **jamais supprimée** : elle a déjà le schéma v3 |
+| 4 | Échec en 3, à n'importe quel moment (vidage, écriture, relecture) → IndexedDB annule toute la transaction, vidage compris : **l'ancienne base reste intacte**. L'app affiche « Rien n'a été modifié » |
+| 5 | Succès → `location.reload()` : `bootstrap` s'exécute normalement, les seeds complètent ce qui manque (par exemple `settings` après un fichier format 1) |
 
-**Garantie** : aucune base « à moitié restaurée ». Entre les étapes 3 et 6, la base est soit vide, soit entièrement restaurée. Le seul état intermédiaire (vide) est explicite et réparable par le même chemin.
+**Garantie** : aucune base « à moitié restaurée » ni vide. À tout instant, la base est soit l'ancienne, intacte, soit entièrement restaurée. `Dexie.delete` ne sert plus qu'à l'effacement total (§ 8), qui ne restaure rien.
 
 **Portée pour le lot C.** `restoreInto`, `resetAndRestore`, `MigrationFailureScreen` et l'export en mode dynamique sont livrés **au lot C**. Leur écran complet (Plus > Sauvegarde) reste au lot L. Au lot C, un point d'entrée minimal suffit : Plus > « Importer une sauvegarde » et « Effacer ». Sans lui, **aucun rollback ne serait possible sur l'iPhone** : l'ancien build n'a pas d'import (§ 10).
 

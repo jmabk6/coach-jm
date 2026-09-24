@@ -173,11 +173,26 @@ function sortedCanonical(records: unknown[], key: string): string {
  * base à moitié restaurée.
  */
 export async function restoreInto(envelope: BackupEnvelope, database: Dexie): Promise<RestoreResult> {
+  return writeBackup(envelope, database, "empty");
+}
+
+/**
+ * Remplacement atomique (§ 7.4, C.7 bis) : vidage de toutes les tables,
+ * écriture et relecture dans **la même** transaction. Un échec, à
+ * n'importe quelle étape, annule aussi le vidage : l'ancienne base reste
+ * intacte. Jamais de base vide entre deux états.
+ */
+export async function replaceWith(envelope: BackupEnvelope, database: Dexie): Promise<RestoreResult> {
+  return writeBackup(envelope, database, "replace");
+}
+
+async function writeBackup(envelope: BackupEnvelope, database: Dexie, mode: "empty" | "replace"): Promise<RestoreResult> {
   const plan = await validateBackupForRestore(envelope, database);
 
   await database.transaction("rw", database.tables, async () => {
     for (const table of database.tables) {
-      if ((await table.count()) > 0) {
+      if (mode === "replace") await table.clear();
+      else if ((await table.count()) > 0) {
         throw new BackupValidationError(`La base cible n'est pas vide (${table.name}) : la restauration ne fusionne jamais`);
       }
     }
@@ -196,6 +211,11 @@ export async function restoreInto(envelope: BackupEnvelope, database: Dexie): Pr
       const readBack = sortedCanonical(await table.toArray(), key);
       if (readBack !== sortedCanonical(envelope.stores[name] ?? [], key)) {
         throw new BackupValidationError(`Relecture différente du fichier pour ${name} : restauration annulée`);
+      }
+    }
+    for (const table of database.tables) {
+      if (!plan.written.includes(table.name) && (await table.count()) > 0) {
+        throw new BackupValidationError(`${table.name} devrait être vide après restauration : restauration annulée`);
       }
     }
   });

@@ -60,7 +60,9 @@ export function DataResetSection({ database, reload = () => window.location.relo
       else await eraseDatabase(database);
       reload();
     } catch (error) {
-      setState({ status: "failed", message: messageOf(error), emptied: seedsSuspended() });
+      /* Import : remplacement atomique, un échec laisse l'ancienne base
+         intacte. Seul un effacement interrompu peut laisser une base vide. */
+      setState({ status: "failed", message: messageOf(error), emptied: action.kind === "erase" && seedsSuspended() });
     }
   }
 
@@ -120,8 +122,8 @@ export function DataResetSection({ database, reload = () => window.location.relo
         <p className="plus-screen__status plus-screen__status--error" role="alert">
           Échec : {state.message}
           {state.emptied
-            ? " La base est maintenant vide. Réimportez votre export de sécurité avec « Importer une sauvegarde »."
-            : " Rien n'a été modifié."}
+            ? " L'effacement n'a pas abouti : rechargez l'application."
+            : " Rien n'a été modifié, vos données actuelles sont intactes."}
         </p>
       )}
 
@@ -158,7 +160,7 @@ export function DataResetSection({ database, reload = () => window.location.relo
               label: state.action.kind === "import" ? "Remplacer" : "Effacer",
               hint:
                 state.action.kind === "import"
-                  ? "La base est effacée puis remplie avec le fichier ; l'application redémarre"
+                  ? "Les données sont remplacées en une seule opération ; l'application redémarre"
                   : "La base est effacée ; l'application redémarre sur une base neuve",
               tone: "danger",
               onSelect: () => void run(state.action),

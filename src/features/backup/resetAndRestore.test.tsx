@@ -17,8 +17,9 @@ import { createTestDatabase, writePrototypeOf } from "./testDatabase";
 
 /**
  * Lot C.7 — `resetAndRestore` (SCHEMA_DEXIE_V3_MIGRATION.md § 7.4) et le
- * point d'entrée minimal de Plus. La validation précède l'effacement :
- * un fichier refusé ne touche à rien (T-12, T-13 par ce chemin).
+ * point d'entrée minimal de Plus. Validation, vidage, écriture et
+ * relecture : un refus ou une panne ne touche à rien (T-12, T-13 et
+ * C.7 bis par ce chemin).
  */
 
 const context: BackupContext = { now: new Date("2026-09-24T11:00:00.000Z"), buildTime: "b", userAgent: "t", standalone: true };
@@ -71,7 +72,8 @@ describe("resetAndRestore", () => {
     expect(await target.weightEntries.get("p-actuelle")).toBeUndefined();
     const after = await readStores(target);
     for (const name of Object.keys(file.stores)) expect(canonicalStringify(after.stores[name]), name).toBe(canonicalStringify(file.stores[name]));
-    expect(seedsSuspended()).toBe(true);
+    /* La base n'est jamais supprimée : pas de seeds à suspendre. */
+    expect(seedsSuspended()).toBe(false);
   });
 
   it("T-12 — empreinte altérée : refus à la validation, base NON effacée", async () => {
@@ -97,22 +99,56 @@ describe("resetAndRestore", () => {
     expect(await snapshot(target)).toBe(before);
   });
 
-  it("panne pendant l'écriture : la base reste vide et cohérente, réimportable par le même chemin", async () => {
+  it("C.7 bis — panne pendant l'écriture : le vidage est annulé aussi, l'ancienne base reste intacte", async () => {
     const file = await validFile();
     const target = await currentBase();
+    const before = await snapshot(target);
     const proto = writePrototypeOf(target);
-    const original = proto.bulkAdd!;
     vi.spyOn(proto, "bulkAdd").mockImplementationOnce(() => {
       throw new Error("panne simulée");
     });
 
     await expect(resetAndRestore(file, target)).rejects.toThrow(/panne simulée/);
-    expect(Object.values((await readStores(target)).counts).every((count) => count === 0)).toBe(true);
+    expect(await snapshot(target)).toBe(before);
+    expect(await target.weightEntries.get("p-actuelle")).toBeDefined();
 
-    proto.bulkAdd = original;
     vi.restoreAllMocks();
     await resetAndRestore(file, target);
     expect(await target.workouts.count()).toBe(buildImportedWorkouts().length);
+  });
+
+  it("C.7 bis — relecture différente du fichier : tout est annulé, l'ancienne base reste intacte", async () => {
+    const file = await validFile();
+    const target = await currentBase();
+    const before = await snapshot(target);
+    let proto: object | null = Object.getPrototypeOf(target.workouts);
+    while (proto && !Object.prototype.hasOwnProperty.call(proto, "toArray")) proto = Object.getPrototypeOf(proto);
+    const owner = proto as Record<string, (...args: unknown[]) => unknown>;
+    const original = owner.toArray!;
+    vi.spyOn(owner, "toArray").mockImplementation(async function (this: { name?: string }, ...args: unknown[]) {
+      const records = (await original.apply(this, args)) as Array<Record<string, unknown>>;
+      return this.name === "workouts" ? records.map((record, index) => (index === 0 ? { ...record, note: "altérée" } : record)) : records;
+    });
+
+    await expect(resetAndRestore(file, target)).rejects.toThrow(/Relecture différente du fichier pour workouts/);
+    vi.restoreAllMocks();
+    expect(await snapshot(target)).toBe(before);
+  });
+
+  it("C.7 bis — fichier format 1 : les stores v3 absents du fichier sont vidés (les seeds les recompléteront)", async () => {
+    const v1 = createTestDatabase("coach-jm-v1src", 1);
+    names.push(v1.name);
+    await v1.open();
+    await v1.table("workouts").bulkAdd(buildImportedWorkouts());
+    const file = parseBackup(serializeBackup(await readBackup(v1, context, { formatVersion: 1 })));
+    const target = await currentBase();
+    await target.settings.put({ key: "preferences", value: { theme: "dark", timerSound: true, freeWorkoutRestSec: 90 } });
+
+    await resetAndRestore(file, target);
+
+    const after = await readStores(target);
+    expect(Object.entries(after.counts).filter(([name, count]) => count > 0 && !(name in file.stores))).toEqual([]);
+    expect(canonicalStringify(after.stores.workouts)).toBe(canonicalStringify(file.stores.workouts));
   });
 
   it("T-11 par ce chemin : export → resetAndRestore dans une base peuplée → export, mêmes empreintes", async () => {
