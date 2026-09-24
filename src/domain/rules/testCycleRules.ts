@@ -1,6 +1,6 @@
 import { addDays, differenceInCalendarDays, parseISO } from "date-fns";
-import type { TestCycleSettings, WeeklyProgram } from "../models";
-import { formatLocalDate, getWeekStartDate } from "./programRules";
+import type { TestCycleSettings, TestProtocol, TestResult, TestScheduleEntry, WeeklyProgram } from "../models";
+import { formatLocalDate, getWeekStartDate, weekdays } from "./programRules";
 
 /**
  * Semaine de tests (conception V2 § 2.3, § 5.9) : toutes les
@@ -41,4 +41,59 @@ export function eveningRoutineFor(program: Pick<WeeklyProgram, "eveningRotation"
   const days = differenceInCalendarDays(parseISO(date), parseISO(program.eveningRotationAnchor));
   const index = ((days % rotation.length) + rotation.length) % rotation.length;
   return rotation[index];
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mensurations du matin (lot I.3)                                            */
+/* -------------------------------------------------------------------------- */
+
+export type MorningMeasurementState =
+  /** Le jour prévu : invitation à côté de la pesée. */
+  | "due"
+  /** Plus tard dans la semaine de tests, sans résultat : encore à faire. */
+  | "late"
+  /** Un résultat existe dans la semaine de tests. */
+  | "done";
+
+export interface MorningMeasurement {
+  state: MorningMeasurementState;
+  /** Jour prévu, dans la semaine de tests en cours. */
+  scheduledDate: string;
+  /** Résultat de la semaine, s'il existe. */
+  resultId?: string;
+}
+
+/**
+ * Invitation aux mensurations (conception V2 § 2.3, § 2.4) : hors séance,
+ * le matin du jour prévu par `testSchedule` (le lundi), dans une semaine de
+ * tests. Avant ce jour, rien ; ensuite, tant que la semaine n'a pas de
+ * résultat, elles restent à faire. En dehors d'une semaine de tests, rien.
+ */
+export function morningMeasurementFor({
+  today,
+  cycle,
+  schedule,
+  protocol,
+  results,
+}: {
+  today: string;
+  cycle: TestCycleSettings;
+  schedule: ReadonlyArray<TestScheduleEntry>;
+  protocol: Pick<TestProtocol, "id" | "key" | "status"> | undefined;
+  results: ReadonlyArray<Pick<TestResult, "id" | "protocolId" | "date">>;
+}): MorningMeasurement | undefined {
+  if (!protocol || protocol.status !== "active") return undefined;
+  const entry = schedule.find((item) => item.protocolKey === protocol.key);
+  if (!entry) return undefined;
+
+  const weekStart = getWeekStartDate(today);
+  if (!isTestWeek(weekStart, cycle)) return undefined;
+
+  const scheduledDate = formatLocalDate(addDays(parseISO(weekStart), weekdays.indexOf(entry.weekday)));
+  const weekEnd = formatLocalDate(addDays(parseISO(weekStart), 6));
+  const result = results.find((item) => item.protocolId === protocol.id && item.date >= weekStart && item.date <= weekEnd);
+
+  if (result) return { state: "done", scheduledDate, resultId: result.id };
+  if (today < scheduledDate) return undefined;
+  return { state: today === scheduledDate ? "due" : "late", scheduledDate };
 }
