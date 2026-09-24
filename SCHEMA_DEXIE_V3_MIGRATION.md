@@ -291,8 +291,7 @@ Chaque cas part d'une base v2 : `workouts` avec 2 séances, et selon le cas un e
 **Résultat de la recette C.8 (24/09/2026) : décision « v3 seule » confirmée.**
 - Page `recette-v3.html` (build `--mode tunnel`, jamais en production), bases fictives `coach-jm-recette-*`. Cas rejoués : E2 / T-4a, E4, T-5, T-3, T-7, et le remplacement atomique de l'import (C.7 bis).
 - Navigateur intégré (Chromium), en direct et par le tunnel HTTPS : **6/6 OK**.
-- **Safari iOS** (iPhone OS 18.7, Safari 26.1, Dexie 4.4.6, build du 24/09 06:49) : **6/6 OK** en navigation privée. Le détail est identique à Chromium : refus nommant `cardioTests`, version 2 et 19 stores intacts (E2, T-4a, T-5), écritures de l'upgrade annulées sans store `settings` (E4), migration v3 à 15 stores et séances identiques (T-3), garde appelée une seule fois (T-7).
-- Onglet normal (stockage persistant) : à confirmer.
+- **Safari iOS** (iPhone OS 18.7, Safari 26.1, Dexie 4.4.6, build du 24/09 06:49) : **6/6 OK** en navigation privée, puis **6/6 OK en onglet normal** (stockage persistant) ; bases de recette effacées ensuite. Le détail est identique à Chromium : refus nommant `cardioTests`, version 2 et 19 stores intacts (E2, T-4a, T-5), écritures de l'upgrade annulées sans store `settings` (E4), migration v3 à 15 stores et séances identiques (T-3), garde appelée une seule fois (T-7).
 
 ---
 
