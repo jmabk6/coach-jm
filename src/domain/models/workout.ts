@@ -1,3 +1,4 @@
+import type { PerformedTestBlock } from "./testProtocol";
 import type { Id, Load } from "./exercise";
 import type {
   ExerciseInstructions,
@@ -134,7 +135,8 @@ export interface WorkoutSession {
 export type PerformedBlock =
   | PerformedExerciseBlock
   | PerformedGroupBlock
-  | PerformedNoteBlock;
+  | PerformedNoteBlock
+  | PerformedTestBlock;
 
 export interface PerformedBaseBlock {
   id: Id;

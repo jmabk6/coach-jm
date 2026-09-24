@@ -902,7 +902,7 @@ function RecapLine({ line, to }: { line: WorkoutRecapLine; to: string }) {
               {line.frameLine}
             </span>
           )}
-          {block.note && <span className="recap-line__note">{block.note}</span>}
+          {block.kind !== "test" && block.note && <span className="recap-line__note">{block.note}</span>}
         </span>
         <StatusIcon block={block} />
         <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />

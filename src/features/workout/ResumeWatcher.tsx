@@ -216,6 +216,8 @@ function describeCurrent(
     return `${number}. ${block.name?.trim() || "Groupe"}${round ? ` · Tour ${round.roundNumber} sur ${block.rounds.length}` : ""}`;
   }
 
+  if (block.kind === "test") return `${number}. Test`;
+
   const exerciseName = exerciseById.get(block.exerciseId)?.name ?? "Exercice";
 
   if (block.series) {

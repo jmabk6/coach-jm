@@ -13,7 +13,10 @@ import type {
   PerformedSeries,
   PerformedSeriesRole,
   PerformedSideValue,
+  PerformedTestBlock,
   RestKind,
+  TestMeasureSpec,
+  TestTrial,
   WorkoutSession,
 } from "../../../domain";
 import { defaultInstructionsFor } from "../../../domain/rules/blockInstructionRules";
@@ -166,6 +169,9 @@ function setPendingEntries(
 ): ExecutableBlock {
   const statusOf = (id: Id): PerformedEntryStatus =>
     id === entryId ? "active" : pending;
+
+  /* Un test n'a pas d'entrées à statut : essais et valeurs vivent dans `draft`. */
+  if (block.kind === "test") return block;
 
   if (block.kind === "group") {
     return {
@@ -1164,7 +1170,7 @@ export function finishBlock(workout: WorkoutSession, blockId: Id, now: string): 
 
     const settled = markActiveEntry(item, undefined);
 
-    if (!openEnded || settled.kind === "group") {
+    if (!openEnded || settled.kind === "group" || settled.kind === "test") {
       return { ...settled, status: "performed" as const };
     }
 
@@ -1676,4 +1682,167 @@ export function completeWorkoutSession(
   }
 
   return completed;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Brique test (lot G.3, conception V2 § 3.5.2)                               */
+/* -------------------------------------------------------------------------- */
+
+type TestDraft = NonNullable<PerformedTestBlock["draft"]>;
+
+function findTestBlock(workout: WorkoutSession, blockId: Id): PerformedTestBlock {
+  const block = findBlock(workout, blockId);
+  if (block.kind !== "test") throw new Error("Cette brique n'est pas un test");
+  return block;
+}
+
+/**
+ * Écrit le brouillon d'un test (D27 : `draft` jusqu'à l'enregistrement),
+ * par le chemin d'écriture unique de la séance. Permis pendant la séance
+ * et, en attente d'enregistrement, comme correction (D21). La brique
+ * devient la brique courante ; en attente, son statut suit la saisie.
+ */
+function withTestDraft(
+  workout: WorkoutSession,
+  blockId: Id,
+  update: (draft: TestDraft) => TestDraft,
+  now: string,
+): WorkoutSession {
+  assertCorrectable(workout);
+
+  const block = findTestBlock(workout, blockId);
+  if (block.status === "skipped") throw new Error("Ce test est sauté : annulez le saut d'abord");
+
+  const pending = isAwaitingConfirmation(workout);
+  let next = withBlock(workout, blockId, (item) => {
+    if (item.kind !== "test") return item;
+    const draft = update(structuredClone(item.draft ?? {}));
+    const updated: PerformedTestBlock = { ...item, draft };
+    if (pending) updated.status = hasCompletedEntries(updated) ? "performed" : "not_performed";
+    return updated;
+  });
+
+  if (!pending) {
+    next = { ...next, currentBlockId: blockId };
+    delete next.currentEntryId;
+  }
+
+  return touch(next, now);
+}
+
+export interface TestTrialValues {
+  value: number;
+  outcome: TestTrial["outcome"];
+  restSec?: number;
+}
+
+function checkTrialValue(value: number): void {
+  if (!Number.isFinite(value) || value < 0) throw new Error("La valeur d'un essai est un nombre positif ou nul");
+}
+
+/** Un essai de plus (traction : charge d'assistance et réussite / échec). */
+export function addTestTrial(workout: WorkoutSession, blockId: Id, values: TestTrialValues, now: string): WorkoutSession {
+  checkTrialValue(values.value);
+
+  return withTestDraft(workout, blockId, (draft) => {
+    const trials = draft.trials ?? [];
+    const trial: TestTrial = { order: trials.length + 1, value: values.value, outcome: values.outcome, completedAt: now };
+    if (values.restSec !== undefined) trial.restSec = values.restSec;
+    return { ...draft, trials: [...trials, trial] };
+  }, now);
+}
+
+/** Corrige un essai ; son ordre et son heure ne changent pas. */
+export function editTestTrial(
+  workout: WorkoutSession,
+  blockId: Id,
+  order: number,
+  values: Pick<TestTrialValues, "value" | "outcome">,
+  now: string,
+): WorkoutSession {
+  checkTrialValue(values.value);
+
+  return withTestDraft(workout, blockId, (draft) => {
+    if (!(draft.trials ?? []).some((trial) => trial.order === order)) throw new Error("Essai introuvable");
+    return {
+      ...draft,
+      trials: draft.trials!.map((trial) => (trial.order === order ? { ...trial, ...values } : trial)),
+    };
+  }, now);
+}
+
+/** Retire un essai ; les suivants sont renumérotés. */
+export function removeTestTrial(workout: WorkoutSession, blockId: Id, order: number, now: string): WorkoutSession {
+  return withTestDraft(workout, blockId, (draft) => {
+    const trials = (draft.trials ?? []).filter((trial) => trial.order !== order);
+    if (trials.length === (draft.trials ?? []).length) throw new Error("Essai introuvable");
+    const next: TestDraft = { ...draft, trials: trials.map((trial, index) => ({ ...trial, order: index + 1 })) };
+    if (next.trials!.length === 0) delete next.trials;
+    return next;
+  }, now);
+}
+
+function checkMeasureValue(spec: TestMeasureSpec, value: number): void {
+  if (spec.input !== "entered") throw new Error("Une mesure dérivée se calcule, elle ne se saisit pas");
+  if (!Number.isFinite(value)) throw new Error("Valeur invalide");
+  if (value < 0 && spec.signed !== true) throw new Error(`${spec.label} : une valeur négative n'est pas admise`);
+}
+
+/**
+ * Valeur d'une mesure saisie ; `undefined` l'efface. Une mesure `signed`
+ * accepte le négatif (doigts-sol, D8) ; une mesure par côté se saisit
+ * avec `setTestSideValue`.
+ */
+export function setTestValue(
+  workout: WorkoutSession,
+  blockId: Id,
+  spec: TestMeasureSpec,
+  value: number | undefined,
+  now: string,
+): WorkoutSession {
+  if (spec.side) throw new Error(`${spec.label} se mesure par côté`);
+  if (value !== undefined) checkMeasureValue(spec, value);
+
+  return withTestDraft(workout, blockId, (draft) => {
+    const values = { ...(draft.values ?? {}) };
+    if (value === undefined) delete values[spec.key];
+    else values[spec.key] = value;
+    const next: TestDraft = { ...draft, values };
+    if (Object.keys(values).length === 0) delete next.values;
+    return next;
+  }, now);
+}
+
+export function setTestSideValue(
+  workout: WorkoutSession,
+  blockId: Id,
+  spec: TestMeasureSpec,
+  side: "left" | "right",
+  value: number | undefined,
+  now: string,
+): WorkoutSession {
+  if (!spec.side) throw new Error(`${spec.label} ne se mesure pas par côté`);
+  if (value !== undefined) checkMeasureValue(spec, value);
+
+  return withTestDraft(workout, blockId, (draft) => {
+    const sideValues = { ...(draft.sideValues ?? {}) };
+    const sides = { ...(sideValues[spec.key] ?? {}) };
+    if (value === undefined) delete sides[side];
+    else sides[side] = value;
+    if (sides.left === undefined && sides.right === undefined) delete sideValues[spec.key];
+    else sideValues[spec.key] = sides;
+    const next: TestDraft = { ...draft, sideValues };
+    if (Object.keys(sideValues).length === 0) delete next.sideValues;
+    return next;
+  }, now);
+}
+
+export function setTestNote(workout: WorkoutSession, blockId: Id, note: string, now: string): WorkoutSession {
+  return withTestDraft(workout, blockId, (draft) => {
+    const next: TestDraft = { ...draft };
+    const trimmed = note.trim();
+    if (trimmed) next.note = trimmed;
+    else delete next.note;
+    return next;
+  }, now);
 }

@@ -207,6 +207,8 @@ export function describeNextUp(
   const block = workout.blocks.find((item) => item.id === workout.currentBlockId);
 
   if (!block || block.kind === "note") return undefined;
+  /* La brique test a son propre écran (lot G.4) : « Ensuite » l'annonce seulement. */
+  if (block.kind === "test") return { title: "Test" };
 
   const sameBlock = block.id === rest.afterBlockId;
   const exerciseName = (id: Id) => exerciseById.get(id)?.name ?? "Exercice";

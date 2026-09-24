@@ -101,7 +101,8 @@ type Nature = "series" | "cardio" | "other";
  */
 function natureOf(block: PerformedBlock, exerciseById: Map<Id, Exercise>): Nature {
   if (block.kind === "group") return "series";
-  if (block.kind === "note") return "other";
+  /* Une brique test n'est ni une série ni du cardio d'entraînement (§ 2.3). */
+  if (block.kind === "note" || block.kind === "test") return "other";
 
   const exercise = exerciseById.get(block.exerciseId);
 
@@ -135,7 +136,7 @@ export function listSeriesModeSeries(
   const result: SeriesWithExercise[] = [];
 
   for (const block of workout.blocks) {
-    if (block.kind === "note" || block.status !== "performed") continue;
+    if (block.kind === "note" || block.kind === "test" || block.status !== "performed") continue;
 
     if (block.kind === "group") {
       for (const round of block.rounds) {

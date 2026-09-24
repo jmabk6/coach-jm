@@ -9,6 +9,7 @@ import type {
   PerformedGroupBlock,
   PerformedSeries,
   PerformedSideValue,
+  PerformedTestBlock,
   WorkoutSession,
 } from "../../../domain";
 import { defaultInstructionsFor } from "../../../domain/rules/blockInstructionRules";
@@ -20,7 +21,19 @@ import { lowOf } from "../../../domain/rules/rangeRules";
  * touche pas au temps. Fonctions pures, sans effet de bord.
  */
 
-export type ExecutableBlock = PerformedExerciseBlock | PerformedGroupBlock;
+/** Brique qui s'exécute : exercice, groupe, ou test (lot G.3). */
+export type ExecutableBlock = PerformedExerciseBlock | PerformedGroupBlock | PerformedTestBlock;
+
+/** Un test est commencé dès qu'un essai, une valeur ou un côté est saisi. */
+export function hasTestInput(block: PerformedTestBlock): boolean {
+  const draft = block.draft;
+  if (!draft) return false;
+  return (
+    (draft.trials?.length ?? 0) > 0 ||
+    Object.keys(draft.values ?? {}).length > 0 ||
+    Object.values(draft.sideValues ?? {}).some((sides) => sides.left !== undefined || sides.right !== undefined)
+  );
+}
 
 export function sortBlocks(blocks: PerformedBlock[]): PerformedBlock[] {
   return [...blocks].sort((a, b) => a.position - b.position);
@@ -75,6 +88,8 @@ export function findGroupBlock(
  * mesure porte une validation.
  */
 export function hasCompletedEntries(block: ExecutableBlock): boolean {
+  if (block.kind === "test") return hasTestInput(block);
+
   if (block.kind === "group") {
     return block.rounds.some((round) =>
       round.children.some((child) => child.completedAt !== undefined),
@@ -89,6 +104,9 @@ export function hasCompletedEntries(block: ExecutableBlock): boolean {
 }
 
 export function allEntriesCompleted(block: ExecutableBlock): boolean {
+  /* Un test ne se termine jamais tout seul : « Terminer le test ». */
+  if (block.kind === "test") return false;
+
   if (block.kind === "group") {
     return (
       block.rounds.length > 0 &&
@@ -122,6 +140,7 @@ export function allEntriesCompleted(block: ExecutableBlock): boolean {
  */
 export function isOpenEndedBlock(block: ExecutableBlock): boolean {
   if (block.kind === "group") return false;
+  if (block.kind === "test") return true;
 
   /* Une mesure simple se valide en une fois : pas de liste, pas d'ajout (§11). */
   if (!block.series && !block.cardioSteps) return false;
@@ -182,6 +201,8 @@ export function findNextExecutableBlock(
  * Première entrée non validée d'une brique : celle qui devient active.
  */
 export function firstPendingEntryId(block: ExecutableBlock): Id | undefined {
+  if (block.kind === "test") return undefined;
+
   if (block.kind === "group") {
     return block.rounds.find((round) => round.status !== "completed")?.id;
   }
@@ -238,6 +259,11 @@ export interface BlockCompletion {
  * dit d'un exercice réalisé en partie (`2 séries réalisées sur 3`).
  */
 export function summarizeBlockCompletion(block: ExecutableBlock): BlockCompletion {
+  if (block.kind === "test") {
+    const count = (block.draft?.trials?.length ?? 0) + Object.keys(block.draft?.values ?? {}).length;
+    return { completed: count, total: count, unit: "mesure" };
+  }
+
   if (block.kind === "group") {
     return {
       completed: block.rounds.filter((round) => round.status === "completed").length,

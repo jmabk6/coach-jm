@@ -408,7 +408,7 @@ export function countPlannedSeries(blocks: PerformedBlock[]): number {
   let total = 0;
 
   for (const block of blocks) {
-    if (block.kind === "note" || block.status === "skipped") continue;
+    if (block.kind === "note" || block.kind === "test" || block.status === "skipped") continue;
 
     if (block.kind === "exercise") {
       total += block.series?.length ?? 0;
@@ -731,6 +731,17 @@ export function buildWorkoutRecapLines(
         ...(groupRpes.length > 0
           ? { rpe: groupRpes.reduce((sum, value) => sum + value, 0) / groupRpes.length }
           : {}),
+      };
+    }
+
+    /* Brique test (lot G) : son résultat vit dans `testResults` (D27) ; la
+       ligne dit seulement si le test a été fait. */
+    if (block.kind === "test") {
+      return {
+        block,
+        number,
+        name: "Test",
+        subtitle: block.status === "performed" ? "Test réalisé" : block.status === "skipped" ? "Sauté" : "Non réalisé",
       };
     }
 

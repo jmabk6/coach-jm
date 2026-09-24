@@ -112,15 +112,15 @@ export interface PlannedTest {
 }
 
 /**
- * Brique de test d'une séance (§ 3.5.2). Déclarée au lot C ; elle entre
- * dans l'union `PerformedBlock` au lot G, avec son traitement par le
- * moteur — l'y ajouter avant obligerait tout le code des briques à la
- * connaître sans rien savoir en faire.
+ * Brique de test d'une séance (§ 3.5.2), dans l'union `PerformedBlock`
+ * depuis le lot G.3. Insérée au démarrage selon son placement ; jamais
+ * ajoutée en cours de séance.
  */
 export interface PerformedTestBlock {
   kind: "test";
   id: Id;
   position: number;
+  addedDuringWorkout: false;
   status: "performed" | "skipped" | "not_performed";
   protocolId: Id;
   protocolVersionId: Id;

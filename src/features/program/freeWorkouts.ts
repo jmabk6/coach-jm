@@ -20,12 +20,18 @@ export function formatFreeWorkoutSummary(
 ): string {
   const cardioNames: string[] = [];
   let exerciseCount = 0;
+  let testCount = 0;
 
   for (const block of workout.blocks) {
     if (block.kind === "note" || block.status !== "performed") continue;
 
     if (block.kind === "group") {
       exerciseCount += block.children.length;
+      continue;
+    }
+
+    if (block.kind === "test") {
+      testCount += 1;
       continue;
     }
 
@@ -40,6 +46,7 @@ export function formatFreeWorkoutSummary(
 
   const parts: string[] = [];
 
+  if (testCount > 0) parts.push(testCount === 1 ? "1 test" : `${testCount} tests`);
   if (cardioNames.length > 0) parts.push(cardioNames.join(", "));
   if (exerciseCount > 0) {
     parts.push(exerciseCount === 1 ? "1 exercice" : `${exerciseCount} exercices`);

@@ -8,6 +8,7 @@ import {
   getInProgressWorkout,
   saveWorkout,
 } from "../../db/repositories/workoutRepository";
+import { getTestProtocol } from "../../db/repositories/testRepository";
 import type {
   Id,
   WorkoutSession,
@@ -15,7 +16,7 @@ import type {
 import { assertRoutineStartable } from "../../domain/rules/sessionTemplateRules";
 import { kindForCategory } from "../../domain/rules/workoutKindRules";
 import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
-import { createWorkoutSnapshot } from "./createWorkoutSnapshot";
+import { createWorkoutSnapshot, type SnapshotTest } from "./createWorkoutSnapshot";
 
 export async function startWorkout(
   plannedSessionId: Id,
@@ -66,7 +67,20 @@ export async function startWorkout(
     );
   }
 
-  assertRoutineStartable(template);
+  /* Tests attachés (lot G.3) : la version active de chaque protocole est
+     capturée au démarrage ; un test replanifié ailleurs, ou d'un protocole
+     disparu ou en pause, n'entre pas dans la séance. */
+  const tests: SnapshotTest[] = [];
+  for (const test of plannedSession.tests ?? []) {
+    if (test.rescheduledToPlannedSessionId !== undefined) continue;
+    const protocol = await getTestProtocol(test.protocolId);
+    if (!protocol || protocol.status !== "active") continue;
+    tests.push({ test, protocolVersionId: protocol.activeVersionId });
+  }
+
+  /* Une routine vide ne démarre pas, sauf si ses tests en sont le contenu
+     (Souplesse et Tronc le lundi soir de la semaine de tests). */
+  if (tests.length === 0) assertRoutineStartable(template);
 
   /* Échelle de RPE en vigueur et versions de cadre actives, capturées au
      démarrage (v1.6, § 4.3 et § 4.5) ; l'échelle est absente seulement si
@@ -86,7 +100,7 @@ export async function startWorkout(
     startedAt: now,
     lastActionAt: now,
     activeDurationSec: 0,
-    blocks: createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById),
+    blocks: createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById, tests),
     createdAt: now,
     updatedAt: now,
   };

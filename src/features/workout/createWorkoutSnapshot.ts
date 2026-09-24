@@ -4,6 +4,9 @@ import type {
   PerformedBlock,
   PerformedExerciseBlock,
   PerformedGroupBlock,
+  PerformedTestBlock,
+  PlannedTest,
+  SessionBlock,
   SessionTemplate,
   StrengthFrameVersion,
 } from "../../domain";
@@ -184,12 +187,102 @@ function createGroupBlock(
   };
 }
 
+/**
+ * Un test attaché à l'instance démarrée (lot G.3) et la version de son
+ * protocole, capturée au démarrage comme une version de cadre.
+ */
+export interface SnapshotTest {
+  test: PlannedTest;
+  protocolVersionId: Id;
+}
+
+/**
+ * Ajustements du jour de test (§ 2.3) : moins de séries sur une brique
+ * (traction assistée : 2 au lieu de 3). La brique devient une
+ * prescription réduite : ni validation de palier, ni stagnation.
+ */
+function applyAdjustments(blocks: SessionBlock[], tests: ReadonlyArray<SnapshotTest>): SessionBlock[] {
+  const sets = new Map<Id, number>();
+  for (const { test } of tests) {
+    for (const adjustment of test.adjustments ?? []) sets.set(adjustment.blockId, adjustment.sets);
+  }
+  if (sets.size === 0) return blocks;
+
+  return blocks.map((block) => {
+    const wanted = sets.get(block.id);
+    if (wanted === undefined || block.kind !== "exercise") return block;
+    const instructions = block.instructions;
+    if (instructions.shape !== "reps" && instructions.shape !== "duration") return block;
+    return { ...block, instructions: { ...instructions, sets: wanted } };
+  });
+}
+
+function createTestBlock({ test, protocolVersionId }: SnapshotTest, replacedBlockId?: Id): PerformedTestBlock {
+  return {
+    id: `workout-block-test-${test.protocolId}`,
+    kind: "test",
+    position: 0,
+    addedDuringWorkout: false,
+    status: "not_performed",
+    protocolId: test.protocolId,
+    protocolVersionId,
+    ...(replacedBlockId !== undefined ? { replacedBlockId } : {}),
+  };
+}
+
+/**
+ * Place les briques test (conception V2 § 3.5.1) :
+ * - `replace_all` : la séance ne contient que ses tests, dans l'ordre ;
+ * - `replace_block` : le test prend la place de la brique visée ;
+ * - `after_warmup` : après la dernière brique d'échauffement, sinon en tête ;
+ * - `before_all` : en tête.
+ * Plusieurs tests en tête gardent leur ordre. Les positions sont refaites.
+ */
+function placeTests(blocks: PerformedBlock[], tests: ReadonlyArray<SnapshotTest>): PerformedBlock[] {
+  if (tests.length === 0) return blocks;
+  if (tests.some(({ test }) => test.placement === "replace_all")) {
+    return tests.map((item, position) => ({ ...createTestBlock(item), position }));
+  }
+
+  const result = [...blocks];
+  let atHead = 0;
+
+  for (const item of tests) {
+    if (item.test.placement === "replace_block") {
+      const index = result.findIndex(
+        (block) => block.kind !== "test" && block.sourceBlockId === item.test.targetBlockId,
+      );
+      if (index >= 0) {
+        result[index] = createTestBlock(item, item.test.targetBlockId);
+        continue;
+      }
+    }
+
+    if (item.test.placement !== "before_all") {
+      const lastWarmup = result.reduce(
+        (last, block, index) => (block.kind === "exercise" && block.role === "warmup" ? index : last),
+        -1,
+      );
+      if (lastWarmup >= 0) {
+        result.splice(lastWarmup + 1, 0, createTestBlock(item));
+        continue;
+      }
+    }
+
+    result.splice(atHead, 0, createTestBlock(item));
+    atHead += 1;
+  }
+
+  return result.map((block, position) => ({ ...block, position }));
+}
+
 export function createWorkoutSnapshot(
   template: SessionTemplate,
   frameVersionByExercise: FrameVersionByExercise = NO_FRAMES,
   versionById: FrameVersionById = NO_VERSIONS,
+  tests: ReadonlyArray<SnapshotTest> = [],
 ): PerformedBlock[] {
-  return template.blocks
+  const blocks = applyAdjustments(template.blocks, tests)
     .slice()
     .sort((a, b) => a.position - b.position)
     .map((block): PerformedBlock => {
@@ -214,4 +307,6 @@ export function createWorkoutSnapshot(
           return createGroupBlock(block, frameVersionByExercise);
       }
     });
+
+  return placeTests(blocks, tests);
 }
