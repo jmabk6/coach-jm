@@ -49,7 +49,8 @@ export const TEST_PROTOCOLS_V1: TestProtocolContent[] = [
         "Premier essai à 40 kg d'assistance.",
         "Puis 2 à 3 kg d'aide en moins à chaque essai.",
         "3 min de repos entre deux essais.",
-        "Jusqu'au premier échec.",
+        "Essai réussi = menton au-dessus de la barre, bras tendus au départ, sans élan.",
+        "Jusqu'au premier échec, ou jusqu'à un essai réussi au réglage le plus bas de la machine.",
         "Toujours la même machine.",
       ],
       settings: { warmupAssistKg: 55, warmupSets: 2, firstTrialKg: 40, stepMinKg: 2, stepMaxKg: 3, restSec: 180 },
@@ -79,6 +80,7 @@ export const TEST_PROTOCOLS_V1: TestProtocolContent[] = [
       kind: "measures",
       instructions: [
         "20 min de tapis à 5 km/h, pente 8 %.",
+        "Sans tenir les barres du tapis. Toujours le même appareil de mesure de la FC.",
         "Relever la fréquence cardiaque à la fin de chaque minute, de la 16e à la 20e.",
         "Les relevés à 5, 10 et 15 min, la FC max, la récupération à 1 min et le RPE final sont facultatifs.",
       ],
@@ -102,8 +104,9 @@ export const TEST_PROTOCOLS_V1: TestProtocolContent[] = [
       kind: "measures",
       instructions: [
         "6 sprints de 12 s sur le vélo, 48 s de récupération entre deux.",
+        "Effort maximal à chaque sprint.",
         "Même vélo, même résistance à chaque test.",
-        "Puis la chaise contre le mur à 60°, durée maximale.",
+        "Puis la chaise contre le mur, durée maximale : dos plaqué au mur, genoux fléchis d'environ 60°, moins bas que la position assise.",
       ],
       /* `unit` (watts ou mètres) n'est pas fixée : elle l'est au premier test (D17). */
       settings: { sprintCount: 6, sprintSec: 12, recoverySec: 48, chairAngleDeg: 60 },
@@ -125,9 +128,9 @@ export const TEST_PROTOCOLS_V1: TestProtocolContent[] = [
       instructions: [
         "État : à froid, avant tout échauffement.",
         "Position et méthode : toujours les mêmes, au mètre ruban.",
-        "Doigts-sol : jambes tendues, 0 = contact ; positif = au-dessus du sol, négatif = au-delà.",
+        "Doigts-sol : debout sur une marche, pour mesurer au-delà du niveau des pieds ; jambes tendues ; 0 = niveau des pieds, positif = au-dessus, négatif = au-delà.",
         "Mains dans le dos (Apley) : écart entre les doigts, côté gauche et côté droit.",
-        "Papillon : distance genou-sol.",
+        "Papillon : assis, plantes des pieds jointes, talons près du bassin ; distance genou-sol.",
         "Consigne d'arrêt : à la première tension franche, sans à-coup.",
       ],
       measures: [
@@ -144,7 +147,12 @@ export const TEST_PROTOCOLS_V1: TestProtocolContent[] = [
     status: "active",
     version: {
       kind: "measures",
-      instructions: ["Le matin, avant le petit-déjeuner.", "Toujours le même mètre ruban."],
+      instructions: [
+        "Le matin, avant le petit-déjeuner.",
+        "Toujours le même mètre ruban.",
+        "Épaules : au plus large, bras relâchés le long du corps.",
+        "Taille : au niveau du nombril, en fin d'expiration, sans rentrer le ventre.",
+      ],
       measures: [
         entered("epaules_cm", "Tour d'épaules", "cm"),
         entered("taille_cm", "Tour de taille", "cm"),
