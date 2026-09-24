@@ -13,6 +13,8 @@ export const ROUTES = {
   planning: "/planning",
   weeklyProgram: "/planning/programmation",
   goals: "/objectifs",
+  /** Un objectif (M5 à M7, lot H.4) ; `:key` est la clé de l'objectif. */
+  goal: "/objectifs/:key",
   sessions: "/seances",
   workoutLive: "/seance-en-cours",
   quickExercise: "/seance-en-cours/exercice-rapide",
@@ -62,6 +64,7 @@ export const paths = {
   home: () => ROUTES.home,
 
   goals: () => ROUTES.goals,
+  goal: (key: string, query?: { onglet?: "exercices" | "conseils" }) => withQuery(`${ROUTES.goals}/${key}`, query),
 
   planning: (query?: { date?: string; view?: "mois"; month?: string }) => withQuery(ROUTES.planning, query),
   weeklyProgram: () => ROUTES.weeklyProgram,

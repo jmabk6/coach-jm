@@ -23,7 +23,7 @@ export interface GoalPoint {
 }
 
 /** Valeur d'une mesure dans un résultat : pour une mesure par côté, le côté le moins bon. */
-function measureValue(result: Pick<TestResult, "measures">, key: string, direction: GoalSegment["direction"]): number | undefined {
+export function measureValue(result: Pick<TestResult, "measures">, key: string, direction: GoalSegment["direction"]): number | undefined {
   const found = result.measures.filter((measure) => measure.key === key);
   if (found.length === 0) return undefined;
   if (found.length === 1) return found[0]!.value;

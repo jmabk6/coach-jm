@@ -70,28 +70,31 @@ function GoalRow({ row }: { row: GoalListRow }) {
   const tone = goalTone(goal);
 
   return (
-    <li className="goal-row" data-goal={goal.key}>
-      <span className={`goal-row__number goal-row__number--${tone}`}>{number}</span>
-      <span className="goal-row__icon">
-        <PictogramTile Icon={goalIcon(goal)} label={goal.title} tone={tone} size={26} />
-      </span>
-      <span className="goal-row__body">
-        <span className="goal-row__head">
-          <strong className="goal-row__title">{goal.title}</strong>
-          {badge && <span className={`goal-row__badge goal-row__badge--${badge.kind}`}>{badge.label}</span>}
+    <li>
+      <Link to={paths.goal(goal.key)} className="goal-row" data-goal={goal.key}>
+        <span className={`goal-row__number goal-row__number--${tone}`}>{number}</span>
+        <span className="goal-row__icon">
+          <PictogramTile Icon={goalIcon(goal)} label={goal.title} tone={tone} size={26} />
         </span>
-        <span className="goal-row__subtitle">{text.subtitle}</span>
-        <span className="goal-row__bar" role="progressbar" aria-label={`Progression ${goal.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(text.bar)}>
-          <span className="goal-row__fill" style={{ width: `${text.bar}%` }} />
-        </span>
-        <span className="goal-row__foot">
-          <span className="goal-row__value">
-            {text.value}
-            {text.reached && <span className="goal-row__reached"> · {text.reached}</span>}
+        <span className="goal-row__body">
+          <span className="goal-row__head">
+            <strong className="goal-row__title">{goal.title}</strong>
+            {badge && <span className={`goal-row__badge goal-row__badge--${badge.kind}`}>{badge.label}</span>}
           </span>
-          <span className="goal-row__target">{text.target}</span>
+          <span className="goal-row__subtitle">{text.subtitle}</span>
+          <span className="goal-row__bar" role="progressbar" aria-label={`Progression ${goal.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(text.bar)}>
+            <span className="goal-row__fill" style={{ width: `${text.bar}%` }} />
+          </span>
+          <span className="goal-row__foot">
+            <span className="goal-row__value">
+              {text.value}
+              {text.reached && <span className="goal-row__reached"> · {text.reached}</span>}
+            </span>
+            <span className="goal-row__target">{text.target}</span>
+          </span>
         </span>
-      </span>
+        <ChevronRight className="goal-row__chevron" size={18} strokeWidth={2} aria-hidden="true" />
+      </Link>
     </li>
   );
 }

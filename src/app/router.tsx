@@ -3,6 +3,7 @@ import { AppShell } from "./AppShell";
 import { ROUTES, routeSegment } from "./paths";
 import { legacyRedirectRoutes } from "./legacyRedirects";
 import { GoalsScreen } from "../features/goals/GoalsScreen";
+import { GoalDetailScreen } from "../features/goals/GoalDetailScreen";
 import { ExercisesScreen } from "../features/exercises/ExercisesScreen";
 import { ExerciseDetailScreen } from "../features/exercises/ExerciseDetailScreen";
 import { ExerciseCreateScreen } from "../features/exercises/ExerciseCreateScreen";
@@ -50,6 +51,7 @@ export const router = createHashRouter([
       { path: routeSegment(ROUTES.history), element: <HistoryScreen /> },
       { path: `${routeSegment(ROUTES.progression)}/cardio/:exerciseId`, element: <CardioDetailScreen /> },
       { path: routeSegment(ROUTES.goals), element: <GoalsScreen /> },
+      { path: routeSegment(ROUTES.goal), element: <GoalDetailScreen /> },
       { path: routeSegment(ROUTES.plus), element: <PlusScreen /> },
       { path: routeSegment(ROUTES.plusTests), element: <TestProtocolsScreen /> },
       { path: routeSegment(ROUTES.sessions), element: <SessionsScreen /> },

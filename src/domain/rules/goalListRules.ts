@@ -1,4 +1,4 @@
-import { addDays, format, parseISO } from "date-fns";
+import { addDays, differenceInCalendarMonths, format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Goal, GoalSegment, Id, PlannedSession, TestCycleSettings, TestResult, TestScheduleEntry } from "../models";
 import type { SegmentEvaluation } from "./goalRules";
@@ -178,4 +178,50 @@ export function goalRowText(
       };
     }
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* M5 — cartes Aujourd'hui, Statut, Échéance (lot H.4)                        */
+/* -------------------------------------------------------------------------- */
+
+export interface GoalCardText {
+  value: string;
+  caption: string;
+}
+
+const STATUS_LABELS = { ahead: "En avance", on_track: "Dans les temps", behind: "En retard" } as const;
+
+function formatWeeks(weeks: number): string {
+  return `${String(Math.abs(weeks)).replace(".", ",")} sem.`;
+}
+
+/**
+ * Statut (§ 5.1) : « — » tant qu'il n'y a ni mesure, ni résultat, ni cible
+ * avec échéance ; un segment intermédiaire atteint dit « Palier atteint »,
+ * jamais « Objectif atteint » (§ 5.1 bis).
+ */
+export function goalStatusCard(evaluation: SegmentEvaluation, nextTest: string | undefined): GoalCardText {
+  switch (evaluation.kind) {
+    case "no_measure":
+      return { value: "—", caption: "Indicateur à choisir après 2 tests" };
+    case "no_result":
+      return { value: "—", caption: nextTest ? `Premier test le ${format(parseISO(nextTest), "d MMMM yyyy", { locale: fr })}` : "Aucun test prévu" };
+    case "untracked":
+      return { value: "—", caption: "Cible ou échéance à définir" };
+    case "reached":
+      return { value: evaluation.role === "final" ? "Objectif atteint" : "Palier atteint", caption: "Cible tenue au dernier test" };
+    case "tracking":
+      return {
+        value: evaluation.weeks !== undefined && evaluation.status !== "on_track" ? `${STATUS_LABELS[evaluation.status]} de ${formatWeeks(evaluation.weeks)}` : STATUS_LABELS[evaluation.status],
+        caption: `${Math.round(evaluation.percent)} % du parcours`,
+      };
+  }
+}
+
+/** Échéance : la date et les mois restants, ou « À définir ». */
+export function goalDueCard(dueDate: string | undefined, today: string): GoalCardText {
+  if (!dueDate) return { value: "À définir", caption: "Pas d'échéance" };
+  const months = differenceInCalendarMonths(parseISO(dueDate), parseISO(today));
+  const caption = dueDate < today ? "Échéance passée" : months <= 0 ? "Ce mois-ci" : `${months} mois restant${months > 1 ? "s" : ""}`;
+  return { value: format(parseISO(dueDate), "d MMMM yyyy", { locale: fr }), caption };
 }

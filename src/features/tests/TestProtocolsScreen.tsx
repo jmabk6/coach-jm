@@ -34,7 +34,9 @@ function today(): string {
  */
 export function TestProtocolsScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const entryFor = searchParams.get("saisie");
+  const returnTo = searchParams.get("retour")?.startsWith("/objectifs/") ? searchParams.get("retour")! : undefined;
   const [data, setData] = useState<Loaded>();
   const [counter, setCounter] = useState(0);
   const [message, setMessage] = useState<string>();
@@ -64,11 +66,13 @@ export function TestProtocolsScreen() {
       <ManualEntry
         protocol={entryProtocol}
         onDone={(saved) => {
+          /* Saisie ouverte depuis un objectif (M5) : retour à sa page. */
+          if (returnTo) return navigate(returnTo, { replace: true });
           setMessage(`${entryProtocol.name} du ${formatFullDate(saved.date)} enregistré.`);
           setCounter((value) => value + 1);
           setSearchParams(new URLSearchParams(), { replace: true });
         }}
-        onCancel={() => setSearchParams(new URLSearchParams(), { replace: true })}
+        onCancel={() => (returnTo ? navigate(returnTo, { replace: true }) : setSearchParams(new URLSearchParams(), { replace: true }))}
       />
     );
   }

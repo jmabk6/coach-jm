@@ -13,6 +13,7 @@ describe("chemins de l'application", () => {
       planning: "/planning",
       weeklyProgram: "/planning/programmation",
       goals: "/objectifs",
+      goal: "/objectifs/:key",
       sessions: "/seances",
       workoutLive: "/seance-en-cours",
       quickExercise: "/seance-en-cours/exercice-rapide",
