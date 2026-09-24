@@ -60,7 +60,8 @@ export function FrameForm({
   );
   const [rpeTarget, setRpeTarget] = useState(text(initial?.rpeTarget ?? (initial ? undefined : duration ? undefined : 8)));
   const [rest, setRest] = useState(text(initial?.restSec ?? 90));
-  const [increment, setIncrement] = useState(text(initial?.increment.value ?? (duration ? 5 : 2.5)));
+  /* Cran facultatif (D18) : une version sans cran reste sans cran à l'édition. */
+  const [increment, setIncrement] = useState(text(initial ? initial.increment?.value : duration ? 5 : 2.5));
   const [barWeight, setBarWeight] = useState(text(initial?.barWeightKg));
   const [start, setStart] = useState(
     askStartingLoad && proposedStart && proposedStart.unit === "kg" ? text(proposedStart.value) : "",
@@ -71,8 +72,10 @@ export function FrameForm({
       progressionType: type,
       workSets: parse(workSets) ?? 0,
       restSec: parse(rest) ?? 0,
-      increment: { unit: duration ? "sec" : "kg", value: parse(increment) ?? 0 },
     };
+
+    const incrementValue = parse(increment);
+    if (incrementValue !== undefined) input.increment = { unit: duration ? "sec" : "kg", value: incrementValue };
 
     if (duration) {
       const parsed = parse(targetDuration);
@@ -153,7 +156,8 @@ export function FrameForm({
 
         <label className="frame-form__field">
           <span>{duration ? "Incrément (s)" : "Incrément (kg, total)"}</span>
-          <input type="text" inputMode="decimal" value={increment} onChange={(event) => setIncrement(event.target.value)} />
+          {/* Facultatif (D18) : vide, aucune hausse n'est proposée. */}
+          <input type="text" inputMode="decimal" placeholder="facultatif" value={increment} onChange={(event) => setIncrement(event.target.value)} />
         </label>
 
         {!duration && (

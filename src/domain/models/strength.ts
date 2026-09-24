@@ -65,7 +65,13 @@ export interface StrengthFrameVersion {
   /** Facultatif sur `duree_croissante`. */
   rpeTarget?: number;
   restSec: number;
-  increment: { unit: StrengthUnit; value: number };
+  /**
+   * Cran de progression (lot D.6, D18) : facultatif. Absent — traction
+   * assistée tant que le cran de la machine n'est pas saisi —, aucune
+   * hausse n'est proposée. Le renseigner plus tard ne crée pas de
+   * version (N4) : ce n'est pas un paramètre figé.
+   */
+  increment?: { unit: StrengthUnit; value: number };
   /**
    * Poids de la barre pour une saisie par côté (v1.6, décision 4). Aide
    * à la saisie, hors figeage : les séries gardent leur propre `tareKg`.

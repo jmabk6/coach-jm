@@ -254,7 +254,9 @@ export function FrameSection({ exercise, completedWorkouts }: FrameSectionProps)
   const summary = [
     formatFrameVersionSummary(current),
     `repos ${formatSeconds(current.restSec)}`,
-    `${current.progressionType === "assistance_decroissante" ? "−" : "+"}${formatStrengthValue(current.increment.value, current.increment.unit)}`,
+    current.increment
+      ? `${current.progressionType === "assistance_decroissante" ? "−" : "+"}${formatStrengthValue(current.increment.value, current.increment.unit)}`
+      : "cran à saisir",
     ...(current.barWeightKg !== undefined ? [`barre ${formatStrengthValue(current.barWeightKg, "kg")}`] : []),
   ].join(" · ");
 

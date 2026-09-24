@@ -316,8 +316,18 @@ export type FrameParameters = Pick<
  * Les paramètres au sens du figeage (§ 4.2) : les changer après la
  * première séance officielle crée la version suivante. `barWeightKg` et
  * `currentTarget` n'en font pas partie (v1.6).
+ *
+ * Le cran (`increment`, lot D.6) : le **renseigner** quand il était absent
+ * n'est pas un changement (N4, cran de la machine saisi après la première
+ * séance) ; le modifier ou le retirer en est un.
  */
 export function frameParametersChanged(before: FrameParameters, after: FrameParameters): boolean {
+  const incrementChanged =
+    before.increment !== undefined &&
+    (after.increment === undefined ||
+      before.increment.unit !== after.increment.unit ||
+      before.increment.value !== after.increment.value);
+
   return (
     before.progressionType !== after.progressionType ||
     before.workSets !== after.workSets ||
@@ -326,8 +336,7 @@ export function frameParametersChanged(before: FrameParameters, after: FramePara
     before.targetDurationSec !== after.targetDurationSec ||
     before.rpeTarget !== after.rpeTarget ||
     before.restSec !== after.restSec ||
-    before.increment.unit !== after.increment.unit ||
-    before.increment.value !== after.increment.value
+    incrementChanged
   );
 }
 
@@ -477,9 +486,12 @@ export function loadToWork(
 
 /**
  * Le cran suivant d'une valeur, selon le type : + incrément pour la
- * charge et la durée, − incrément pour l'assistance (borné à 0).
+ * charge et la durée, − incrément pour l'assistance (borné à 0). Sans
+ * incrément (D18 : cran de la machine pas encore saisi), aucun cran.
  */
-export function nextStep(version: Pick<StrengthFrameVersion, "progressionType" | "increment">, value: number): number {
+export function nextStep(version: Pick<StrengthFrameVersion, "progressionType" | "increment">, value: number): number | undefined {
+  if (version.increment === undefined) return undefined;
+
   if (version.progressionType === "assistance_decroissante") {
     return Math.max(0, Math.round((value - version.increment.value) * 100) / 100);
   }
@@ -553,9 +565,13 @@ export function proposeRaise(
 
   if (laterSession) return undefined;
 
+  /* Sans incrément, aucune hausse n'est proposée (D18). */
+  const value = nextStep(version, last.value);
+  if (value === undefined) return undefined;
+
   return {
     milestone: last,
-    value: nextStep(version, last.value),
+    value,
     unit: last.unit,
     ...(version.progressionType !== "duree_croissante" && version.repRange ? { repFloor: version.repRange.min } : {}),
   };

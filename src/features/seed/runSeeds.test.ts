@@ -52,19 +52,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "programV1", "routines"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "programV1", "routines", "frames"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "programV1", "routines"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "programV1", "routines", "frames"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
     expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
     const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
-    expect(settings.install).toEqual({ settingsDefaults: iso, programV1: iso, routines: iso });
+    expect(settings.install).toEqual({ settingsDefaults: iso, programV1: iso, routines: iso, frames: iso });
     expect(await db.exercises.count()).toBeGreaterThan(0);
     expect(await db.rpeScaleVersions.count()).toBe(1);
 
@@ -159,7 +159,14 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     /* Lots C et D : réglages, place des tests, modèles V1 et routines ajoutés ; rien d'existant n'est réécrit. */
     const settingsKeys = Object.keys(await settingsByKey()).sort();
     expect(settingsKeys).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
-    const untouched = ["workouts", "plannedSessions", "weightEntries", "strengthFrames", "strengthFrameVersions", "strengthMilestones", "goals"];
+    const untouched = ["workouts", "plannedSessions", "weightEntries", "strengthMilestones", "goals"];
+    /* Lot D.6 : les cadres du fichier restent identiques, ceux du programme s'ajoutent (T-21). */
+    for (const store of ["strengthFrames", "strengthFrameVersions"]) {
+      const seededById = new Map((seeded.stores[store] as Array<{ id: string }>).map((item) => [item.id, item]));
+      for (const item of (file.stores[store] ?? []) as Array<{ id: string }>) {
+        expect(canonicalStringify(seededById.get(item.id)), `${store} ${item.id}`).toBe(canonicalStringify(item));
+      }
+    }
     const fileTemplates = (file.stores.sessionTemplates ?? []) as Array<{ id: string }>;
     const seededTemplates = seeded.stores.sessionTemplates as Array<{ id: string }>;
     for (const template of fileTemplates) {

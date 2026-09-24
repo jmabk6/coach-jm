@@ -48,8 +48,10 @@ function normalizeInput(input: FrameVersionInput): FrameVersionInput {
     progressionType: input.progressionType,
     workSets: input.workSets,
     restSec: input.restSec,
-    increment: { unit: unitOf(input), value: input.increment.value },
   };
+
+  /* Cran facultatif (D18) : absent, aucune hausse n'est proposée. */
+  if (input.increment !== undefined) clean.increment = { unit: unitOf(input), value: input.increment.value };
 
   if (!duration && input.repRange) clean.repRange = { ...input.repRange };
   if (duration && input.targetDurationSec !== undefined) clean.targetDurationSec = input.targetDurationSec;
@@ -82,7 +84,7 @@ export function assertFrameInput(exercise: Exercise, input: FrameVersionInput): 
     throw new Error("La cible de RPE est comprise entre 1 et 10");
   }
   if (input.restSec < 0) throw new Error("Le repos ne peut pas être négatif");
-  if (input.increment.value <= 0) throw new Error("L'incrément doit être positif");
+  if (input.increment !== undefined && input.increment.value <= 0) throw new Error("L'incrément doit être positif");
   if (input.barWeightKg !== undefined && input.barWeightKg < 0) {
     throw new Error("Le poids de la barre ne peut pas être négatif");
   }
