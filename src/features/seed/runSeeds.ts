@@ -3,6 +3,7 @@ import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
 import { seedProgramV1, seedRoutines } from "../program/seedProgramV1";
 import { seedProgramFrames } from "../strength/seedProgramFrames";
 import { seedRpeScale } from "../strength/seedRpeScale";
+import { seedGoals } from "../goals/seedGoals";
 import { seedTestProtocols } from "../tests/seedTestProtocols";
 import { seedSettingsDefaults } from "./seedSettingsDefaults";
 
@@ -16,7 +17,7 @@ import { seedSettingsDefaults } from "./seedSettingsDefaults";
  * s'exécutent pas, et l'application démarre quand même ; il sera retenté
  * au lancement suivant.
  *
- * Le seed 8 (objectifs, lot H) s'ajoute ici avec son lot.
+ * Le seed 8 (objectifs, lot H) vient en dernier : il lit exercices et protocoles.
  */
 
 export interface SeedStep {
@@ -33,6 +34,7 @@ export const SEEDS: SeedStep[] = [
   { name: "programV1", dependsOn: ["exerciseCatalog"], run: () => seedProgramV1() },
   { name: "routines", run: () => seedRoutines() },
   { name: "frames", dependsOn: ["exerciseCatalog", "programV1"], run: () => seedProgramFrames() },
+  { name: "goals", dependsOn: ["exerciseCatalog", "testProtocols"], run: () => seedGoals() },
 ];
 
 export interface SeedReport {
