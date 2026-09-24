@@ -10,7 +10,11 @@ import {
   Plus,
 } from "lucide-react";
 import { addDays, addMonths, parseISO } from "date-fns";
-import type { Id, PlannedSession, SessionBlock, SessionTemplate, WorkoutSession } from "../../domain";
+import type { Id, PlannedSession, SessionCategory, SessionTemplate, WorkoutSession } from "../../domain";
+import { dayBlockLabel } from "./dayBlockLabel";
+import { categoryForWorkout } from "./freeWorkouts";
+import { SessionCategoryIcon } from "../sessions/sessionCategory";
+import { categoryClassName } from "../sessions/sessionCategoryClass";
 import { estimateSessionTemplateDurationSec } from "../../domain/rules/sessionTemplateRules";
 import { summarizeMonth } from "./monthSummary";
 import {
@@ -732,12 +736,20 @@ function MonthView({
                   {Number(date.slice(8, 10))}
                 </span>
                 <span className="program-month__markers">
-                  {sessions.map((entry) => (
-                    <span
-                      key={entryKey(entry)}
-                      className={`program-marker program-marker--${entryStatus(entry)}`}
-                    />
-                  ))}
+                  {sessions.map((entry) => {
+                    const category = entryCategory(entry, data);
+                    /* M3 : l'icône de la catégorie, le statut dans la forme de la pastille. */
+                    return (
+                      <span
+                        key={entryKey(entry)}
+                        className={`program-chip program-chip--${entryStatus(entry)} ${
+                          category ? categoryClassName("program-chip", category) : ""
+                        }`}
+                      >
+                        {category && <SessionCategoryIcon category={category} size={12} />}
+                      </span>
+                    );
+                  })}
                 </span>
               </button>
             );
@@ -748,7 +760,7 @@ function MonthView({
       <ul className="program-legend" aria-label="Légende">
         {legend.map((item) => (
           <li key={item.status}>
-            <span className={`program-marker program-marker--${item.status}`} />
+            <span className={`program-chip program-chip--${item.status} program-chip--legend`} />
             {item.label}
           </li>
         ))}
@@ -795,10 +807,10 @@ function isVisibleInMonth(entry: ProgramEntry, today: string): boolean {
   return entry.kind === "free" || entry.session.status === "done";
 }
 
-function blockName(block: SessionBlock, data: ProgramData, index: number): string {
-  if (block.kind === "exercise") return data.exerciseById.get(block.exerciseId)?.name ?? "Exercice";
-  if (block.kind === "group") return block.name || `Groupe ${index + 1}`;
-  return "Note";
+/** Catégorie d'une entrée : celle du modèle, sinon la nature réelle de la séance libre. */
+function entryCategory(entry: ProgramEntry, data: ProgramData): SessionCategory | undefined {
+  if (entry.kind === "free") return categoryForWorkout(entry.workout, undefined, data.exerciseById);
+  return data.templateById.get(entry.session.sessionTemplateId)?.category;
 }
 
 /**
@@ -830,7 +842,7 @@ function DayCard({ entry, data }: { entry: ProgramEntry; data: ProgramData }) {
           {blocks.map((block, index) => (
             <li key={block.id}>
               <span className="program-day-card__number">{index + 1}</span>
-              <span className="program-day-card__name">{blockName(block, data, index)}</span>
+              <span className="program-day-card__name">{dayBlockLabel(block, data.exerciseById, index)}</span>
               <span className="program-day-card__duration">
                 ≈ {Math.max(1, Math.round(estimateSessionTemplateDurationSec([block]) / 60))} min
               </span>

@@ -76,6 +76,15 @@ describe("Planning Mois", () => {
 
     expect(cell(/^dimanche 20 septembre 2026, 1 séance$/i)).toBeTruthy();
     expect(cell(/^jeudi 10 septembre 2026, 1 séance$/i)).toBeTruthy();
+    /* Pastille : icône de la catégorie, statut dans sa forme (F.3 bis). */
+    expect(cell(/^dimanche 20 septembre 2026/i).querySelector(".program-chip")?.className).toMatch(
+      /program-chip--done program-chip--musculation/,
+    );
+    expect(cell(/^jeudi 24 septembre 2026/i).querySelector(".program-chip")?.className).toMatch(/program-chip--today/);
+    expect(cell(/^samedi 26 septembre 2026/i).querySelector(".program-chip")?.className).toMatch(
+      /program-chip--upcoming program-chip--cardio/,
+    );
+    expect(cell(/^samedi 26 septembre 2026/i).querySelector(".program-chip svg")).toBeTruthy();
     /* Mardi 22 : planifiée, non réalisée — le passé ne la montre pas. */
     expect(cell(/^mardi 22 septembre 2026$/i)).toBeTruthy();
     expect(cell(/^jeudi 24 septembre 2026, 1 séance$/i)).toBeTruthy();
@@ -89,7 +98,7 @@ describe("Planning Mois", () => {
 
     const blocks = screen.getByRole("list", { name: "Blocs de la séance" });
     expect(within(blocks).getAllByRole("listitem")).toHaveLength(1);
-    expect(within(blocks).getByText(/Tapis/)).toBeTruthy();
+    expect(blocks.querySelector(".program-day-card__name")?.textContent).toBe("Tapis de course · 3 paliers · 55 min · 4,5 à 5 km/h · 0 à 8 %");
     expect(within(blocks).getByText(/≈ \d+ min/)).toBeTruthy();
   });
 

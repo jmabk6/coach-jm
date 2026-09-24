@@ -929,3 +929,75 @@
 .program-summary__history {
   margin-top: 10px;
 }
+
+/* Grille du Mois (lot F.3 bis, M3) : une pastille par séance, icône de
+   la catégorie ; le statut se lit dans la forme de la pastille. */
+.program-chip {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  box-sizing: border-box;
+  background: #eef1f5;
+  color: #6b7280;
+}
+
+.program-chip--musculation {
+  background: #efe9ff;
+  color: #6b3fd6;
+}
+
+.program-chip--cardio {
+  background: #e6f6ea;
+  color: #1f8a3b;
+}
+
+.program-chip--mobilite {
+  background: #fff0e0;
+  color: #d9740e;
+}
+
+.program-chip--bilan {
+  background: #e8f1f8;
+  color: #2a6f97;
+}
+
+.program-chip--routine {
+  background: #efeafb;
+  color: #5b3fa8;
+}
+
+/* Faite : pastille pleine, liseré de sa couleur. */
+.program-chip--done {
+  border-color: currentColor;
+}
+
+/* À venir : estompée, sans liseré. */
+.program-chip--upcoming {
+  opacity: 0.55;
+}
+
+/* Aujourd'hui : liseré accent. */
+.program-chip--today {
+  border-color: var(--color-accent, #2f6fed);
+}
+
+/* En cours : liseré accent épais. */
+.program-chip--in_progress {
+  border: 2.5px solid var(--color-accent, #2f6fed);
+}
+
+/* Sautée : liseré pointillé, estompée. */
+.program-chip--skipped {
+  border: 1.5px dashed currentColor;
+  opacity: 0.55;
+}
+
+.program-chip--legend {
+  width: 14px;
+  height: 14px;
+  background: #cfd5dd;
+  color: #4b5563;
+}
