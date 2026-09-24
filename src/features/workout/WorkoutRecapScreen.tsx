@@ -40,7 +40,7 @@ import type {
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getAllGoals } from "../../db/repositories/goalRepository";
 import { getPlannedSessionsBetween } from "../../db/repositories/programRepository";
-import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
+import { getAllSessionTemplates, getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
 import { getCompletedWorkouts, getWorkout } from "../../db/repositories/workoutRepository";
 import { formatFullDate, formatLocalDate } from "../../domain/rules/programRules";
 import { calculateSessionTemplateDuration } from "../../domain/rules/sessionTemplateRules";
@@ -184,7 +184,7 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
       }
 
       const pending = isAwaitingConfirmation(workout);
-      const [template, completed, frames, goals, ahead] = await Promise.all([
+      const [template, completed, frames, goals, ahead, templates] = await Promise.all([
         workout.sessionTemplateId
           ? getSessionTemplate(workout.sessionTemplateId)
           : Promise.resolve(undefined),
@@ -194,6 +194,7 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
         pending
           ? getPlannedSessionsBetween(shiftDate(workout.date, 1), shiftDate(workout.date, NEXT_SESSION_HORIZON_DAYS))
           : Promise.resolve([]),
+        getAllSessionTemplates(),
       ]);
 
       const nextPlanned = listNextPlannedSessions(ahead, workout.date, 1)[0];
@@ -202,7 +203,10 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
       if (cancelled) return;
 
       const exerciseById = new Map(exercises.map((exercise) => [exercise.id, exercise]));
-      const { records, references } = computeWorkoutRecords(workout, completed, exerciseById);
+      const routineTemplateIds = new Set(
+        templates.filter((item) => item.category === "Routine").map((item) => item.id),
+      );
+      const { records, references } = computeWorkoutRecords(workout, completed, exerciseById, routineTemplateIds);
 
       setFeeling(workout.feeling);
       setNote(workout.note ?? "");

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import type { Exercise, PerformedExerciseBlock, PerformedSeries, WorkoutSession } from "../../domain";
+import type { Exercise, PerformedExerciseBlock, PerformedSeries, SessionTemplate, WorkoutSession } from "../../domain";
 import { getLoadKg } from "../../domain/rules/workoutRules";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { parseBackup } from "../backup/restoreBackup";
@@ -50,22 +50,16 @@ describe("cas réel du 15/09 (séances importées de septembre)", () => {
     ]);
   });
 
-  it("durées : strictement au-dessus du maximum ; par côté, le côté le plus faible ; égalité : pas de record", () => {
+  it("durées : strictement au-dessus du maximum ; égalité : pas de record ; étirements exclus", () => {
     const imported = buildImportedWorkouts();
     const on = (id: string) => computeWorkoutRecords(imported.find((item) => item.id === id)!, imported, byId);
-    const weakest = (series: PerformedSeries | undefined) =>
-      series?.durationSec ?? Math.min(...(series?.sideValues ?? []).map((side) => side.durationSec ?? Infinity));
-    const summary = (id: string) => on(id).records.map((record) => [record.exerciseId, weakest(record.series), weakest(record.previous)]);
+    const summary = (id: string) => on(id).records.map((record) => [record.exerciseId, record.series.durationSec, record.previous?.durationSec]);
 
-    /* CT § 5.6 : les étirements mesurés en durée entrent dans la règle (catégorie Mobilité). */
-    expect(summary("import-2026-09-09")).toEqual([
-      ["planche", 60, 50],
-      ["mobilite-flechisseur-hanche", 40, 30],
-      ["mobilite-ischio-jambiers", 40, 30],
-      ["import-position-enfant", 60, 30],
-    ]);
+    /* 09/09 : planche 60 s > 50 s ; les étirements (Mobilité), même plus longs, ne sont pas des records. */
+    expect(summary("import-2026-09-09")).toEqual([["planche", 60, 50]]);
+    expect(on("import-2026-09-09").references).toEqual(["dead-bug"]);
     /* 16/09 : planche 60 s = maximum antérieur, pas de record. */
-    expect(summary("import-2026-09-16")).toEqual([["mobilite-flechisseur-hanche", 45, 40]]);
+    expect(summary("import-2026-09-16")).toEqual([]);
   });
 });
 
@@ -153,6 +147,32 @@ describe("règles", () => {
   });
 });
 
+describe("ni Mobilité ni Routine (décision du 24/09)", () => {
+  const stretch = (id: string, date: string, durationSec: number) =>
+    workout(id, date, [{ exerciseId: "import-position-enfant", series: [s({ durationSec })] }]);
+
+  it("un étirement (Mobilité) : ni record, ni référence", () => {
+    const before = stretch("w1", "2026-09-20", 30);
+    const longer = stretch("w2", "2026-09-22", 60);
+    expect(computeWorkoutRecords(before, [before], byId)).toEqual({ records: [], references: [] });
+    expect(computeWorkoutRecords(longer, [before, longer], byId)).toEqual({ records: [], references: [] });
+  });
+
+  it("une séance Routine : ni record, ni place dans l'historique", () => {
+    const routines = new Set(["v1-routine-a"]);
+    const plank = (id: string, date: string, durationSec: number, templateId?: string): WorkoutSession => ({
+      ...workout(id, date, [{ exerciseId: "planche", series: [s({ durationSec })] }]),
+      ...(templateId ? { sessionTemplateId: templateId } : {}),
+    });
+    const evening = plank("w1", "2026-09-20", 90, "v1-routine-a");
+    const muscu = plank("w2", "2026-09-22", 45, "v1-muscu-c");
+
+    expect(computeWorkoutRecords(evening, [evening], byId, routines)).toEqual({ records: [], references: [] });
+    /* La planche du soir n'est pas un précédent : 45 s en musculation reste une première mesure. */
+    expect(computeWorkoutRecords(muscu, [evening, muscu], byId, routines)).toEqual({ records: [], references: ["planche"] });
+  });
+});
+
 describe("sauvegarde réelle (COACH_JM_BACKUP) : aucun record inventé", () => {
   const path = process.env.COACH_JM_BACKUP;
 
@@ -160,11 +180,14 @@ describe("sauvegarde réelle (COACH_JM_BACKUP) : aucun record inventé", () => {
     const file = parseBackup(await readFile(path!, "utf8"));
     const workouts = (file.stores.workouts as WorkoutSession[]).filter((item) => item.status === "completed");
     const exercises = new Map<string, Exercise>((file.stores.exercises as Exercise[]).map((exercise) => [exercise.id, exercise]));
+    const routines = new Set(
+      ((file.stores.sessionTemplates ?? []) as SessionTemplate[]).filter((item) => item.category === "Routine").map((item) => item.id),
+    );
     const seen = new Set<string>();
     let recordCount = 0;
 
     for (const item of [...workouts].sort((a, b) => a.startedAt.localeCompare(b.startedAt))) {
-      const { records, references } = computeWorkoutRecords(item, workouts, exercises);
+      const { records, references } = computeWorkoutRecords(item, workouts, exercises, routines);
       for (const exerciseId of references) expect(seen.has(exerciseId), `${item.id} ${exerciseId}`).toBe(false);
 
       for (const record of records) {
@@ -187,7 +210,8 @@ describe("sauvegarde réelle (COACH_JM_BACKUP) : aucun record inventé", () => {
         }
       }
 
-      for (const exerciseId of retainedSeriesByExercise(item).keys()) seen.add(exerciseId);
+      const routine = item.sessionTemplateId !== undefined && routines.has(item.sessionTemplateId);
+      if (!routine) for (const exerciseId of retainedSeriesByExercise(item).keys()) seen.add(exerciseId);
     }
 
     console.info("[records réels]", { séances: workouts.length, records: recordCount });

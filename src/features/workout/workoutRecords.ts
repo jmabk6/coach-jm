@@ -17,6 +17,9 @@ import { pickBestSeries } from "./workoutBlockDetail";
  * - Un record par exercice et par séance : la meilleure série du jour
  *   (`pickBestSeries`), qui bat toute performance antérieure comparable.
  * - Pas de record cardio (paliers, mesures simples) en V1 (N7).
+ * - Décision du 24/09 : ni les exercices Mobilité ou Test mobilité, ni
+ *   les séances de catégorie Routine — Souplesse et Tronc sont mesurés
+ *   par leurs tests. Une routine ne compte pas non plus dans l'historique.
  */
 
 export type RecordKind = "load" | "reps" | "duration" | "reps_duration" | "power";
@@ -99,6 +102,7 @@ function durationOf(series: PerformedSeries): number | undefined {
 }
 
 function kindOf(exercise: Exercise): RecordKind | undefined {
+  if (exercise.category === "Mobilité" || exercise.category === "Test mobilité") return undefined;
   switch (exercise.measurementType) {
     case "load_reps":
       return "load";
@@ -213,9 +217,16 @@ export function computeWorkoutRecords(
   workout: WorkoutSession,
   allWorkouts: ReadonlyArray<WorkoutSession>,
   exerciseById: ReadonlyMap<Id, Exercise>,
+  /** Modèles de catégorie Routine : leurs séances n'ont ni record ni place dans l'historique. */
+  routineTemplateIds: ReadonlySet<Id> = new Set(),
 ): WorkoutRecordsSummary {
+  const isRoutine = (item: WorkoutSession) =>
+    item.sessionTemplateId !== undefined && routineTemplateIds.has(item.sessionTemplateId);
+  if (isRoutine(workout)) return { records: [], references: [] };
+
   const earlier = allWorkouts.filter(
-    (item) => item.status === "completed" && item.id !== workout.id && item.startedAt < workout.startedAt,
+    (item) =>
+      item.status === "completed" && item.id !== workout.id && item.startedAt < workout.startedAt && !isRoutine(item),
   );
   const historyByExercise = new Map<Id, Dated[]>();
   for (const item of earlier) {
