@@ -70,6 +70,7 @@ import {
 } from "./workoutRecap";
 import "./WorkoutRecapScreen.css";
 import { TestBlockCard } from "../tests/TestBlockCard";
+import { loadTestNames } from "../tests/testRecapCards";
 import { paths } from "../../app/paths";
 
 type LoadState =
@@ -118,17 +119,18 @@ export function WorkoutBlockDetailScreen() {
         return;
       }
 
-      const [workout, exercises, completed] = await Promise.all([
+      const [workout, exercises, completed, testNames] = await Promise.all([
         getWorkout(workoutId),
         getAllExercises(),
         getCompletedWorkouts(),
+        loadTestNames(),
       ]);
 
       if (cancelled) return;
 
       const exerciseById = new Map(exercises.map((exercise) => [exercise.id, exercise]));
       const { planned, added } = workout
-        ? splitRecapLines(buildWorkoutRecapLines(workout, exerciseById), workout.sessionTemplateId !== undefined)
+        ? splitRecapLines(buildWorkoutRecapLines(workout, exerciseById, testNames), workout.sessionTemplateId !== undefined)
         : { planned: [], added: [] };
       const lines = [...planned, ...added];
       const line = lines.find((item) => item.block.id === blockId);

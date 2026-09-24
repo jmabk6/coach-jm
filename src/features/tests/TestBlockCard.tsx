@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Check, ChevronDown, ChevronUp, ClipboardCheck, X } from "lucide-react";
-import type { PerformedTestBlock, TestMeasureSpec, TestProtocolVersion } from "../../domain";
-import { computeTestResult, measureUnit, primaryValue } from "../../domain/rules/testResultRules";
+import type { PerformedTestBlock, TestMeasureSpec, TestProtocolVersion, TestResult } from "../../domain";
+import { getTestResult } from "../../db/repositories/testRepository";
+import { computeTestResult, draftFromResult, measureUnit, primaryValue, type ComputedTestResult } from "../../domain/rules/testResultRules";
 import { hasTestInput } from "../workout/engine/workoutBlocks";
 import {
   addTestTrial,
@@ -32,6 +33,22 @@ interface TestBlockCardProps {
   onUnskip?: (() => void) | undefined;
 }
 
+/** Le résultat enregistré d'une brique confirmée (D27). */
+function useStoredResult(resultId: string | undefined): TestResult | undefined {
+  const [result, setResult] = useState<TestResult>();
+  useEffect(() => {
+    if (!resultId) return;
+    let cancelled = false;
+    void getTestResult(resultId).then((found) => {
+      if (!cancelled) setResult(found);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [resultId]);
+  return resultId ? result : undefined;
+}
+
 /**
  * Brique test en séance (lot G.4, conception V2 § 3.5.2, M9) : consignes,
  * saisie selon la nature du protocole — essais dégressifs (traction,
@@ -41,7 +58,7 @@ interface TestBlockCardProps {
  * moteur et s'enregistre aussitôt dans le brouillon (D27).
  */
 export function TestBlockCard({
-  block,
+  block: rawBlock,
   number,
   expanded,
   busy,
@@ -52,13 +69,26 @@ export function TestBlockCard({
   onSkip,
   onUnskip,
 }: TestBlockCardProps) {
-  const { protocol, version, reload } = useTestProtocolVersion(block.protocolId, block.protocolVersionId);
+  const { protocol, version, reload } = useTestProtocolVersion(rawBlock.protocolId, rawBlock.protocolVersionId);
+  /* Séance enregistrée : la saisie et les mesures viennent du résultat,
+     jamais recalculées (§ 5.3). */
+  const stored = useStoredResult(rawBlock.testResultId);
+  const block: PerformedTestBlock = stored ? { ...rawBlock, draft: draftFromResult(stored) } : rawBlock;
   const name = protocol?.name ?? "Test";
   const skipped = block.status === "skipped";
   const performed = block.status === "performed";
   const started = hasTestInput(block);
-  const result = version ? computeTestResult(version, block.draft) : undefined;
-  const canEdit = editable && !skipped && !busy;
+  const result: ComputedTestResult | undefined = version
+    ? stored
+      ? {
+          status: stored.status,
+          measures: stored.measures,
+          ...(stored.trials ? { trials: stored.trials } : {}),
+          messages: computeTestResult(version, block.draft).messages,
+        }
+      : computeTestResult(version, block.draft)
+    : undefined;
+  const canEdit = editable && !stored && !skipped && !busy;
 
   return (
     <li className={`wblock test-card ${expanded ? "wblock--open" : ""} ${performed ? "wblock--done" : ""} ${skipped ? "wblock--skipped" : ""}`}>

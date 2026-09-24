@@ -154,3 +154,22 @@ export function primaryValue(
   if (found.length === 0) return undefined;
   return found.length === 1 ? found[0]!.value : Math.max(...found.map((measure) => measure.value));
 }
+
+/**
+ * La saisie d'un résultat enregistré, pour l'afficher comme en séance
+ * (D27 : la séance ne garde que `testResultId`, le détail lit le résultat).
+ * Les dérivées stockées y figurent aussi : elles ne sont jamais recalculées.
+ */
+export function draftFromResult(result: Pick<TestResult, "measures" | "trials" | "note">): TestDraft {
+  const draft: TestDraft = {};
+  for (const measure of result.measures) {
+    if (measure.side) {
+      draft.sideValues = { ...draft.sideValues, [measure.key]: { ...draft.sideValues?.[measure.key], [measure.side]: measure.value } };
+    } else {
+      draft.values = { ...draft.values, [measure.key]: measure.value };
+    }
+  }
+  if (result.trials && result.trials.length > 0) draft.trials = structuredClone(result.trials);
+  if (result.note) draft.note = result.note;
+  return draft;
+}

@@ -695,6 +695,8 @@ export const recapStatusLabels = {
 export function buildWorkoutRecapLines(
   workout: WorkoutSession,
   exerciseById: Map<Id, Exercise>,
+  /** Noms des protocoles de test, pour nommer une brique test (lot G). */
+  testNameById: ReadonlyMap<Id, string> = new Map(),
 ): WorkoutRecapLine[] {
   const ordered = [...workout.blocks].sort((a, b) => a.position - b.position);
   let visibleNumber = 0;
@@ -740,7 +742,7 @@ export function buildWorkoutRecapLines(
       return {
         block,
         number,
-        name: "Test",
+        name: `Test ${(testNameById.get(block.protocolId) ?? "").toLocaleLowerCase("fr-FR")}`.trim(),
         subtitle: block.status === "performed" ? "Test réalisé" : block.status === "skipped" ? "Sauté" : "Non réalisé",
       };
     }

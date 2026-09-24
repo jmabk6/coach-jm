@@ -133,7 +133,7 @@ describe("à replanifier (D26), état dérivé", () => {
   });
   const TODAY = "2026-10-31";
 
-  it("sautée, retirée ou passée sans être faite ; ni faite, ni future, ni avec résultat, ni déjà replanifiée", () => {
+  it("sautée, retirée, passée sans être faite, ou faite sans le test ; ni future, ni avec résultat, ni déjà replanifiée", () => {
     const sessions = [
       tested("sautee", "2026-10-29", { status: "skipped" }),
       tested("retiree", "2026-10-29", { removedAt: T }),
@@ -145,7 +145,11 @@ describe("à replanifier (D26), état dérivé", () => {
     ];
     const results = [{ protocolId: "protocol-jambes", date: "2026-10-22" }];
 
-    expect(listTestsToReschedule(sessions, results, TODAY).map((item) => item.session.id)).toEqual(["sautee", "retiree", "passee"]);
+    /* « faite » : la séance est faite, mais sans résultat du test ce jour-là (test sauté, I-13). */
+    expect(listTestsToReschedule(sessions, results, TODAY).map((item) => item.session.id)).toEqual(["sautee", "retiree", "passee", "faite"]);
+    expect(
+      listTestsToReschedule(sessions, [...results, { protocolId: "protocol-jambes", date: "2026-10-29" }], TODAY).map((item) => item.session.id),
+    ).toEqual([]);
   });
 });
 

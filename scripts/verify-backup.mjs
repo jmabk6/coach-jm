@@ -124,25 +124,8 @@ export function verifyBackup(envelope) {
     }
   }
 
-  /* Tests (v3, D27) : résultat et séance se répondent, source unique. */
-  const workoutIds = idsOf("workouts");
-  const results = idsOf("testResults");
-  for (const result of envelope.stores.testResults ?? []) {
-    if (result.origin === "workout" && !workoutIds.has(result.workoutId)) {
-      notes.push(`testResults · ${result.id} : workoutId ${result.workoutId} sans séance`);
-    }
-  }
-  for (const workout of envelope.stores.workouts ?? []) {
-    for (const block of workout.blocks ?? []) {
-      if (block.kind !== "test") continue;
-      if (block.testResultId && !results.has(block.testResultId)) {
-        notes.push(`workouts · ${workout.id} · ${block.id} : testResultId ${block.testResultId} sans résultat`);
-      }
-      if (workout.status === "completed" && block.draft) {
-        notes.push(`workouts · ${workout.id} · ${block.id} : brique test confirmée avec une saisie (draft) restante`);
-      }
-    }
-  }
+  /* Tests (v3, D27, SCHEMA § 8.2) : I-10 à I-13. */
+  for (const violation of checkTestLinks(envelope.stores)) notes.push(violation);
   for (const goal of envelope.stores.goals ?? []) {
     for (const segment of goal.segments ?? []) {
       if (segment.measure?.source === "test" && !protocols.has(segment.measure.protocolId)) {
@@ -159,6 +142,64 @@ export function verifyBackup(envelope) {
   }
 
   return { ok: problems.length === 0, problems, notes, computed, legacyHash, storeHashes };
+}
+
+/**
+ * Liens entre séances et résultats de test (SCHEMA § 8.2, T-19) :
+ * - I-10 : séance enregistrée ⇒ aucune brique test avec un brouillon ;
+ * - I-11 : test réalisé d'une séance enregistrée ⇒ `testResultId` vers un
+ *   résultat qui renvoie à cette séance et à cette brique ;
+ * - I-12 : résultat d'origine séance ⇒ séance existante, enregistrée, qui
+ *   le référence une seule fois ;
+ * - I-13 : test sauté ou non réalisé d'une séance enregistrée ⇒ ni
+ *   brouillon ni `testResultId`.
+ * Rend la liste des écarts, chacun préfixé par son invariant.
+ */
+export function checkTestLinks(stores) {
+  const violations = [];
+  const workouts = stores.workouts ?? [];
+  const results = stores.testResults ?? [];
+  const resultById = new Map(results.map((result) => [result.id, result]));
+  const workoutById = new Map(workouts.map((workout) => [workout.id, workout]));
+
+  for (const workout of workouts) {
+    if (workout.status !== "completed") continue;
+    for (const block of workout.blocks ?? []) {
+      if (block.kind !== "test") continue;
+      const where = `workouts · ${workout.id} · ${block.id}`;
+
+      if (block.draft) violations.push(`I-10 ${where} : brique test enregistrée avec un brouillon (draft)`);
+
+      if (block.status === "performed") {
+        const result = block.testResultId ? resultById.get(block.testResultId) : undefined;
+        if (!block.testResultId) violations.push(`I-11 ${where} : test réalisé sans testResultId`);
+        else if (!result) violations.push(`I-11 ${where} : testResultId ${block.testResultId} sans résultat`);
+        else if (result.workoutId !== workout.id || result.blockId !== block.id) {
+          violations.push(`I-11 ${where} : le résultat ${result.id} renvoie à ${result.workoutId} · ${result.blockId}`);
+        }
+      } else if (block.draft || block.testResultId) {
+        violations.push(`I-13 ${where} : test ${block.status === "skipped" ? "sauté" : "non réalisé"} avec une saisie ou un résultat`);
+      }
+    }
+  }
+
+  for (const result of results) {
+    if (result.origin !== "workout") continue;
+    const where = `testResults · ${result.id}`;
+    const workout = workoutById.get(result.workoutId);
+    if (!workout) {
+      violations.push(`I-12 ${where} : workoutId ${result.workoutId} sans séance`);
+      continue;
+    }
+    if (workout.status !== "completed") {
+      violations.push(`I-12 ${where} : séance ${workout.id} non enregistrée`);
+      continue;
+    }
+    const references = (workout.blocks ?? []).filter((block) => block.kind === "test" && block.testResultId === result.id).length;
+    if (references !== 1) violations.push(`I-12 ${where} : référencé par ${references} brique(s) de sa séance`);
+  }
+
+  return violations;
 }
 
 /** Clé primaire d'un store : `key` pour les réglages (v3), `id` partout ailleurs. */

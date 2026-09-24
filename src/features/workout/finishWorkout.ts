@@ -17,6 +17,7 @@ import {
 import { isMobilityAssessment } from "../../domain/rules/workoutKindRules";
 import { completeWorkoutSession, endWorkoutSession, isAwaitingConfirmation } from "./engine/workoutEngine";
 import { calculateActiveDurationSec } from "./engine/workoutTime";
+import { settleTestBlocks } from "../tests/settleTestBlocks";
 
 export { completeWorkoutSession, endWorkoutSession, isAwaitingConfirmation };
 
@@ -138,7 +139,7 @@ export async function confirmWorkout(
 ): Promise<ConfirmWorkoutResult> {
   return db.transaction(
     "rw",
-    [db.workouts, db.plannedSessions, db.strengthFrameVersions, db.strengthMilestones],
+    [db.workouts, db.plannedSessions, db.strengthFrameVersions, db.strengthMilestones, db.testResults, db.testProtocolVersions],
     async () => {
       const workout = await getWorkout(workoutId);
 
@@ -154,7 +155,9 @@ export async function confirmWorkout(
         throw new Error("Terminez d'abord la séance");
       }
 
-      const completed = completeWorkoutSession(workout, now, input);
+      /* Tests (D27) : chaque brique réalisée devient un `TestResult`,
+         le brouillon quitte la séance. */
+      const completed = await settleTestBlocks(completeWorkoutSession(workout, now, input), now);
 
       await saveWorkout(completed);
 

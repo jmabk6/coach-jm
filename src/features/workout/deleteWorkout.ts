@@ -10,6 +10,7 @@ import {
 } from "../../db/repositories/workoutRepository";
 import type { Id, PlannedSession, StrengthFrameVersion, WorkoutSession } from "../../domain";
 import { frameVersionIdsOf } from "../../domain/rules/strengthRules";
+import { removeWorkoutTestResults } from "../tests/settleTestBlocks";
 
 export interface DeleteWorkoutResult {
   deletedId: Id;
@@ -45,7 +46,7 @@ export async function deleteWorkout(
 ): Promise<DeleteWorkoutResult> {
   return db.transaction(
     "rw",
-    [db.workouts, db.plannedSessions, db.strengthMilestones, db.strengthFrameVersions],
+    [db.workouts, db.plannedSessions, db.strengthMilestones, db.strengthFrameVersions, db.testResults, db.testProtocolVersions],
     async () => {
       const workout = await getWorkout(workoutId);
 
@@ -60,6 +61,10 @@ export async function deleteWorkout(
       }
 
       await deleteWorkoutRecord(workoutId);
+
+      /* Tests (SCHEMA § 8.1) : les résultats de la séance partent avec elle ;
+         la version qu'ils figeaient se défige s'il ne lui en reste aucun. */
+      await removeWorkoutTestResults(workoutId, now);
 
       const removed = await db.strengthMilestones.where("workoutId").equals(workoutId).toArray();
       await db.strengthMilestones.where("workoutId").equals(workoutId).delete();

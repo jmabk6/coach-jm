@@ -1032,3 +1032,17 @@
   padding: 0;
   list-style: none;
 }
+
+/* Lot G.5 : un test dans le bilan — « Nouveau repère », jamais un record. */
+.end-records__card--test {
+  background: #e6f6ea;
+}
+
+.end-records__card--test .end-records__name {
+  color: #1f8a3b;
+}
+
+.end-records__meta--test {
+  color: #1f8a3b;
+  font-weight: 600;
+}

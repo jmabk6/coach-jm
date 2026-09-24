@@ -81,6 +81,7 @@ import {
   type WorkoutFeeling,
 } from "./workoutEndSummary";
 import { computeWorkoutRecords } from "./workoutRecords";
+import { loadTestNames, loadTestRecapCards, type TestRecapCard } from "../tests/testRecapCards";
 import "./WorkoutRecapScreen.css";
 import { paths } from "../../app/paths";
 
@@ -109,6 +110,9 @@ type LoadState =
       referenceCount: number;
       goals: Goal[];
       next: NextSession | undefined;
+      /** Noms des protocoles, et bilan des tests de la séance (M10.1). */
+      testNames: Map<Id, string>;
+      tests: TestRecapCard[];
     };
 
 function capitalize(value: string): string {
@@ -197,6 +201,8 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
         getAllSessionTemplates(),
       ]);
 
+      const testNames = await loadTestNames();
+      const tests = await loadTestRecapCards(workout, testNames);
       const nextPlanned = listNextPlannedSessions(ahead, workout.date, 1)[0];
       const nextTemplate = nextPlanned ? await getSessionTemplate(nextPlanned.sessionTemplateId) : undefined;
 
@@ -223,6 +229,8 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
         records: recordCards(records, exerciseById),
         referenceCount: references.length,
         goals: workedGoals(workout, goals),
+        testNames,
+        tests,
         next: nextPlanned
           ? {
               planned: nextPlanned,
@@ -506,7 +514,7 @@ function NextButton({ onClick, children }: { onClick: () => void; children: Reac
 /* -------------------------------------------------------------------------- */
 
 function SummaryView({ state, pending, children }: { state: Loaded; pending: boolean; children: ReactNode }) {
-  const { workout, template, exerciseById, records, referenceCount, goals } = state;
+  const { workout, template, exerciseById, records, referenceCount, goals, tests } = state;
   const head = summarizeWorkout(workout, template, exerciseById);
   const end = workoutEndOf(workout);
   const totalSec = end
@@ -571,12 +579,23 @@ function SummaryView({ state, pending, children }: { state: Loaded; pending: boo
         </section>
       )}
 
-      {records.length > 0 && (
+      {(records.length > 0 || tests.length > 0) && (
         <section className="end-section">
           <h2 className="end-section__title">
             <Trophy size={20} strokeWidth={2} aria-hidden="true" /> Records de la séance
           </h2>
           <ul className="end-records">
+            {/* Un test donne un « Nouveau repère », jamais un record (§ 5.6). */}
+            {tests.map((test) => (
+              <li key={test.blockId} className="end-records__card end-records__card--test">
+                <span className="end-records__name">{test.name} (test)</span>
+                <strong>{test.value}</strong>
+                <span className="end-records__meta">{test.label}</span>
+                <span className="end-records__meta end-records__meta--test">
+                  {test.complete ? "Nouveau repère" : "Résultat incomplet"}
+                </span>
+              </li>
+            ))}
             {records.map((record) => (
               <li key={record.exerciseId} className="end-records__card">
                 <span className="end-records__name">{record.name}</span>
@@ -608,7 +627,7 @@ function DetailView({ state, returnTo, children }: { state: Loaded; returnTo: st
   /* `dont 4 comptées · 2 éch.` : rien quand toutes les séries comptent (v1.6). */
   const rolesLine = formatSeriesRoleSummary(head.roles);
   const { planned, added } = splitRecapLines(
-    withFrameLines(buildWorkoutRecapLines(workout, exerciseById), frameOutcomes, exerciseById, versionById),
+    withFrameLines(buildWorkoutRecapLines(workout, exerciseById, state.testNames), frameOutcomes, exerciseById, versionById),
     workout.sessionTemplateId !== undefined,
   );
   const detailBase = `/workouts/${workout.id}/blocks`;

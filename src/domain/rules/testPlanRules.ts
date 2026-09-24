@@ -127,9 +127,10 @@ export interface TestToReschedule {
 
 /**
  * Un test attaché devient « à replanifier » quand son instance est
- * sautée, retirée, ou passée sans avoir été faite ; qu'aucun résultat de
- * ce protocole n'existe à cette date ; et qu'il n'a pas déjà été
- * replanifié. Il n'est **jamais** converti en test passé.
+ * sautée, retirée, passée sans avoir été faite, ou faite sans que le test
+ * le soit (brique sautée ou non réalisée, I-13) ; qu'aucun résultat de ce
+ * protocole n'existe à cette date ; et qu'il n'a pas déjà été replanifié.
+ * Il n'est **jamais** converti en test passé.
  */
 export function listTestsToReschedule(
   sessions: ReadonlyArray<PlannedSession>,
@@ -141,6 +142,7 @@ export function listTestsToReschedule(
   return sessions.flatMap((session) => {
     const missed =
       session.status === "skipped" ||
+      session.status === "done" ||
       session.removedAt !== undefined ||
       (session.status === "upcoming" && session.date < today);
     if (!missed) return [];
