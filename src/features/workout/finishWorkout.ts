@@ -90,6 +90,35 @@ export interface ConfirmWorkoutInput {
 }
 
 /**
+ * Ressenti et notes entre Terminer et Enregistrer (M10, D21) : écrits
+ * aussitôt sur la séance en attente, pour survivre à une fermeture de
+ * l'application. Une note vide efface la note.
+ */
+export async function saveWorkoutFeedback(
+  workoutId: Id,
+  input: ConfirmWorkoutInput,
+  now: string = new Date().toISOString(),
+): Promise<WorkoutSession> {
+  return db.transaction("rw", db.workouts, async () => {
+    const workout = await getWorkout(workoutId);
+
+    if (!workout) throw new Error("Séance réalisée introuvable");
+    if (!isAwaitingConfirmation(workout)) throw new Error("Cette séance est déjà enregistrée");
+
+    const next: WorkoutSession = { ...workout, updatedAt: now };
+    if (input.feeling !== undefined) next.feeling = input.feeling;
+    if (input.note !== undefined) {
+      const note = input.note.trim();
+      if (note) next.note = note;
+      else delete next.note;
+    }
+
+    await saveWorkout(next);
+    return next;
+  });
+}
+
+/**
  * `Enregistrer et revenir à l'accueil` (conception V2 § 2.6) : en **une**
  * transaction, écrit ressenti et notes, passe la séance `completed` avec
  * `completedAt = endedAt`, fige les cadres et crée les jalons, puis passe

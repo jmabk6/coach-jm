@@ -106,7 +106,7 @@ export function WorkoutBlockDetailScreen() {
   const returnTo = searchParams.get("returnTo") ?? paths.planning();
   const search = `?returnTo=${encodeURIComponent(returnTo)}`;
   const pendingWorkout = state.status === "success" && isAwaitingConfirmation(state.workout);
-  const backTo = pendingWorkout ? paths.workoutEnd() : workoutId ? `/workouts/${workoutId}${search}` : returnTo;
+  const backTo = pendingWorkout ? `${paths.workoutEnd()}?vue=2` : workoutId ? `/workouts/${workoutId}${search}&vue=2` : returnTo;
 
   useEffect(() => {
     let cancelled = false;

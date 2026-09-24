@@ -1668,8 +1668,12 @@ export function completeWorkoutSession(
   };
 
   if (input.feeling !== undefined) completed.feeling = input.feeling;
-  const note = input.note?.trim();
-  if (note) completed.note = note;
+  if (input.note !== undefined) {
+    /* Une note vidée avant Enregistrer disparaît. */
+    const note = input.note.trim();
+    if (note) completed.note = note;
+    else delete completed.note;
+  }
 
   return completed;
 }
