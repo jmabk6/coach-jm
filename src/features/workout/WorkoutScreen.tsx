@@ -37,6 +37,7 @@ import {
   pauseWorkout,
   resumeWorkout,
   skipBlock,
+  discardBlock,
   skipRest,
   substituteExercise,
   substituteGroupChild,
@@ -88,6 +89,7 @@ export function WorkoutScreen() {
     groupChildId?: Id;
   }>();
   const [finishing, setFinishing] = useState(false);
+  const [discarding, setDiscarding] = useState<PerformedExerciseBlock | PerformedGroupBlock>();
   const [finishError, setFinishError] = useState<string>();
 
   const workout = state.status === "ready" ? state.workout : undefined;
@@ -632,8 +634,38 @@ export function WorkoutScreen() {
                 void run((current, at) => skipBlock(current, target.id, at));
               },
             },
+            {
+              label: "Retirer ce bloc",
+              hint: "Bloc non utilisé : ses validations sont effacées",
+              tone: "danger" as const,
+              onSelect: () => {
+                const target = blockMenu;
+                setBlockMenu(undefined);
+                setDiscarding(target);
+              },
+            },
           ]}
           onDismiss={() => setBlockMenu(undefined)}
+        />
+      )}
+
+      {discarding && (
+        <BottomSheet
+          title="Retirer ce bloc ?"
+          message="Ses validations sont effacées ; il reste visible comme sauté et ne compte ni dans la durée, ni dans les records."
+          actions={[
+            {
+              label: "Retirer ce bloc",
+              tone: "danger",
+              hint: "Les autres blocs ne changent pas",
+              onSelect: () => {
+                const target = discarding;
+                setDiscarding(undefined);
+                void run((current, at) => discardBlock(current, target.id, at));
+              },
+            },
+          ]}
+          onDismiss={() => setDiscarding(undefined)}
         />
       )}
 

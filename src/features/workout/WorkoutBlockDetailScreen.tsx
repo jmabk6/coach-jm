@@ -41,7 +41,8 @@ import {
 } from "./workoutBlockDetail";
 import { formatShortDate, seriesFieldLayout } from "./workoutDisplay";
 import { applyWorkoutAction } from "./engine/persistWorkout";
-import { editRoundChild, editSeries, isAwaitingConfirmation, type SeriesValues } from "./engine/workoutEngine";
+import { discardBlock, editRoundChild, editSeries, isAwaitingConfirmation, type SeriesValues } from "./engine/workoutEngine";
+import { BottomSheet } from "../../components/ui/BottomSheet";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { SeriesForm } from "./SeriesForm";
 import {
@@ -104,6 +105,7 @@ export function WorkoutBlockDetailScreen() {
   /* Relecture après une correction (séance terminée, pas enregistrée). */
   const [version, setVersion] = useState(0);
   const [correctionError, setCorrectionError] = useState<string>();
+  const [discarding, setDiscarding] = useState(false);
 
   const returnTo = searchParams.get("returnTo") ?? paths.planning();
   const search = `?returnTo=${encodeURIComponent(returnTo)}`;
@@ -252,6 +254,29 @@ export function WorkoutBlockDetailScreen() {
         </p>
       )}
       {correctionError && <p className="recap__message recap__message--error">{correctionError}</p>}
+      {correctable && block.kind !== "note" && (
+        <button type="button" className="recap-detail__discard" onClick={() => setDiscarding(true)}>
+          Retirer ce bloc
+        </button>
+      )}
+      {discarding && block.kind !== "note" && (
+        <BottomSheet
+          title="Retirer ce bloc ?"
+          message="Pour un bloc non utilisé : ses validations sont effacées, il reste visible comme sauté et ne compte ni dans la durée, ni dans les records."
+          actions={[
+            {
+              label: "Retirer ce bloc",
+              tone: "danger",
+              hint: "Les autres blocs ne changent pas",
+              onSelect: () => {
+                setDiscarding(false);
+                void correct((current, at) => discardBlock(current, block.id, at));
+              },
+            },
+          ]}
+          onDismiss={() => setDiscarding(false)}
+        />
+      )}
 
       {block.kind === "exercise" && (
         <ExerciseDetail

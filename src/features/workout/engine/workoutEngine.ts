@@ -1849,3 +1849,80 @@ export function setTestNote(workout: WorkoutSession, blockId: Id, note: string, 
     return next;
   }, now);
 }
+
+/* -------------------------------------------------------------------------- */
+/* Retirer un bloc (décision du 24/09/2026)                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `Retirer ce bloc` : un bloc non utilisé sort de la séance, même si des
+ * entrées y ont été validées par erreur (paliers « validés à vide »). Ses
+ * validations sont effacées — les consignes restent — et il passe
+ * « sauté ». Permis pendant la séance et, en attente d'enregistrement,
+ * comme correction (D21) ; jamais après « Enregistrer ». Les autres blocs
+ * ne sont pas touchés.
+ */
+export function discardBlock(workout: WorkoutSession, blockId: Id, now: string): WorkoutSession {
+  assertCorrectable(workout);
+
+  const block = findBlock(workout, blockId);
+  if (!isExecutable(block)) throw new Error("Une note ne se retire pas");
+
+  const pending: PerformedEntryStatus = isAwaitingConfirmation(workout) ? "not_performed" : "upcoming";
+
+  let next = withBlock(workout, blockId, (item): PerformedBlock => {
+    if (item.kind === "exercise") {
+      const cleared: PerformedExerciseBlock = { ...item, status: "skipped" };
+      if (item.series) {
+        cleared.series = item.series.map((series) => ({
+          id: series.id,
+          position: series.position,
+          status: pending,
+          ...(series.role !== undefined ? { role: series.role } : {}),
+        }));
+      }
+      if (item.cardioSteps) {
+        cleared.cardioSteps = item.cardioSteps.map((step) => ({
+          id: step.id,
+          position: step.position,
+          status: pending,
+          settings: step.originalSettings ?? step.settings,
+        }));
+      }
+      if (item.simpleMeasurement) cleared.simpleMeasurement = {};
+      return cleared;
+    }
+
+    if (item.kind === "group") {
+      return {
+        ...item,
+        status: "skipped",
+        rounds: item.rounds.map((round) => ({
+          id: round.id,
+          roundNumber: round.roundNumber,
+          status: pending,
+          children: round.children.map((child) => ({
+            id: child.id,
+            groupChildId: child.groupChildId,
+            exerciseId: child.exerciseId,
+            ...(child.frameVersionId !== undefined ? { frameVersionId: child.frameVersionId } : {}),
+          })),
+        })),
+      };
+    }
+
+    if (item.kind === "test") {
+      const cleared = { ...item, status: "skipped" as const };
+      delete cleared.draft;
+      return cleared;
+    }
+
+    return item;
+  });
+
+  if (!isAwaitingConfirmation(workout) && workout.currentBlockId === blockId) {
+    next = advanceFrom(next, blockId, now);
+  }
+
+  return touch(next, now);
+}
