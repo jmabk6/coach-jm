@@ -8,6 +8,7 @@ import { ExerciseDetailScreen } from "../features/exercises/ExerciseDetailScreen
 import { ExerciseCreateScreen } from "../features/exercises/ExerciseCreateScreen";
 import { ExerciseEditScreen } from "../features/exercises/ExerciseEditScreen";
 import { PlusScreen } from "../features/plus/PlusScreen";
+import { TestProtocolsScreen } from "../features/tests/TestProtocolsScreen";
 import { SessionsScreen } from "../features/sessions/SessionsScreen";
 import { SessionCreateScreen } from "../features/sessions/SessionCreateScreen";
 import { SessionEditScreen } from "../features/sessions/SessionEditScreen";
@@ -50,6 +51,7 @@ export const router = createHashRouter([
       { path: `${routeSegment(ROUTES.progression)}/cardio/:exerciseId`, element: <CardioDetailScreen /> },
       { path: routeSegment(ROUTES.goals), element: <GoalsPlaceholderScreen /> },
       { path: routeSegment(ROUTES.plus), element: <PlusScreen /> },
+      { path: routeSegment(ROUTES.plusTests), element: <TestProtocolsScreen /> },
       { path: routeSegment(ROUTES.sessions), element: <SessionsScreen /> },
       { path: `${routeSegment(ROUTES.sessions)}/new`, element: <SessionCreateScreen /> },
       { path: `${routeSegment(ROUTES.sessions)}/:sessionId/edit`, element: <SessionEditScreen /> },

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, DatabaseBackup, Dumbbell } from "lucide-react";
+import { BarChart3, ClipboardCheck, DatabaseBackup, Dumbbell } from "lucide-react";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { db } from "../../db/database";
 import { BackupSection } from "../backup/BackupSection";
@@ -59,6 +59,21 @@ export function PlusScreen() {
             <span className="plus-list__title">Exercices</span>
             <span className="plus-list__meta">
               Bibliothèque, fiches et création d'exercices
+            </span>
+          </span>
+          <span className="plus-list__chevron" aria-hidden="true">
+            ›
+          </span>
+        </Link>
+
+        <Link to={paths.plusTests()} className="plus-list__item">
+          <span className="plus-list__icon" aria-hidden="true">
+            <ClipboardCheck size={22} strokeWidth={2} />
+          </span>
+          <span className="plus-list__content">
+            <span className="plus-list__title">Protocoles de tests</span>
+            <span className="plus-list__meta">
+              Résultats, et saisie d'un test passé
             </span>
           </span>
           <span className="plus-list__chevron" aria-hidden="true">

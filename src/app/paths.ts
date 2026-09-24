@@ -21,6 +21,8 @@ export const ROUTES = {
   progression: "/progression",
   history: "/historique",
   plus: "/plus",
+  /** Plus > Protocoles de tests (M11, lot G.6). */
+  plusTests: "/plus/protocoles",
 } as const;
 
 /**
@@ -83,6 +85,7 @@ export const paths = {
   history: () => ROUTES.history,
 
   plus: () => ROUTES.plus,
+  plusTests: () => ROUTES.plusTests,
 } as const;
 
 /** Vrai si `pathname` est la route `base` ou l'une de ses sous-routes. */

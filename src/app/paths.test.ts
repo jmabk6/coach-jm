@@ -20,8 +20,10 @@ describe("chemins de l'application", () => {
       progression: "/progression",
       history: "/historique",
       plus: "/plus",
+      plusTests: "/plus/protocoles",
     });
     expect(paths.goals()).toBe("/objectifs");
+    expect(paths.plusTests()).toBe("/plus/protocoles");
   });
 
   it("rend les adresses des écrans", () => {

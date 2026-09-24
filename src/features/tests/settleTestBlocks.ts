@@ -74,7 +74,15 @@ export async function removeWorkoutTestResults(workoutId: Id, now: string): Prom
   if (removed.length === 0) return;
 
   await db.testResults.bulkDelete(removed.map((result) => result.id));
+  await releaseVersions(removed, now);
+}
 
+/**
+ * Après la suppression de résultats : une version figée par l'un d'eux se
+ * défige s'il ne lui reste aucun résultat, sinon son premier résultat
+ * officiel devient le plus ancien restant (SCHEMA § 8.1).
+ */
+export async function releaseVersions(removed: ReadonlyArray<Pick<TestResult, "id" | "versionId">>, now: string): Promise<void> {
   for (const versionId of new Set(removed.map((result) => result.versionId))) {
     const version = await db.testProtocolVersions.get(versionId);
     if (!version || !removed.some((result) => result.id === version.firstOfficialResultId)) continue;
