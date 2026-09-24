@@ -11,6 +11,7 @@ import { parseBackup } from "../backup/restoreBackup";
 import { WRITE_METHODS, writePrototypeOf } from "../backup/testDatabase";
 import { PROGRAM_V1_TEMPLATES } from "../program/programV1";
 import { createWorkoutSnapshot } from "../workout/createWorkoutSnapshot";
+import { FIX_WORKOUT_ID, fixWorkout20260924 } from "../workout/seedFixWorkout20260924";
 import { updateFrameVersion } from "./frameActions";
 
 vi.stubEnv("BASE_URL", "/coach-jm/");
@@ -205,8 +206,16 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
       expect(await db.strengthFrames.where("exerciseId").equals(spec.exerciseId).count(), spec.exerciseId).toBe(1);
       if (!covered.has(spec.exerciseId)) expect(await db.strengthFrames.get(programFrameIds(spec.exerciseId).frameId), spec.exerciseId).toBeDefined();
     }
-    expect(canonicalStringify(await db.workouts.orderBy("id").toArray())).toBe(
-      canonicalStringify([...(file.stores.workouts as WorkoutSession[])].sort((a, b) => (a.id < b.id ? -1 : 1))),
+    const workouts = await db.workouts.orderBy("id").toArray();
+    /* Seed 10 : seule la Cardio A du 24/09, dans l'état constaté, est corrigée. */
+    const expected = (file.stores.workouts as WorkoutSession[]).map(
+      (workout) =>
+        (workout.id === FIX_WORKOUT_ID &&
+          fixWorkout20260924(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "")) ||
+        workout,
+    );
+    expect(canonicalStringify(workouts)).toBe(
+      canonicalStringify(expected.sort((a, b) => (a.id < b.id ? -1 : 1))),
     );
 
     const spies = spyWrites();
