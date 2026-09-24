@@ -603,7 +603,7 @@ function SummaryView({
           <ul className="end-goals">
             {goals.map((goal) => (
               <li key={goal.id}>
-                <Link to={paths.goals()} className="end-goals__item">
+                <Link to={paths.goal(goal.key)} className="end-goals__item">
                   <span>{goal.title}</span>
                   <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
                 </Link>

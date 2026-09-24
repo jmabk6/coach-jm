@@ -323,3 +323,144 @@
   margin: 0;
   color: #b42318;
 }
+
+/* M6 — Exercices (lot H.5). */
+.goal-exercises {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goal-exercises__row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto 16px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f2f4f7;
+  color: inherit;
+  text-decoration: none;
+}
+
+.goal-exercises__row--inactive {
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  opacity: 0.5;
+}
+
+.goal-exercises__media {
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f2f4f7;
+}
+
+.goal-exercises__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.goal-exercises__placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.goal-exercises__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.8rem;
+}
+
+.goal-exercises__body strong {
+  font-size: 0.9rem;
+}
+
+.goal-exercises__description {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text-soft, #667085);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.goal-exercises__prescription {
+  font-weight: 600;
+}
+
+.goal-exercises__inactive {
+  color: #b42318;
+}
+
+.goal-exercises__letters {
+  display: flex;
+  gap: 4px;
+}
+
+.goal-exercises__letter {
+  display: grid;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  place-items: center;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.goal-exercises__letter--a { background: #eff8ff; color: #175cd3; }
+.goal-exercises__letter--b { background: #f4f3ff; color: #6938ef; }
+.goal-exercises__letter--c { background: #ecfdf3; color: #067647; }
+
+/* M7 — Conseils (lot H.5). */
+.goal-advice__draft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md, 14px);
+  background: #fffaeb;
+  color: #b54708;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.goal-advice__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.goal-advice__sessions {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+}
+
+.goal-advice__sessions li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.goal-advice__list,
+.goal-advice__bullets {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+}
+
+.goal-advice__bullets {
+  padding-left: 0;
+  list-style: none;
+}

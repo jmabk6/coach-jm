@@ -12,6 +12,7 @@ import { formatTestNumber } from "../../domain/rules/testResultRules";
 import { todayLocalDate } from "../today/useTodayData";
 import { activateNextSegment, editGoalSegment, LEGS_MEASURES } from "./goalActions";
 import { GoalCurveChart } from "./GoalCurveChart";
+import { GoalAdviceTab, GoalExercisesTab } from "./GoalTabs";
 import { loadGoalDetail, type GoalDetail } from "./goalDetail";
 import "./GoalDetailScreen.css";
 
@@ -105,7 +106,8 @@ export function GoalDetailScreen() {
       </nav>
 
       {tab === "progression" && <ProgressionTab detail={detail} today={today} onChanged={() => setVersion((value) => value + 1)} />}
-      {tab !== "progression" && <p className="goal-detail__message">Cet onglet arrive avec la suite du lot H.</p>}
+      {tab === "exercices" && <GoalExercisesTab goal={goal} />}
+      {tab === "conseils" && <GoalAdviceTab goal={goal} />}
     </section>
   );
 }
