@@ -42,6 +42,13 @@ describe("lot 4B sur la sauvegarde réelle", () => {
     await db.open();
     const envelope = parseBackup(await readFile(path!, "utf8"));
     await restoreBackup(envelope, db);
+    /* Un fichier v3 (après le 24/09) porte déjà le cadre V1 de la presse
+       (seed 7) : on le retire de la base de test pour rejouer le scénario
+       sur un exercice sans cadre, comme avec les fichiers antérieurs. */
+    for (const frame of await db.strengthFrames.where("exerciseId").equals("presse-cuisses").toArray()) {
+      await db.strengthFrameVersions.where("frameId").equals(frame.id).delete();
+      await db.strengthFrames.delete(frame.id);
+    }
     const initial = await readStores(db);
 
     /* 11 séances au 20/09 (0205), 12 depuis la séance libre du 20/09 (sauvegarde du 22/09) : le test suit le fichier. */

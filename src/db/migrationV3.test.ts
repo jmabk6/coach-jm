@@ -284,6 +284,13 @@ describe("migration v2 → v3 sur la sauvegarde réelle (COACH_JM_BACKUP) — T-
     const envelope = parseBackup(await readFile(path!, "utf8"));
     const name = track(uniqueTestName("coach-jm-v3-reel"));
 
+    /* Un fichier déjà en v3 (export après migration, 24/09 10:28) n'a plus
+       de migration v2 → v3 à prouver : T-3 est sans objet pour lui. */
+    if (envelope.database.version >= 3) {
+      console.info("[migration réelle] fichier déjà en v3 : T-3 sans objet", envelope.exportedAt);
+      return;
+    }
+
     /* Le fichier dans une base v2 (son schéma d'origine), puis la v3. */
     const legacy = new CoachJmDatabaseV2(name);
     await legacy.open();

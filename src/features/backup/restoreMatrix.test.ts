@@ -200,6 +200,9 @@ describe("T-9 (R) — sauvegarde réelle (COACH_JM_BACKUP) restaurée dans une b
     const after = await readStores(target);
     for (const name of result.written) expect(canonicalStringify(after.stores[name]), name).toBe(canonicalStringify(file.stores[name]));
     expect(after.counts.workouts).toBe((file.stores.workouts ?? []).length);
-    for (const name of ["testProtocols", "testProtocolVersions", "testResults", "settings"]) expect(after.counts[name], name).toBe(0);
+    /* Stores v3 : vides pour un fichier v2, ceux du fichier pour un fichier v3. */
+    for (const name of ["testProtocols", "testProtocolVersions", "testResults", "settings"]) {
+      expect(after.counts[name], name).toBe((file.stores[name] ?? []).length);
+    }
   });
 });

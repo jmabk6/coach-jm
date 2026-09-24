@@ -87,7 +87,8 @@ describe("seed du lot 3 sur la sauvegarde réelle", () => {
       expect(exercise.updatedAt, exercise.id).toBe(previous.updatedAt);
       expect(checkClassification(exercise), exercise.id).toEqual([]);
 
-      if (exercise.category === "Musculation") {
+      /* Mollets debout (lot D) : sans groupe, par décision — aucun n'existe pour eux. */
+      if (exercise.category === "Musculation" && exercise.id !== "mollets-debout") {
         expect(exercise.progressionGroup, exercise.id).toBeDefined();
         if (previous.progressionGroup === undefined) enriched += 1;
       } else {

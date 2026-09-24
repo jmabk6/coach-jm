@@ -149,7 +149,10 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     resumeSeedsForTests(); // le rechargement de l'étape 6
 
     const restored = await readStores(db);
-    for (const name of ["testProtocols", "testProtocolVersions", "testResults", "settings"]) expect(restored.counts[name], name).toBe(0);
+    /* Stores v3 : vides pour un fichier v2, ceux du fichier pour un fichier v3. */
+    for (const name of ["testProtocols", "testProtocolVersions", "testResults", "settings"]) {
+      expect(restored.counts[name], name).toBe((file.stores[name] ?? []).length);
+    }
     expect(await db.workouts.get("a-remplacer")).toBeUndefined();
 
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
