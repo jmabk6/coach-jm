@@ -2,7 +2,7 @@
 import "fake-indexeddb/auto";
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../../db/database";
 import type { PerformedExerciseBlock, SessionTemplate, WorkoutSession } from "../../domain";
@@ -33,6 +33,10 @@ function oldCardioA(base: SessionTemplate): SessionTemplate {
     ...base,
     blocks: [block("debut", 0, 300, 4.5, 0), block("principal", 1, 2100, 5, 7), block("retour", 2, 300, 4.5, 0)],
   } as SessionTemplate;
+}
+
+function Where() {
+  return <p>{useLocation().pathname}</p>;
 }
 
 const exerciseBlocks = (workout: WorkoutSession) =>
@@ -66,24 +70,24 @@ afterEach(async () => {
 });
 
 describe("discardBlock (moteur)", () => {
-  it("pendant la séance : validations effacées, bloc sauté, le suivant devient courant", async () => {
+  it("pendant la séance : le bloc est supprimé, les autres renumérotés, le suivant devient courant", async () => {
     const started = await startOld();
     const [debut, principal] = exerciseBlocks(started);
     let workout = validateStep(started, debut!.id, debut!.cardioSteps![0]!.id, {}, "2026-09-24T13:41:00.000Z");
     workout = validateStep(workout, principal!.id, principal!.cardioSteps![0]!.id, {}, "2026-09-24T13:43:00.000Z");
 
     const next = discardBlock(workout, principal!.id, "2026-09-24T13:44:00.000Z");
-    const [, cleared, retour] = exerciseBlocks(next);
-    expect(cleared!.status).toBe("skipped");
-    expect(cleared!.cardioSteps).toEqual([
-      { id: principal!.cardioSteps![0]!.id, position: 0, status: "upcoming", settings: principal!.cardioSteps![0]!.settings },
-    ]);
+    const remaining = exerciseBlocks(next);
+    expect(remaining.map((block) => block.sourceBlockId)).toEqual(["debut", "retour"]);
+    expect(next.blocks.map((block) => block.position)).toEqual([0, 1]);
     /* Le bloc déjà fait n'est pas touché. */
-    expect(exerciseBlocks(next)[0]).toEqual(exerciseBlocks(workout)[0]);
-    expect(next.currentBlockId).toBe(retour!.id);
+    expect(remaining[0]).toEqual(exerciseBlocks(workout)[0]);
+    expect(next.currentBlockId).toBe(remaining[1]!.id);
+    /* Le repos ouvert après la validation par erreur disparaît avec le bloc. */
+    expect(next.activeRest?.afterBlockId).not.toBe(principal!.id);
   });
 
-  it("en attente d'enregistrement : paliers « non réalisés », séance toujours en attente", async () => {
+  it("en attente d'enregistrement : les blocs disparaissent, séance toujours en attente", async () => {
     const started = await startOld();
     await db.workouts.put(validateAll(started, "2026-09-24T13:43:00.000Z"));
     await endWorkout(started.id, "2026-09-24T16:22:00.000Z");
@@ -93,8 +97,7 @@ describe("discardBlock (moteur)", () => {
     const after = await applyWorkoutAction(started.id, (current, at) => discardBlock(current, retour!.id, at), "2026-09-25T08:01:00.000Z");
 
     const blocks = exerciseBlocks(after);
-    expect(blocks.map((block) => block.status)).toEqual(["performed", "skipped", "skipped"]);
-    expect(blocks[1]!.cardioSteps!.every((step) => step.status === "not_performed" && step.completedAt === undefined)).toBe(true);
+    expect(blocks.map((block) => [block.sourceBlockId, block.status])).toEqual([["debut", "performed"]]);
     expect(after.status).toBe("in_progress");
     expect(after.endedAt).toBe("2026-09-24T16:22:00.000Z");
   });
@@ -110,7 +113,7 @@ describe("discardBlock (moteur)", () => {
 });
 
 describe("récapitulatif en attente : bouton « Retirer ce bloc »", () => {
-  it("retire le bloc après confirmation ; absent d'une séance enregistrée", async () => {
+  it("supprime le bloc après confirmation et revient au récapitulatif ; absent d'une séance enregistrée", async () => {
     const started = await startOld();
     await db.workouts.put(validateAll(started, "2026-09-24T13:43:00.000Z"));
     await endWorkout(started.id, "2026-09-24T16:22:00.000Z");
@@ -120,6 +123,7 @@ describe("récapitulatif en attente : bouton « Retirer ce bloc »", () => {
       <MemoryRouter initialEntries={[`/workouts/${started.id}/blocks/${principal.id}`]}>
         <Routes>
           <Route path="/workouts/:workoutId/blocks/:blockId" element={<WorkoutBlockDetailScreen />} />
+          <Route path="*" element={<Where />} />
         </Routes>
       </MemoryRouter>,
     );
@@ -129,20 +133,22 @@ describe("récapitulatif en attente : bouton « Retirer ce bloc »", () => {
     fireEvent.click(within(sheet).getByRole("button", { name: /Retirer ce bloc/ }));
 
     await waitFor(async () => {
-      const block = exerciseBlocks((await db.workouts.get(started.id))!)[1]!;
-      expect(block.status).toBe("skipped");
+      const ids = exerciseBlocks((await db.workouts.get(started.id))!).map((block) => block.id);
+      expect(ids).not.toContain(principal.id);
     });
+    expect(await screen.findByText("/seance-en-cours/fin")).toBeDefined();
 
     view.unmount();
     await confirmWorkout(started.id, {}, "2026-09-25T08:05:00.000Z");
+    const retour = exerciseBlocks(started)[2]!;
     render(
-      <MemoryRouter initialEntries={[`/workouts/${started.id}/blocks/${principal.id}`]}>
+      <MemoryRouter initialEntries={[`/workouts/${started.id}/blocks/${retour.id}`]}>
         <Routes>
           <Route path="/workouts/:workoutId/blocks/:blockId" element={<WorkoutBlockDetailScreen />} />
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByText("Sauté")).toBeDefined();
+    expect(await screen.findByText("Réalisé")).toBeDefined();
     expect(screen.queryByRole("button", { name: "Retirer ce bloc" })).toBeNull();
   });
 });

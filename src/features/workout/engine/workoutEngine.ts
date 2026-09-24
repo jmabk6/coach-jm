@@ -1910,12 +1910,34 @@ export function clearDiscardedBlock(item: PerformedBlock, pending: PerformedEntr
 }
 
 /**
- * `Retirer ce bloc` : un bloc non utilisé sort de la séance, même si des
- * entrées y ont été validées par erreur (paliers « validés à vide »). Ses
- * validations sont effacées — les consignes restent — et il passe
- * « sauté ». Permis pendant la séance et, en attente d'enregistrement,
- * comme correction (D21) ; jamais après « Enregistrer ». Les autres blocs
- * ne sont pas touchés.
+ * Supprime des blocs de la séance et renumérote les autres. Un repos
+ * ouvert après l'un d'eux s'efface avec lui, et le bloc courant aussi
+ * s'il en fait partie.
+ */
+export function removeBlocks(workout: WorkoutSession, blockIds: ReadonlyArray<Id>): WorkoutSession {
+  const gone = new Set(blockIds);
+  const next: WorkoutSession = {
+    ...workout,
+    blocks: workout.blocks
+      .filter((block) => !gone.has(block.id))
+      .sort((a, b) => a.position - b.position)
+      .map((block, position) => ({ ...block, position })),
+  };
+  if (next.currentBlockId !== undefined && gone.has(next.currentBlockId)) {
+    delete next.currentBlockId;
+    delete next.currentEntryId;
+  }
+  if (next.activeRest && gone.has(next.activeRest.afterBlockId)) delete next.activeRest;
+  return next;
+}
+
+/**
+ * `Retirer ce bloc` (décision du 24/09/2026, précisée le soir même) : un
+ * bloc non utilisé est **supprimé** de la séance, même si des entrées y
+ * ont été validées par erreur (paliers « validés à vide ») — il n'y reste
+ * pas comme « sauté ». Permis pendant la séance et, en attente
+ * d'enregistrement, comme correction (D21) ; jamais après « Enregistrer ».
+ * Les autres blocs ne sont pas touchés, seulement renumérotés.
  */
 export function discardBlock(workout: WorkoutSession, blockId: Id, now: string): WorkoutSession {
   assertCorrectable(workout);
@@ -1923,15 +1945,12 @@ export function discardBlock(workout: WorkoutSession, blockId: Id, now: string):
   const block = findBlock(workout, blockId);
   if (!isExecutable(block)) throw new Error("Une note ne se retire pas");
 
-  const pending: PerformedEntryStatus = isAwaitingConfirmation(workout) ? "not_performed" : "upcoming";
-
-  let next = withBlock(workout, blockId, (item) => clearDiscardedBlock(item, pending));
-
+  let next = workout;
   if (!isAwaitingConfirmation(workout) && workout.currentBlockId === blockId) {
     next = advanceFrom(next, blockId, now);
   }
 
-  return touch(next, now);
+  return touch(removeBlocks(next, [blockId]), now);
 }
 
 /**

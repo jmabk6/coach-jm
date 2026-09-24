@@ -72,6 +72,8 @@ describe("séance entièrement cardio : somme des paliers validés", () => {
     const after = await applyWorkoutAction(ended.id, (current, at) => discardBlock(current, retour!.id, at), "2026-09-25T08:01:00.000Z");
     expect(after.activeDurationSec).toBe(2700);
 
+    expect(exerciseBlocks(after)).toHaveLength(1);
+
     await confirmWorkout(ended.id, {}, "2026-09-25T08:02:00.000Z");
     expect((await db.workouts.get(ended.id))!.activeDurationSec).toBe(2700);
   });

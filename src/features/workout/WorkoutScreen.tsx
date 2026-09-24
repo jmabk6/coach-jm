@@ -636,7 +636,7 @@ export function WorkoutScreen() {
             },
             {
               label: "Retirer ce bloc",
-              hint: "Bloc non utilisé : ses validations sont effacées",
+              hint: "Bloc non utilisé : supprimé de la séance",
               tone: "danger" as const,
               onSelect: () => {
                 const target = blockMenu;
@@ -652,7 +652,7 @@ export function WorkoutScreen() {
       {discarding && (
         <BottomSheet
           title="Retirer ce bloc ?"
-          message="Ses validations sont effacées ; il reste visible comme sauté et ne compte ni dans la durée, ni dans les records."
+          message="Il est supprimé de la séance, avec ce qui y a été validé par erreur. Il ne compte ni dans la durée, ni dans les records."
           actions={[
             {
               label: "Retirer ce bloc",

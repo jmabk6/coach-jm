@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity,
   BarChart3,
@@ -106,6 +106,7 @@ export function WorkoutBlockDetailScreen() {
   const [version, setVersion] = useState(0);
   const [correctionError, setCorrectionError] = useState<string>();
   const [discarding, setDiscarding] = useState(false);
+  const navigate = useNavigate();
 
   const returnTo = searchParams.get("returnTo") ?? paths.planning();
   const search = `?returnTo=${encodeURIComponent(returnTo)}`;
@@ -175,14 +176,16 @@ export function WorkoutBlockDetailScreen() {
   }, [workoutId, blockId, version]);
 
   /* Corrections (D21) : permises entre Terminer et Enregistrer, jamais après. */
-  async function correct(action: Parameters<typeof applyWorkoutAction>[1]) {
-    if (!workoutId) return;
+  async function correct(action: Parameters<typeof applyWorkoutAction>[1]): Promise<boolean> {
+    if (!workoutId) return false;
     try {
       setCorrectionError(undefined);
       await applyWorkoutAction(workoutId, action);
       setVersion((value) => value + 1);
+      return true;
     } catch (cause) {
       setCorrectionError(cause instanceof Error ? cause.message : "Correction impossible");
+      return false;
     }
   }
 
@@ -262,7 +265,7 @@ export function WorkoutBlockDetailScreen() {
       {discarding && block.kind !== "note" && (
         <BottomSheet
           title="Retirer ce bloc ?"
-          message="Pour un bloc non utilisé : ses validations sont effacées, il reste visible comme sauté et ne compte ni dans la durée, ni dans les records."
+          message="Pour un bloc non utilisé : il est supprimé de la séance, avec ce qui y a été validé par erreur. Il ne compte ni dans la durée, ni dans les records."
           actions={[
             {
               label: "Retirer ce bloc",
@@ -270,7 +273,10 @@ export function WorkoutBlockDetailScreen() {
               hint: "Les autres blocs ne changent pas",
               onSelect: () => {
                 setDiscarding(false);
-                void correct((current, at) => discardBlock(current, block.id, at));
+                /* Le bloc n'existe plus : retour au récapitulatif. */
+                void correct((current, at) => discardBlock(current, block.id, at)).then((done) => {
+                  if (done) navigate(backTo, { replace: true });
+                });
               },
             },
           ]}
