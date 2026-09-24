@@ -1,3 +1,7 @@
+import { addDays, format, parseISO } from "date-fns";
+import type { WeightEntry } from "../models";
+import { formatLocalDate, getWeekStartDate, listWeekDates } from "./programRules";
+
 /**
  * Pesée quotidienne (conception V2 § 2.4, lot I.1) : une pesée par jour
  * local, en kg à une décimale, entre 30 et 250 kg, jamais dans le futur.
@@ -42,4 +46,68 @@ export function weightDateError(date: string, today: string): string | undefined
   if (date > today) return "Pas de pesée dans le futur.";
 
   return undefined;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Moyenne de la semaine (lot I.2, D9, conception V2 § 5.4)                   */
+/* -------------------------------------------------------------------------- */
+
+/** Une semaine n'est valide qu'avec au moins 3 pesées (D9). */
+export const MIN_WEIGHINGS_PER_WEEK = 3;
+
+export interface WeekAverage {
+  /** Dimanche de la semaine (WEEK_STARTS_ON). */
+  weekStart: string;
+  /** Samedi de la semaine. */
+  weekEnd: string;
+  count: number;
+  /** Moyenne **exacte** ; l'arrondi à 0,1 kg n'est qu'un affichage. Absente sans pesée. */
+  mean?: number;
+  valid: boolean;
+}
+
+/** Moyenne arithmétique des pesées de la semaine qui commence le dimanche `weekStart`. */
+export function weekAverage(entries: ReadonlyArray<Pick<WeightEntry, "date" | "kg">>, weekStart: string): WeekAverage {
+  const days = listWeekDates(weekStart);
+  const inWeek = entries.filter((entry) => days.includes(entry.date));
+  const weekEnd = days[days.length - 1]!;
+
+  if (inWeek.length === 0) return { weekStart, weekEnd, count: 0, valid: false };
+
+  const mean = inWeek.reduce((sum, entry) => sum + entry.kg, 0) / inWeek.length;
+
+  return { weekStart, weekEnd, count: inWeek.length, mean, valid: inWeek.length >= MIN_WEIGHINGS_PER_WEEK };
+}
+
+export interface WeightWeekSummary {
+  /** La dernière semaine complète : celle qui précède la semaine en cours. */
+  lastComplete: WeekAverage;
+  /** La semaine en cours : toujours provisoire, quel que soit le nombre de pesées. */
+  current: WeekAverage;
+}
+
+/**
+ * Les deux moyennes de la carte, pour le jour local `today`. Une pesée
+ * postérieure à `today` (impossible à la saisie) n'entre dans aucune.
+ */
+export function weightWeekSummary(entries: ReadonlyArray<Pick<WeightEntry, "date" | "kg">>, today: string): WeightWeekSummary {
+  const currentStart = getWeekStartDate(today);
+  const previousStart = formatLocalDate(addDays(parseISO(currentStart), -7));
+  const known = entries.filter((entry) => entry.date <= today);
+
+  return { lastComplete: weekAverage(known, previousStart), current: weekAverage(known, currentStart) };
+}
+
+/** « 20 → 26 sept. » */
+export function formatWeekSpan(week: Pick<WeekAverage, "weekStart" | "weekEnd">): string {
+  const start = parseISO(week.weekStart);
+  const end = parseISO(week.weekEnd);
+  const months = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+  const startLabel = start.getMonth() === end.getMonth() ? format(start, "d") : `${format(start, "d")} ${months[start.getMonth()]}`;
+
+  return `${startLabel} → ${format(end, "d")} ${months[end.getMonth()]}`;
+}
+
+export function formatWeighingCount(count: number): string {
+  return count <= 1 ? `${count} pesée` : `${count} pesées`;
 }

@@ -3,8 +3,15 @@ import { Scale } from "lucide-react";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { getWeightEntries } from "../../db/repositories/weightRepository";
 import type { WeightEntry } from "../../domain";
-import { formatDayLabel } from "../../domain/rules/programRules";
-import { formatWeightKg } from "../../domain/rules/weightRules";
+import { addDays, parseISO } from "date-fns";
+import { formatDayLabel, formatLocalDate } from "../../domain/rules/programRules";
+import {
+  formatWeekSpan,
+  formatWeighingCount,
+  formatWeightKg,
+  MIN_WEIGHINGS_PER_WEEK,
+  weightWeekSummary,
+} from "../../domain/rules/weightRules";
 import { correctWeight, recordWeight, removeWeight, todayForWeight } from "./weightActions";
 import "./WeightCard.css";
 
@@ -31,11 +38,9 @@ function formatKgInput(kg: number | undefined): string {
 interface WeightCardProps {
   /** Jour local courant ; remplaçable pour les tests. */
   today?: string;
-  /** Contenu ajouté sous la saisie (moyennes, lot I.2). */
-  renderSummary?: (entries: WeightEntry[], today: string) => React.ReactNode;
 }
 
-export function WeightCard({ today = todayForWeight(), renderSummary }: WeightCardProps) {
+export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
   const [entries, setEntries] = useState<WeightEntry[] | undefined>();
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(today);
@@ -99,23 +104,39 @@ export function WeightCard({ today = todayForWeight(), renderSummary }: WeightCa
       {todayEntry && !editing && (
         <div className="weight-card__today">
           <strong className="weight-card__value">{formatWeightKg(todayEntry.kg)}</strong>
-          <button
-            type="button"
-            className="today__link weight-card__link"
-            onClick={() => {
-              setEditing(true);
-              setDate(today);
-              setInput(formatKgInput(todayEntry.kg));
-            }}
-          >
-            Modifier
-          </button>
+          <span className="weight-card__today-actions">
+            <button
+              type="button"
+              className="today__link weight-card__link"
+              onClick={() => {
+                setEditing(true);
+                setDate(today);
+                setInput(formatKgInput(todayEntry.kg));
+              }}
+            >
+              Modifier
+            </button>
+            {/* Pesée oubliée : le champ s'ouvre vide, sur la veille. */}
+            <button
+              type="button"
+              className="today__link weight-card__link"
+              onClick={() => {
+                setEditing(true);
+                setDate(formatLocalDate(addDays(parseISO(today), -1)));
+                setInput("");
+              }}
+            >
+              Autre jour
+            </button>
+          </span>
         </div>
       )}
 
       {formOpen && (
         <form
           className="weight-card__form"
+          /* Nos règles répondent, en français, sur tous les navigateurs. */
+          noValidate
           onSubmit={(event) => {
             event.preventDefault();
             if (!busy) void submit();
@@ -169,7 +190,7 @@ export function WeightCard({ today = todayForWeight(), renderSummary }: WeightCa
         </form>
       )}
 
-      {renderSummary?.(entries, today)}
+      {entries.length > 0 && <WeightAverages entries={entries} today={today} />}
 
       {entries.length > 0 && (
         <button
@@ -260,6 +281,7 @@ function CorrectionForm({
   return (
     <form
       className="weight-card__form weight-card__form--inline"
+      noValidate
       onSubmit={(event) => {
         event.preventDefault();
         void (async () => {
@@ -297,5 +319,43 @@ function CorrectionForm({
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Moyennes de la carte (lot I.2, D9) : la dernière semaine complète, valide
+ * à partir de 3 pesées, et la semaine en cours, toujours « provisoire ».
+ * Arrondi d'affichage à 0,1 kg ; les calculs gardent les valeurs exactes.
+ */
+function WeightAverages({ entries, today }: { entries: WeightEntry[]; today: string }) {
+  const { lastComplete, current } = weightWeekSummary(entries, today);
+
+  return (
+    <dl className="weight-card__averages">
+      <div>
+        <dt>Semaine dernière <small>{formatWeekSpan(lastComplete)}</small></dt>
+        <dd>
+          {lastComplete.valid && lastComplete.mean !== undefined ? (
+            <>
+              <strong>{formatWeightKg(lastComplete.mean)}</strong> · {formatWeighingCount(lastComplete.count)}
+            </>
+          ) : (
+            <>Pas assez de pesées ({lastComplete.count} sur {MIN_WEIGHINGS_PER_WEEK} minimum)</>
+          )}
+        </dd>
+      </div>
+      <div>
+        <dt>Cette semaine <small>provisoire</small></dt>
+        <dd>
+          {current.mean !== undefined ? (
+            <>
+              <strong>{formatWeightKg(current.mean)}</strong> · {formatWeighingCount(current.count)}
+            </>
+          ) : (
+            <>Aucune pesée</>
+          )}
+        </dd>
+      </div>
+    </dl>
   );
 }

@@ -118,11 +118,15 @@ describe("sauvegarde", () => {
 
 describe("carte « Pesée du jour »", () => {
   it("pas de pesée : champ ouvert ; enregistrer ; la valeur s'affiche, modifiable, sans doublon", async () => {
-    render(<WeightCard today="2026-09-24" />);
+    const { container } = render(<WeightCard today="2026-09-24" />);
+    const value = async () => {
+      await waitFor(() => expect(container.querySelector(".weight-card__value")).not.toBeNull());
+      return container.querySelector(".weight-card__value")?.textContent;
+    };
 
     fireEvent.change(await screen.findByLabelText("Poids en kg"), { target: { value: "81,4" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
-    expect(await screen.findByText("81,4 kg")).toBeTruthy();
+    expect(await value()).toBe("81,4 kg");
     expect(screen.queryByLabelText("Poids en kg")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Modifier" }));
@@ -132,8 +136,16 @@ describe("carte « Pesée du jour »", () => {
     fireEvent.change(input, { target: { value: "80,9" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
 
-    expect(await screen.findByText("80,9 kg")).toBeTruthy();
+    await waitFor(() => expect(container.querySelector(".weight-card__value")?.textContent).toBe("80,9 kg"));
     expect(await db.weightEntries.count()).toBe(1);
+
+    /* Pesée oubliée : « Autre jour » ouvre le champ vide sur la veille. */
+    fireEvent.click(screen.getByRole("button", { name: "Autre jour" }));
+    expect((screen.getByLabelText("Jour de la pesée") as HTMLInputElement).value).toBe("2026-09-23");
+    expect((screen.getByLabelText("Poids en kg") as HTMLInputElement).value).toBe("");
+    fireEvent.change(screen.getByLabelText("Poids en kg"), { target: { value: "81,7" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await waitFor(async () => expect((await db.weightEntries.orderBy("date").toArray()).map((entry) => [entry.date, entry.kg])).toEqual([["2026-09-23", 81.7], ["2026-09-24", 80.9]]));
   });
 
   it("valeur hors bornes : message, rien d'écrit ; jour passé choisi dans le champ Jour", async () => {
@@ -165,7 +177,7 @@ describe("carte « Pesée du jour »", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Corriger" })[0]!);
     fireEvent.change(screen.getByLabelText("Poids corrigé du 2026-09-23"), { target: { value: "81,6" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer la correction" }));
-    expect(await screen.findByText("81,6 kg")).toBeTruthy();
+    await waitFor(() => expect(screen.getAllByRole("listitem")[0]?.textContent).toContain("81,6 kg"));
 
     fireEvent.click(screen.getAllByRole("button", { name: "Supprimer" })[1]!);
     expect(screen.getByText(/Supprimer la pesée de/)).toBeTruthy();

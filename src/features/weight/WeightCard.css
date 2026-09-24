@@ -130,17 +130,19 @@
 }
 
 .weight-card__row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
-  gap: 8px;
-  padding: 8px 0;
+  gap: 4px;
+  padding: 6px 0;
   border-top: 1px solid var(--color-border, #e4e7ec);
 }
 
 .weight-card__day {
-  flex: 1 1 auto;
+  overflow: hidden;
   color: var(--color-text-soft, #666);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .weight-card__kg {
@@ -148,8 +150,8 @@
 }
 
 .weight-card__row-action {
-  min-height: 36px;
-  padding: 0 8px;
+  min-height: 40px;
+  padding: 0 4px;
   border: 0;
   background: none;
   color: var(--color-accent, #2f6fed);
@@ -163,5 +165,48 @@
 }
 
 .weight-card__form--inline {
-  flex: 1 1 100%;
+  grid-column: 1 / -1;
 }
+
+/* Lot I.2 : moyennes de la semaine. */
+.weight-card__averages {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-soft, #f2f4f7);
+}
+
+.weight-card__averages div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.weight-card__averages dt {
+  font-weight: 600;
+}
+
+.weight-card__averages dt small {
+  margin-left: 4px;
+  color: var(--color-text-soft, #666);
+  font-weight: 400;
+}
+
+.weight-card__averages dd {
+  margin: 0;
+  color: var(--color-text-soft, #666);
+}
+
+.weight-card__averages dd strong {
+  color: var(--color-text, #1b1f24);
+}
+
+.weight-card__today-actions {
+  display: inline-flex;
+  gap: 16px;
+}
+
