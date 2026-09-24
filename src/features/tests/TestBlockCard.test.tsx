@@ -2,7 +2,7 @@
 import "fake-indexeddb/auto";
 
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
 import type { PerformedTestBlock, WorkoutSession } from "../../domain";
@@ -27,7 +27,8 @@ function testBlock(key: string): PerformedTestBlock {
   };
 }
 
-let latest: WorkoutSession | undefined;
+/* La séance du montage, relue par les assertions (écrite après chaque rendu). */
+const seen: { workout?: WorkoutSession } = {};
 const onFinish = vi.fn();
 
 function Harness({ keyName, editable = true }: { keyName: string; editable?: boolean }) {
@@ -35,7 +36,9 @@ function Harness({ keyName, editable = true }: { keyName: string; editable?: boo
     id: "w", source: "planned", kind: "training", status: "in_progress", date: "2026-10-25", startedAt: T, lastActionAt: T,
     activeDurationSec: 0, createdAt: T, updatedAt: T, blocks: [testBlock(keyName)],
   });
-  latest = workout;
+  useEffect(() => {
+    seen.workout = workout;
+  }, [workout]);
   const apply = (action: WorkoutAction) => setWorkout((current) => action(current, new Date().toISOString()));
   return (
     <ul>
@@ -61,7 +64,7 @@ afterEach(async () => {
 });
 
 const result = () => screen.getByRole("region", { name: "Résultat" });
-const draft = () => (latest!.blocks[0] as PerformedTestBlock).draft;
+const draft = () => (seen.workout!.blocks[0] as PerformedTestBlock).draft;
 
 function type(label: string | RegExp, value: string) {
   const input = screen.getByLabelText(label) as HTMLInputElement;
