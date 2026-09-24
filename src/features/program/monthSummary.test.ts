@@ -97,3 +97,29 @@ describe("résumé du mois", () => {
     });
   });
 });
+
+describe("sauvegarde réelle (COACH_JM_BACKUP) : classement des séances sans modèle (option B)", () => {
+  const path = process.env.COACH_JM_BACKUP;
+
+  it.skipIf(!path)("séances importées de septembre : Cardio les 03, 06, 09 et 16/09, Musculation les autres ; les lignes et la mobilité font le total", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const { parseBackup } = await import("../backup/restoreBackup");
+    const { categoryForWorkout } = await import("./freeWorkouts");
+    const file = parseBackup(await readFile(path!, "utf8"));
+    const all = file.stores.workouts as WorkoutSession[];
+    const byId = new Map<string, Exercise>((file.stores.exercises as Exercise[]).map((exercise) => [exercise.id, exercise]));
+    const templates = new Map<string, SessionTemplate>(((file.stores.sessionTemplates ?? []) as SessionTemplate[]).map((template) => [template.id, template]));
+
+    const imported = all.filter((workout) => workout.id.startsWith("import-"));
+    expect(imported.length).toBeGreaterThan(0);
+    const cardio = imported
+      .filter((workout) => categoryForWorkout(workout, undefined, byId) === "Cardio")
+      .map((workout) => workout.date)
+      .sort();
+    expect(cardio).toEqual(["2026-09-03", "2026-09-06", "2026-09-09", "2026-09-16"]);
+
+    const summary = summarizeMonth(all, "2026-09-01", "2026-09-30", templates, byId);
+    expect(summary.musculation + summary.cardio + summary.routine + summary.mobility).toBe(summary.total);
+    expect(summary.cardio).toBeGreaterThanOrEqual(4);
+  });
+});

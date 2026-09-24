@@ -59,11 +59,29 @@ export function formatFreeWorkoutSummary(
 }
 
 /**
- * Catégorie dominante pour l'icône de la ligne d'une séance libre : un
- * **bilan de mobilité** d'abord (`kind` prime sur toute inférence, v1.5
- * § 11.4 — l'inférence ne connaît pas « Test mobilité » et classerait un
- * bilan improvisé en Musculation), puis cardio seul → Cardio, mobilité
- * seule → Mobilité, sinon Musculation. Les briques `warmup` ne comptent pas.
+ * Temps de cardio d'une séance : la somme des durées réalisées de ses
+ * paliers cardio, hors briques d'échauffement (§ 5.8).
+ */
+export function cardioSecondsOf(workout: Pick<WorkoutSession, "blocks">): number {
+  let total = 0;
+  for (const block of workout.blocks) {
+    if (block.kind !== "exercise" || block.role === "warmup") continue;
+    for (const step of block.cardioSteps ?? []) {
+      if (step.status === "completed") total += step.settings.durationSec;
+    }
+  }
+  return total;
+}
+
+/**
+ * Catégorie d'une séance **sans modèle** (séance libre, dont tout
+ * l'historique de septembre) : un **bilan de mobilité** d'abord (`kind`
+ * prime sur toute inférence, v1.5 § 11.4), puis mobilité seule →
+ * Mobilité ; puis (décision du 24/09/2026, option B) Cardio si la séance
+ * ne contient que du cardio (une marche saisie en distance), ou si son
+ * temps de cardio dépasse **strictement** 60 % de sa durée active ;
+ * Musculation sinon — exactement 60 % reste Musculation. Les briques
+ * `warmup` ne comptent pas.
  */
 export function inferFreeWorkoutCategory(
   workout: WorkoutSession,
@@ -75,7 +93,6 @@ export function inferFreeWorkoutCategory(
 
   for (const block of workout.blocks) {
     if (block.kind !== "exercise" || block.status !== "performed") continue;
-    /* Une brique d'échauffement ne fait jamais d'une séance une séance cardio (§ 5.8). */
     if (block.role === "warmup") continue;
 
     const category = exerciseById.get(block.exerciseId)?.category;
@@ -86,7 +103,8 @@ export function inferFreeWorkoutCategory(
   if (categories.size === 1 && categories.has("Cardio")) return "Cardio";
   if (categories.size === 1 && categories.has("Mobilité")) return "Mobilité";
 
-  return "Musculation";
+  /* Plus de 60 % du temps en cardio, en entiers : cardio / actif > 3 / 5. */
+  return cardioSecondsOf(workout) * 5 > workout.activeDurationSec * 3 ? "Cardio" : "Musculation";
 }
 
 /**
