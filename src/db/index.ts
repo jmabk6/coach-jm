@@ -51,6 +51,8 @@ export {
   saveGoal,
 } from "./repositories/goalRepository";
 
+export { getSetting, saveSetting } from "./repositories/settingsRepository";
+
 export {
   getWeightEntries,
   getLatestWeightEntry,

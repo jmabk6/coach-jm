@@ -3,8 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { MigrationFailureScreen } from "./app/MigrationFailureScreen";
 import { db } from "./db/database";
-import { seedExerciseCatalog } from "./features/exercises/seedExerciseCatalog";
-import { seedRpeScale } from "./features/strength/seedRpeScale";
+import { runSeeds } from "./features/seed/runSeeds";
 import "./index.css";
 
 async function bootstrap() {
@@ -25,8 +24,9 @@ async function bootstrap() {
     return;
   }
 
-  await seedExerciseCatalog();
-  await seedRpeScale();
+  /* Seeds dans l'ordre du § 5.2 : un échec est journalisé, l'application
+     démarre quand même (§ 5.1). */
+  await runSeeds();
 
   /* Console de recette : restauration d'une sauvegarde dans la base de
      cet origin (serveur de développement). Absent du build de production. */

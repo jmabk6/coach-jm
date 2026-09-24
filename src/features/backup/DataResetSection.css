@@ -1,0 +1,39 @@
+.plus-list__icon--danger {
+  background: #fdeaea;
+  color: var(--color-danger, #c2413b);
+}
+
+.data-reset__review {
+  margin: 14px 0 0;
+  padding: 14px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: var(--radius-md, 14px);
+}
+
+.data-reset__lead {
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.data-reset__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.data-reset__button {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: var(--radius-sm, 10px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+}
+
+.data-reset__button--danger {
+  border-color: var(--color-danger, #c2413b);
+  background: var(--color-danger, #c2413b);
+  color: #fff;
+}

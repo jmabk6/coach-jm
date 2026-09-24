@@ -4,6 +4,7 @@ import { BarChart3, DatabaseBackup, Dumbbell } from "lucide-react";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { db } from "../../db/database";
 import { BackupSection } from "../backup/BackupSection";
+import { DataResetSection } from "../backup/DataResetSection";
 import {
   importSeptember2026History,
   type ImportHistoryResult,
@@ -127,6 +128,8 @@ export function PlusScreen() {
       <div className="plus-list">
         <BackupSection database={db} />
       </div>
+
+      <DataResetSection database={db} />
 
       <p className="plus-screen__version">
         Version du{" "}
