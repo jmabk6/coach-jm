@@ -7,7 +7,7 @@ import type { InstallMarkers, PerformedExerciseBlock, WorkoutSession } from "../
 import { parseBackup } from "../backup/restoreBackup";
 import { resetAndRestore } from "../backup/resetAndRestore";
 import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
-import { FIX_WORKOUT_ID, fixWorkout20260924, seedFixWorkout20260924 } from "./seedFixWorkout20260924";
+import { FIX_WORKOUT_ID, fixWorkout20260924, removeSkippedBlocks20260924, seedFixWorkout20260924, seedRemoveSkipped20260924 } from "./seedFixWorkout20260924";
 
 /**
  * Seed 10 : la Cardio A du 24/09/2026, enregistrée avec « principal » et
@@ -78,6 +78,23 @@ describe("correction ponctuelle du 24/09", () => {
     expect((await db.workouts.get(FIX_WORKOUT_ID))!.activeDurationSec).toBe(10053);
   });
 
+  it("seed 11 : les deux blocs laissés « sautés » sont supprimés, une seule fois", async () => {
+    const skipped = fixWorkout20260924(observed(), T)!;
+    const removed = removeSkippedBlocks20260924(skipped, T)!;
+    expect(removed.blocks.map((item) => [item.id, item.position])).toEqual([["workout-block-v1-cardio-a-debut", 0]]);
+    expect(removed.blocks[0]).toEqual(skipped.blocks[0]);
+    expect(removed.activeDurationSec).toBe(2700);
+    /* Pas dans l'état attendu : rien. */
+    expect(removeSkippedBlocks20260924(observed(), T)).toBeUndefined();
+
+    await db.workouts.put(skipped);
+    await seedRemoveSkipped20260924(T);
+    expect((await db.workouts.get(FIX_WORKOUT_ID))!.blocks).toHaveLength(1);
+    await db.workouts.put(skipped);
+    await seedRemoveSkipped20260924("2026-09-26T06:00:00.000Z");
+    expect((await db.workouts.get(FIX_WORKOUT_ID))!.blocks).toHaveLength(3);
+  });
+
   it.skipIf(!process.env.COACH_JM_BACKUP_2232)("sauvegarde réelle du 24/09 22:32 : 45 min, le reste identique", async () => {
     const file = parseBackup(await readFile(process.env.COACH_JM_BACKUP_2232!, "utf8"));
     await resetAndRestore(file, db);
@@ -85,7 +102,8 @@ describe("correction ponctuelle du 24/09", () => {
     await runSeeds();
     const fixed = (await db.workouts.get(FIX_WORKOUT_ID))!;
     expect(fixed.activeDurationSec).toBe(2700);
-    expect(fixed.blocks.map((item) => (item as PerformedExerciseBlock).status)).toEqual(["performed", "skipped", "skipped"]);
+    expect(fixed.blocks.map((item) => [item.id, item.position])).toEqual([["workout-block-v1-cardio-a-debut", 0]]);
+    expect(fixed.feeling).toBe(5);
     const others = (file.stores.workouts as WorkoutSession[]).filter((item) => item.id !== FIX_WORKOUT_ID);
     for (const other of others) expect(await db.workouts.get(other.id)).toEqual(other);
   });

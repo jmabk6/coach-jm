@@ -2,7 +2,7 @@ import { db } from "../../db/database";
 import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
 import { seedProgramV1, seedRoutines } from "../program/seedProgramV1";
 import { seedCardioASingleBlock } from "../program/seedCardioASingleBlock";
-import { seedFixWorkout20260924 } from "../workout/seedFixWorkout20260924";
+import { seedFixWorkout20260924, seedRemoveSkipped20260924 } from "../workout/seedFixWorkout20260924";
 import { seedProgramFrames } from "../strength/seedProgramFrames";
 import { seedRpeScale } from "../strength/seedRpeScale";
 import { seedGoals } from "../goals/seedGoals";
@@ -41,6 +41,8 @@ export const SEEDS: SeedStep[] = [
   { name: "cardioASingleBlock", dependsOn: ["programV1", "testProtocols"], run: () => seedCardioASingleBlock() },
   /* Seed 10 : la Cardio A du 24/09, enregistrée avec deux blocs validés à vide. */
   { name: "fixWorkout20260924", run: () => seedFixWorkout20260924() },
+  /* Seed 11 : « Retirer ce bloc » supprime ; les blocs sautés de cette séance aussi. */
+  { name: "removeSkipped20260924", run: () => seedRemoveSkipped20260924() },
 ];
 
 export interface SeedReport {

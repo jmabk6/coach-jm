@@ -1,6 +1,6 @@
 import { db } from "../../db/database";
 import type { InstallMarkers, PerformedExerciseBlock, WorkoutSession } from "../../domain";
-import { clearDiscardedBlock } from "./engine/workoutEngine";
+import { clearDiscardedBlock, removeBlocks } from "./engine/workoutEngine";
 import { validatedCardioStepsSec } from "./engine/workoutTime";
 
 /**
@@ -61,4 +61,46 @@ export async function seedFixWorkout20260924(now: string = new Date().toISOStrin
 
     await db.settings.put({ key: "install", value: { ...install, fixWorkout20260924: now } });
   });
+}
+
+/**
+ * Seed 11 (24/09/2026, le soir) : « Retirer ce bloc » supprime désormais le
+ * bloc au lieu de le laisser « sauté ». Les deux blocs laissés « sautés » par
+ * le seed 10 sont supprimés de la séance — seulement s'ils sont encore
+ * sautés, sans aucune validation, et la séance toujours à 45 min.
+ */
+export function removeSkippedBlocks20260924(workout: WorkoutSession, now: string): WorkoutSession | undefined {
+  if (workout.status !== "completed" || workout.activeDurationSec !== 2700) return undefined;
+
+  const ids = SPURIOUS.map((item) => item.blockId);
+  const skipped = ids.every((blockId) => {
+    const block = workout.blocks.find((item) => item.id === blockId);
+    return (
+      block?.kind === "exercise" &&
+      block.status === "skipped" &&
+      !(block.cardioSteps ?? []).some((step) => step.status === "completed")
+    );
+  });
+  if (!skipped) return undefined;
+
+  return { ...removeBlocks(workout, ids), updatedAt: now };
+}
+
+export async function seedRemoveSkipped20260924(now: string = new Date().toISOString()): Promise<void> {
+  await db.transaction("rw", db.workouts, db.settings, async () => {
+    const install = (await db.settings.get("install"))?.value as InstallMarkers | undefined;
+    if (install?.removeSkipped20260924 !== undefined) return;
+
+    const workout = await db.workouts.get(FIX_WORKOUT_ID);
+    const fixed = workout ? removeSkippedBlocks20260924(workout, now) : undefined;
+    if (fixed) await db.workouts.put(fixed);
+
+    await db.settings.put({ key: "install", value: { ...install, removeSkipped20260924: now } });
+  });
+}
+
+/** Les deux corrections enchaînées, telles qu'un lancement les applique (tests sur sauvegarde réelle). */
+export function fixesOf20260924(workout: WorkoutSession, now: string): WorkoutSession {
+  const first = fixWorkout20260924(workout, now) ?? workout;
+  return removeSkippedBlocks20260924(first, now) ?? first;
 }

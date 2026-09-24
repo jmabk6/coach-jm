@@ -52,6 +52,8 @@ export interface InstallMarkers {
   cardioASingleBlock?: string;
   /** Correction ponctuelle de la Cardio A du 24/09/2026 (seed 10). */
   fixWorkout20260924?: string;
+  /** Les blocs « sautés » de cette séance supprimés (seed 11). */
+  removeSkipped20260924?: string;
 }
 
 export type SettingsRecord =
