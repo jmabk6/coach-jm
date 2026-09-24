@@ -21,12 +21,8 @@ function labels(templateId: string): string[] {
 }
 
 describe("fiche d'un jour : libellé des blocs", () => {
-  it("Cardio A : trois blocs de tapis, trois libellés différents", () => {
-    expect(labels("v1-cardio-a")).toEqual([
-      "Marche 4,5 km/h · pente 0 %",
-      "Marche 5 km/h · pente 6–8 %",
-      "Retour au calme",
-    ]);
+  it("Cardio A : un seul bloc de tapis, ses trois paliers résumés (décision du 24/09/2026)", () => {
+    expect(labels("v1-cardio-a")).toEqual(["Tapis de course · 3 paliers · 45 min · 4,5 à 5 km/h · 0 à 8 %"]);
   });
 
   it("Muscu A : l'échauffement, puis chaque exercice avec sa consigne, sans le repos", () => {

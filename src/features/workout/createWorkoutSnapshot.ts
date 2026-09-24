@@ -231,9 +231,51 @@ function createTestBlock({ test, protocolVersionId }: SnapshotTest, replacedBloc
 }
 
 /**
+ * Coupe un bloc à paliers autour du palier visé : les paliers d'avant,
+ * le test, les paliers d'après (Cardio A, décision du 24/09/2026). Un
+ * morceau vide disparaît ; `undefined` si le palier est introuvable.
+ */
+function splitAroundStep(
+  block: PerformedExerciseBlock,
+  stepId: Id,
+  testBlock: PerformedTestBlock,
+): PerformedBlock[] | undefined {
+  const steps = block.cardioSteps ?? [];
+  const index = steps.findIndex((step) => step.id === `${block.id}-step-${stepId}`);
+  if (index < 0 || block.snapshotInstructions.shape !== "steps") return undefined;
+
+  const instructions = block.snapshotInstructions;
+  const part = (from: number, to: number, id: Id): PerformedExerciseBlock | undefined => {
+    if (from >= to) return undefined;
+    const kept = new Set(steps.slice(from, to).map((step) => step.id));
+    const piece: PerformedExerciseBlock = {
+      ...block,
+      id,
+      snapshotInstructions: {
+        ...instructions,
+        steps: instructions.steps
+          .filter((step) => kept.has(`${block.id}-step-${step.id}`))
+          .map((step, position) => ({ ...step, position })),
+      },
+      cardioSteps: steps.slice(from, to).map((step, position) => ({ ...step, position })),
+    };
+    /* La note du bloc (retour au calme) suit la fin du bloc. */
+    if (to < steps.length) delete piece.note;
+    return piece;
+  };
+
+  return [
+    part(0, index, block.id),
+    testBlock,
+    part(index + 1, steps.length, `${block.id}-suite`),
+  ].filter((item) => item !== undefined);
+}
+
+/**
  * Place les briques test (conception V2 § 3.5.1) :
  * - `replace_all` : la séance ne contient que ses tests, dans l'ordre ;
- * - `replace_block` : le test prend la place de la brique visée ;
+ * - `replace_block` : le test prend la place de la brique visée — ou,
+ *   avec `targetStepId`, du seul palier visé ;
  * - `after_warmup` : après la dernière brique d'échauffement, sinon en tête ;
  * - `before_all` : en tête.
  * Plusieurs tests en tête gardent leur ordre. Les positions sont refaites.
@@ -253,7 +295,13 @@ function placeTests(blocks: PerformedBlock[], tests: ReadonlyArray<SnapshotTest>
         (block) => block.kind !== "test" && block.sourceBlockId === item.test.targetBlockId,
       );
       if (index >= 0) {
-        result[index] = createTestBlock(item, item.test.targetBlockId);
+        const target = result[index]!;
+        const testBlock = createTestBlock(item, item.test.targetBlockId);
+        const split =
+          item.test.targetStepId !== undefined && target.kind === "exercise"
+            ? splitAroundStep(target, item.test.targetStepId, testBlock)
+            : undefined;
+        result.splice(index, 1, ...(split ?? [testBlock]));
         continue;
       }
     }

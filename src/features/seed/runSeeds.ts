@@ -1,6 +1,7 @@
 import { db } from "../../db/database";
 import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
 import { seedProgramV1, seedRoutines } from "../program/seedProgramV1";
+import { seedCardioASingleBlock } from "../program/seedCardioASingleBlock";
 import { seedProgramFrames } from "../strength/seedProgramFrames";
 import { seedRpeScale } from "../strength/seedRpeScale";
 import { seedGoals } from "../goals/seedGoals";
@@ -35,6 +36,8 @@ export const SEEDS: SeedStep[] = [
   { name: "routines", run: () => seedRoutines() },
   { name: "frames", dependsOn: ["exerciseCatalog", "programV1"], run: () => seedProgramFrames() },
   { name: "goals", dependsOn: ["exerciseCatalog", "testProtocols"], run: () => seedGoals() },
+  /* Seed 9 (24/09/2026) : Cardio A en un seul bloc, le test sur le palier principal. */
+  { name: "cardioASingleBlock", dependsOn: ["programV1", "testProtocols"], run: () => seedCardioASingleBlock() },
 ];
 
 export interface SeedReport {

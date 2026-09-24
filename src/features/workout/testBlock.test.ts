@@ -73,12 +73,36 @@ describe("placements (§ 3.5.1)", () => {
     expect(blocks[1]).toMatchObject({ kind: "test", status: "not_performed", protocolVersionId: "protocol-traction-v1", addedDuringWorkout: false });
   });
 
-  it("cardio : remplace le bloc principal de Cardio A", () => {
+  it("cardio : remplace le seul palier principal de Cardio A ; échauffement et retour au calme restent (option b)", () => {
     const blocks = createWorkoutSnapshot(template("v1-cardio-a"), undefined, undefined, [
-      test("cardio", { placement: "replace_block", targetBlockId: "v1-cardio-a-principal" }),
+      test("cardio", { placement: "replace_block", targetBlockId: "v1-cardio-a-tapis", targetStepId: "v1-cardio-a-principal-p1" }),
     ]);
-    expect(order(blocks)).toEqual(["v1-cardio-a-debut", "test:cardio", "v1-cardio-a-retour"]);
-    expect((blocks[1] as PerformedTestBlock).replacedBlockId).toBe("v1-cardio-a-principal");
+    expect(order(blocks)).toEqual(["v1-cardio-a-tapis", "test:cardio", "v1-cardio-a-tapis"]);
+    expect(blocks.map((block) => block.id)).toEqual([
+      "workout-block-v1-cardio-a-tapis",
+      "workout-block-test-protocol-cardio",
+      "workout-block-v1-cardio-a-tapis-suite",
+    ]);
+    expect(blocks.map((block) => block.position)).toEqual([0, 1, 2]);
+    expect((blocks[1] as PerformedTestBlock).replacedBlockId).toBe("v1-cardio-a-tapis");
+
+    const [warmup, , cooldown] = blocks as [PerformedExerciseBlock, PerformedTestBlock, PerformedExerciseBlock];
+    expect(warmup.cardioSteps).toEqual([
+      { id: "workout-block-v1-cardio-a-tapis-step-v1-cardio-a-debut-p1", position: 0, status: "upcoming", settings: { durationSec: 300, speedKmh: 4.5, inclinePercent: 0 } },
+    ]);
+    expect(warmup.note).toBeUndefined();
+    expect(cooldown.cardioSteps).toEqual([
+      { id: "workout-block-v1-cardio-a-tapis-step-v1-cardio-a-retour-p1", position: 0, status: "upcoming", settings: { durationSec: 300, speedKmh: 4.5, inclinePercent: 0 } },
+    ]);
+    expect(cooldown.note).toBe("Dernier palier : retour au calme.");
+    expect(cooldown.snapshotInstructions).toMatchObject({ shape: "steps", steps: [{ id: "v1-cardio-a-retour-p1", position: 0 }] });
+  });
+
+  it("palier visé introuvable : le bloc entier est remplacé", () => {
+    const blocks = createWorkoutSnapshot(template("v1-cardio-a"), undefined, undefined, [
+      test("cardio", { placement: "replace_block", targetBlockId: "v1-cardio-a-tapis", targetStepId: "absent" }),
+    ]);
+    expect(order(blocks)).toEqual(["test:cardio"]);
   });
 
   it("souplesse et tronc : remplacent tout le contenu de la routine du soir, dans l'ordre", () => {

@@ -111,6 +111,11 @@ export interface PlannedTest {
   protocolId: Id;
   placement: "before_all" | "after_warmup" | "replace_block" | "replace_all";
   targetBlockId?: Id;
+  /**
+   * `replace_block` sur un bloc à paliers : seul ce palier est remplacé,
+   * le bloc est coupé autour du test (Cardio A, décision du 24/09/2026).
+   */
+  targetStepId?: Id;
   adjustments?: Array<{ blockId: Id; sets: number }>;
   /** D26 : posé par « Replanifier ». */
   rescheduledToPlannedSessionId?: Id;

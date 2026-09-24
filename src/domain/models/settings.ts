@@ -35,6 +35,7 @@ export interface TestScheduleEntry {
   templateId?: Id;
   placement?: PlannedTest["placement"];
   targetBlockId?: Id;
+  targetStepId?: Id;
   adjustments?: PlannedTest["adjustments"];
 }
 
@@ -47,6 +48,8 @@ export interface InstallMarkers {
   routinesContent?: string;
   frames?: string;
   goals?: string;
+  /** Cardio A en un seul bloc (décision du 24/09/2026). */
+  cardioASingleBlock?: string;
 }
 
 export type SettingsRecord =

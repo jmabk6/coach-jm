@@ -138,6 +138,14 @@ const muscuC: TemplateContent = {
   ],
 };
 
+/**
+ * Cardio A (décision du 24/09/2026) : une séance sur une seule machine =
+ * **un seul bloc**, trois paliers — 5 min à 4,5 km/h, 35 min à 5 km/h en
+ * pente 6-8 %, 5 min de retour au calme. Le test cardio ne remplace que
+ * le palier principal (voir `PROGRAM_V1_TEST_SCHEDULE`).
+ */
+export const CARDIO_A_MAIN_STEP_ID = "v1-cardio-a-principal-p1";
+
 const cardioA: TemplateContent = {
   id: "v1-cardio-a",
   name: "Cardio A — Endurance facile",
@@ -146,6 +154,27 @@ const cardioA: TemplateContent = {
   subtitle: "Endurance facile",
   tags: ["Endurance"],
   description: "45 min.",
+  mainBlockId: "v1-cardio-a-tapis",
+  blocks: [
+    exercise(
+      "v1-cardio-a-tapis",
+      0,
+      "tapis",
+      {
+        shape: "steps",
+        steps: [
+          { ...tapisStep("v1-cardio-a-debut-p1", 300, 4.5, 0), position: 0 },
+          { ...tapisStep(CARDIO_A_MAIN_STEP_ID, 2100, 5, { min: 6, max: 8 }), position: 1 },
+          { ...tapisStep("v1-cardio-a-retour-p1", 300, 4.5, 0), position: 2 },
+        ],
+      },
+      { notes: "Dernier palier : retour au calme." },
+    ),
+  ],
+};
+
+/** Le Cardio A installé avant le 24/09/2026, en trois blocs : reconnu tel quel pour la mise à jour. */
+export const CARDIO_A_FORMER: Pick<TemplateContent, "mainBlockId" | "blocks"> = {
   mainBlockId: "v1-cardio-a-principal",
   blocks: [
     exercise("v1-cardio-a-debut", 0, "tapis", { shape: "steps", steps: [tapisStep("v1-cardio-a-debut-p1", 300, 4.5, 0)] }),
@@ -153,6 +182,8 @@ const cardioA: TemplateContent = {
     exercise("v1-cardio-a-retour", 2, "tapis", { shape: "steps", steps: [tapisStep("v1-cardio-a-retour-p1", 300, 4.5, 0)] }, { notes: "Retour au calme." }),
   ],
 };
+
+export const CARDIO_A = cardioA;
 
 /**
  * Cardio B (décision du 24/09/2026) : paliers préremplis, **sans distance**
@@ -265,8 +296,11 @@ export const PROGRAM_V1_TEST_SCHEDULE: TestScheduleEntry[] = [
     weekday: "wednesday",
     slot: "day",
     templateId: "v1-cardio-a",
+    /* Option (b) du 24/09/2026 : le test remplace le seul palier principal ;
+       échauffement et retour au calme restent. */
     placement: "replace_block",
-    targetBlockId: "v1-cardio-a-principal",
+    targetBlockId: "v1-cardio-a-tapis",
+    targetStepId: CARDIO_A_MAIN_STEP_ID,
   },
   /* Décision du 24/09/2026 : le test remplace les sprints d'entraînement ce jour-là (jamais 12 sprints). */
   {

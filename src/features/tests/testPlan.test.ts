@@ -79,7 +79,7 @@ describe("génération d'une semaine de tests", () => {
     });
     expect(by(week, "2026-10-28")).toMatchObject({
       sessionTemplateId: "v1-cardio-a",
-      tests: [{ protocolId: "protocol-cardio", placement: "replace_block", targetBlockId: "v1-cardio-a-principal" }],
+      tests: [{ protocolId: "protocol-cardio", placement: "replace_block", targetBlockId: "v1-cardio-a-tapis", targetStepId: "v1-cardio-a-principal-p1" }],
     });
     expect(by(week, "2026-10-29")).toMatchObject({
       sessionTemplateId: "v1-muscu-c",

@@ -41,6 +41,7 @@ export function eveningSessionId(date: string): string {
 function testOf(entry: TestScheduleEntry, protocolId: Id): PlannedTest {
   const test: PlannedTest = { protocolId, placement: entry.placement ?? "before_all" };
   if (entry.targetBlockId) test.targetBlockId = entry.targetBlockId;
+  if (entry.targetStepId) test.targetStepId = entry.targetStepId;
   if (entry.adjustments) test.adjustments = structuredClone(entry.adjustments);
   return test;
 }
