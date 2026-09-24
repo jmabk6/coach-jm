@@ -65,7 +65,12 @@ export default defineConfig(({ mode }) => ({
      URL aléatoire) pour la recette sur iPhone sans certificat à installer.
      Seul `dist/` est servi ; aucun fichier du dépôt ni clé privée. */
   ...(mode === "tunnel"
-    ? { preview: { host: "127.0.0.1", port: 5176, strictPort: true, allowedHosts: [".trycloudflare.com"] } }
+    ? {
+        preview: { host: "127.0.0.1", port: 5176, strictPort: true, allowedHosts: [".trycloudflare.com"] },
+        /* Recette C.8 : la page de test Dexie v3 n'entre que dans ce build,
+           jamais dans celui de production. */
+        build: { rollupOptions: { input: { main: resolve(__dirname, "index.html"), recette: resolve(__dirname, "recette-v3.html") } } },
+      }
     : {}),
   plugins: [
     react(),
