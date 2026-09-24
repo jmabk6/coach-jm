@@ -403,6 +403,10 @@ function entryKey(entry: ProgramEntry): string {
   return entry.kind === "free" ? `free-${entry.workout.id}` : entry.session.id;
 }
 
+function isEvening(entry: ProgramEntry): boolean {
+  return entry.kind === "planned" && entry.session.slot === "evening";
+}
+
 function entryStatus(entry: ProgramEntry): DisplayedPlannedSessionStatus {
   return entry.kind === "free"
     ? "done"
@@ -494,6 +498,9 @@ function WeekView({
       <ol className="program-week">
         {dates.map((date) => {
           const entries = data.entries.filter((entry) => entry.date === date);
+          /* Créneau Soir (conception V2 § 2.7) : la routine du soir sous la journée. */
+          const evening = entries.filter(isEvening);
+          const daytime = entries.filter((entry) => !isEvening(entry));
           const label = formatDayLabel(date);
 
           return (
@@ -509,9 +516,9 @@ function WeekView({
               </span>
 
               <div className="program-day__content">
-                {entries.length === 0 ? (
+                {daytime.length === 0 ? (
                   <div className="program-day__empty">
-                    <span>Aucune séance</span>
+                    <span>Repos</span>
                     <button
                       type="button"
                       className="program-day__add"
@@ -522,7 +529,7 @@ function WeekView({
                     </button>
                   </div>
                 ) : (
-                  entries.map((entry) => (
+                  daytime.map((entry) => (
                     <EntryRow
                       key={entryKey(entry)}
                       entry={entry}
@@ -531,6 +538,21 @@ function WeekView({
                       onOpenFreeMenu={onOpenFreeMenu}
                     />
                   ))
+                )}
+
+                {evening.length > 0 && (
+                  <>
+                    <span className="program-day__slot">Soir</span>
+                    {evening.map((entry) => (
+                      <EntryRow
+                        key={entryKey(entry)}
+                        entry={entry}
+                        data={data}
+                        onOpenMenu={onOpenMenu}
+                        onOpenFreeMenu={onOpenFreeMenu}
+                      />
+                    ))}
+                  </>
                 )}
               </div>
             </li>
@@ -580,6 +602,7 @@ interface MonthViewProps {
 const legend: { status: DisplayedPlannedSessionStatus; label: string }[] = [
   { status: "done", label: "Faite" },
   { status: "in_progress", label: "En cours" },
+  { status: "today", label: "Aujourd'hui" },
   { status: "upcoming", label: "À venir" },
   { status: "not_performed", label: "Non réalisée" },
   { status: "skipped", label: "Sautée" },
@@ -737,7 +760,7 @@ function MonthView({
         ))}
 
         {selectedEntries.length === 0 && (
-          <p className="program-selected__empty">Aucune séance</p>
+          <p className="program-selected__empty">Repos</p>
         )}
 
         <button

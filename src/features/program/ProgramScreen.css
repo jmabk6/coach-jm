@@ -326,6 +326,12 @@
   color: var(--color-danger, #c2413b);
 }
 
+/* Séance du jour, pas encore commencée (D23). */
+.program-badge--today {
+  background: var(--color-accent, #2f6fed);
+  color: white;
+}
+
 /* Date passée sans réalisation : ton neutre, ce n'est pas une décision (§18) */
 .program-badge--not_performed {
   background: var(--color-surface-soft, #f2f4f7);
@@ -562,6 +568,11 @@
   border: 1.5px solid var(--color-accent, #2f6fed);
 }
 
+.program-marker--today {
+  background: #c9d1dc;
+  border: 2px solid var(--color-accent, #2f6fed);
+}
+
 .program-marker--upcoming {
   background: #c9d1dc;
 }
@@ -629,4 +640,15 @@
 
 .program-selected__add span {
   flex: 1;
+}
+
+/* Créneau Soir (lot F.1, préparation du lot K). */
+.program-day__slot {
+  display: block;
+  margin: 6px 0 2px;
+  color: var(--color-text-soft, #666);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }

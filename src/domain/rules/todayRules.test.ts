@@ -54,13 +54,16 @@ describe("getDisplayedPlannedSessionStatus", () => {
     expect(formatDisplayedPlannedSessionStatus(session, today)).toBe("Non réalisée");
   });
 
+  it("affiche Aujourd'hui une séance à venir du jour (D23)", () => {
+    const session = plannedSession({ id: "a", date: today });
+
+    expect(getDisplayedPlannedSessionStatus(session, today)).toBe("today");
+    expect(formatDisplayedPlannedSessionStatus(session, today)).toBe("Aujourd'hui");
+    expect(getDisplayedPlannedSessionStatus({ ...session, status: "skipped" }, today)).toBe("skipped");
+    expect(getDisplayedPlannedSessionStatus({ ...session, status: "done" }, today)).toBe("done");
+  });
+
   it("ne change rien aux autres statuts ni aux dates à venir", () => {
-    expect(
-      getDisplayedPlannedSessionStatus(
-        plannedSession({ id: "a", date: today }),
-        today,
-      ),
-    ).toBe("upcoming");
     expect(
       getDisplayedPlannedSessionStatus(
         plannedSession({ id: "b", date: "2026-09-20" }),

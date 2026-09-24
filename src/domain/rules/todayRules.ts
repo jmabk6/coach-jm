@@ -11,8 +11,9 @@ import { formatFullDate, plannedSessionStatusLabels } from "./programRules";
 /* -------------------------------------------------------------------------- */
 
 /**
- * Statut tel qu'il s'affiche, qui ajoute un cas au statut stocké (§9) :
- * une séance `À venir` dont la date est passée s'affiche `Non réalisée`.
+ * Statut tel qu'il s'affiche (§9, conception V2 § 2.7, D23), qui ajoute
+ * deux cas au statut stocké : une séance `À venir` dont la date est passée
+ * s'affiche `Non réalisée`, celle du jour `Aujourd'hui`.
  *
  * Décision du 17/09/2026 : elle n'est jamais marquée `Sautée` d'office —
  * elle a pu être faite sans être saisie sur le moment. Elle garde les
@@ -21,7 +22,8 @@ import { formatFullDate, plannedSessionStatusLabels } from "./programRules";
  */
 export type DisplayedPlannedSessionStatus =
   | PlannedSessionStatus
-  | "not_performed";
+  | "not_performed"
+  | "today";
 
 export function getDisplayedPlannedSessionStatus(
   session: PlannedSession,
@@ -29,6 +31,10 @@ export function getDisplayedPlannedSessionStatus(
 ): DisplayedPlannedSessionStatus {
   if (session.status === "upcoming" && session.date < today) {
     return "not_performed";
+  }
+
+  if (session.status === "upcoming" && session.date === today) {
+    return "today";
   }
 
   return session.status;
@@ -40,6 +46,7 @@ export const displayedPlannedSessionStatusLabels: Record<
 > = {
   ...plannedSessionStatusLabels,
   not_performed: "Non réalisée",
+  today: "Aujourd'hui",
 };
 
 export function formatDisplayedPlannedSessionStatus(
