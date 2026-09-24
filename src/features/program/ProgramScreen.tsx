@@ -21,13 +21,15 @@ import {
   listWeekDates,
   weekdays,
   weekdayShortLabels,
+  type MoveChoice,
   type PlannedSessionAction,
 } from "../../domain/rules/programRules";
+import { MoveSheet } from "./MoveSheet";
 import { removePlannedSession } from "../../db/repositories/programRepository";
 import {
   addPlannedSession,
   duplicatePlannedSession,
-  movePlannedSession,
+  moveWithChoice,
   replacePlannedSession,
   restorePlannedSession,
   skipPlannedSession,
@@ -328,9 +330,10 @@ export function ProgramScreen() {
           data={state}
           activeTemplates={activeTemplates}
           onMenuAction={handleMenuAction}
-          onMove={(session, date) =>
-            void run(() => movePlannedSession(session.id, date))
+          onMove={(session, date, choice) =>
+            void run(() => moveWithChoice(session.id, date, choice))
           }
+          onSkip={(session) => void run(() => skipPlannedSession(session.id))}
           onReplace={(session, templateId) =>
             void run(() => replacePlannedSession(session.id, templateId))
           }
@@ -786,7 +789,8 @@ interface ProgramFlowProps {
   data: ProgramData;
   activeTemplates: SessionTemplate[];
   onMenuAction: (session: PlannedSession, action: PlannedSessionAction) => void;
-  onMove: (session: PlannedSession, date: string) => void;
+  onMove: (session: PlannedSession, date: string, choice: MoveChoice | undefined) => void;
+  onSkip: (session: PlannedSession) => void;
   onReplace: (session: PlannedSession, templateId: Id) => void;
   onDuplicate: (session: PlannedSession, date: string) => void;
   onAddDate: (date: string) => void;
@@ -801,6 +805,7 @@ function ProgramFlow({
   activeTemplates,
   onMenuAction,
   onMove,
+  onSkip,
   onReplace,
   onDuplicate,
   onAddDate,
@@ -833,12 +838,12 @@ function ProgramFlow({
 
     case "move":
       return (
-        <DateSheet
-          title="Déplacer à un autre jour"
-          message={`${templateName(flow.session)} — ${formatFullDate(flow.session.date)}. La règle hebdomadaire n'est pas modifiée.`}
-          initialDate={flow.session.date}
-          confirmLabel={() => "Déplacer la séance"}
-          onConfirm={(date) => onMove(flow.session, date)}
+        <MoveSheet
+          session={flow.session}
+          templateById={data.templateById}
+          today={today()}
+          onConfirm={(date, choice) => onMove(flow.session, date, choice)}
+          onSkip={flow.session.status === "upcoming" ? () => onSkip(flow.session) : undefined}
           onDismiss={onDismiss}
         />
       );

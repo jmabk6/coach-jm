@@ -526,3 +526,77 @@ export function listPlannedSessionActions(
       ];
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Déplacer avec conflit (conception V2 § 2.7, lot F.2)                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `Échanger` : les deux instances échangent leurs dates, avec leurs tests ;
+ * `Faire les deux` : elles coexistent ; `Remplacer` : l'instance visée est
+ * retirée, ses tests restent attachés (« à replanifier », état dérivé, D26).
+ */
+export type MoveChoice = "swap" | "both" | "replace";
+
+/** Créneau d'une instance ; absent = la journée. */
+export function slotOf(session: Pick<PlannedSession, "slot">): NonNullable<PlannedSession["slot"]> {
+  return session.slot ?? "day";
+}
+
+/**
+ * L'instance du jour visé qui entre en conflit : visible, autre que celle
+ * qu'on déplace, du **même créneau**. La plus ancienne si plusieurs.
+ */
+export function findMoveConflict(
+  moving: PlannedSession,
+  date: string,
+  sessions: ReadonlyArray<PlannedSession>,
+): PlannedSession | undefined {
+  return sessions
+    .filter(
+      (session) =>
+        !session.removedAt &&
+        session.id !== moving.id &&
+        session.date === date &&
+        slotOf(session) === slotOf(moving),
+    )
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+}
+
+/** Une instance faite ou en cours n'est jamais échangée ni remplacée. */
+export function isLockedPlannedSession(session: Pick<PlannedSession, "status">): boolean {
+  return session.status === "done" || session.status === "in_progress";
+}
+
+export function allowedMoveChoices(target: PlannedSession): MoveChoice[] {
+  return isLockedPlannedSession(target) ? ["both"] : ["swap", "both", "replace"];
+}
+
+/** `jeu. 24 sept.` — un jour de la feuille Déplacer. */
+export function formatShortDay(date: string): string {
+  return format(parseISO(date), "EEE d MMM", { locale: fr });
+}
+
+/**
+ * Le bouton du bas reprend le choix fait : `Déplacer sur jeu. 24 sept.`,
+ * `Échanger avec Muscu C`, `Faire les deux le jeu. 24 sept.`,
+ * `Remplacer Muscu C`.
+ */
+export function formatMoveConfirmLabel(
+  date: string,
+  conflictName: string | undefined,
+  choice: MoveChoice | undefined,
+): string {
+  if (conflictName === undefined) return `Déplacer sur ${formatShortDay(date)}`;
+
+  switch (choice) {
+    case "swap":
+      return `Échanger avec ${conflictName}`;
+    case "both":
+      return `Faire les deux le ${formatShortDay(date)}`;
+    case "replace":
+      return `Remplacer ${conflictName}`;
+    default:
+      return "Choisissez que faire";
+  }
+}

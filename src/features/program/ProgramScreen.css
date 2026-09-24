@@ -652,3 +652,123 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+/* Feuille Déplacer avec conflit (lot F.2, M2). */
+.move-sheet__heading {
+  margin: 4px 0 8px;
+  font-weight: 700;
+}
+
+.move-sheet__days {
+  display: grid;
+  max-height: 38vh;
+  margin: 0 0 10px;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-md, 14px);
+  list-style: none;
+}
+
+.move-sheet__days li + li {
+  border-top: 1px solid var(--color-border, #e4e7ec);
+}
+
+.move-sheet__day {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.move-sheet__day[aria-checked="true"] {
+  background: var(--color-accent-soft, #eaf1ff);
+  box-shadow: inset 3px 0 0 var(--color-accent, #2f6fed);
+}
+
+.move-sheet__date {
+  color: var(--color-text-soft, #666);
+  font-size: 0.85rem;
+}
+
+.move-sheet__content {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.move-sheet__other {
+  margin-bottom: 10px;
+}
+
+.move-sheet__conflict {
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: var(--radius-md, 14px);
+  background: #fff4e5;
+}
+
+.move-sheet__conflict-title {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: #8a4b08;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.move-sheet__choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.move-sheet__choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 6px 4px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-md, 14px);
+  background: white;
+  color: var(--color-accent, #2f6fed);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.move-sheet__choice--replace {
+  color: var(--color-danger, #c2413b);
+}
+
+.move-sheet__choice[aria-pressed="true"] {
+  border-color: currentColor;
+  background: var(--color-accent-soft, #eaf1ff);
+}
+
+.move-sheet__choice:disabled {
+  opacity: 0.4;
+}
+
+.move-sheet__skip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border, #e4e7ec);
+  border-radius: var(--radius-md, 14px);
+  background: white;
+  color: inherit;
+  font: inherit;
+}
