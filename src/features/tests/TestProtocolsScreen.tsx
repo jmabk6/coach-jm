@@ -5,10 +5,9 @@ import { getAllTestProtocols, getAllTestResults } from "../../db/repositories/te
 import { db } from "../../db/database";
 import type { PerformedTestBlock, TestProtocol, TestProtocolVersion, TestResult, WorkoutSession } from "../../domain";
 import { formatFullDate, formatLocalDate } from "../../domain/rules/programRules";
-import { measureUnit, primaryValue } from "../../domain/rules/testResultRules";
+import { formatTestNumber, measureUnit, primaryValue } from "../../domain/rules/testResultRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import type { WorkoutAction } from "../workout/engine/persistWorkout";
-import { formatDecimal } from "../workout/workoutRecap";
 import { deleteManualTestResult, saveManualTestResult } from "./manualTestResult";
 import { TestBlockCard } from "./TestBlockCard";
 import { TEST_PROTOCOLS_V1 } from "./testProtocolsV1";
@@ -170,7 +169,7 @@ function describe(result: TestResult, version: TestProtocolVersion | undefined):
   const spec = version.measures.find((measure) => measure.key === version.primaryMeasureKey);
   if (value === undefined || !spec) return `${result.measures.length} mesure${result.measures.length > 1 ? "s" : ""}`;
   const unit = measureUnit(spec, version);
-  return `${spec.label} ${formatDecimal(value)}${unit ? ` ${unit}` : ""}`;
+  return `${spec.label} ${formatTestNumber(value)}${unit ? ` ${unit}` : ""}`;
 }
 
 /* -------------------------------------------------------------------------- */

@@ -1,7 +1,6 @@
 import { getAllTestProtocols, getTestProtocolVersion, getTestResult } from "../../db/repositories/testRepository";
 import type { Id, WorkoutSession } from "../../domain";
-import { computeTestResult, measureUnit, primaryValue } from "../../domain/rules/testResultRules";
-import { formatDecimal } from "../workout/workoutRecap";
+import { computeTestResult, formatTestNumber, measureUnit, primaryValue } from "../../domain/rules/testResultRules";
 
 /**
  * Le bilan des tests d'une séance (M10.1) : le résultat principal de
@@ -23,7 +22,7 @@ export async function loadTestNames(): Promise<Map<Id, string>> {
 }
 
 function formatPrimary(value: number, unit: string, protocolKeyIsTraction: boolean): string {
-  const number = formatDecimal(value);
+  const number = formatTestNumber(value);
   if (unit === "kg") return protocolKeyIsTraction ? `${number} kg d'assistance` : `${number} kg`;
   return unit ? `${number} ${unit}` : number;
 }

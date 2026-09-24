@@ -37,6 +37,7 @@ import { useTodayData, type TodayData } from "./useTodayData";
 import "./TodayScreen.css";
 import { paths } from "../../app/paths";
 import { WeightCard } from "../weight/WeightCard";
+import { MeasurementsCard } from "../weight/MeasurementsCard";
 
 /**
  * Aujourd'hui (§10, mockups 21–22) : la journée telle qu'elle est
@@ -115,6 +116,8 @@ export function TodayScreen() {
 
       {/* Pesée du jour (lot I.1). */}
       <WeightCard today={data.today} />
+      {/* Mensurations du matin, le lundi d'une semaine de tests (lot I.3). */}
+      <MeasurementsCard today={data.today} />
 
       <NextSessions data={data} />
 

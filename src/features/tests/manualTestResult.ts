@@ -19,6 +19,8 @@ export interface ManualTestInput {
   draft: TestDraft;
   conditionsRespected?: boolean;
   conditionsNote?: string;
+  /** Correction : le résultat saisi remplacé, dans la même transaction. */
+  replacesResultId?: Id;
 }
 
 export async function saveManualTestResult(
@@ -33,6 +35,15 @@ export async function saveManualTestResult(
     const protocol = await db.testProtocols.get(input.protocolId);
     if (!protocol) throw new Error("Protocole introuvable");
     if (protocol.status !== "active") throw new Error(`Le test ${protocol.name} est en pause`);
+
+    if (input.replacesResultId) {
+      const replaced = await db.testResults.get(input.replacesResultId);
+      if (!replaced || replaced.origin !== "manual" || replaced.protocolId !== protocol.id) {
+        throw new Error("Seul un résultat saisi de ce test se corrige ici");
+      }
+      await db.testResults.delete(replaced.id);
+      await releaseVersions([replaced], now);
+    }
 
     const version = await db.testProtocolVersions.get(protocol.activeVersionId);
     if (!version) throw new Error("Version de protocole introuvable");

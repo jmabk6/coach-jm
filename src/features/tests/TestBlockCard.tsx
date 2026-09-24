@@ -5,6 +5,7 @@ import { getTestResult } from "../../db/repositories/testRepository";
 import {
   computeTestResult,
   draftFromResult,
+  formatTestNumber,
   isTrialsTestFinished,
   measureUnit,
   primaryValue,
@@ -195,11 +196,11 @@ export function TestBlockCard({
 /* -------------------------------------------------------------------------- */
 
 function formatValue(value: number, unit: string): string {
-  if (unit === "kg") return `${formatDecimal(value)} kg`;
+  if (unit === "kg") return `${formatTestNumber(value)} kg`;
   /* Unités comptées : « 1 essai », « 3 essais ». */
-  if (unit === "essais" || unit === "reps") return `${formatDecimal(value)} ${value > 1 ? unit : unit.slice(0, -1)}`;
-  if (unit === "") return formatDecimal(value);
-  return `${formatDecimal(value)} ${unit}`;
+  if (unit === "essais" || unit === "reps") return `${formatTestNumber(value)} ${value > 1 ? unit : unit.slice(0, -1)}`;
+  if (unit === "") return formatTestNumber(value);
+  return `${formatTestNumber(value)} ${unit}`;
 }
 
 function summarize(version: TestProtocolVersion, result: ReturnType<typeof computeTestResult>): string {

@@ -183,3 +183,10 @@ export function draftFromResult(result: Pick<TestResult, "measures" | "trials" |
   if (result.note) draft.note = result.note;
   return draft;
 }
+
+const testNumber = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
+
+/** Une valeur de test telle qu'enregistrée, jusqu'au centième (rapport épaules / taille). */
+export function formatTestNumber(value: number): string {
+  return testNumber.format(value);
+}
