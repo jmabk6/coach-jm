@@ -15,6 +15,7 @@ import { DEFAULT_PREFERENCES, DEFAULT_TEST_CYCLE } from "./seedSettingsDefaults"
    seedRealBackup.test.ts) : sans cela, le seed du catalogue
    resynchroniserait les médias d'une sauvegarde réelle. */
 vi.stubEnv("BASE_URL", "/coach-jm/");
+import { CARDIO_A, CARDIO_A_FORMER } from "../program/programV1";
 const { runSeeds, suspendSeeds, resumeSeedsForTests, SEEDS } = await import("./runSeeds");
 const { seedSettingsDefaults } = await import("./seedSettingsDefaults");
 
@@ -181,7 +182,12 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     const fileTemplates = (file.stores.sessionTemplates ?? []) as Array<{ id: string }>;
     const seededTemplates = seeded.stores.sessionTemplates as Array<{ id: string }>;
     for (const template of fileTemplates) {
-      expect(canonicalStringify(seededTemplates.find((item) => item.id === template.id)), template.id).toBe(canonicalStringify(template));
+      const seededTemplate = seededTemplates.find((item) => item.id === template.id) as { updatedAt?: string } | undefined;
+      /* Seed 9 (24/09/2026) : l'ancien Cardio A intact passe en un seul bloc ; rien d'autre ne change. */
+      const expected = isFormerCardioA(template)
+        ? { ...template, mainBlockId: CARDIO_A.mainBlockId, blocks: CARDIO_A.blocks, updatedAt: seededTemplate?.updatedAt }
+        : template;
+      expect(canonicalStringify(seededTemplate), template.id).toBe(canonicalStringify(expected));
     }
     expect(seededTemplates.filter((item) => !fileTemplates.some((t) => t.id === item.id)).every((item) => item.id.startsWith("v1-"))).toBe(true);
     if ((file.stores.weeklyPrograms ?? []).length > 0) untouched.push("weeklyPrograms");
@@ -198,3 +204,11 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     expect(canonicalStringify((await readStores(db)).stores.workouts)).toBe(canonicalStringify(file.stores.workouts));
   });
 });
+
+function isFormerCardioA(template: { id: string; mainBlockId?: string; blocks?: unknown }): boolean {
+  return (
+    template.id === CARDIO_A.id &&
+    template.mainBlockId === CARDIO_A_FORMER.mainBlockId &&
+    canonicalStringify(template.blocks) === canonicalStringify(CARDIO_A_FORMER.blocks)
+  );
+}
