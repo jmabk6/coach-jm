@@ -268,5 +268,13 @@ export const PROGRAM_V1_TEST_SCHEDULE: TestScheduleEntry[] = [
     placement: "replace_block",
     targetBlockId: "v1-cardio-a-principal",
   },
-  { protocolKey: "jambes", weekday: "thursday", slot: "day", templateId: "v1-muscu-c", placement: "after_warmup" },
+  /* Décision du 24/09/2026 : le test remplace les sprints d'entraînement ce jour-là (jamais 12 sprints). */
+  {
+    protocolKey: "jambes",
+    weekday: "thursday",
+    slot: "day",
+    templateId: "v1-muscu-c",
+    placement: "replace_block",
+    targetBlockId: "v1-muscu-c-sprints",
+  },
 ];

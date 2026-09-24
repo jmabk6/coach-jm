@@ -99,6 +99,36 @@ describe("seed 4 : protocoles V1", () => {
   });
 });
 
+describe("place des tests installée avant le lot G", () => {
+  const before = [
+    { protocolKey: "traction", weekday: "sunday", slot: "day", templateId: "v1-muscu-a", placement: "after_warmup", adjustments: [{ blockId: "v1-muscu-a-traction", sets: 2 }] },
+    { protocolKey: "mensurations", weekday: "monday", slot: "morning" },
+    { protocolKey: "souplesse", weekday: "monday", slot: "evening", placement: "replace_all" },
+    { protocolKey: "cardio", weekday: "wednesday", slot: "day", templateId: "v1-cardio-a", placement: "replace_block", targetBlockId: "v1-cardio-a-principal" },
+    { protocolKey: "jambes", weekday: "thursday", slot: "day", templateId: "v1-muscu-c", placement: "after_warmup" },
+  ] as const;
+
+  it("complétée : le test Jambes remplace les sprints d'entraînement ; le Tronc rejoint la Souplesse ; le reste intact", async () => {
+    await db.settings.put({ key: "testSchedule", value: structuredClone(before) as never });
+    await seedTestProtocols(NOW);
+
+    const schedule = (await db.settings.get("testSchedule"))?.value as Array<Record<string, unknown>>;
+    expect(schedule.map((entry) => entry.protocolKey)).toEqual(["traction", "mensurations", "souplesse", "cardio", "jambes", "tronc"]);
+    expect(schedule[4]).toEqual({
+      protocolKey: "jambes", weekday: "thursday", slot: "day", templateId: "v1-muscu-c", placement: "replace_block", targetBlockId: "v1-muscu-c-sprints",
+    });
+    expect(schedule[5]).toEqual({ protocolKey: "tronc", weekday: "monday", slot: "evening", placement: "replace_all" });
+    expect(schedule.slice(0, 4)).toEqual(before.slice(0, 4));
+  });
+
+  it("une place du test Jambes déjà modifiée n'est pas touchée", async () => {
+    const mine = [{ protocolKey: "jambes", weekday: "friday", slot: "day", placement: "before_all" }];
+    await db.settings.put({ key: "testSchedule", value: structuredClone(mine) as never });
+    await seedTestProtocols(NOW);
+    expect(((await db.settings.get("testSchedule"))?.value as unknown[])[0]).toEqual(mine[0]);
+  });
+});
+
 describe("figeage des versions (§ 3.7.2)", () => {
   beforeEach(() => seedTestProtocols(NOW));
 

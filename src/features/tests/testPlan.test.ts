@@ -83,7 +83,7 @@ describe("génération d'une semaine de tests", () => {
     });
     expect(by(week, "2026-10-29")).toMatchObject({
       sessionTemplateId: "v1-muscu-c",
-      tests: [{ protocolId: "protocol-jambes", placement: "after_warmup" }],
+      tests: [{ protocolId: "protocol-jambes", placement: "replace_block", targetBlockId: "v1-muscu-c-sprints" }],
     });
     /* Mensurations : le matin, hors séance — aucune instance. */
     expect(week.flatMap((session) => session.tests ?? []).map((test) => test.protocolId)).not.toContain("protocol-mensurations");

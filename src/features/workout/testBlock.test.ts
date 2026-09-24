@@ -219,6 +219,22 @@ describe("démarrage d'une séance de la semaine de tests", () => {
     expect(await db.strengthMilestones.count()).toBe(0);
   });
 
+  it("Muscu C du 29/10 : le test Jambes prend la place des sprints d'entraînement, le reste est inchangé", async () => {
+    const workout = await startWorkout("weekly-2026-10-29", T);
+
+    expect(order(workout.blocks)).toEqual([
+      "v1-muscu-c-echauffement",
+      "v1-muscu-c-suspension",
+      "test:jambes",
+      "v1-muscu-c-montee-banc",
+      "v1-muscu-c-rester-bas",
+      "v1-muscu-c-pullover",
+      "v1-muscu-c-leg-curl",
+    ]);
+    expect(workout.blocks.find((block) => block.kind === "test")).toMatchObject({ replacedBlockId: "v1-muscu-c-sprints" });
+    expect(workout.blocks.some((block) => block.kind === "exercise" && block.exerciseId === "sprint-velo")).toBe(false);
+  });
+
   it("lundi soir : la routine vide démarre, son contenu est la Souplesse puis le Tronc", async () => {
     const workout = await startWorkout("weekly-2026-10-26-evening", T);
     expect(order(workout.blocks)).toEqual(["test:souplesse", "test:tronc"]);
