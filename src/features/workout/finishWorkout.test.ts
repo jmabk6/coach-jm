@@ -9,7 +9,8 @@ import type {
   WorkoutSession,
 } from "../../domain";
 import { db } from "../../db/database";
-import { completeWorkoutSession, finishWorkout, milestoneIdFor } from "./finishWorkout";
+import { completeWorkoutSession, milestoneIdFor } from "./finishWorkout";
+import { endAndConfirm as finishWorkout } from "./endAndConfirmForTests";
 
 const startedAt = "2026-09-17T16:00:00.000Z";
 const now = "2026-09-17T16:42:00.000Z";
@@ -128,7 +129,7 @@ describe("finishWorkout", () => {
     const completed = { ...freeWorkout, status: "completed" as const, updatedAt: "x" };
     await db.workouts.put(completed);
 
-    await expect(finishWorkout("free-1", now)).rejects.toThrow("Cette séance est déjà terminée");
+    await expect(finishWorkout("free-1", now)).rejects.toThrow("Cette séance est déjà enregistrée");
     expect(await db.workouts.get("free-1")).toEqual(completed);
   });
 });

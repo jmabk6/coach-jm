@@ -22,7 +22,7 @@ import {
   validateSeries,
   validateStep,
 } from "./engine/workoutEngine";
-import { finishWorkout } from "./finishWorkout";
+import { endAndConfirm as finishWorkout } from "./endAndConfirmForTests";
 import { findLastPerformances } from "./lastPerformance";
 import { startFreeWorkout } from "./startFreeWorkout";
 import { startWorkout } from "./startWorkout";

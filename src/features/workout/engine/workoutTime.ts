@@ -65,7 +65,8 @@ export function calculateActiveDurationSec(
   workout: WorkoutSession,
   now: string,
 ): number {
-  const end = workout.completedAt ?? now;
+  /* Terminée (D20) : la durée s'arrête à `endedAt`, même avant l'enregistrement. */
+  const end = workout.completedAt ?? workout.endedAt ?? now;
 
   return Math.max(
     0,
@@ -95,6 +96,7 @@ export function shouldShowResumeSheet(
 ): boolean {
   return (
     workout.status === "in_progress" &&
+    workout.endedAt === undefined &&
     !isWorkoutPaused(workout) &&
     absenceSec(workout, now) >= ABSENCE_SHEET_THRESHOLD_SEC
   );

@@ -128,6 +128,26 @@ function assertInProgress(workout: WorkoutSession): void {
   if (workout.status !== "in_progress") {
     throw new Error("Cette séance est terminée");
   }
+  /* Terminée, pas encore enregistrée (D20, D21) : plus aucun geste de
+     séance, seulement les corrections (voir `assertCorrectable`). */
+  if (workout.endedAt !== undefined) {
+    throw new Error("La séance est terminée : seules les corrections restent possibles avant l'enregistrement");
+  }
+}
+
+/**
+ * Corrections d'une valeur validée (`Modifier`) : permises pendant la
+ * séance et entre Terminer et Enregistrer (D21), jamais après.
+ */
+function assertCorrectable(workout: WorkoutSession): void {
+  if (workout.status !== "in_progress") {
+    throw new Error("Cette séance est enregistrée : elle ne se modifie plus");
+  }
+}
+
+/** Terminée, en attente d'enregistrement (D20) : `in_progress` avec `endedAt`. */
+export function isAwaitingConfirmation(workout: Pick<WorkoutSession, "status" | "endedAt">): boolean {
+  return workout.status === "in_progress" && workout.endedAt !== undefined;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -574,7 +594,7 @@ export function editSeries(
   values: SeriesValues,
   now: string,
 ): WorkoutSession {
-  assertInProgress(workout);
+  assertCorrectable(workout);
 
   const block = findExerciseBlock(workout, blockId);
   const series = block.series?.find((item) => item.id === seriesId);
@@ -754,7 +774,7 @@ export function editStep(
   values: StepValues,
   now: string,
 ): WorkoutSession {
-  assertInProgress(workout);
+  assertCorrectable(workout);
 
   const block = findExerciseBlock(workout, blockId);
   const step = block.cardioSteps?.find((item) => item.id === stepId);
@@ -891,7 +911,7 @@ export function editSimpleMeasurement(
   values: SimpleMeasurementValues,
   now: string,
 ): WorkoutSession {
-  assertInProgress(workout);
+  assertCorrectable(workout);
 
   const block = findExerciseBlock(workout, blockId);
 
@@ -1039,7 +1059,7 @@ export function editRoundChild(
   values: SeriesValues,
   now: string,
 ): WorkoutSession {
-  assertInProgress(workout);
+  assertCorrectable(workout);
 
   const block = findGroupBlock(workout, blockId);
   const round = block.rounds.find((item) => item.id === roundId);
@@ -1566,7 +1586,14 @@ export function buildResumeSummary(workout: WorkoutSession, now: string): Resume
  * sautée, ou jamais abordée — et ses entrées non validées deviennent
  * `not_performed`. Rien n'est supprimé, rien n'est complété.
  */
-export function completeWorkoutSession(
+/**
+ * `Terminer` (D20, conception V2 § 2.6) : la séance reste `in_progress`,
+ * `endedAt` est posé, le repos en cours et une pause ouverte sont clos,
+ * chaque brique prend son statut et la durée active est figée. Aucun
+ * jalon, aucun figeage, aucun résultat de test : tout cela attend
+ * `Enregistrer` (`confirmWorkout`).
+ */
+export function endWorkoutSession(
   workout: WorkoutSession,
   now: string,
 ): WorkoutSession {
@@ -1602,19 +1629,47 @@ export function completeWorkoutSession(
     return { ...settled, status };
   });
 
-  const completed: WorkoutSession = {
+  const ended: WorkoutSession = {
     ...next,
     blocks,
-    status: "completed",
-    completedAt: now,
+    endedAt: now,
     lastActionAt: now,
     updatedAt: now,
   };
 
-  delete completed.currentBlockId;
-  delete completed.currentEntryId;
+  delete ended.currentBlockId;
+  delete ended.currentEntryId;
 
-  completed.activeDurationSec = calculateActiveDurationSec(completed, now);
+  ended.activeDurationSec = calculateActiveDurationSec(ended, now);
+
+  return ended;
+}
+
+/**
+ * `Enregistrer` (D21) : la séance terminée devient `completed`, avec
+ * `completedAt = endedAt` ; ressenti et notes sont écrits. Terminer est
+ * un préalable : une séance non terminée est d'abord terminée à `now`.
+ */
+export function completeWorkoutSession(
+  workout: WorkoutSession,
+  now: string,
+  input: { feeling?: WorkoutSession["feeling"]; note?: string } = {},
+): WorkoutSession {
+  if (workout.status !== "in_progress") {
+    throw new Error("Cette séance est terminée");
+  }
+
+  const ended = workout.endedAt === undefined ? endWorkoutSession(workout, now) : workout;
+  const completed: WorkoutSession = {
+    ...ended,
+    status: "completed",
+    completedAt: ended.endedAt!,
+    updatedAt: now,
+  };
+
+  if (input.feeling !== undefined) completed.feeling = input.feeling;
+  const note = input.note?.trim();
+  if (note) completed.note = note;
 
   return completed;
 }

@@ -15,20 +15,20 @@ import {
   type FrameValidationResult,
 } from "../../domain/rules/strengthRules";
 import { isMobilityAssessment } from "../../domain/rules/workoutKindRules";
-import { completeWorkoutSession } from "./engine/workoutEngine";
+import { completeWorkoutSession, endWorkoutSession, isAwaitingConfirmation } from "./engine/workoutEngine";
 import { calculateActiveDurationSec } from "./engine/workoutTime";
 
-export { completeWorkoutSession };
+export { completeWorkoutSession, endWorkoutSession, isAwaitingConfirmation };
 
 /**
  * Durée active d'une séance à l'instant `now` (§12) : amplitude moins
- * pauses pour une séance en cours, valeur figée pour une séance terminée.
+ * pauses pour une séance en cours, valeur figée dès `Terminer` (D20).
  */
 export function currentActiveDurationSec(
   workout: WorkoutSession,
   now: string,
 ): number {
-  return workout.status === "completed"
+  return workout.status === "completed" || workout.endedAt !== undefined
     ? workout.activeDurationSec
     : calculateActiveDurationSec(workout, now);
 }
@@ -40,7 +40,7 @@ export interface FrameOutcome {
   milestoneId?: Id;
 }
 
-export interface FinishWorkoutResult {
+export interface ConfirmWorkoutResult {
   workout: WorkoutSession;
   /** Un élément par version de cadre exécutée dans la séance ; vide hors musculation cadrée. */
   frames: FrameOutcome[];
@@ -61,24 +61,52 @@ function framesApply(workout: WorkoutSession): boolean {
 }
 
 /**
- * Termine la séance en cours (`Terminer` comme `Arrêter`, §14 et §15) et,
- * si elle était planifiée, passe l'instance `Faite`. Une séance libre
- * ne touche pas au Programme.
- *
- * Musculation (v1.6, § 4.2 bis, § 4.3, § 4.4) — dans la **même
- * transaction** que la séance :
- * - chaque version de cadre référencée par une brique ou un tour est
- *   figée à sa première séance terminée (`firstOfficialWorkoutId`) ;
- * - chaque version exécutée est validée sur ses séries : un jalon est
- *   créé si tous les critères sont remplis, et l'objectif en cours de la
- *   version est effacé (événement 4 du cycle de vie).
- * La validation lit la version portée par la brique, jamais la version
- * active du cadre.
+ * `Terminer` (D20, D21) : pose `endedAt`, clôt le repos et une pause
+ * ouverte, fige la durée active. La séance reste `in_progress` : aucun
+ * jalon, aucun figeage, l'instance planifiée reste en cours, et la séance
+ * n'entre dans aucune statistique tant qu'elle n'est pas enregistrée.
  */
-export async function finishWorkout(
+export async function endWorkout(
   workoutId: Id,
   now: string = new Date().toISOString(),
-): Promise<FinishWorkoutResult> {
+): Promise<WorkoutSession> {
+  return db.transaction("rw", db.workouts, async () => {
+    const workout = await getWorkout(workoutId);
+
+    if (!workout) throw new Error("Séance réalisée introuvable");
+    if (workout.status !== "in_progress") throw new Error("Cette séance est déjà enregistrée");
+    if (workout.endedAt !== undefined) return workout;
+
+    const ended = endWorkoutSession(workout, now);
+    await saveWorkout(ended);
+
+    return ended;
+  });
+}
+
+export interface ConfirmWorkoutInput {
+  feeling?: WorkoutSession["feeling"];
+  note?: string;
+}
+
+/**
+ * `Enregistrer et revenir à l'accueil` (conception V2 § 2.6) : en **une**
+ * transaction, écrit ressenti et notes, passe la séance `completed` avec
+ * `completedAt = endedAt`, fige les cadres et crée les jalons, puis passe
+ * l'instance planifiée `Faite`. Ensuite la séance ne se modifie plus.
+ *
+ * Musculation (v1.6, § 4.2 bis, § 4.3, § 4.4) : chaque version de cadre
+ * référencée est figée à sa première séance enregistrée
+ * (`firstOfficialWorkoutId`) ; chaque version exécutée est validée sur ses
+ * séries (hors prescription réduite) : un jalon est créé si tous les
+ * critères sont remplis, et l'objectif en cours est effacé. La validation
+ * lit la version portée par la brique, jamais la version active du cadre.
+ */
+export async function confirmWorkout(
+  workoutId: Id,
+  input: ConfirmWorkoutInput = {},
+  now: string = new Date().toISOString(),
+): Promise<ConfirmWorkoutResult> {
   return db.transaction(
     "rw",
     [db.workouts, db.plannedSessions, db.strengthFrameVersions, db.strengthMilestones],
@@ -90,10 +118,14 @@ export async function finishWorkout(
       }
 
       if (workout.status !== "in_progress") {
-        throw new Error("Cette séance est déjà terminée");
+        throw new Error("Cette séance est déjà enregistrée");
       }
 
-      const completed = completeWorkoutSession(workout, now);
+      if (workout.endedAt === undefined) {
+        throw new Error("Terminez d'abord la séance");
+      }
+
+      const completed = completeWorkoutSession(workout, now, input);
 
       await saveWorkout(completed);
 

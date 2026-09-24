@@ -16,6 +16,7 @@ describe("chemins de l'application", () => {
       sessions: "/seances",
       workoutLive: "/seance-en-cours",
       quickExercise: "/seance-en-cours/exercice-rapide",
+      workoutEnd: "/seance-en-cours/fin",
       progression: "/progression",
       history: "/historique",
       plus: "/plus",
@@ -38,6 +39,7 @@ describe("chemins de l'application", () => {
     expect(paths.sessionGroupChild("abc", "g1", "c1")).toBe(`${ROUTES.sessions}/abc/groups/g1/children/c1`);
     expect(paths.workoutLive()).toBe(ROUTES.workoutLive);
     expect(paths.quickExercise()).toBe(ROUTES.quickExercise);
+    expect(paths.workoutEnd()).toBe(ROUTES.workoutEnd);
     expect(paths.progression()).toBe(ROUTES.progression);
     expect(paths.history()).toBe(ROUTES.history);
     expect(paths.plus()).toBe(ROUTES.plus);

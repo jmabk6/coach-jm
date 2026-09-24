@@ -734,3 +734,25 @@
 .recap-line__frame--ok {
   color: #067647;
 }
+
+/* Lot E.1 : enregistrer une séance terminée. */
+.recap__save {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 18px 0 0;
+}
+
+.recap__save-button {
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-accent, #2f6fed);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+}
+
+.recap__save-button:disabled {
+  opacity: 0.6;
+}

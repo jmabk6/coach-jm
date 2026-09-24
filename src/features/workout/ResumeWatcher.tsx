@@ -9,7 +9,7 @@ import { BottomSheet } from "../../components/ui/BottomSheet";
 import { recordWorkoutPresence } from "./engine/persistWorkout";
 import { buildResumeSummary, type ResumeSummary } from "./engine/workoutEngine";
 import { PRESENCE_HEARTBEAT_SEC, shouldShowResumeSheet } from "./engine/workoutTime";
-import { finishWorkout } from "./finishWorkout";
+import { endWorkout } from "./finishWorkout";
 import { formatMmSs } from "./workoutDisplay";
 import { formatClock, formatMinutes } from "./workoutRecap";
 import "./ResumeWatcher.css";
@@ -97,9 +97,9 @@ export function ResumeWatcher() {
   async function stop() {
     try {
       setError(undefined);
-      const { workout: completed } = await finishWorkout(workout.id);
+      await endWorkout(workout.id);
       setFound(undefined);
-      navigate(`/workouts/${completed.id}?returnTo=/`, { replace: true });
+      navigate(paths.workoutEnd(), { replace: true });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Arrêt impossible");
     }
@@ -120,7 +120,7 @@ export function ResumeWatcher() {
         },
         {
           label: "Arrêter la séance",
-          hint: "La séance sera enregistrée avec les exercices restants en « Non réalisé »",
+          hint: "La séance est terminée ; les exercices restants seront « Non réalisés ». Vous l'enregistrerez ensuite",
           onSelect: () => void stop(),
         },
       ]}

@@ -8,7 +8,7 @@ import { canonicalStringify } from "../backup/canonicalJson";
 import { readStores } from "../backup/exportBackup";
 import { parseBackup, restoreBackup } from "../backup/restoreBackup";
 import { addExerciseBlocks, addSeries, finishBlock, validateSeries } from "../workout/engine/workoutEngine";
-import { finishWorkout } from "../workout/finishWorkout";
+import { endAndConfirm as finishWorkout } from "../workout/endAndConfirmForTests";
 import { deleteWorkout } from "../workout/deleteWorkout";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import { detectStagnation, proposeRaise } from "../../domain/rules/strengthRules";

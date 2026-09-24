@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import {
   CheckCircle2,
   Circle,
@@ -54,7 +54,7 @@ import { getOpenPause, getRestCountdown } from "./engine/workoutTime";
 import { ExerciseBlockCard } from "./ExerciseBlockCard";
 import { GroupBlockCard } from "./GroupBlockCard";
 import { RestBand } from "./RestBand";
-import { finishWorkout } from "./finishWorkout";
+import { endWorkout } from "./finishWorkout";
 import { findLastComparableStep } from "./lastPerformance";
 import { RestBar } from "./RestBar";
 import { RestCard } from "./RestCard";
@@ -190,6 +190,12 @@ export function WorkoutScreen() {
         <p className="workout__message">Chargement de la séance…</p>
       </section>
     );
+  }
+
+  /* Terminée, en attente d'enregistrement : il n'y a plus de séance à
+     conduire, seulement son récapitulatif (pas de « Reprendre », D21). */
+  if (workout?.endedAt !== undefined) {
+    return <Navigate to={paths.workoutEnd()} replace />;
   }
 
   if (state.status === "none" || !workout) {
@@ -336,11 +342,13 @@ export function WorkoutScreen() {
     return peekedId === block.id;
   }
 
+  /* `Terminer` (D20, D21) : la séance est terminée, pas encore enregistrée ;
+     l'écran de fin permet ressenti, notes et corrections, puis Enregistrer. */
   async function finish() {
     try {
       setFinishError(undefined);
-      const { workout: completed } = await finishWorkout(workout!.id);
-      navigate(`/workouts/${completed.id}?returnTo=/`, { replace: true });
+      await endWorkout(workout!.id);
+      navigate(paths.workoutEnd(), { replace: true });
     } catch (cause) {
       setFinishing(false);
       setFinishError(cause instanceof Error ? cause.message : "Clôture impossible");
@@ -722,7 +730,7 @@ export function WorkoutScreen() {
       {finishing && (
         <BottomSheet
           title={`Terminer ${name} ?`}
-          message="Voici le récapitulatif de cette séance. Elle sera enregistrée telle quelle."
+          message="Vous pourrez encore noter votre ressenti et corriger une série avant d'enregistrer. La séance ne pourra pas reprendre."
           actions={[
             {
               label: "Terminer la séance",

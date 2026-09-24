@@ -8,7 +8,7 @@ import { calculateVolume } from "../../domain/rules/workoutRules";
 import { lastSessionOutcome } from "../strength/frameReadings";
 import { updateExerciseBlock } from "../sessions/sessionTemplateEdits";
 import { createWorkoutSnapshot } from "./createWorkoutSnapshot";
-import { finishWorkout } from "./finishWorkout";
+import { endAndConfirm as finishWorkout } from "./endAndConfirmForTests";
 
 /**
  * Lot D.3 — brique d'échauffement (D14) et prescription réduite

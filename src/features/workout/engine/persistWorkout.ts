@@ -47,7 +47,8 @@ export async function recordWorkoutPresence(
 ): Promise<WorkoutSession | undefined> {
   const workout = await getInProgressWorkout();
 
-  if (!workout) {
+  /* Terminée, en attente d'enregistrement : plus de présence à suivre. */
+  if (!workout || workout.endedAt !== undefined) {
     return undefined;
   }
 

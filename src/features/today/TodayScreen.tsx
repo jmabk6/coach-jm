@@ -317,9 +317,11 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
   const badge = `${
     openPause
       ? `En pause depuis ${formatClock(openPause.startedAt)}`
-      : running
-        ? "En cours"
-        : "Faite"
+      : running && workout.endedAt !== undefined
+        ? "Terminée, à enregistrer"
+        : running
+          ? "En cours"
+          : "Faite"
   }${entry.supplementary ? " · Supplémentaire" : ""}`;
   const progress = calculateExecutionProgress(workout.blocks);
   const activeSec = currentActiveDurationSec(workout, new Date().toISOString());
@@ -389,7 +391,12 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
         </div>
       )}
 
-      {running ? (
+      {running && workout.endedAt !== undefined ? (
+        <Link to={paths.workoutEnd()} className="today__primary">
+          <Play size={18} strokeWidth={2.2} aria-hidden="true" />
+          Enregistrer la séance
+        </Link>
+      ) : running ? (
         <Link to={paths.workoutLive()} className="today__primary">
           <Play size={18} strokeWidth={2.2} aria-hidden="true" />
           {openPause ? "Ouvrir la séance" : "Reprendre la séance"}

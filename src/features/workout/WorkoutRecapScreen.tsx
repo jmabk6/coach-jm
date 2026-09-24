@@ -32,6 +32,7 @@ import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { frameOutcomesOf } from "../strength/frameReadings";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { deleteWorkout } from "./deleteWorkout";
+import { confirmWorkout, isAwaitingConfirmation } from "./finishWorkout";
 import { SessionCategoryIcon } from "../sessions/sessionCategory";
 import { categoryClassName } from "../sessions/sessionCategoryClass";
 import {
@@ -82,8 +83,14 @@ function formatDelta(deltaPercent: number): string {
  * pendant la séance dans leur propre section, numérotés à la suite.
  * Chaque ligne ouvre son écran de détail ; rien ne se déplie ici.
  */
-export function WorkoutRecapScreen() {
-  const { workoutId } = useParams<{ workoutId: string }>();
+interface WorkoutRecapScreenProps {
+  /** Séance à afficher ; par défaut, celle de l'adresse `/workouts/:workoutId`. */
+  workoutId?: string;
+}
+
+export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenProps = {}) {
+  const params = useParams<{ workoutId: string }>();
+  const workoutId = forcedId ?? params.workoutId;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -91,6 +98,8 @@ export function WorkoutRecapScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string>();
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string>();
 
   const returnTo = searchParams.get("returnTo") ?? paths.planning();
 
@@ -181,6 +190,21 @@ export function WorkoutRecapScreen() {
         ),
       )
     : undefined;
+
+  /* Terminée, en attente d'enregistrement (D20, D21). */
+  const pending = isAwaitingConfirmation(workout);
+
+  async function save() {
+    try {
+      setSaving(true);
+      setSaveError(undefined);
+      await confirmWorkout(workout.id);
+      navigate(paths.home(), { replace: true });
+    } catch (cause) {
+      setSaving(false);
+      setSaveError(cause instanceof Error ? cause.message : "Enregistrement impossible");
+    }
+  }
 
   async function confirmDelete() {
     try {
@@ -419,6 +443,15 @@ export function WorkoutRecapScreen() {
             ))}
           </ol>
         </>
+      )}
+
+      {pending && (
+        <div className="recap__save">
+          {saveError && <p className="recap__message recap__message--error">{saveError}</p>}
+          <button type="button" className="recap__save-button" disabled={saving} onClick={() => void save()}>
+            Enregistrer et revenir à l'accueil
+          </button>
+        </div>
       )}
 
       {!workout.plannedSessionId && (

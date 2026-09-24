@@ -18,6 +18,7 @@ import { GroupEditScreen } from "../features/sessions/GroupEditScreen";
 import { ProgramScreen } from "../features/program/ProgramScreen";
 import { WeeklyProgramScreen } from "../features/program/WeeklyProgramScreen";
 import { WorkoutRecapScreen } from "../features/workout/WorkoutRecapScreen";
+import { WorkoutEndScreen } from "../features/workout/WorkoutEndScreen";
 import { WorkoutBlockDetailScreen } from "../features/workout/WorkoutBlockDetailScreen";
 import { WorkoutScreen } from "../features/workout/WorkoutScreen";
 import { QuickExerciseScreen } from "../features/workout/QuickExerciseScreen";
@@ -39,6 +40,7 @@ export const router = createHashRouter([
       },
       { path: routeSegment(ROUTES.workoutLive), element: <WorkoutScreen /> },
       { path: routeSegment(ROUTES.quickExercise), element: <QuickExerciseScreen /> },
+      { path: routeSegment(ROUTES.workoutEnd), element: <WorkoutEndScreen /> },
       { path: routeSegment(ROUTES.planning), element: <ProgramScreen /> },
       { path: routeSegment(ROUTES.weeklyProgram), element: <WeeklyProgramScreen /> },
       { path: "workouts/:workoutId", element: <WorkoutRecapScreen /> },

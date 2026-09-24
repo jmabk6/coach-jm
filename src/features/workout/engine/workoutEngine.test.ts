@@ -670,7 +670,7 @@ describe("paliers", () => {
 
     w = validateStep(w, "tapis-block", "p1", {}, at(5));
     const done = completeWorkoutSession(w, at(6));
-    expect(() => editStep(done, "tapis-block", "p1", { bpm: 100 }, at(7))).toThrow(/terminée/);
+    expect(() => editStep(done, "tapis-block", "p1", { bpm: 100 }, at(7))).toThrow(/enregistrée/);
   });
 
   it("Ajouter un palier reprend les réglages du précédent", () => {

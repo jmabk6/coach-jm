@@ -16,6 +16,8 @@ export const ROUTES = {
   sessions: "/seances",
   workoutLive: "/seance-en-cours",
   quickExercise: "/seance-en-cours/exercice-rapide",
+  /** Fin de séance (M10) : séance terminée, en attente d'enregistrement (lot E). */
+  workoutEnd: "/seance-en-cours/fin",
   progression: "/progression",
   history: "/historique",
   plus: "/plus",
@@ -74,6 +76,7 @@ export const paths = {
 
   workoutLive: (query?: Query) => withQuery(ROUTES.workoutLive, query),
   quickExercise: () => ROUTES.quickExercise,
+  workoutEnd: () => ROUTES.workoutEnd,
 
   progression: (query?: Query) => withQuery(ROUTES.progression, query),
   cardioDetail: (exerciseId: string, query?: Query) => withQuery(`${ROUTES.progression}/cardio/${exerciseId}`, query),
