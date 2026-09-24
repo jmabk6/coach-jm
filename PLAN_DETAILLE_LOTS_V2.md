@@ -144,6 +144,28 @@ Suite complète : 654 tests passent et 8 sont ignorés sans sauvegarde ; 662/662
 
 **Note** : la semaine du 27/09 ne sera pas générée si D arrive après le 26/09 (règle « semaine en cours intouchée »). C'est acté : tests sur papier. La génération reprend à la première semaine future.
 
+**Rapport du lot D (24/09/2026) : terminé et déployé avec le lot C.**
+
+| Étape | Commit | Résultat |
+|---|---|---|
+| D.1 | `3748fed` | mesures `reps_duration` (durée de chaque répétition, la plus lente en `durationSec`) et `duration_power` (watts ou mètres + résistance, unité fixée à la première saisie) ; métriques `reps`/`durationMax` et `powerMax` (même unité, même durée). Saisie jugée assez légère à l'essai sur PC : pas de repli « une durée » |
+| D.2 | `d380367` | plages dans les consignes (paliers, durées, enfants de groupe) ; réalisé prérempli au bas de la plage ; estimation au milieu |
+| D.3 | `58ecb99` | brique `warmup` recopiée au démarrage ; `reducedPrescription` : ni jalon, ni motif, ni stagnation (leg curl de Muscu C) |
+| D.4 | `bc9e938` | catégorie Routine ; 7 exercices (55 au catalogue, sans médias) ; seed 1 étendu aux libellés de mesure |
+| D.5 | `9ed3b6e` | seeds 5 et 6 : 6 modèles V1, règle dimanche → samedi, `testSchedule`, 3 routines vides non démarrables |
+| D.6 | `53bcf71` | seed 7 : 13 cadres, premières cibles (rowing 40 kg, leg curl 32,5 kg), traction assistée sans incrément ; `increment` facultatif, le renseigner ne crée pas de version (N4) |
+| D.6 bis | `54571f5` | décisions du 24/09 : distance facultative sur le vélo, RPE par palier, Cardio B à 18 paliers préremplis (40 min estimées) ; test traction `after_warmup` |
+| correctif | `1053fed` | modifier un exercice conserve `loadSemantics`, les libellés hors cm et l'unité fixée |
+
+Décisions du 24/09 : mollets debout sans groupe ni cible ; repos non précisés à 90 s ; échauffement tapis 5 km/h, pente 0 %, 8-10 min ; rotation des routines au 27/09.
+
+**D.7, déploiement C + D (protocole D2 § 10)**
+- Étape 1-2 : sauvegarde iPhone du 24/09 09:58 (schéma 2, 13 séances, identique au 23/09 store par store) ; stores gardés vides ; suite complète verte sur ce fichier (729/729), comme sur les sauvegardes du 20, du 22 et du 23/09.
+- Étape 3 : push `b6c7f2d..54571f5`, workflow « Deploy Coach JM » `success`, bundle en ligne contrôlé (schéma v3, programme V1, écran d'échec, import ; ni console de développement ni page de recette), build du 24/09 10:20.
+- Étapes 4 à 6 : migration à l'ouverture de la PWA, contrôles visuels, export de 10:28 (format 2, schéma 3).
+- Étape 7 : comparaison 09:58 → 10:28 : **les 13 séances identiques à l'octet**, `rpeScaleVersions`, `weightEntries`, `strengthMilestones`, `goals` identiques ; brouillon « Muscu A » et cadre `tirage-vertical` (cible 40 kg) inchangés ; **uniquement des ajouts attendus** : 7 exercices, 9 modèles `v1-*`, 12 cadres `frame-v1-*`, la règle hebdomadaire, 6 séances planifiées du 27/09 au 03/10, 4 réglages ; les 8 stores cardio / mobilité, vides, ont disparu avec le schéma v2. Aucun rollback.
+- Fichiers de référence : `coach-jm-sauvegarde-2026-09-24-0958.json` (retour arrière), `coach-jm-sauvegarde-2026-09-24-1028.json` (premier fichier v3).
+
 ---
 
 ## 4. Lot E — Fin de séance
