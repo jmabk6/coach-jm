@@ -68,7 +68,8 @@ describe("Protocoles de tests", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Enregistrer le test du lundi 28 septembre 2026" }));
 
     expect(await screen.findByText("Tronc du lundi 28 septembre 2026 enregistré.")).toBeTruthy();
-    expect(within(card("Tronc")).getByText(/^Dernier : lundi 28 septembre 2026 · Planche 70 s$/)).toBeTruthy();
+    /* La liste se relit après l'enregistrement : on attend la ligne à jour. */
+    expect(await within(card("Tronc")).findByText(/^Dernier : lundi 28 septembre 2026 · Planche 70 s$/)).toBeTruthy();
     expect(await db.testResults.toArray()).toMatchObject([{ protocolId: "protocol-tronc", date: "2026-09-28", origin: "manual", status: "complete" }]);
 
     fireEvent.click(within(card("Tronc")).getByRole("button", { name: "Supprimer le résultat du lundi 28 septembre 2026" }));
