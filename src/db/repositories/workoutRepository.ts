@@ -23,18 +23,27 @@ export async function getWorkoutsByDate(
 }
 
 /**
- * Retourne la séance actuellement en cours.
- *
- * En V1, Coach JM ne doit avoir qu'une seule séance
- * active à la fois.
+ * Retourne la séance en train de se faire : `in_progress` et pas encore
+ * terminée. En V1, une seule à la fois. Une séance terminée mais pas
+ * encore enregistrée (D20) n'en est pas une : elle n'empêche jamais d'en
+ * démarrer une autre (voir `getPendingWorkout`).
  */
 export async function getInProgressWorkout(): Promise<
   WorkoutSession | undefined
 > {
-  return db.workouts
-    .where("status")
-    .equals("in_progress")
-    .first();
+  const open = await db.workouts.where("status").equals("in_progress").toArray();
+  return open.find((workout) => workout.endedAt === undefined);
+}
+
+/**
+ * La séance terminée mais pas encore enregistrée (D20, D21), la plus
+ * ancienne s'il y en a plusieurs.
+ */
+export async function getPendingWorkout(): Promise<WorkoutSession | undefined> {
+  const open = await db.workouts.where("status").equals("in_progress").toArray();
+  return open
+    .filter((workout) => workout.endedAt !== undefined)
+    .sort((a, b) => a.startedAt.localeCompare(b.startedAt))[0];
 }
 
 /**

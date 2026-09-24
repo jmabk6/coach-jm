@@ -16,6 +16,7 @@ import { getAllSessionTemplates } from "../../db/repositories/sessionTemplateRep
 import {
   getCompletedWorkouts,
   getInProgressWorkout,
+  getPendingWorkout,
   getWorkoutsByDate,
 } from "../../db/repositories/workoutRepository";
 import {
@@ -45,6 +46,8 @@ export interface TodayData {
   templateById: Map<Id, SessionTemplate>;
   exerciseById: Map<Id, Exercise>;
   activeTemplates: SessionTemplate[];
+  /** Séance terminée, pas encore enregistrée : elle n'empêche pas d'en démarrer une autre. */
+  pendingWorkout?: WorkoutSession;
   /**
    * Durée d'un modèle et nombre de réalisations qui la fondent,
    * la même valeur que sur l'écran Séances (§5).
@@ -96,6 +99,7 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
           templates,
           exercises,
           completedWorkouts,
+          pendingWorkout,
         ] = await Promise.all([
           getPlannedSessionsByDate(today),
           getPlannedSessionsBetween(shiftDate(today, 1), horizonEnd),
@@ -104,6 +108,7 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
           getAllSessionTemplates(),
           getAllExercises(),
           getCompletedWorkouts(),
+          getPendingWorkout(),
         ]);
 
         if (cancelled) return;
@@ -131,6 +136,7 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
             ...(inProgressWorkout ? { inProgressWorkout } : {}),
           }),
           nextSessions: listNextPlannedSessions(plannedAhead, today),
+          ...(pendingWorkout ? { pendingWorkout } : {}),
           templateById,
           exerciseById: new Map(
             exercises.map((exercise) => [exercise.id, exercise]),

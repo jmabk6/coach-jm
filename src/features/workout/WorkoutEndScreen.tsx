@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getInProgressWorkout } from "../../db/repositories/workoutRepository";
+import { getPendingWorkout } from "../../db/repositories/workoutRepository";
 import type { WorkoutSession } from "../../domain";
 import { paths } from "../../app/paths";
 import { WorkoutRecapScreen } from "./WorkoutRecapScreen";
@@ -15,8 +15,8 @@ export function WorkoutEndScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    void getInProgressWorkout().then((found) => {
-      if (!cancelled) setWorkout(found && found.endedAt !== undefined ? found : null);
+    void getPendingWorkout().then((found) => {
+      if (!cancelled) setWorkout(found ?? null);
     });
 
     return () => {

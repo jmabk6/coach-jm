@@ -36,6 +36,7 @@ import { categoryForWorkout } from "../program/freeWorkouts";
 import { useTodayData, type TodayData } from "./useTodayData";
 import "./TodayScreen.css";
 import { paths } from "../../app/paths";
+import { formatFullDate } from "../../domain/rules/programRules";
 import { WeightCard } from "../weight/WeightCard";
 import { MeasurementsCard } from "../weight/MeasurementsCard";
 
@@ -102,6 +103,18 @@ export function TodayScreen() {
       <TodayHeader date={data.today} />
 
       {error && <p className="today__message today__message--error">{error}</p>}
+
+      {/* Séance d'un autre jour, terminée mais pas enregistrée : un rappel,
+          qui n'empêche pas de démarrer la séance du jour. */}
+      {data.pendingWorkout && data.pendingWorkout.date !== data.today && (
+        <section className="today-card today-card--soft" aria-label="Séance à enregistrer">
+          <h2 className="today-card__title">Séance du {formatFullDate(data.pendingWorkout.date)} à enregistrer</h2>
+          <p className="today-card__text">Terminée, pas encore enregistrée. Tu peux démarrer la séance du jour avant.</p>
+          <Link to={paths.workoutEnd()} className="today__secondary">
+            Enregistrer la séance
+          </Link>
+        </section>
+      )}
 
       {data.state.kind === "rest" && <RestCard />}
 

@@ -4,7 +4,7 @@ import { Info } from "lucide-react";
 import type { Exercise, Id, SessionTemplate, WorkoutSession } from "../../domain";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
-import { getInProgressWorkout } from "../../db/repositories/workoutRepository";
+import { getInProgressWorkout, getPendingWorkout } from "../../db/repositories/workoutRepository";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { recordWorkoutPresence } from "./engine/persistWorkout";
 import { buildResumeSummary, type ResumeSummary } from "./engine/workoutEngine";
@@ -48,10 +48,12 @@ export function ResumeWatcher() {
 
     /* Terminée, pas encore enregistrée (app fermée entre Terminer et
        Enregistrer, D21) : le récapitulatif en attente s'ouvre, sauf si on
-       y est déjà, ou dans le détail d'une de ses briques pour corriger. */
-    if (workout && workout.endedAt !== undefined) {
+       y est déjà, ou dans le détail d'une de ses briques pour corriger.
+       Une séance en train de se faire passe toujours avant. */
+    const pending = workout ? undefined : await getPendingWorkout();
+    if (pending) {
       const pathname = pathnameRef.current;
-      if (pathname !== paths.workoutEnd() && !pathname.startsWith(`/workouts/${workout.id}`)) {
+      if (pathname !== paths.workoutEnd() && !pathname.startsWith(`/workouts/${pending.id}`)) {
         navigateRef.current(paths.workoutEnd(), { replace: true });
       }
       return;
