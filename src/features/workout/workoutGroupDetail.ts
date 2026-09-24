@@ -128,6 +128,7 @@ export interface RoundRestView {
 }
 
 export interface GroupRoundView {
+  roundId: Id;
   roundNumber: number;
   status: "completed" | "partial" | "not_performed";
   doneCount: number;
@@ -202,6 +203,7 @@ export function describeGroupRounds(block: PerformedGroupBlock): GroupRoundView[
     const restAfter = describeRestAfter(block, round, index < rounds.length - 1);
 
     return {
+      roundId: round.id,
       roundNumber: round.roundNumber,
       status: doneCount === 0 ? "not_performed" : doneCount < children.length ? "partial" : "completed",
       doneCount,

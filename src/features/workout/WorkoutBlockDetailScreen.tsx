@@ -39,7 +39,11 @@ import {
   type ExerciseDetailSummary,
   type ExerciseHistoryEntry,
 } from "./workoutBlockDetail";
-import { formatShortDate } from "./workoutDisplay";
+import { formatShortDate, seriesFieldLayout } from "./workoutDisplay";
+import { applyWorkoutAction } from "./engine/persistWorkout";
+import { editRoundChild, editSeries, isAwaitingConfirmation, type SeriesValues } from "./engine/workoutEngine";
+import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
+import { SeriesForm } from "./SeriesForm";
 import {
   compareGroupVolumeToPrevious,
   describeGroupRounds,
@@ -95,10 +99,14 @@ export function WorkoutBlockDetailScreen() {
   const { workoutId, blockId } = useParams<{ workoutId: string; blockId: string }>();
   const [searchParams] = useSearchParams();
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  /* Relecture après une correction (séance terminée, pas enregistrée). */
+  const [version, setVersion] = useState(0);
+  const [correctionError, setCorrectionError] = useState<string>();
 
   const returnTo = searchParams.get("returnTo") ?? paths.planning();
   const search = `?returnTo=${encodeURIComponent(returnTo)}`;
-  const backTo = workoutId ? `/workouts/${workoutId}${search}` : returnTo;
+  const pendingWorkout = state.status === "success" && isAwaitingConfirmation(state.workout);
+  const backTo = pendingWorkout ? paths.workoutEnd() : workoutId ? `/workouts/${workoutId}${search}` : returnTo;
 
   useEffect(() => {
     let cancelled = false;
@@ -159,7 +167,19 @@ export function WorkoutBlockDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [workoutId, blockId]);
+  }, [workoutId, blockId, version]);
+
+  /* Corrections (D21) : permises entre Terminer et Enregistrer, jamais après. */
+  async function correct(action: Parameters<typeof applyWorkoutAction>[1]) {
+    if (!workoutId) return;
+    try {
+      setCorrectionError(undefined);
+      await applyWorkoutAction(workoutId, action);
+      setVersion((value) => value + 1);
+    } catch (cause) {
+      setCorrectionError(cause instanceof Error ? cause.message : "Correction impossible");
+    }
+  }
 
   if (state.status === "loading") {
     return (
@@ -189,6 +209,7 @@ export function WorkoutBlockDetailScreen() {
     lines.find((candidate) => candidate.block.id === item.id)?.name ?? "";
   const numberOf = (item: PerformedBlock): string =>
     lines.find((candidate) => candidate.block.id === item.id)?.number ?? "";
+  const correctable = isAwaitingConfirmation(workout);
 
   return (
     <section className="recap recap-detail">
@@ -220,6 +241,13 @@ export function WorkoutBlockDetailScreen() {
         )}
       </p>
 
+      {correctable && (
+        <p className="recap-detail__correctable">
+          Séance terminée, pas encore enregistrée : une série peut encore être corrigée.
+        </p>
+      )}
+      {correctionError && <p className="recap__message recap__message--error">{correctionError}</p>}
+
       {block.kind === "exercise" && (
         <ExerciseDetail
           block={block}
@@ -227,6 +255,12 @@ export function WorkoutBlockDetailScreen() {
           history={history}
           workoutId={workout.id}
           search={search}
+          {...(correctable
+            ? {
+                onCorrectSeries: (seriesId: Id, values: SeriesValues) =>
+                  void correct((current, at) => editSeries(current, block.id, seriesId, values, at)),
+              }
+            : {})}
         />
       )}
       {block.kind === "group" && (
@@ -235,6 +269,12 @@ export function WorkoutBlockDetailScreen() {
           blockNumber={line.number}
           exerciseById={exerciseById}
           volumeVsLast={groupVolumeVsLast}
+          {...(correctable
+            ? {
+                onCorrectChild: (roundId: Id, childId: Id, values: SeriesValues) =>
+                  void correct((current, at) => editRoundChild(current, block.id, roundId, childId, values, at)),
+              }
+            : {})}
         />
       )}
 
@@ -286,12 +326,14 @@ function ExerciseDetail({
   history,
   workoutId,
   search,
+  onCorrectSeries,
 }: {
   block: PerformedExerciseBlock;
   exercise: Exercise | undefined;
   history: ExerciseHistoryEntry[];
   workoutId: Id;
   search: string;
+  onCorrectSeries?: (seriesId: Id, values: SeriesValues) => void;
 }) {
   const summary = summarizeExerciseBlock(block, exercise, history);
 
@@ -299,7 +341,14 @@ function ExerciseDetail({
     <>
       <SummaryCards summary={summary} />
 
-      {summary.kind === "series" && <SeriesTable block={block} plannedLine={summary.plannedLine} />}
+      {summary.kind === "series" && (
+        <SeriesTable
+          block={block}
+          plannedLine={summary.plannedLine}
+          exercise={exercise}
+          {...(onCorrectSeries ? { onCorrect: onCorrectSeries } : {})}
+        />
+      )}
       {summary.kind === "steps" && <StepsTable block={block} />}
       {summary.kind === "simple" && (
         <dl className="recap-detail__planned">
@@ -496,11 +545,16 @@ function SummaryCards({ summary }: { summary: ExerciseDetailSummary }) {
 function SeriesTable({
   block,
   plannedLine,
+  exercise,
+  onCorrect,
 }: {
   block: PerformedExerciseBlock;
   plannedLine: string | undefined;
+  exercise: Exercise | undefined;
+  onCorrect?: (seriesId: Id, values: SeriesValues) => void;
 }) {
   const series = block.series ?? [];
+  const [editingId, setEditingId] = useState<Id>();
   const target =
     block.snapshotInstructions.shape === "reps" || block.snapshotInstructions.shape === "duration"
       ? block.snapshotInstructions.targetRpe
@@ -524,6 +578,7 @@ function SeriesTable({
             <th>Réalisé</th>
             <th>RPE</th>
             <th>Repos</th>
+            {onCorrect && <th aria-label="Corriger" />}
           </tr>
         </thead>
         <tbody>
@@ -560,7 +615,46 @@ function SeriesTable({
                       <span className="recap-table__note" title="Repos non comparable"> *</span>
                     )}
                   </td>
+                  {onCorrect && (
+                    <td>
+                      <button type="button" className="recap-table__correct" onClick={() => setEditingId(item.id)}>
+                        Corriger
+                      </button>
+                    </td>
+                  )}
                 </tr>
+                {onCorrect && editingId === item.id && (
+                  <tr>
+                    <td colSpan={5}>
+                      <SeriesForm
+                        layout={seriesFieldLayout(exercise)}
+                        initial={{
+                          ...(item.load ? { load: item.load } : {}),
+                          ...(item.reps !== undefined ? { reps: item.reps } : {}),
+                          ...(item.durationSec !== undefined ? { durationSec: item.durationSec } : {}),
+                          ...(item.sideValues ? { sideValues: item.sideValues } : {}),
+                          ...(item.repDurationsSec ? { repDurationsSec: item.repDurationsSec } : {}),
+                          ...(item.result ? { result: item.result } : {}),
+                          ...(item.resistance !== undefined ? { resistance: item.resistance } : {}),
+                          ...(item.rpe !== undefined ? { rpe: item.rpe } : {}),
+                          ...(item.note !== undefined ? { note: item.note } : {}),
+                          ...(item.role !== undefined ? { role: item.role } : {}),
+                          ...(item.sideLimited !== undefined ? { sideLimited: item.sideLimited } : {}),
+                        }}
+                        strengthFields={exercise?.category === "Musculation"}
+                        loadSemantics={loadSemanticsOf(exercise)}
+                        powerUnit={item.result?.unit}
+                        sideRepsUnit={exercise?.measurementLabels?.value}
+                        submitLabel="Enregistrer la correction"
+                        onSubmit={(values) => {
+                          setEditingId(undefined);
+                          onCorrect(item.id, values);
+                        }}
+                        onCancel={() => setEditingId(undefined)}
+                      />
+                    </td>
+                  </tr>
+                )}
                 {item.note && (
                   <tr className="recap-table__adapted">
                     <td />
@@ -725,11 +819,13 @@ function GroupDetail({
   blockNumber,
   exerciseById,
   volumeVsLast,
+  onCorrectChild,
 }: {
   block: PerformedGroupBlock;
   blockNumber: string;
   exerciseById: Map<Id, Exercise>;
   volumeVsLast: GroupVolumeVsLast | undefined;
+  onCorrectChild?: (roundId: Id, childId: Id, values: SeriesValues) => void;
 }) {
   const summary = summarizeGroupBlock(block, volumeVsLast, exerciseById);
   const structure = describeGroupStructure(block, blockNumber);
@@ -864,7 +960,14 @@ function GroupDetail({
         </h2>
         <div className="recap-detail__rounds">
           {rounds.map((round) => (
-            <RoundCard key={round.roundNumber} round={round} name={name} labelOf={labelOf} />
+            <RoundCard
+              key={round.roundNumber}
+              round={round}
+              name={name}
+              labelOf={labelOf}
+              exerciseById={exerciseById}
+              {...(onCorrectChild ? { onCorrect: onCorrectChild } : {})}
+            />
           ))}
         </div>
       </section>
@@ -922,11 +1025,17 @@ function RoundCard({
   round,
   name,
   labelOf,
+  exerciseById,
+  onCorrect,
 }: {
   round: GroupRoundView;
   name: (exerciseId: Id) => string;
   labelOf: (groupChildId: Id) => string;
+  exerciseById?: Map<Id, Exercise>;
+  onCorrect?: (roundId: Id, childId: Id, values: SeriesValues) => void;
 }) {
+  const [editingId, setEditingId] = useState<Id>();
+
   return (
     <section className={`recap-detail__round recap-detail__round--${round.status}`}>
       <h3>
@@ -985,13 +1094,50 @@ function RoundCard({
                   </td>
                   {bare ? (
                     <>
-                      <td>{formatSeriesLine(bare)}</td>
+                      <td>
+                        {formatSeriesLine(bare)}
+                        {onCorrect && child.series && (
+                          <button
+                            type="button"
+                            className="recap-table__correct"
+                            onClick={() => setEditingId(child.series!.id)}
+                          >
+                            Corriger
+                          </button>
+                        )}
+                      </td>
                       <td>{child.series?.rpe ?? "—"}</td>
                     </>
                   ) : (
                     <td colSpan={2}>Non réalisé</td>
                   )}
                 </tr>
+                {onCorrect && child.series && editingId === child.series.id && (
+                  <tr>
+                    <td colSpan={4}>
+                      <SeriesForm
+                        layout={seriesFieldLayout(exerciseById?.get(child.exerciseId))}
+                        initial={{
+                          ...(child.series.load ? { load: child.series.load } : {}),
+                          ...(child.series.reps !== undefined ? { reps: child.series.reps } : {}),
+                          ...(child.series.durationSec !== undefined ? { durationSec: child.series.durationSec } : {}),
+                          ...(child.series.sideValues ? { sideValues: child.series.sideValues } : {}),
+                          ...(child.series.rpe !== undefined ? { rpe: child.series.rpe } : {}),
+                          ...(child.series.note !== undefined ? { note: child.series.note } : {}),
+                        }}
+                        loadSemantics={loadSemanticsOf(exerciseById?.get(child.exerciseId))}
+                        sideRepsUnit={exerciseById?.get(child.exerciseId)?.measurementLabels?.value}
+                        submitLabel="Enregistrer la correction"
+                        onSubmit={(values) => {
+                          const seriesId = child.series!.id;
+                          setEditingId(undefined);
+                          onCorrect(round.roundId, seriesId, values);
+                        }}
+                        onCancel={() => setEditingId(undefined)}
+                      />
+                    </td>
+                  </tr>
+                )}
                 {child.series?.note && (
                   <tr className="recap-table__adapted">
                     <td />

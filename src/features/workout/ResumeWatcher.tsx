@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Info } from "lucide-react";
 import type { Exercise, Id, SessionTemplate, WorkoutSession } from "../../domain";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
@@ -31,12 +31,31 @@ interface FoundWorkout {
  */
 export function ResumeWatcher() {
   const navigate = useNavigate();
+  const location = useLocation();
+  /* Lus au moment du contrôle, sans relancer la veille à chaque écran. */
+  const pathnameRef = useRef(location.pathname);
+  const navigateRef = useRef(navigate);
+  useEffect(() => {
+    pathnameRef.current = location.pathname;
+    navigateRef.current = navigate;
+  });
   const [found, setFound] = useState<FoundWorkout>();
   const [error, setError] = useState<string>();
 
   const checkOnReturn = useCallback(async () => {
     const now = new Date().toISOString();
     const workout = await getInProgressWorkout();
+
+    /* Terminée, pas encore enregistrée (app fermée entre Terminer et
+       Enregistrer, D21) : le récapitulatif en attente s'ouvre, sauf si on
+       y est déjà, ou dans le détail d'une de ses briques pour corriger. */
+    if (workout && workout.endedAt !== undefined) {
+      const pathname = pathnameRef.current;
+      if (pathname !== paths.workoutEnd() && !pathname.startsWith(`/workouts/${workout.id}`)) {
+        navigateRef.current(paths.workoutEnd(), { replace: true });
+      }
+      return;
+    }
 
     if (workout && shouldShowResumeSheet(workout, now)) {
       const [template, exercises] = await Promise.all([

@@ -211,7 +211,7 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
       setDeleteError(undefined);
       await deleteWorkout(workout.id);
       setConfirmingDelete(false);
-      navigate(returnTo, { replace: true });
+      navigate(pending ? paths.home() : returnTo, { replace: true });
     } catch (cause) {
       setDeleteError(cause instanceof Error ? cause.message : "Suppression impossible");
     }
@@ -225,7 +225,7 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
           <h1>{title}</h1>
           <p>{capitalize(formatFullDate(workout.date))}</p>
         </div>
-        {workout.status === "completed" ? (
+        {workout.status === "completed" || isAwaitingConfirmation(workout) ? (
           <button
             type="button"
             className="recap__menu"
@@ -242,7 +242,7 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
       {menuOpen && (
         <BottomSheet
           title={`${title} — ${formatFullDate(workout.date)}`}
-          message="Séance réalisée"
+          message={pending ? "Séance terminée, pas encore enregistrée" : "Séance réalisée"}
           actions={[
             {
               label: "Supprimer cette séance",

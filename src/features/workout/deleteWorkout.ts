@@ -53,7 +53,9 @@ export async function deleteWorkout(
         throw new Error("Séance réalisée introuvable");
       }
 
-      if (workout.status !== "completed") {
+      /* N6 : une séance terminée mais pas encore enregistrée se supprime
+         aussi ; une séance vraiment en cours, non : on la termine d'abord. */
+      if (workout.status !== "completed" && workout.endedAt === undefined) {
         throw new Error("Une séance en cours ne se supprime pas : terminez-la ou arrêtez-la");
       }
 

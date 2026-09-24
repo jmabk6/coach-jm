@@ -756,3 +756,24 @@
 .recap__save-button:disabled {
   opacity: 0.6;
 }
+
+/* Lot E.2 : corrections d'une séance terminée, pas encore enregistrée. */
+.recap-detail__correctable {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md, 14px);
+  background: #fff4e5;
+  color: #8a4b08;
+  font-size: 0.9rem;
+}
+
+.recap-table__correct {
+  margin-left: 6px;
+  padding: 2px 6px;
+  border: 0;
+  background: none;
+  color: var(--color-accent, #2f6fed);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
