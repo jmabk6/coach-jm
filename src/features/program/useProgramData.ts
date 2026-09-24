@@ -4,9 +4,13 @@ import type {
   Id,
   PlannedSession,
   SessionTemplate,
+  TestCycleSettings,
+  TestResult,
   WeeklyProgram,
   WorkoutSession,
 } from "../../domain";
+import { getSetting } from "../../db/repositories/settingsRepository";
+import { getAllTestProtocols, getAllTestResults } from "../../db/repositories/testRepository";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import {
   getPlannedSessionsBetween,
@@ -36,6 +40,12 @@ export interface ProgramData {
   program: WeeklyProgram | undefined;
   /** Séances confirmées, toutes dates : résumé du mois (§ 5.8). */
   completedWorkouts: WorkoutSession[];
+  /** Semaines de tests (§ 5.9) ; absent avant l'installation des réglages. */
+  testCycle: TestCycleSettings | undefined;
+  /** Nom de chaque protocole de test (lot G.7). */
+  testNameById: Map<Id, string>;
+  /** Protocole et date de chaque résultat : « à replanifier » (D26). */
+  testResults: Pick<TestResult, "protocolId" | "date">[];
   /**
    * `Moyenne 45 min` ou `Estimé 20 min` pour un modèle (§5), la même
    * valeur qu'ailleurs dans l'application.
@@ -76,13 +86,16 @@ export function useProgramData(
           await generateProgramWeek(weekStartDate);
         }
 
-        const [sessions, templates, exercises, completedWorkouts, program] =
+        const [sessions, templates, exercises, completedWorkouts, program, testCycle, protocols, testResults] =
           await Promise.all([
             getPlannedSessionsBetween(startDate, endDate),
             getAllSessionTemplates(),
             getAllExercises(),
             getCompletedWorkouts(),
             getWeeklyProgram(),
+            getSetting("testCycle"),
+            getAllTestProtocols(),
+            getAllTestResults(),
           ]);
 
         if (cancelled) return;
@@ -125,6 +138,9 @@ export function useProgramData(
           ),
           program,
           completedWorkouts,
+          testCycle,
+          testNameById: new Map(protocols.map((protocol) => [protocol.id, protocol.name])),
+          testResults: testResults.map(({ protocolId, date }) => ({ protocolId, date })),
           durationLabel: (templateId) => {
             const template = templateById.get(templateId);
 

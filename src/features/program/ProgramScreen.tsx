@@ -33,6 +33,11 @@ import {
   type PlannedSessionAction,
 } from "../../domain/rules/programRules";
 import { MoveSheet } from "./MoveSheet";
+import { ReplanSheet } from "./ReplanSheet";
+import { rescheduleTest } from "../tests/rescheduleTest";
+import { listTestsToReschedule } from "../../domain/rules/testPlanRules";
+import { daysUntilNextTestWeek, isTestWeek, nextTestWeekStart } from "../../domain/rules/testCycleRules";
+import type { RowTest } from "./PlannedSessionRow";
 import { removePlannedSession } from "../../db/repositories/programRepository";
 import {
   addPlannedSession,
@@ -71,7 +76,8 @@ type Flow =
   | { kind: "replace"; session: PlannedSession }
   | { kind: "duplicate"; session: PlannedSession }
   | { kind: "add-date"; initialDate: string }
-  | { kind: "add-template"; date: string };
+  | { kind: "add-template"; date: string }
+  | { kind: "replan"; session: PlannedSession; protocolId: Id };
 
 function today(): string {
   return formatLocalDate(new Date());
@@ -342,6 +348,8 @@ export function ProgramScreen() {
             void run(() => moveWithChoice(session.id, date, choice))
           }
           onSkip={(session) => void run(() => skipPlannedSession(session.id))}
+          onReplan={(session, protocolId) => setFlow({ kind: "replan", session, protocolId })}
+          onConfirmReplan={(session, protocolId, target) => void run(() => rescheduleTest(session.id, protocolId, target.id))}
           onReplace={(session, templateId) =>
             void run(() => replacePlannedSession(session.id, templateId))
           }
@@ -405,6 +413,7 @@ function EntryRow({
       session={entry.session}
       template={data.templateById.get(entry.session.sessionTemplateId)}
       durationLabel={data.durationLabel(entry.session.sessionTemplateId)}
+      tests={rowTestsOf(entry.session, data)}
       onOpenMenu={onOpenMenu}
     />
   );
@@ -412,6 +421,19 @@ function EntryRow({
 
 function entryKey(entry: ProgramEntry): string {
   return entry.kind === "free" ? `free-${entry.workout.id}` : entry.session.id;
+}
+
+/** Tests en retard d'une instance (D26), dérivés à l'affichage. */
+function testsToRescheduleOf(session: PlannedSession, data: ProgramData) {
+  return listTestsToReschedule([session], data.testResults, today()).map((item) => item.test);
+}
+
+/** Tests attachés à une instance (non replanifiés ailleurs), pour sa ligne. */
+function rowTestsOf(session: PlannedSession, data: ProgramData): RowTest[] {
+  const late = new Set(testsToRescheduleOf(session, data).map((test) => test.protocolId));
+  return (session.tests ?? [])
+    .filter((test) => test.rescheduledToPlannedSessionId === undefined)
+    .map((test) => ({ name: data.testNameById.get(test.protocolId) ?? "Test", toReschedule: late.has(test.protocolId) }));
 }
 
 function isEvening(entry: ProgramEntry): boolean {
@@ -495,6 +517,17 @@ function WeekView({
         </button>
       </nav>
 
+      {data.testCycle && isTestWeek(weekStart, data.testCycle) && (
+        <p className="program-banner program-banner--tests">
+          <CalendarDays size={20} strokeWidth={2} aria-hidden="true" />
+          <span>
+            <strong>Semaine de tests</strong>
+            <br />
+            {formatWeekRange(weekStart)} : chaque test est indiqué sous sa séance.
+          </span>
+        </p>
+      )}
+
       {futureWeek && (
         <p className="program-banner">
           <CalendarDays size={20} strokeWidth={2} aria-hidden="true" />
@@ -571,6 +604,14 @@ function WeekView({
         })}
       </ol>
 
+      {data.testCycle && !isTestWeek(weekStart, data.testCycle) && (
+        <NextTestWeekBanner
+          weekStart={nextTestWeekStart(weekStart > today ? weekStart : today, data.testCycle)}
+          days={daysUntilNextTestWeek(today, data.testCycle)}
+          onOpen={onChangeWeek}
+        />
+      )}
+
       <button type="button" className="program-screen__primary" onClick={onAdd}>
         <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
         Ajouter une séance
@@ -588,6 +629,21 @@ function WeekView({
         </span>
       </Link>
     </>
+  );
+}
+
+/** « Semaine de tests dans N jours » (M2) : ouvre cette semaine. */
+function NextTestWeekBanner({ weekStart, days, onOpen }: { weekStart: string; days: number; onOpen: (weekStart: string) => void }) {
+  return (
+    <button type="button" className="program-banner program-banner--next-tests" onClick={() => onOpen(weekStart)}>
+      <CalendarDays size={20} strokeWidth={2} aria-hidden="true" />
+      <span>
+        <strong>Semaine de tests{days > 0 ? ` dans ${days} jour${days > 1 ? "s" : ""}` : ""}</strong>
+        <br />
+        {formatWeekRange(weekStart)}
+      </span>
+      <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -920,6 +976,8 @@ interface ProgramFlowProps {
   onMenuAction: (session: PlannedSession, action: PlannedSessionAction) => void;
   onMove: (session: PlannedSession, date: string, choice: MoveChoice | undefined) => void;
   onSkip: (session: PlannedSession) => void;
+  onReplan: (session: PlannedSession, protocolId: Id) => void;
+  onConfirmReplan: (session: PlannedSession, protocolId: Id, target: PlannedSession) => void;
   onReplace: (session: PlannedSession, templateId: Id) => void;
   onDuplicate: (session: PlannedSession, date: string) => void;
   onAddDate: (date: string) => void;
@@ -935,6 +993,8 @@ function ProgramFlow({
   onMenuAction,
   onMove,
   onSkip,
+  onReplan,
+  onConfirmReplan,
   onReplace,
   onDuplicate,
   onAddDate,
@@ -952,6 +1012,24 @@ function ProgramFlow({
           session={flow.session}
           templateName={templateName(flow.session)}
           onAction={(action) => onMenuAction(flow.session, action)}
+          extraActions={testsToRescheduleOf(flow.session, data).map((test) => ({
+            label: `Replanifier le test ${(data.testNameById.get(test.protocolId) ?? "").toLocaleLowerCase("fr-FR")}`,
+            hint: "Le placer sur une autre séance à venir",
+            tone: "primary" as const,
+            onSelect: () => onReplan(flow.session, test.protocolId),
+          }))}
+          onDismiss={onDismiss}
+        />
+      );
+
+    case "replan":
+      return (
+        <ReplanSheet
+          from={flow.session}
+          testName={data.testNameById.get(flow.protocolId) ?? "Test"}
+          templateById={data.templateById}
+          today={today()}
+          onConfirm={(target) => onConfirmReplan(flow.session, flow.protocolId, target)}
           onDismiss={onDismiss}
         />
       );

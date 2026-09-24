@@ -18,10 +18,17 @@ import {
   inferFreeWorkoutCategory,
 } from "./freeWorkouts";
 
+/** Un test attaché à l'instance (lot G.7) : son nom, et s'il est en retard (D26). */
+export interface RowTest {
+  name: string;
+  toReschedule: boolean;
+}
+
 interface PlannedSessionRowProps {
   session: PlannedSession;
   template: SessionTemplate | undefined;
   durationLabel: string;
+  tests?: RowTest[] | undefined;
   onOpenMenu: (session: PlannedSession) => void;
 }
 
@@ -35,6 +42,7 @@ export function PlannedSessionRow({
   session,
   template,
   durationLabel,
+  tests = [],
   onOpenMenu,
 }: PlannedSessionRowProps) {
   const name = template?.name ?? "Séance supprimée";
@@ -64,6 +72,12 @@ export function PlannedSessionRow({
         <span className="program-row__body">
           <span className="program-row__name">{name}</span>
           <span className="program-row__meta">{durationLabel}</span>
+          {tests.map((test) => (
+            <span key={test.name} className="program-row__test">
+              Test {test.name.toLocaleLowerCase("fr-FR")}
+              {test.toReschedule && <span className="program-badge program-badge--reschedule">À replanifier</span>}
+            </span>
+          ))}
         </span>
 
         <span className={`program-badge program-badge--${displayedStatus}`}>

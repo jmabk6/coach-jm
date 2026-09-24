@@ -133,6 +133,8 @@ interface PlannedSessionMenuProps {
   session: PlannedSession;
   templateName: string;
   onAction: (action: PlannedSessionAction) => void;
+  /** En tête du menu : « Replanifier le test … » (lot G.7). */
+  extraActions?: SheetAction[] | undefined;
   onDismiss: () => void;
 }
 
@@ -145,9 +147,10 @@ export function PlannedSessionMenu({
   session,
   templateName,
   onAction,
+  extraActions = [],
   onDismiss,
 }: PlannedSessionMenuProps) {
-  const actions: SheetAction[] = listPlannedSessionActions(session).map(
+  const statusActions: SheetAction[] = listPlannedSessionActions(session).map(
     (entry) => {
       const pending =
         entry.action === "recap" && session.workoutId
@@ -164,6 +167,7 @@ export function PlannedSessionMenu({
       };
     },
   );
+  const actions = [...extraActions, ...statusActions];
 
   return (
     <BottomSheet

@@ -1001,3 +1001,40 @@
   background: #cfd5dd;
   color: #4b5563;
 }
+
+/* Semaine de tests (lot G.7, M2). */
+.program-banner--tests {
+  background: #fff4e5;
+  color: #8a4b08;
+}
+
+.program-banner--next-tests {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 12px 0;
+  border: 0;
+  font: inherit;
+  text-align: left;
+}
+
+.program-banner--next-tests span {
+  flex: 1;
+}
+
+.program-row__test {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: #d9740e;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.program-badge--reschedule {
+  background: #fff4e5;
+  color: #b45309;
+  border: 1px solid #f59e0b;
+}
