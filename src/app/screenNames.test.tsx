@@ -3,7 +3,6 @@ import "fake-indexeddb/auto";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { GoalsPlaceholderScreen } from "../features/goals/GoalsPlaceholderScreen";
 import { PlusScreen } from "../features/plus/PlusScreen";
 import { TodayScreen } from "../features/today/TodayScreen";
 import { ProgramScreen } from "../features/program/ProgramScreen";
@@ -32,12 +31,6 @@ describe("noms d'écran et écrans provisoires (lot B.4)", () => {
   it("l'écran du programme s'appelle Planning", async () => {
     inRouter(<ProgramScreen />, "/planning");
     expect(await screen.findByRole("heading", { level: 1, name: "Planning" })).toBeTruthy();
-  });
-
-  it("Objectifs provisoire : un titre, une phrase, aucun chiffre", () => {
-    const { container } = inRouter(<GoalsPlaceholderScreen />);
-    expect(screen.getByRole("heading", { level: 1, name: "Objectifs" })).toBeTruthy();
-    expect(container.textContent).not.toMatch(/\d/);
   });
 
   it("Plus : Statistiques mène à l'ancien Progression, Séances n'y est plus", () => {

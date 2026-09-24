@@ -1,0 +1,57 @@
+.exercise-pictogram {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: #344054;
+}
+
+.exercise-pictogram--musculation {
+  background: #eef4ff;
+  color: #175cd3;
+}
+
+.exercise-pictogram--cardio {
+  background: #fff1f3;
+  color: #c01048;
+}
+
+.exercise-pictogram--mobilité {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.exercise-pictogram--test-mobilité {
+  background: #f9f5ff;
+  color: #6938ef;
+}
+/* Lot H.3 : tons des objectifs (M4). */
+.exercise-pictogram--rose {
+  background: #fff1f3;
+  color: #c01048;
+}
+
+.exercise-pictogram--blue {
+  background: #eff8ff;
+  color: #175cd3;
+}
+
+.exercise-pictogram--violet {
+  background: #f4f3ff;
+  color: #6938ef;
+}
+
+.exercise-pictogram--green {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.exercise-pictogram--orange {
+  background: #fff6ed;
+  color: #c4320a;
+}
+
+.exercise-pictogram--sky {
+  background: #f0f9ff;
+  color: #026aa2;
+}
