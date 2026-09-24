@@ -50,6 +50,8 @@ export interface InstallMarkers {
   goals?: string;
   /** Cardio A en un seul bloc (décision du 24/09/2026). */
   cardioASingleBlock?: string;
+  /** Correction ponctuelle de la Cardio A du 24/09/2026 (seed 10). */
+  fixWorkout20260924?: string;
 }
 
 export type SettingsRecord =

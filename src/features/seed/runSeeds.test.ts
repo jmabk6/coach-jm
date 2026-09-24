@@ -3,7 +3,8 @@ import "fake-indexeddb/auto";
 import { readFile } from "node:fs/promises";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
-import type { SettingsRecord } from "../../domain";
+import type { SettingsRecord, WorkoutSession } from "../../domain";
+import { FIX_WORKOUT_ID, fixWorkout20260924 } from "../workout/seedFixWorkout20260924";
 import { canonicalStringify } from "../backup/canonicalJson";
 import { readStores } from "../backup/exportBackup";
 import { resetAndRestore } from "../backup/resetAndRestore";
@@ -53,19 +54,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "cardioASingleBlock"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "cardioASingleBlock", "fixWorkout20260924"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "cardioASingleBlock"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "cardioASingleBlock", "fixWorkout20260924"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
     expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
     const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
-    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, cardioASingleBlock: iso });
+    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, cardioASingleBlock: iso, fixWorkout20260924: iso });
     expect(await db.goals.count()).toBe(7);
     expect(await db.testProtocols.count()).toBe(7);
     expect(await db.exercises.count()).toBeGreaterThan(0);
@@ -165,7 +166,15 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     /* Lots C et D : réglages, place des tests, modèles V1 et routines ajoutés ; rien d'existant n'est réécrit. */
     const settingsKeys = Object.keys(await settingsByKey()).sort();
     expect(settingsKeys).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
-    const untouched = ["workouts", "plannedSessions", "weightEntries", "strengthMilestones"];
+    const untouched = ["plannedSessions", "weightEntries", "strengthMilestones"];
+    /* Seed 10 : seule la Cardio A du 24/09, si elle est dans l'état constaté, est corrigée. */
+    const seededWorkouts = seeded.stores.workouts as WorkoutSession[];
+    const expectedWorkouts = (file.stores.workouts ?? []).map((item) => {
+      const workout = item as WorkoutSession;
+      const updatedAt = seededWorkouts.find((candidate) => candidate.id === workout.id)?.updatedAt ?? "";
+      return (workout.id === FIX_WORKOUT_ID && fixWorkout20260924(workout, updatedAt)) || workout;
+    });
+    expect(canonicalStringify(seededWorkouts), "workouts").toBe(canonicalStringify(expectedWorkouts));
     /* Lot H : les 7 objectifs s'installent ; ceux du fichier restent identiques. */
     const seededGoals = seeded.stores.goals as Array<{ id: string; key: string }>;
     expect(new Set(seededGoals.map((goal) => goal.key)).size).toBe(7);
@@ -201,7 +210,7 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     const spies = spyWrites();
     await runSeeds();
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
-    expect(canonicalStringify((await readStores(db)).stores.workouts)).toBe(canonicalStringify(file.stores.workouts));
+    expect(canonicalStringify((await readStores(db)).stores.workouts)).toBe(canonicalStringify(expectedWorkouts));
   });
 });
 
