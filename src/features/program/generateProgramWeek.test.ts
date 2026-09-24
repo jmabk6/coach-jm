@@ -21,6 +21,10 @@ vi.mock("../../db/repositories/programRepository", () => ({
   savePlannedSessions,
 }));
 
+/* Sans calendrier de tests : la génération seule (les tests : testPlan.test.ts). */
+vi.mock("../../db/repositories/settingsRepository", () => ({ getSetting: vi.fn(async () => undefined) }));
+vi.mock("../../db/repositories/testRepository", () => ({ getAllTestProtocols: vi.fn(async () => []) }));
+
 import { generateProgramWeek } from "./generateProgramWeek";
 
 const program: WeeklyProgram = {

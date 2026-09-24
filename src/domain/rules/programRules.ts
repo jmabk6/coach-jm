@@ -249,9 +249,11 @@ export function generatePlannedSessionsForWeek({
       addDays(weekStart, weekdayOffsets[day.weekday]),
     );
 
+    /* Le créneau du soir (routine, test) ne compte pas : une journée seulement. */
     const alreadyExists = existingSessions.some(
       (session) =>
         session.source === "weekly_program" &&
+        slotOf(session) === "day" &&
         getSourceDate(session) === date,
     );
 
@@ -298,6 +300,13 @@ export function isPlannedSessionPristine(
   session: PlannedSession,
   program: Pick<WeeklyProgram, "days">,
 ): boolean {
+  /* Une instance du soir ne suit pas la règle de journée ; une instance
+     qui porte des tests appartient à la semaine de tests (lot G) : la
+     règle ne la supprime ni ne la change, pour ne jamais perdre un test. */
+  if (slotOf(session) !== "day" || (session.tests?.length ?? 0) > 0) {
+    return false;
+  }
+
   if (
     session.source !== "weekly_program" ||
     !session.sourceWeekday ||

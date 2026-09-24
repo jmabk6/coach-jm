@@ -97,7 +97,7 @@ describe("contenu du programme V1", () => {
       if (entry.targetBlockId) expect(blocksById.get(entry.targetBlockId), entry.protocolKey).toBe(entry.templateId);
       for (const adjustment of entry.adjustments ?? []) expect(blocksById.get(adjustment.blockId), entry.protocolKey).toBe(entry.templateId);
     }
-    expect(PROGRAM_V1_TEST_SCHEDULE.map((entry) => entry.protocolKey)).toEqual(["traction", "mensurations", "souplesse", "cardio", "jambes"]);
+    expect(PROGRAM_V1_TEST_SCHEDULE.map((entry) => entry.protocolKey)).toEqual(["traction", "mensurations", "souplesse", "tronc", "cardio", "jambes"]);
   });
 });
 
@@ -138,7 +138,10 @@ describe("seeds 5 et 6 sur une base neuve", () => {
     const nextWeek = getWeekStartDate("2026-10-01");
     expect(nextWeek).toBe("2026-09-27");
 
-    const generated = await generateProgramWeek(nextWeek, NOW);
+    const all = await generateProgramWeek(nextWeek, NOW);
+    /* 27/09 ouvre la première semaine de tests : le lundi soir porte en plus la Souplesse et le Tronc (lot G.2). */
+    const generated = all.filter((session) => session.slot !== "evening");
+    expect(all.filter((session) => session.slot === "evening").map((session) => session.date)).toEqual(["2026-09-28"]);
     const byDate = new Map(generated.map((session) => [session.date, session.sessionTemplateId]));
     const [sunday, , , , , friday, saturday] = listWeekDates(nextWeek);
 

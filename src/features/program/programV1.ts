@@ -246,7 +246,7 @@ export const PROGRAM_V1_WEEKLY: Omit<WeeklyProgram, "id" | "createdAt" | "update
   eveningRotationAnchor: "2026-09-27",
 };
 
-/** Place de chaque test (conception V2 § 2.3) ; le tronc reste à placer (N2). */
+/** Place de chaque test (conception V2 § 2.3) ; le Tronc le lundi soir, avec la Souplesse (N2). */
 export const PROGRAM_V1_TEST_SCHEDULE: TestScheduleEntry[] = [
   {
     protocolKey: "traction",
@@ -259,6 +259,7 @@ export const PROGRAM_V1_TEST_SCHEDULE: TestScheduleEntry[] = [
   },
   { protocolKey: "mensurations", weekday: "monday", slot: "morning" },
   { protocolKey: "souplesse", weekday: "monday", slot: "evening", placement: "replace_all" },
+  { protocolKey: "tronc", weekday: "monday", slot: "evening", placement: "replace_all" },
   {
     protocolKey: "cardio",
     weekday: "wednesday",
