@@ -65,11 +65,10 @@ export function StepForm({ step, mode, submitLabel, onSubmit, onCancel, busy = f
       return { durationSec, speedKmh, inclinePercent };
     }
 
+    /* Distance facultative (lot D.6 bis) : un palier au RPE peut s'en passer. */
     const distanceKm = parseNumber(distance);
 
-    if (distanceKm === undefined) return undefined;
-
-    return { durationSec, distanceKm };
+    return distanceKm !== undefined ? { durationSec, distanceKm } : { durationSec };
   }
 
   const settings = buildSettings();
@@ -102,7 +101,7 @@ export function StepForm({ step, mode, submitLabel, onSubmit, onCancel, busy = f
             <NumberField label="Pente" unit="%" value={incline} onChange={setIncline} step={1} min={0} />
           </>
         ) : (
-          <NumberField label="Distance" unit="km" value={distance} onChange={setDistance} step={0.1} min={0} decimal />
+          <NumberField label="Distance (optionnel)" unit="km" value={distance} onChange={setDistance} step={0.1} min={0} decimal optional />
         )}
         {mode !== "edit" && (
           <NumberField

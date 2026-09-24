@@ -405,7 +405,8 @@ export interface SpeedInclineStepSettings {
 
 export interface DistanceStepSettings {
   durationSec: number;
-  distanceKm: number;
+  /** Facultative (lot D.6 bis) : relevée si l'appareil l'affiche. */
+  distanceKm?: number;
 }
 
 export type CardioStepSettings =

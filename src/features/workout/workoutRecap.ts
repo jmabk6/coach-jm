@@ -168,7 +168,8 @@ export function formatCardioSettings(settings: CardioStepSettings): {
 
   return {
     duration: formatDurationShort(settings.durationSec),
-    first: `${fr.format(settings.distanceKm)} km`,
+    /* Distance facultative (lot D.6 bis) : absente, rien n'est affiché. */
+    first: settings.distanceKm !== undefined ? `${fr.format(settings.distanceKm)} km` : "",
     second: "",
   };
 }

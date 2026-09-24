@@ -99,7 +99,7 @@ function createExerciseBlock(
             }
           : {
               durationSec: lowOf(step.durationSec),
-              distanceKm: step.distanceKm,
+              ...(step.distanceKm !== undefined ? { distanceKm: step.distanceKm } : {}),
             },
     }));
   }

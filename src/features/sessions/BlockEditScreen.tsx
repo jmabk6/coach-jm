@@ -699,6 +699,7 @@ function InstructionFields({ draft, exercise, onChange }: InstructionFieldsProps
       return (
         <StepsEditor
           steps={instructions.steps}
+          kind={exercise.measurementType === "duration_speed_incline" ? "speed_incline" : "distance"}
           onChange={(steps) => set({ ...instructions, steps })}
         />
       );
@@ -927,8 +928,8 @@ function adaptInstructions(
   }
 
   if (current.shape === "steps" && defaults.shape === "steps") {
-    const currentKind = current.steps[0] && "distanceKm" in current.steps[0];
-    const defaultKind = defaults.steps[0] && "distanceKm" in defaults.steps[0];
+    const currentKind = current.steps[0] && !("speedKmh" in current.steps[0]);
+    const defaultKind = defaults.steps[0] && !("speedKmh" in defaults.steps[0]);
     return currentKind === defaultKind ? current : defaults;
   }
 

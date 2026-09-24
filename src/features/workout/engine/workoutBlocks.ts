@@ -366,7 +366,10 @@ export function createAddedExerciseBlock(
               speedKmh: lowOf(step.speedKmh),
               inclinePercent: lowOf(step.inclinePercent),
             }
-          : { durationSec: lowOf(step.durationSec), distanceKm: step.distanceKm },
+          : {
+              durationSec: lowOf(step.durationSec),
+              ...(step.distanceKm !== undefined ? { distanceKm: step.distanceKm } : {}),
+            },
     }));
   } else {
     block.simpleMeasurement = {};

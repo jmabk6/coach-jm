@@ -272,7 +272,14 @@ export interface DistanceStepInstruction {
   position: number;
 
   durationSec: number;
-  distanceKm: number;
+  /**
+   * Facultative (lot D.6 bis) : un palier au RPE (Cardio B, « 1 min à
+   * RPE 7-8 ») n'a pas de distance prescrite. Absente, rien n'est inventé.
+   */
+  distanceKm?: number;
+
+  /** Effort visé sur ce palier (« RPE 7-8 »). */
+  targetRpe?: NumberRange;
 }
 
 /**

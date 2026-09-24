@@ -163,7 +163,7 @@ function areStepSettingsComparable(
     return isCardioStepComparable(reference, candidate);
   }
 
-  if ("distanceKm" in reference && "distanceKm" in candidate) {
+  if (!("speedKmh" in reference) && !("speedKmh" in candidate)) {
     return (
       reference.distanceKm === candidate.distanceKm &&
       candidate.durationSec >= reference.durationSec * 0.9 &&

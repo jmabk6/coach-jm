@@ -358,7 +358,9 @@ export function summarizeExerciseBlock(
     const inclines = steps.flatMap((step) =>
       "inclinePercent" in step.settings ? [step.settings.inclinePercent] : [],
     );
-    const distances = steps.flatMap((step) => ("distanceKm" in step.settings ? [step.settings.distanceKm] : []));
+    const distances = steps.flatMap((step) =>
+      !("speedKmh" in step.settings) && step.settings.distanceKm !== undefined ? [step.settings.distanceKm] : [],
+    );
     const ranges = [
       speeds.length > 0 ? formatRangeOf(speeds, "km/h") : undefined,
       inclines.length > 0 ? formatRangeOf(inclines, "%") : undefined,

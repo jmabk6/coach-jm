@@ -588,7 +588,7 @@ function SeriesTable({
 function StepsTable({ block }: { block: PerformedExerciseBlock }) {
   const steps = block.cardioSteps ?? [];
   const first = steps.find((step) => step.status === "completed") ?? steps[0];
-  const distanceBased = first !== undefined && "distanceKm" in first.settings;
+  const distanceBased = first !== undefined && !("speedKmh" in first.settings);
 
   return (
     <>

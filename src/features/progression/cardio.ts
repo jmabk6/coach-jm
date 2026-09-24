@@ -187,7 +187,9 @@ export function describeLastRealisation(
     const steps = realisation.steps;
     const speeds = steps.flatMap((step) => ("speedKmh" in step.settings ? [step.settings.speedKmh] : []));
     const inclines = steps.flatMap((step) => ("inclinePercent" in step.settings ? [step.settings.inclinePercent] : []));
-    const distances = steps.flatMap((step) => ("distanceKm" in step.settings ? [step.settings.distanceKm] : []));
+    const distances = steps.flatMap((step) =>
+      !("speedKmh" in step.settings) && step.settings.distanceKm !== undefined ? [step.settings.distanceKm] : [],
+    );
     const bpm = averageBpm(steps);
     const known = steps.filter((step) => step.bpm !== undefined).length;
     const speedRange = rangeOf(speeds);

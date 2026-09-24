@@ -134,7 +134,7 @@ function formatSteps(steps: SessionStepInstruction[]): string {
     "inclinePercent" in step ? [lowOf(step.inclinePercent), highOf(step.inclinePercent)] : [],
   );
   const distances = steps.flatMap((step) =>
-    "distanceKm" in step ? [step.distanceKm] : [],
+    !("speedKmh" in step) && step.distanceKm !== undefined ? [step.distanceKm] : [],
   );
 
   if (speeds.length > 0) parts.push(formatSpan(speeds, "km/h"));
@@ -222,7 +222,18 @@ export function formatExerciseInstructionsRow(
  * palier à valeurs uniques sans RPE : ses réglages suffisent.
  */
 export function formatStepPrescription(step: SessionStepInstruction): string | undefined {
-  if (!("speedKmh" in step)) return undefined;
+  /* Palier de vélo (lot D.6 bis) : durée, distance si prescrite, RPE. */
+  if (!("speedKmh" in step)) {
+    if (step.targetRpe === undefined) return undefined;
+
+    return [
+      formatDurationRange(step.durationSec),
+      step.distanceKm !== undefined ? `${formatNumberFr(step.distanceKm)} km` : undefined,
+      formatRpe(step.targetRpe),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
 
   const ranged = isRange(step.durationSec) || isRange(step.speedKmh) || isRange(step.inclinePercent);
   if (!ranged && step.targetRpe === undefined) return undefined;

@@ -1,4 +1,5 @@
 import type {
+  DistanceStepInstruction,
   ExerciseBlock,
   ExerciseInstructions,
   GroupBlock,
@@ -17,7 +18,7 @@ import type {
  *
  * Plages (D16) : une consigne en est une quand la prescription en est
  * une (« 8-10 min », « pente 6-8 % »). Aucune valeur inventée : Cardio B
- * n'a pas de distance prescrite, ses paliers se saisissent en séance.
+ * n'a pas de distance prescrite, elle est facultative sur le vélo.
  */
 
 type TemplateContent = Pick<
@@ -153,6 +154,25 @@ const cardioA: TemplateContent = {
   ],
 };
 
+/**
+ * Cardio B (décision du 24/09/2026) : paliers préremplis, **sans distance**
+ * — elle est facultative sur le vélo : 10 min progressif, 8 × (1 min à
+ * RPE 7-8 puis 2 min facile), 5 min de retour au calme. 39 min de paliers,
+ * 40 min estimées avec l'installation.
+ */
+function cardioBSteps(): DistanceStepInstruction[] {
+  const steps: DistanceStepInstruction[] = [{ id: "v1-cardio-b-progressif", position: 0, durationSec: 600 }];
+
+  for (let round = 1; round <= 8; round += 1) {
+    steps.push({ id: `v1-cardio-b-effort-${round}`, position: steps.length, durationSec: 60, targetRpe: { min: 7, max: 8 } });
+    steps.push({ id: `v1-cardio-b-facile-${round}`, position: steps.length, durationSec: 120 });
+  }
+
+  steps.push({ id: "v1-cardio-b-retour", position: steps.length, durationSec: 300 });
+
+  return steps;
+}
+
 const cardioB: TemplateContent = {
   id: "v1-cardio-b",
   name: "Cardio B — Intervalles vélo",
@@ -169,8 +189,7 @@ const cardioB: TemplateContent = {
       title: "Déroulé",
       text: "10 min progressif ; 8 × (1 min à RPE 7-8, puis 2 min facile) ; 5 min de retour au calme.",
     } satisfies NoteBlock,
-    /* Aucune distance prescrite : les paliers se saisissent pendant la séance. */
-    exercise("v1-cardio-b-velo", 1, "velo", { shape: "steps", steps: [] }, { notes: "Ajoutez un palier par phase, avec la durée et la distance réelles." }),
+    exercise("v1-cardio-b-velo", 1, "velo", { shape: "steps", steps: cardioBSteps() }, { notes: "Distance facultative : notez-la si le vélo l'affiche." }),
   ],
 };
 
@@ -234,7 +253,8 @@ export const PROGRAM_V1_TEST_SCHEDULE: TestScheduleEntry[] = [
     weekday: "sunday",
     slot: "day",
     templateId: "v1-muscu-a",
-    placement: "before_all",
+    /* Après l'échauffement cardio (décision du 24/09/2026). */
+    placement: "after_warmup",
     adjustments: [{ blockId: "v1-muscu-a-traction", sets: 2 }],
   },
   { protocolKey: "mensurations", weekday: "monday", slot: "morning" },

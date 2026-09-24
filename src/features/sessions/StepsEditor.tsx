@@ -21,11 +21,16 @@ import {
   formatNumberFr,
 } from "../../domain/rules/blockInstructionRules";
 import { isRange, lowOf, sumRanges, widenToRange } from "../../domain/rules/rangeRules";
-import { DecimalRangeFields, RangeToggle, RpeFields, Stepper } from "./instructionFields";
+import { DecimalRangeFields, OptionalNumberInput, RangeToggle, RpeFields, Stepper } from "./instructionFields";
 
 interface StepsEditorProps {
   steps: SessionStepInstruction[];
   onChange: (steps: SessionStepInstruction[]) => void;
+  /**
+   * Nature des paliers, lue sur l'exercice : une liste vide ou des paliers
+   * sans distance (lot D.6 bis) ne suffisent plus à la deviner.
+   */
+  kind?: "speed_incline" | "distance";
 }
 
 /**
@@ -33,13 +38,13 @@ interface StepsEditorProps {
  * avec durée et, selon le type de mesure, vitesse + pente ou distance.
  * Réorganisation par poignées, `Ajouter un palier`, pas de champ « séries ».
  */
-export function StepsEditor({ steps, onChange }: StepsEditorProps) {
+export function StepsEditor({ steps, onChange, kind: exerciseKind }: StepsEditorProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
   const ordered = [...steps].sort((a, b) => a.position - b.position);
   const kind: "speed_incline" | "distance" =
-    ordered[0] && "distanceKm" in ordered[0] ? "distance" : "speed_incline";
+    exerciseKind ?? (ordered[0] && !("speedKmh" in ordered[0]) ? "distance" : "speed_incline");
   const total = sumRanges(ordered.map((step) => step.durationSec));
 
   function commit(next: SessionStepInstruction[]) {
@@ -54,6 +59,11 @@ export function StepsEditor({ steps, onChange }: StepsEditorProps) {
     );
   }
 
+  /** Remplace le palier entier : seul moyen de retirer un champ facultatif (RPE, distance). */
+  function replace(next: SessionStepInstruction) {
+    commit(ordered.map((step) => (step.id === next.id ? next : step)));
+  }
+
   function add() {
     const last = ordered[ordered.length - 1];
     const base = { id: crypto.randomUUID(), position: ordered.length };
@@ -64,7 +74,12 @@ export function StepsEditor({ steps, onChange }: StepsEditorProps) {
         ? {
             ...base,
             durationSec: last ? lowOf(last.durationSec) : 300,
-            distanceKm: last && "distanceKm" in last ? last.distanceKm : 1,
+            /* Distance facultative : recopiée si le palier précédent en a une. */
+            ...(!last
+              ? { distanceKm: 1 }
+              : !("speedKmh" in last) && last.distanceKm !== undefined
+                ? { distanceKm: last.distanceKm }
+                : {}),
           }
         : {
             ...base,
@@ -134,6 +149,7 @@ export function StepsEditor({ steps, onChange }: StepsEditorProps) {
                 kind={kind}
                 canRemove={ordered.length > 1}
                 onChange={(changes) => update(step.id, changes)}
+                onReplace={replace}
                 onRemove={() => commit(ordered.filter((item) => item.id !== step.id))}
               />
             ))}
@@ -146,11 +162,11 @@ export function StepsEditor({ steps, onChange }: StepsEditorProps) {
         Ajouter un palier
       </button>
 
-      {kind === "speed_incline" && (
-        <p className="steps-editor__hint">
-          Touchez le numéro d'un palier pour saisir une plage (« pente 6–8 % ») ou un RPE cible.
-        </p>
-      )}
+      <p className="steps-editor__hint">
+        {kind === "speed_incline"
+          ? "Touchez le numéro d'un palier pour saisir une plage (« pente 6–8 % ») ou un RPE cible."
+          : "Touchez le numéro d'un palier pour saisir un RPE cible. La distance est facultative."}
+      </p>
 
       <p className="steps-editor__total">
         <strong>Total</strong>
@@ -169,6 +185,7 @@ interface StepRowProps {
   kind: "speed_incline" | "distance";
   canRemove: boolean;
   onChange: (changes: Partial<SessionStepInstruction>) => void;
+  onReplace: (step: SessionStepInstruction) => void;
   onRemove: () => void;
 }
 
@@ -263,15 +280,29 @@ function RangeLine({
   );
 }
 
-function StepRow({ step, index, kind, canRemove, onChange, onRemove }: StepRowProps) {
+function StepRow({ step, index, kind, canRemove, onChange, onReplace, onRemove }: StepRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: step.id });
   const label = `palier ${index + 1}`;
   const [panelOpen, setPanelOpen] = useState(false);
-  const speedIncline = kind === "speed_incline" && "speedKmh" in step;
   const hasRanges =
     isRange(step.durationSec) ||
-    ("speedKmh" in step && (isRange(step.speedKmh) || isRange(step.inclinePercent) || step.targetRpe !== undefined));
+    step.targetRpe !== undefined ||
+    ("speedKmh" in step && (isRange(step.speedKmh) || isRange(step.inclinePercent)));
+  const rpeLine = (
+    <div className="steps-editor__range-line">
+      <span className="steps-editor__range-name">RPE cible</span>
+      <RpeFields
+        value={step.targetRpe}
+        onChange={(targetRpe) => {
+          const next = { ...step };
+          if (targetRpe) next.targetRpe = targetRpe;
+          else delete next.targetRpe;
+          onReplace(next);
+        }}
+      />
+    </div>
+  );
 
   return (
     <li
@@ -289,19 +320,15 @@ function StepRow({ step, index, kind, canRemove, onChange, onRemove }: StepRowPr
         <GripVertical size={18} strokeWidth={2} aria-hidden="true" />
       </button>
 
-      {speedIncline ? (
-        <button
-          type="button"
-          className={`steps-editor__index steps-editor__index--button ${hasRanges ? "steps-editor__index--ranged" : ""}`}
-          aria-label={`Plages et RPE du ${label}`}
-          aria-expanded={panelOpen}
-          onClick={() => setPanelOpen((open) => !open)}
-        >
-          {index + 1}
-        </button>
-      ) : (
-        <span className="steps-editor__index">{index + 1}</span>
-      )}
+      <button
+        type="button"
+        className={`steps-editor__index steps-editor__index--button ${hasRanges ? "steps-editor__index--ranged" : ""}`}
+        aria-label={`${kind === "speed_incline" ? "Plages et RPE" : "RPE"} du ${label}`}
+        aria-expanded={panelOpen}
+        onClick={() => setPanelOpen((open) => !open)}
+      >
+        {index + 1}
+      </button>
 
       <StepValue
         label={`durée du ${label}`}
@@ -332,15 +359,19 @@ function StepRow({ step, index, kind, canRemove, onChange, onRemove }: StepRowPr
             onChange={(inclinePercent) => onChange({ inclinePercent })}
           />
         </>
-      ) : "distanceKm" in step ? (
-        <Stepper
+      ) : !("speedKmh" in step) ? (
+        /* Distance facultative (lot D.6 bis) : vide = « libre ». */
+        <OptionalNumberInput
           label={`distance du ${label}`}
+          unit="km"
+          step={0.1}
           value={step.distanceKm}
-          min={0.1}
-          max={50}
-          step={step.distanceKm < 2 ? 0.1 : 0.5}
-          format={formatNumberFr}
-          onChange={(distanceKm) => onChange({ distanceKm })}
+          onChange={(distanceKm) => {
+            const next = { ...step };
+            if (distanceKm !== undefined) next.distanceKm = distanceKm;
+            else delete next.distanceKm;
+            onReplace(next);
+          }}
         />
       ) : null}
 
@@ -384,18 +415,13 @@ function StepRow({ step, index, kind, canRemove, onChange, onRemove }: StepRowPr
             step={1}
             onChange={(inclinePercent) => onChange({ inclinePercent })}
           />
-          <div className="steps-editor__range-line">
-            <span className="steps-editor__range-name">RPE cible</span>
-            <RpeFields
-              value={step.targetRpe}
-              onChange={(targetRpe) => {
-                const next = { ...step };
-                if (targetRpe) next.targetRpe = targetRpe;
-                else delete next.targetRpe;
-                onChange(next);
-              }}
-            />
-          </div>
+          {rpeLine}
+        </div>
+      )}
+
+      {panelOpen && !("speedKmh" in step) && (
+        <div className="steps-editor__panel" role="group" aria-label={`RPE du ${label}`}>
+          {rpeLine}
         </div>
       )}
     </li>
