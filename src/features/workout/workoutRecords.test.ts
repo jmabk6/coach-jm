@@ -5,7 +5,7 @@ import { getLoadKg } from "../../domain/rules/workoutRules";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { parseBackup } from "../backup/restoreBackup";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
-import { buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildImportedWorkouts } from "../history/fixtures/september2026";
 import { computeWorkoutRecords, retainedSeriesByExercise } from "./workoutRecords";
 
 /**

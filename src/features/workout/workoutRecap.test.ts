@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildImportedWorkouts } from "../history/fixtures/september2026";
 import {
   formatLoad,
   formatSeriesLine,

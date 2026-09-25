@@ -3,7 +3,8 @@ import type { Exercise, PerformedExerciseBlock, WorkoutSession } from "../../dom
 import { compareAssistedSeries, loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { frameTypesFor } from "../../domain/rules/strengthRules";
 import { calculateVolume } from "../../domain/rules/workoutRules";
-import { buildImportedWorkout, buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildImportedWorkout } from "../history/importedWorkouts";
+import { buildImportedWorkouts } from "../history/fixtures/september2026";
 import { formatLoadSuggestion } from "../workout/suggestedLoad";
 import { pickBestSeries } from "../workout/workoutBlockDetail";
 import { summarizeWorkout } from "../workout/workoutRecap";

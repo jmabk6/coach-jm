@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DATABASE_VERSION, db, STORE_NAMES, VERSION_2_STORES } from "../../db/database";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
 import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
-import { buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildImportedWorkouts } from "../history/fixtures/september2026";
 import { buildEstablishedDataset } from "./fixtures/establishedDataset";
 import { canonicalStringify } from "./canonicalJson";
 import {

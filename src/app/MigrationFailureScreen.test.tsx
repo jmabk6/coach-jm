@@ -9,7 +9,7 @@ import { canonicalStringify } from "../features/backup/canonicalJson";
 import { readBackup, readStores } from "../features/backup/exportBackup";
 import { verifyBackupIntegrity } from "../features/backup/restoreBackup";
 import { CoachJmDatabaseV2, WRITE_METHODS, uniqueTestName, writePrototypeOf } from "../features/backup/testDatabase";
-import { buildImportedWorkouts } from "../features/history/importedWorkouts";
+import { buildImportedWorkouts } from "../features/history/fixtures/september2026";
 import { MigrationFailureScreen } from "./MigrationFailureScreen";
 import { openDatabaseAsIs } from "./openDatabaseAsIs";
 

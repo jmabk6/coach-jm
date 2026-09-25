@@ -7,7 +7,7 @@ import { REMOVED_IN_V3, type CoachJmDatabase } from "../../db/database";
 import type { WorkoutSession } from "../../domain";
 import { canonicalStringify } from "./canonicalJson";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
-import { buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildImportedWorkouts } from "../history/fixtures/september2026";
 import { readBackup, readStores, serializeBackup, type BackupContext, type BackupEnvelope } from "./exportBackup";
 import { BackupValidationError, parseBackup, restoreInto } from "./restoreBackup";
 import { createTestDatabase } from "./testDatabase";

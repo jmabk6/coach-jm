@@ -8,7 +8,7 @@ import type { Exercise, PerformedExerciseBlock, WorkoutSession } from "../../dom
 import { calculateVolume } from "../../domain/rules/workoutRules";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
 import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
-import { buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildImportedWorkouts } from "../history/fixtures/september2026";
 import { pickBestSeries } from "../workout/workoutBlockDetail";
 import { readBackup, serializeBackup, type BackupContext } from "./exportBackup";
 import { parseBackup, restoreBackup } from "./restoreBackup";

@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import Dexie from "dexie";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildImportedWorkouts } from "../history/fixtures/september2026";
 import { PlusScreen } from "../plus/PlusScreen";
 import { buildEstablishedDataset } from "./fixtures/establishedDataset";
 import { BackupSection } from "./BackupSection";

@@ -8,7 +8,7 @@ import { canonicalStringify } from "../features/backup/canonicalJson";
 import { parseBackup, restoreBackup } from "../features/backup/restoreBackup";
 import { CoachJmDatabaseV2, describeSchema, uniqueTestName } from "../features/backup/testDatabase";
 import { exerciseCatalog } from "../features/exercises/exerciseCatalog";
-import { buildImportedWorkouts } from "../features/history/importedWorkouts";
+import { buildImportedWorkouts } from "../features/history/fixtures/september2026";
 import { rpeScaleV1 } from "../domain/rules/strengthRules";
 import {
   CoachJmDatabase,

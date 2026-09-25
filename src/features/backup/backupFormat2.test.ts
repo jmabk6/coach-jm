@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { compareBackups, verifyBackup as scriptVerify } from "../../../scripts/verify-backup.mjs";
 import type { SettingsRecord, WorkoutSession } from "../../domain";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
-import { buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildImportedWorkouts } from "../history/fixtures/september2026";
 import { legacyHash7, readBackup, serializeBackup, storeHashesOf, type BackupContext } from "./exportBackup";
 import { parseBackup, restoreBackup, verifyBackupIntegrity } from "./restoreBackup";
 import { createTestDatabase } from "./testDatabase";

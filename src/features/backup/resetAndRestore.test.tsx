@@ -9,7 +9,7 @@ import { resumeSeedsForTests, seedsSuspended } from "../seed/runSeeds";
 import { canonicalStringify } from "./canonicalJson";
 import { DataResetSection } from "./DataResetSection";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
-import { buildImportedWorkouts } from "../history/importedWorkouts";
+import { buildImportedWorkouts } from "../history/fixtures/september2026";
 import { readBackup, readStores, serializeBackup, type BackupContext, type BackupEnvelope } from "./exportBackup";
 import { parseBackup } from "./restoreBackup";
 import { eraseDatabase, resetAndRestore } from "./resetAndRestore";

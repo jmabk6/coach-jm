@@ -6,7 +6,7 @@ import { readBackup, serializeBackup } from "../features/backup/exportBackup";
 import { parseBackup, replaceWith } from "../features/backup/restoreBackup";
 import { CoachJmDatabaseV2, writePrototypeOf } from "../features/backup/testDatabase";
 import { exerciseCatalog } from "../features/exercises/exerciseCatalog";
-import { buildImportedWorkouts } from "../features/history/importedWorkouts";
+import { buildImportedWorkouts } from "../features/history/fixtures/september2026";
 
 /**
  * Page de recette C.8 (SCHEMA_DEXIE_V3_MIGRATION.md § 3.3 et § 9) :

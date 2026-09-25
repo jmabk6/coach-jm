@@ -13,8 +13,7 @@ import type {
 } from "../domain";
 import { exerciseCatalog } from "../features/exercises/exerciseCatalog";
 import { seedExerciseCatalog } from "../features/exercises/seedExerciseCatalog";
-import { importSeptember2026History } from "../features/history/importHistory";
-import { buildImportedWorkouts } from "../features/history/importedWorkouts";
+import { buildImportedWorkouts } from "../features/history/fixtures/september2026";
 import { buildEstablishedDataset } from "../features/backup/fixtures/establishedDataset";
 import { isCountedWorkout } from "../features/program/countedWorkouts";
 import { DATABASE_VERSION, VERSION_1_STORES, VERSION_2_STORES, db } from "./database";
@@ -365,40 +364,6 @@ describe("migration v1 → v2 — par les fonctions de l'application (instance g
     await populate(legacy);
     legacy.close();
   }
-
-  it("scénario 3 bis : base à neuf séances (version déployée), migration, puis import en version dix", async () => {
-    const nine = buildImportedWorkouts()
-      .slice(0, 9)
-      .map((w) => ({ ...w, createdAt: "2026-09-16T12:00:00.000Z", updatedAt: "2026-09-16T12:00:00.000Z" }));
-    expect(nine.map((w) => w.date).at(-1)).toBe("2026-09-15");
-
-    await createLegacyCoachJm(async (legacy) => {
-      await legacy.workouts.bulkPut(nine);
-    });
-
-    await db.open();
-    /* Lot C : l'instance de l'application migre désormais jusqu'à la v3. */
-    expect(db.verno).toBe(DATABASE_VERSION);
-    expect(await db.workouts.count()).toBe(9);
-
-    const result = await importSeptember2026History();
-    expect(result).toEqual({ workoutsCreated: 1, workoutsUpdated: 9 });
-
-    const after = (await db.workouts.toArray()).sort((a, b) => a.date.localeCompare(b.date));
-    expect(after).toHaveLength(10);
-    expect(after.at(-1)?.id).toBe("import-2026-09-16");
-
-    const strip = (w: WorkoutSession) => {
-      const copy = { ...w } as Partial<WorkoutSession>;
-      delete copy.createdAt;
-      delete copy.updatedAt;
-      return copy;
-    };
-    expect(after.slice(0, 9).map(strip)).toEqual(nine.map(strip));
-    expect(after.slice(0, 9).every((w) => w.updatedAt === "2026-09-17T12:00:00.000Z")).toBe(true);
-    expect(new Set(after.map((w) => w.id)).size).toBe(10);
-    expect(await db.strengthMilestones.count()).toBe(0);
-  });
 
   it("scénario 6 : résidus de l'ancien seed de validation — rattrapage inchangé, pas de doublon", async () => {
     const legacyNow = "2026-09-05T08:00:00.000Z";

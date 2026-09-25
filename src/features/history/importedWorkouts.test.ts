@@ -11,8 +11,7 @@ import {
   buildExercisePerformanceSummary,
   getDefaultPerformanceMetric,
 } from "../exercises/exercisePerformance";
-import { importSeptember2026History } from "./importHistory";
-import { buildImportedWorkouts, importedWorkoutSpecs } from "./importedWorkouts";
+import { buildImportedWorkouts, importedWorkoutSpecs } from "./fixtures/september2026";
 
 describe("historique importé de septembre 2026", () => {
   beforeEach(async () => {
@@ -62,8 +61,7 @@ describe("historique importé de septembre 2026", () => {
   });
 
   it("alimente les fiches : charge max et volume de la presse, BPM du tapis", async () => {
-    const first = await importSeptember2026History();
-    expect(first).toEqual({ workoutsCreated: 10, workoutsUpdated: 0 });
+    await db.workouts.bulkPut(buildImportedWorkouts());
 
     const exercises = await getAllExercises();
     const presse = exercises.find((e) => e.id === "presse-cuisses");
@@ -95,10 +93,5 @@ describe("historique importé de septembre 2026", () => {
     expect(settings16.map((step) => step.durationSec)).toEqual([300, 300, 300, 300, 300, 300, 120, 480]);
     expect(settings16.map((step) => step.inclinePercent)).toEqual([0, 5, 7, 5, 7, 5, 15, 0]);
     expect(steps16.map((step) => step.bpm)).toEqual([86, 98, 111, 102, 112, 105, 140, 92]);
-
-    /* Réimporter ne crée rien de plus. */
-    const second = await importSeptember2026History();
-    expect(second).toEqual({ workoutsCreated: 0, workoutsUpdated: 10 });
-    expect((await getCompletedWorkouts()).length).toBe(10);
   });
 });
