@@ -1,6 +1,7 @@
-import { addDays, format, parseISO } from "date-fns";
+import { addDays, parseISO } from "date-fns";
 import type { WeightEntry } from "../models";
 import { formatLocalDate, getWeekStartDate, listWeekDates } from "./programRules";
+import { formatFr } from "./dateFr";
 
 /**
  * Pesée quotidienne (conception V2 § 2.4, lot I.1) : une pesée par jour
@@ -103,9 +104,9 @@ export function formatWeekSpan(week: Pick<WeekAverage, "weekStart" | "weekEnd">)
   const start = parseISO(week.weekStart);
   const end = parseISO(week.weekEnd);
   const months = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-  const startLabel = start.getMonth() === end.getMonth() ? format(start, "d") : `${format(start, "d")} ${months[start.getMonth()]}`;
+  const startLabel = start.getMonth() === end.getMonth() ? formatFr(start, "d") : `${formatFr(start, "d")} ${months[start.getMonth()]}`;
 
-  return `${startLabel} → ${format(end, "d")} ${months[end.getMonth()]}`;
+  return `${startLabel} → ${formatFr(end, "d")} ${months[end.getMonth()]}`;
 }
 
 export function formatWeighingCount(count: number): string {

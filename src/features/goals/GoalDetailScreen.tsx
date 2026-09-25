@@ -15,6 +15,7 @@ import { GoalCurveChart } from "./GoalCurveChart";
 import { GoalAdviceTab, GoalExercisesTab } from "./GoalTabs";
 import { loadGoalDetail, type GoalDetail } from "./goalDetail";
 import "./GoalDetailScreen.css";
+import { formatFr } from "../../domain/rules/dateFr";
 
 type Tab = "progression" | "exercices" | "conseils";
 
@@ -25,7 +26,7 @@ const TABS: ReadonlyArray<{ key: Tab; label: string }> = [
 ];
 
 function formatLongDate(date: string): string {
-  return format(parseISO(date), "d MMMM yyyy", { locale: fr });
+  return formatFr(date, "d MMMM yyyy");
 }
 
 /**
@@ -65,7 +66,7 @@ export function GoalDetailScreen() {
   const { segment, evaluation } = progress;
   const latest = evaluation.kind === "untracked" || evaluation.kind === "reached" || evaluation.kind === "tracking" ? evaluation.latest : undefined;
   const todayCard: GoalCardText = latest
-    ? { value: formatValue(latest.value), caption: `${segment.label} · ${format(parseISO(latest.date), "d MMM", { locale: fr })}` }
+    ? { value: formatValue(latest.value), caption: `${segment.label} · ${formatFr(latest.date, "d MMM")}` }
     : { value: evaluation.kind === "no_measure" ? "—" : "À mesurer", caption: segment.label };
 
   /* Poids : pas de test, une moyenne dès 3 pesées dans une semaine (§ 5.4). */
@@ -202,7 +203,7 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
                 {card.gain && (
                   <span className="goal-secondary__gain">
                     {card.gain}
-                    {card.since ? ` depuis le ${format(parseISO(card.since), "d MMM", { locale: fr })}` : ""}
+                    {card.since ? ` depuis le ${formatFr(card.since, "d MMM")}` : ""}
                   </span>
                 )}
               </li>
@@ -222,7 +223,7 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
                 <li key={session.workoutId}>
                   <Link to={`/workouts/${session.workoutId}?returnTo=${encodeURIComponent(returnTo)}`} className="goal-linked__row">
                     <span className="goal-linked__date">
-                      <strong>{format(parseISO(session.date), "d", { locale: fr })}</strong>
+                      <strong>{formatFr(session.date, "d")}</strong>
                       {format(parseISO(session.date), "MMM", { locale: fr })}
                     </span>
                     <span className="goal-linked__lines">{session.lines.join(" · ")}</span>

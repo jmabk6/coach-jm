@@ -99,7 +99,7 @@ describe("M5 — Traction sans résultat", () => {
 
     const tirage = screen.getAllByText("Tirage vertical à la poulie")[0]!.closest(".goal-secondary__card") as HTMLElement;
     expect(within(tirage).getByText("45 kg × 7")).toBeDefined();
-    expect(within(tirage).getByText("+5 kg depuis le 1 sept.")).toBeDefined();
+    expect(within(tirage).getByText("+5 kg depuis le 1er sept.")).toBeDefined();
 
     const rows = document.querySelectorAll(".goal-linked__row");
     expect(rows).toHaveLength(2);

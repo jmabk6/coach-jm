@@ -1,5 +1,6 @@
 import { addDays, differenceInCalendarDays, parseISO } from "date-fns";
 import { formatLocalDate } from "../../domain/rules/programRules";
+import { formatFr } from "../../domain/rules/dateFr";
 
 /**
  * Périodes de Progression (§16) : glissantes, **en jours**, terminées
@@ -70,10 +71,7 @@ export function formatPeriodRange(period: Period): string {
   const start = parseISO(period.start);
   const end = parseISO(period.end);
   const sameYear = start.getFullYear() === end.getFullYear();
-  const dayMonth = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
-  const full = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-
-  return `${sameYear ? dayMonth.format(start) : full.format(start)} – ${full.format(end)} (${period.days} jours)`;
+  return `${formatFr(start, sameYear ? "d MMMM" : "d MMMM yyyy")} – ${formatFr(end, "d MMMM yyyy")} (${period.days} jours)`;
 }
 
 /**

@@ -14,6 +14,7 @@ import type {
   Weekday,
   WeeklyProgram,
 } from "../models";
+import { formatFr } from "./dateFr";
 
 /* -------------------------------------------------------------------------- */
 /* Jours et dates                                                             */
@@ -141,7 +142,7 @@ export function formatDayLabel(date: string): {
 
   return {
     weekday: capitalize(format(parsed, "EEE", { locale: fr })),
-    day: format(parsed, "d MMM", { locale: fr }),
+    day: formatFr(parsed, "d MMM"),
   };
 }
 
@@ -149,14 +150,14 @@ export function formatDayLabel(date: string): {
  * `jeudi 10 septembre 2026` — la date complète d'une instance.
  */
 export function formatFullDate(date: string): string {
-  return format(parseISO(date), "EEEE d MMMM yyyy", { locale: fr });
+  return formatFr(date, "EEEE d MMMM yyyy");
 }
 
 /**
  * `10 septembre` — pour `Retirer du 10 septembre`.
  */
 export function formatDayAndMonth(date: string): string {
-  return format(parseISO(date), "d MMMM", { locale: fr });
+  return formatFr(date, "d MMMM");
 }
 
 /**
@@ -168,10 +169,10 @@ export function formatWeekRange(weekStartDate: string): string {
   const end = addDays(start, 6);
 
   if (isSameMonth(start, end)) {
-    return `Du ${format(start, "d", { locale: fr })} au ${format(end, "d MMMM yyyy", { locale: fr })}`;
+    return `Du ${formatFr(start, "d")} au ${formatFr(end, "d MMMM yyyy")}`;
   }
 
-  return `Du ${format(start, "d MMMM", { locale: fr })} au ${format(end, "d MMMM yyyy", { locale: fr })}`;
+  return `Du ${formatFr(start, "d MMMM")} au ${formatFr(end, "d MMMM yyyy")}`;
 }
 
 /**
@@ -583,7 +584,7 @@ export function allowedMoveChoices(target: PlannedSession): MoveChoice[] {
 
 /** `jeu. 24 sept.` — un jour de la feuille Déplacer. */
 export function formatShortDay(date: string): string {
-  return format(parseISO(date), "EEE d MMM", { locale: fr });
+  return formatFr(date, "EEE d MMM");
 }
 
 /**

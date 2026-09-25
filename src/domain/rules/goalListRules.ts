@@ -1,10 +1,10 @@
-import { addDays, differenceInCalendarMonths, format, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import { addDays, differenceInCalendarMonths, parseISO } from "date-fns";
 import type { Goal, GoalSegment, Id, PlannedSession, TestCycleSettings, TestResult, TestScheduleEntry } from "../models";
 import type { SegmentEvaluation } from "./goalRules";
 import { formatLocalDate, getWeekStartDate, weekdays } from "./programRules";
 import { isTestWeek, nextTestWeekStart } from "./testCycleRules";
 import { listTestsToReschedule } from "./testPlanRules";
+import { formatFr } from "./dateFr";
 
 /**
  * Ligne de la liste des objectifs (M4, lot H.3) : numéro, icône, titre,
@@ -28,9 +28,7 @@ export function goalProtocolId(goal: Goal, segment: GoalSegment): Id | undefined
 
 /** « 27 sept. », « 1er oct. ». */
 export function formatTestDay(date: string): string {
-  const day = parseISO(date);
-  const dayOfMonth = day.getDate();
-  return `${dayOfMonth === 1 ? "1er" : dayOfMonth} ${format(day, "MMM", { locale: fr })}`;
+  return formatFr(date, "d MMM");
 }
 
 /**
@@ -205,7 +203,7 @@ export function goalStatusCard(evaluation: SegmentEvaluation, nextTest: string |
     case "no_measure":
       return { value: "—", caption: "Indicateur à choisir après 2 tests" };
     case "no_result":
-      return { value: "—", caption: nextTest ? `Premier test le ${format(parseISO(nextTest), "d MMMM yyyy", { locale: fr })}` : "Aucun test prévu" };
+      return { value: "—", caption: nextTest ? `Premier test le ${formatFr(nextTest, "d MMMM yyyy")}` : "Aucun test prévu" };
     case "untracked":
       return { value: "—", caption: "Cible ou échéance à définir" };
     case "reached":
@@ -223,5 +221,5 @@ export function goalDueCard(dueDate: string | undefined, today: string): GoalCar
   if (!dueDate) return { value: "À définir", caption: "Pas d'échéance" };
   const months = differenceInCalendarMonths(parseISO(dueDate), parseISO(today));
   const caption = dueDate < today ? "Échéance passée" : months <= 0 ? "Ce mois-ci" : `${months} mois restant${months > 1 ? "s" : ""}`;
-  return { value: format(parseISO(dueDate), "d MMMM yyyy", { locale: fr }), caption };
+  return { value: formatFr(dueDate, "d MMMM yyyy"), caption };
 }
