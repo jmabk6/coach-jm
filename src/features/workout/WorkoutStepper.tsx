@@ -10,15 +10,15 @@ export function WorkoutStepper({ steps, onSelect }: { steps: Step[]; onSelect: (
     <nav className="wstepper" aria-label="Étapes de la séance">
       <ol>
         {steps.map((step) => (
-          <li key={step.id} className={`wstepper__step wstepper__step--${step.state}`}>
+          <li key={step.id} className={`wstepper__step wstepper__step--${step.state}${step.warmup ? " wstepper__step--warmup" : ""}`}>
             <button
               type="button"
               onClick={() => onSelect(step.id)}
               aria-current={step.state === "current" ? "step" : undefined}
-              aria-label={`Étape ${step.number} : ${step.label}${step.state === "done" ? " (faite)" : step.state === "skipped" ? " (sautée)" : ""}`}
+              aria-label={`${step.warmup ? "Échauffement" : `Étape ${step.number ?? ""}`} : ${step.label}${step.state === "done" ? " (faite)" : step.state === "skipped" ? " (sautée)" : ""}`}
             >
               <span className="wstepper__dot" aria-hidden="true">
-                {step.state === "done" ? <Check size={14} strokeWidth={3} /> : step.number}
+                {step.warmup ? "Échauffement" : step.state === "done" ? <Check size={14} strokeWidth={3} /> : step.number}
               </span>
               <span className="wstepper__label">{step.label}</span>
             </button>

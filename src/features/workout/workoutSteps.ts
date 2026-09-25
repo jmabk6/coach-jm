@@ -4,14 +4,17 @@ export type StepState = "done" | "current" | "skipped" | "upcoming";
 
 export interface Step {
   id: Id;
-  number: number;
+  /** Absent pour l'échauffement, qui porte la pastille « Échauffement ». */
+  number: number | undefined;
+  warmup: boolean;
   label: string;
   state: StepState;
 }
 
 /**
  * Étapes de la frise (M9, lot M.3) : chaque brique hors note, dans
- * l'ordre ; la brique test est l'étape 0. Faite, courante, sautée ou à
+ * l'ordre ; l'échauffement n'a pas de numéro, la brique test est
+ * l'étape 0, les exercices vont de 1 à N. Faite, courante, sautée ou à
  * venir.
  */
 export function workoutSteps(
@@ -38,6 +41,7 @@ export function workoutSteps(
             : block.id === currentBlockId
               ? "current"
               : "upcoming";
-      return [{ id: block.id, number: numbering[block.id] ?? 0, label, state }];
+      const warmup = block.kind === "exercise" && block.role === "warmup";
+      return [{ id: block.id, number: numbering[block.id], warmup, label, state }];
     });
 }

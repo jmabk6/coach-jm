@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../../db/database";
-import type { PerformedBlock } from "../../domain";
+import type { PerformedBlock, PerformedExerciseBlock } from "../../domain";
 import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
 import { startFreeWorkout } from "./startFreeWorkout";
 import { calculatePerformedNumbering } from "./workoutDisplay";
@@ -17,14 +17,15 @@ import { workoutSteps } from "./workoutSteps";
  * « Assistance (kg) » pour une assistance, « Charge (kg) » sinon.
  */
 
-const exercise = (id: string, position: number, exerciseId: string, status: "performed" | "skipped" | "not_performed"): PerformedBlock => ({
+const exercise = (id: string, position: number, exerciseId: string, status: "performed" | "skipped" | "not_performed"): PerformedExerciseBlock => ({
   id, kind: "exercise", position, addedDuringWorkout: false, exerciseId, status,
   snapshotInstructions: { shape: "reps", sets: 3, reps: { min: 6, max: 8 }, restBetweenSetsSec: 90 },
 });
 
 describe("étapes de la frise", () => {
-  it("la brique test est l'étape 0, les exercices partent de 1 ; faite, courante, sautée, à venir", () => {
+  it("l'échauffement sans numéro, la brique test est l'étape 0, les exercices partent de 1 ; faite, courante, sautée, à venir", () => {
     const blocks: PerformedBlock[] = [
+      { ...exercise("w", -1, "tapis-de-course", "performed"), role: "warmup" },
       { id: "t", kind: "test", position: 0, addedDuringWorkout: false, status: "performed", protocolId: "p", protocolVersionId: "v" },
       exercise("a", 1, "traction-assistee", "not_performed"),
       exercise("b", 2, "squat", "skipped"),
@@ -32,12 +33,15 @@ describe("étapes de la frise", () => {
       exercise("c", 4, "rowing-poulie-basse", "not_performed"),
     ];
     const names = new Map([
+      ["tapis-de-course", { name: "Tapis de course" }],
       ["traction-assistee", { name: "Traction assistée" }],
       ["squat", { name: "Squat barre" }],
       ["rowing-poulie-basse", { name: "Rowing" }],
     ]) as never;
     const steps = workoutSteps(blocks, calculatePerformedNumbering(blocks), "a", names);
+    expect(steps.map((step) => step.warmup)).toEqual([true, false, false, false, false]);
     expect(steps.map((step) => [step.number, step.label, step.state])).toEqual([
+      [undefined, "Tapis de course", "done"],
       [0, "Test", "done"],
       [1, "Traction assistée", "current"],
       [2, "Squat barre", "skipped"],
@@ -75,22 +79,22 @@ describe("écran de séance", () => {
     const stepper = await screen.findByRole("navigation", { name: "Étapes de la séance" }, { timeout: 4000 });
     const steps = within(stepper).getAllByRole("button");
     expect(steps.map((step) => step.getAttribute("aria-label"))).toEqual([
-      "Étape 1 : Tapis de course",
-      "Étape 2 : Traction assistée",
-      "Étape 3 : Squat barre",
-      "Étape 4 : Rowing poulie basse assis",
-      "Étape 5 : Chest press machine",
-      "Étape 6 : Leg curl assis",
-      "Étape 7 : Élévations latérales haltères",
+      "Échauffement : Tapis de course",
+      "Étape 1 : Traction assistée",
+      "Étape 2 : Squat barre",
+      "Étape 3 : Rowing poulie basse assis",
+      "Étape 4 : Chest press machine",
+      "Étape 5 : Leg curl assis",
+      "Étape 6 : Élévations latérales haltères",
     ]);
 
-    fireEvent.click(within(stepper).getByRole("button", { name: "Étape 2 : Traction assistée" }));
-    await waitFor(() => expect(within(stepper).getByRole("button", { name: "Étape 2 : Traction assistée" }).getAttribute("aria-current")).toBe("step"), {
+    fireEvent.click(within(stepper).getByRole("button", { name: "Étape 1 : Traction assistée" }));
+    await waitFor(() => expect(within(stepper).getByRole("button", { name: "Étape 1 : Traction assistée" }).getAttribute("aria-current")).toBe("step"), {
       timeout: 4000,
     });
     expect(await screen.findByText("Assistance (kg)", {}, { timeout: 4000 })).toBeDefined();
 
-    fireEvent.click(within(stepper).getByRole("button", { name: "Étape 3 : Squat barre" }));
+    fireEvent.click(within(stepper).getByRole("button", { name: "Étape 2 : Squat barre" }));
     expect(await screen.findByText("Charge (kg)", {}, { timeout: 4000 })).toBeDefined();
   }, 20000);
 });

@@ -37,7 +37,10 @@ export function calculatePerformedNumbering(
   for (const block of [...blocks].sort((a, b) => a.position - b.position)) {
     if (block.kind === "note") continue;
 
-    /* Frise M9 (lot M.3) : une brique test est l'étape 0, les exercices partent de 1. */
+    /* Frise M9 (lot M.3, décision du 25/09/2026) : l'échauffement n'est
+       pas numéroté, la brique test est l'étape 0, les exercices vont de 1
+       à N, jour de test ou non. */
+    if (block.kind === "exercise" && block.role === "warmup") continue;
     if (block.kind === "test") {
       numbering[block.id] = 0;
       continue;

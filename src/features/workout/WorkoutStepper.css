@@ -69,3 +69,16 @@
   border-style: dashed;
   color: var(--color-text-muted);
 }
+
+/* Échauffement : une pastille nommée plutôt qu'un numéro. */
+.wstepper__step--warmup button {
+  width: auto;
+  min-width: 64px;
+}
+
+.wstepper__step--warmup .wstepper__dot {
+  width: auto;
+  padding: 0 8px;
+  border-radius: 14px;
+  font-size: 0.66rem;
+}
