@@ -73,6 +73,8 @@ interface ExerciseBlockCardProps {
    * saisie par côté quand la barre est connue.
    */
   frameVersion?: StrengthFrameVersion | undefined;
+  /** Encarts de progression du cadre (lot M.1) : hausse proposée, stagnation à examiner. */
+  insets?: ReactNode;
   onToggle: () => void;
   onOpenMenu: () => void;
   onUnskip: () => void;
@@ -109,6 +111,7 @@ export function ExerciseBlockCard({
   originalName,
   rpeTable,
   frameVersion,
+  insets,
   onToggle,
   onOpenMenu,
   onUnskip,
@@ -202,6 +205,7 @@ export function ExerciseBlockCard({
 
       {/* Consigne du modèle (« +5 s de maintien par semaine… », « Même vélo… ») : lisible pendant la séance. */}
       {expanded && !skipped && block.note && <p className="wblock__note">{block.note}</p>}
+      {expanded && !skipped && insets && <div className="wblock__insets">{insets}</div>}
 
       {expanded && !skipped && block.series && (
         <div className="wblock__content">

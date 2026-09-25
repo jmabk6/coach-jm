@@ -904,3 +904,10 @@
   font-size: 0.72rem;
   font-weight: 600;
 }
+
+/* Lot M.1 : encarts de progression du cadre dans la carte de l'exercice. */
+.wblock__insets {
+  display: grid;
+  gap: 8px;
+  margin: 0 12px 8px;
+}

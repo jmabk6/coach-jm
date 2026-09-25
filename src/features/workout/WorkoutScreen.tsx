@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import {
   CheckCircle2,
@@ -17,6 +17,7 @@ import type {
   PerformedExerciseBlock,
   PerformedGroupBlock,
   PerformedNoteBlock,
+  StrengthFrameVersion,
 } from "../../domain";
 import { fixExercisePowerUnit } from "../../db/repositories/exerciseRepository";
 import { listExerciseAlternatives } from "../exercises/exerciseAlternatives";
@@ -62,6 +63,10 @@ import { RestBar } from "./RestBar";
 import { RestCard } from "./RestCard";
 import { playRestSignal, primeRestSignal } from "./restSignal";
 import { usePreferences } from "../plus/usePreferences";
+import { acceptRaise } from "../strength/frameActions";
+import { RaiseInset, StagnationInset } from "../strength/FrameInsets";
+import { readDismissedRaises, rememberDismissedRaise } from "../strength/frameDismissal";
+import { useFrameInsights } from "../strength/useFrameInsights";
 import { useClock, useWorkoutSession } from "./useWorkoutSession";
 import { calculatePerformedNumbering, describeNextUp } from "./workoutDisplay";
 import { formatClock } from "./workoutRecap";
@@ -75,6 +80,9 @@ import { paths } from "../../app/paths";
  * résumé. Chaque geste passe par le moteur et est sauvegardé aussitôt ;
  * l'écran ne calcule rien lui-même.
  */
+/** Aucune version de cadre tant que la séance se charge (référence stable). */
+const EMPTY_VERSIONS: ReadonlyMap<Id, StrengthFrameVersion> = new Map();
+
 export function WorkoutScreen() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -95,6 +103,40 @@ export function WorkoutScreen() {
 
   const workout = state.status === "ready" ? state.workout : undefined;
   const preferences = usePreferences();
+  /* Lot M.1 : hausse proposée et stagnation à examiner, par cadre de la séance. */
+  const frameVersions = state.status === "ready" ? state.frames.versionById : EMPTY_VERSIONS;
+  const { insights, reload: reloadInsights } = useFrameInsights(workout, frameVersions);
+  const [dismissedRaises, setDismissedRaises] = useState<string[]>(() => readDismissedRaises());
+  const [insetBusy, setInsetBusy] = useState(false);
+
+  function insetsFor(frameVersionId: Id | undefined): ReactNode {
+    const insight = frameVersionId ? insights.get(frameVersionId) : undefined;
+    if (!insight) return undefined;
+    const { raise, stagnation, version } = insight;
+    const showRaise = raise && !dismissedRaises.includes(raise.milestone.id);
+    if (!showRaise && !stagnation) return undefined;
+    return (
+      <>
+        {showRaise && (
+          <RaiseInset
+            raise={raise}
+            busy={insetBusy}
+            onAccept={() => {
+              setInsetBusy(true);
+              void acceptRaise(version, raise)
+                .then(reloadInsights)
+                .finally(() => setInsetBusy(false));
+            }}
+            onStay={() => {
+              rememberDismissedRaise(raise.milestone.id);
+              setDismissedRaises((items) => [...items, raise.milestone.id]);
+            }}
+          />
+        )}
+        {stagnation && <StagnationInset stagnation={stagnation} />}
+      </>
+    );
+  }
   useClock(Boolean(workout?.activeRest));
 
   /* Signal au premier plan quand le compte à rebours atteint zéro (§12) :
@@ -515,6 +557,7 @@ export function WorkoutScreen() {
                 }
                 rpeTable={rpeScale?.table}
                 frameVersion={block.frameVersionId ? frames.versionById.get(block.frameVersionId) : undefined}
+                insets={insetsFor(block.frameVersionId)}
                 onToggle={() => toggleBlock(block)}
                 onOpenMenu={() => setBlockMenu(block)}
                 onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}

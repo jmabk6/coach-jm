@@ -35,6 +35,8 @@ import {
   type StartingTarget,
 } from "./frameActions";
 import { FrameForm, type FrameFormMode } from "./FrameForm";
+import { RaiseInset, StagnationInset } from "./FrameInsets";
+import { readDismissedRaises, rememberDismissedRaise } from "./frameDismissal";
 import { currentLoadOf, lastSessionOutcome, latestMilestone, proposeStartingLoad } from "./frameReadings";
 import "./FrameSection.css";
 
@@ -65,29 +67,6 @@ function formatIsoDate(iso: string): string {
   return formatDate(iso.slice(0, 10));
 }
 
-/* « Rester sur le palier » n'écrit rien dans le modèle (spec § 7) : la
-   proposition s'éteint d'elle-même à la séance suivante. Pour ne pas la
-   remontrer à chaque ouverture d'ici là, le refus est mémorisé dans le
-   navigateur seulement — jamais dans la base ni la sauvegarde. */
-const DISMISSED_KEY = "coach-jm:hausse-refusee";
-
-function readDismissed(): string[] {
-  try {
-    const raw = sessionStorage.getItem(DISMISSED_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function rememberDismissed(milestoneId: string): void {
-  try {
-    sessionStorage.setItem(DISMISSED_KEY, JSON.stringify([...readDismissed(), milestoneId]));
-  } catch {
-    /* stockage indisponible : l'encart réapparaîtra, sans conséquence */
-  }
-}
-
 /**
  * Section « Cadre de progression » de la fiche exercice (plan lot 4,
  * décision 1 ; conception v1.6 § 4.2, § 4.2 bis) : créer le cadre,
@@ -103,7 +82,7 @@ export function FrameSection({ exercise, completedWorkouts }: FrameSectionProps)
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
-  const [dismissed, setDismissed] = useState<string[]>(() => readDismissed());
+  const [dismissed, setDismissed] = useState<string[]>(() => readDismissedRaises());
 
   const [revision, setRevision] = useState(0);
   const reload = useCallback(() => setRevision((value) => value + 1), []);
@@ -337,64 +316,23 @@ export function FrameSection({ exercise, completedWorkouts }: FrameSectionProps)
       )}
 
       {raise && raiseVisible && (
-        <aside className="frame-section__suggestion" aria-label="Hausse proposée">
-          <strong>Augmentation proposée</strong>
-          <p>
-            Palier {formatStrengthValue(raise.milestone.value, raise.unit)} validé le {formatDate(raise.milestone.date)}.
-            Cran suivant : <strong>{formatStrengthValue(raise.value, raise.unit)}</strong>
-            {raise.repFloor !== undefined ? `, en repartant du bas de la plage (${raise.repFloor} répétitions)` : ""}.
-            Rien ne change tant que vous n'acceptez pas.
-          </p>
-          <div className="frame-section__actions">
-            <button
-              type="button"
-              className="frame-section__primary"
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  await acceptRaise(current, raise);
-                  return `Objectif ${formatStrengthValue(raise.value, raise.unit)} enregistré pour la prochaine séance.`;
-                })
-              }
-            >
-              Accepter le nouveau palier
-            </button>
-            <button
-              type="button"
-              className="frame-section__secondary"
-              disabled={busy}
-              onClick={() => {
-                rememberDismissed(raise.milestone.id);
-                setDismissed((items) => [...items, raise.milestone.id]);
-              }}
-            >
-              Rester à {formatStrengthValue(raise.milestone.value, raise.unit)}
-            </button>
-          </div>
-        </aside>
+        <RaiseInset
+          raise={raise}
+          busy={busy}
+          onAccept={() =>
+            void run(async () => {
+              await acceptRaise(current, raise);
+              return `Objectif ${formatStrengthValue(raise.value, raise.unit)} enregistré pour la prochaine séance.`;
+            })
+          }
+          onStay={() => {
+            rememberDismissedRaise(raise.milestone.id);
+            setDismissed((items) => [...items, raise.milestone.id]);
+          }}
+        />
       )}
 
-      {stagnation && (
-        <aside className="frame-section__suggestion frame-section__suggestion--warn" aria-label="Stagnation à examiner">
-          <strong>Stagnation à examiner</strong>
-          <p>
-            Trois séances à {formatStrengthValue(stagnation.load, stagnation.unit)} sans progrès sur le total
-            {stagnation.unit === "sec" ? " de secondes" : " de répétitions"} :
-          </p>
-          <ul>
-            {stagnation.sessions.map((session) => (
-              <li key={session.workoutId}>
-                {formatDate(session.date)} — total {session.total}
-                {stagnation.unit === "sec" ? " s" : " reps"}
-              </li>
-            ))}
-          </ul>
-          <p>
-            Pistes, sans décision : revenir au cran précédent, poursuivre, vérifier le repos. Réduire le nombre de
-            séries serait un changement de cadre (« Modifier »), pas un ajustement de charge.
-          </p>
-        </aside>
-      )}
+      {stagnation && <StagnationInset stagnation={stagnation} />}
 
       {notice && <p className="frame-section__notice">{notice}</p>}
 
