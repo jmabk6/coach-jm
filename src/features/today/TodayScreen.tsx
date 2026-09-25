@@ -608,11 +608,7 @@ function ChooseSessionSheet({ data, onChoose, onDismiss }: ChooseSessionSheetPro
             onSelect: () => onChoose(template),
           };
         }),
-        {
-          label: "Bilan de mobilité (séance libre)",
-          hint: "Part vide ; n'entre pas dans les statistiques d'entraînement",
-          onSelect: () => onChoose(undefined, "mobility_assessment"),
-        },
+        /* Décision D2 (lot J.3) : plus d'entrée « Bilan de mobilité » ; les tests de souplesse la remplacent. */
         {
           label: "Séance libre sans modèle",
           hint: "Part vide : ajoute les exercices au fil de la séance",

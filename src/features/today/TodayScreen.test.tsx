@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
@@ -77,6 +77,14 @@ describe("Accueil — bloc Aujourd'hui", () => {
     await db.sessionTemplates.update("v1-routine-a", { name: "Routine A — à définir", blocks: [] });
     await renderOn("2026-09-27");
     expect(await within(await screen.findByRole("link", { name: /^Ce soir/ })).findByText("Routine A — contenu à définir")).toBeDefined();
+  });
+
+  it("Choisir une séance : plus d'entrée « Bilan de mobilité » (D2), la séance libre reste", async () => {
+    await renderOn("2026-10-02");
+    fireEvent.click(await screen.findByRole("button", { name: /Choisir une séance/ }));
+    const sheet = await screen.findByRole("dialog");
+    expect(within(sheet).queryByText(/Bilan de mobilité/)).toBeNull();
+    expect(within(sheet).getByRole("button", { name: /Séance libre sans modèle/ })).toBeDefined();
   });
 
   it("séance d'un autre jour en attente : « Terminer l'enregistrement »", async () => {
