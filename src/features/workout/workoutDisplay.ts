@@ -201,6 +201,8 @@ export function describeNextUp(
   workout: WorkoutSession,
   exerciseById: Map<Id, Exercise>,
   proposed: (block: PerformedExerciseBlock) => ProposedSeriesValues,
+  /** Lot M.2 : la charge conseillée d'un exercice qu'on n'a pas encore commencé. */
+  advised?: (block: PerformedExerciseBlock) => string | undefined,
 ): NextUp | undefined {
   const rest = workout.activeRest;
 
@@ -250,9 +252,10 @@ export function describeNextUp(
     const proposal = formatProposedValues(values);
     const target = formatSeriesTarget(block);
 
+    const advice = !sameBlock && pendingIndex === 0 ? advised?.(block) : undefined;
     const detail = [
       target && target !== "À saisir" ? target : undefined,
-      proposal ? `proposé ${proposal}` : undefined,
+      advice ? `Charge conseillée : ${advice}` : proposal ? `proposé ${proposal}` : undefined,
     ]
       .filter(Boolean)
       .join(" · ");

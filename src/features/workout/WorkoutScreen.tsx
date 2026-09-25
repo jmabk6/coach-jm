@@ -67,6 +67,7 @@ import { acceptRaise } from "../strength/frameActions";
 import { RaiseInset, StagnationInset } from "../strength/FrameInsets";
 import { readDismissedRaises, rememberDismissedRaise } from "../strength/frameDismissal";
 import { useFrameInsights } from "../strength/useFrameInsights";
+import { advisedLoadOf, formatAdvisedLoad } from "./advisedLoad";
 import { useClock, useWorkoutSession } from "./useWorkoutSession";
 import { calculatePerformedNumbering, describeNextUp } from "./workoutDisplay";
 import { formatClock } from "./workoutRecap";
@@ -290,8 +291,18 @@ export function WorkoutScreen() {
     <RestCard
       rest={workout.activeRest}
       now={nowIso}
-      nextUp={describeNextUp(workout, exerciseById, (block) =>
-        proposeSeriesValues(block, lastByExercise.get(block.exerciseId)?.series),
+      nextUp={describeNextUp(
+        workout,
+        exerciseById,
+        (block) => proposeSeriesValues(block, lastByExercise.get(block.exerciseId)?.series),
+        (block) => {
+          const advised = advisedLoadOf(
+            exerciseById.get(block.exerciseId),
+            block.frameVersionId ? frames.versionById.get(block.frameVersionId) : undefined,
+            lastByExercise.get(block.exerciseId)?.allSeries,
+          );
+          return advised ? formatAdvisedLoad(advised) : undefined;
+        },
       )}
       paused={paused}
       busy={busy}

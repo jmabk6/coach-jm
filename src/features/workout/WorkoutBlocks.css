@@ -911,3 +911,12 @@
   gap: 8px;
   margin: 0 12px 8px;
 }
+
+/* Lot M.2 : charge conseillée d'un exercice à venir. */
+.wblock__advice {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-accent-strong);
+  font-size: 0.78rem;
+  font-weight: 600;
+}

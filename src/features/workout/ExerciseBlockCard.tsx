@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Check, ChevronDown, ChevronUp, EllipsisVertical, Plus } from "lucide-react";
+import { advisedLoadOf, formatAdvisedLoad } from "./advisedLoad";
 import type {
   CardioStepSettings,
   Exercise,
@@ -141,6 +142,11 @@ export function ExerciseBlockCard({
   const performed = block.status === "performed";
   const skipped = block.status === "skipped";
   const url = exercise?.media?.thumbnailUrl ?? exercise?.media?.photoUrl;
+  /* Lot M.2 : un exercice à venir annonce sa charge conseillée, chiffrée. */
+  const advised =
+    !expanded && !performedOrSkipped(block) && !hasCompletedEntries(block) && block.series
+      ? advisedLoadOf(exercise, frameVersion, lastTime?.allSeries)
+      : undefined;
 
   return (
     <li
@@ -168,6 +174,7 @@ export function ExerciseBlockCard({
                 <span className="wblock__added">Prévu : {originalName}</span>
               )}
             </span>
+            {advised && <span className="wblock__advice">Charge conseillée : {formatAdvisedLoad(advised)}</span>}
           </span>
           <span className="wblock__aside">
             {performed ? (
