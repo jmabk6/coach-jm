@@ -56,6 +56,8 @@ export interface InstallMarkers {
   removeSkipped20260924?: string;
   /** La séance du 25/09/2026, transcrite de la feuille de l'utilisateur (seed 12). */
   addWorkout20260925?: string;
+  /** Thème Clair par défaut : l'ancien « Auto » par défaut passe à « Clair » (seed 14). */
+  themeLight?: string;
 }
 
 export type SettingsRecord =

@@ -8,7 +8,7 @@ import { seedProgramFrames } from "../strength/seedProgramFrames";
 import { seedRpeScale } from "../strength/seedRpeScale";
 import { seedGoals } from "../goals/seedGoals";
 import { seedTestProtocols } from "../tests/seedTestProtocols";
-import { seedSettingsDefaults } from "./seedSettingsDefaults";
+import { seedSettingsDefaults, seedThemeLight } from "./seedSettingsDefaults";
 
 /**
  * Seeds du lancement (SCHEMA_DEXIE_V3_MIGRATION.md § 5) : exécutés après
@@ -48,6 +48,8 @@ export const SEEDS: SeedStep[] = [
   { name: "removeSkipped20260924", run: () => seedRemoveSkipped20260924() },
   /* Seed 12 : la séance du 25/09, que l'utilisateur n'a pas pu saisir. */
   { name: "addWorkout20260925", dependsOn: ["exerciseCatalog"], run: () => seedWorkout20260925() },
+  /* Seed 14 : thème Clair par défaut. */
+  { name: "themeLight", dependsOn: ["settingsDefaults"], run: () => seedThemeLight() },
 ];
 
 export interface SeedReport {
