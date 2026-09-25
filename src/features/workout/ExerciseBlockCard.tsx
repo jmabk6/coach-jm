@@ -12,7 +12,8 @@ import type {
   SessionStepInstruction,
   StrengthFrameVersion,
 } from "../../domain";
-import { formatStepPrescription } from "../../domain/rules/blockInstructionRules";
+import { formatRange, formatStepPrescription } from "../../domain/rules/blockInstructionRules";
+import { getLoadKg } from "../../domain/rules/workoutRules";
 import { formatFrameVersionSummary } from "../../domain/rules/strengthRules";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { effectivePowerUnit } from "../../domain/rules/powerRules";
@@ -28,6 +29,7 @@ import {
 } from "./engine/workoutBlocks";
 import type { LastComparableStep, LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
+import { formatDecimal } from "./workoutRecap";
 import { SimpleMeasurementForm } from "./SimpleMeasurementForm";
 import { StepForm } from "./StepForm";
 import { formatFrameLoadSuggestion, formatLoadSuggestion, suggestFrameLoad, suggestLoad } from "./suggestedLoad";
@@ -142,6 +144,9 @@ export function ExerciseBlockCard({
   const performed = block.status === "performed";
   const skipped = block.status === "skipped";
   const url = exercise?.media?.thumbnailUrl ?? exercise?.media?.photoUrl;
+  /* Tableau des séries (M9, lot M.3) : charge et répétitions en colonnes. */
+  const tabular = seriesFieldLayout(exercise) === "load_reps";
+  const assistance = loadSemanticsOf(exercise) === "assistance";
   /* Lot M.2 : un exercice à venir annonce sa charge conseillée, chiffrée. */
   const advised =
     !expanded && !performedOrSkipped(block) && !hasCompletedEntries(block) && block.series
@@ -150,6 +155,7 @@ export function ExerciseBlockCard({
 
   return (
     <li
+      data-block-id={block.id}
       className={`wblock ${expanded ? "wblock--open" : ""} ${
         performed ? "wblock--done" : ""
       } ${block.status === "skipped" ? "wblock--skipped" : ""}`}
@@ -219,7 +225,20 @@ export function ExerciseBlockCard({
           {restCard}
           <ReferenceBlock block={block} exercise={exercise} lastTime={lastTime} frameVersion={frameVersion} />
 
-          <ol className="wseries">
+          <ol className={`wseries${tabular ? " wseries--table" : ""}`}>
+            {tabular && (
+              <li className="wseries__row wseries__head" aria-hidden="true">
+                <span className="wseries__bullet">Série</span>
+                <span className="wseries__body">
+                  <span className="wseries__cells">
+                    <span>{assistance ? "Assistance (kg)" : "Charge (kg)"}</span>
+                    <span>Répétitions</span>
+                    <span>RPE</span>
+                  </span>
+                </span>
+                <span />
+              </li>
+            )}
             {[...block.series]
               .sort((a, b) => a.position - b.position)
               .map((series, index) => (
@@ -455,6 +474,28 @@ interface SeriesRowProps {
   onSaveEdit: (values: SeriesValues) => void;
 }
 
+/** Une ligne du tableau des séries : charge, répétitions, RPE ; le libellé reste lu par les lecteurs d'écran. */
+function SeriesCells({ load, reps, rpe, label }: { load: string; reps: string; rpe: string; label: string }) {
+  return (
+    <span className="wseries__cells" aria-label={`${label} : ${load} kg, ${reps} répétitions, RPE ${rpe}`}>
+      <span>{load}</span>
+      <span>{reps}</span>
+      <span>{rpe}</span>
+    </span>
+  );
+}
+
+function loadCell(series: PerformedSeries): string {
+  const kg = getLoadKg(series.load);
+  return kg !== undefined ? formatDecimal(kg) : "—";
+}
+
+/** « 6–8 » : les répétitions prévues d'une série à venir. */
+function targetReps(block: PerformedExerciseBlock): string {
+  const instructions = block.snapshotInstructions;
+  return !block.addedDuringWorkout && instructions.shape === "reps" ? formatRange(instructions.reps) : "—";
+}
+
 function SeriesRow({
   block,
   series,
@@ -472,6 +513,7 @@ function SeriesRow({
 }: SeriesRowProps) {
   const label = `Série ${index + 1}`;
   const layout = seriesFieldLayout(exercise);
+  const tabular = layout === "load_reps";
   /* Rôle et drapeau : séries de musculation seulement (v1.6, § 4.4). */
   const strengthFields = exercise?.category === "Musculation";
   /* Effort en puissance (D17) : l'unité déjà saisie est imposée. */
@@ -484,8 +526,14 @@ function SeriesRow({
           <Check size={14} strokeWidth={3} />
         </span>
         <span className="wseries__body">
-          <span className="wseries__title">{label}</span>
-          <span className="wseries__meta">{formatSeriesLine(series)}</span>
+          {tabular ? (
+            <SeriesCells load={loadCell(series)} reps={series.reps !== undefined ? String(series.reps) : "—"} rpe={series.rpe !== undefined ? String(series.rpe) : "—"} label={label} />
+          ) : (
+            <>
+              <span className="wseries__title">{label}</span>
+              <span className="wseries__meta">{formatSeriesLine(series)}</span>
+            </>
+          )}
           {series.actualRestAfterSec !== undefined && (
             <span className="wseries__rest">
               Repos réel {formatMmSs(series.actualRestAfterSec)}
@@ -540,8 +588,20 @@ function SeriesRow({
       <li className="wseries__row wseries__row--active">
         <span className="wseries__bullet wseries__bullet--active">{index + 1}</span>
         <span className="wseries__body">
-          <span className="wseries__title">{label}</span>
-          <span className="wseries__meta">{formatSeriesTarget(block)}</span>
+          {tabular ? (
+            /* Ligne du tableau : les valeurs proposées, à ajuster juste dessous. */
+            <SeriesCells
+              load={proposed.load ? loadCell({ load: proposed.load } as PerformedSeries) : "—"}
+              reps={proposed.reps !== undefined ? String(proposed.reps) : targetReps(block)}
+              rpe="—"
+              label={`${label}, en cours`}
+            />
+          ) : (
+            <>
+              <span className="wseries__title">{label}</span>
+              <span className="wseries__meta">{formatSeriesTarget(block)}</span>
+            </>
+          )}
         </span>
         <div className="wseries__form">
           <SeriesForm
@@ -567,8 +627,14 @@ function SeriesRow({
     <li className="wseries__row wseries__row--upcoming">
       <span className="wseries__bullet">{index + 1}</span>
       <span className="wseries__body">
-        <span className="wseries__title">{label}</span>
-        <span className="wseries__meta">{formatSeriesTarget(block)}</span>
+        {tabular ? (
+          <SeriesCells load="—" reps={targetReps(block)} rpe="—" label={label} />
+        ) : (
+          <>
+            <span className="wseries__title">{label}</span>
+            <span className="wseries__meta">{formatSeriesTarget(block)}</span>
+          </>
+        )}
       </span>
       <span className="wseries__state">
         {series.status === "not_performed" ? "Non réalisée" : "À venir"}

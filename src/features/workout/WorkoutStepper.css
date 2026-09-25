@@ -1,0 +1,71 @@
+/* Frise des étapes de la séance (M9, lot M.3). */
+
+.wstepper {
+  margin: 0 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.wstepper ol {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0 0 4px;
+  list-style: none;
+}
+
+.wstepper__step button {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 64px;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: var(--color-text-soft);
+  font: inherit;
+}
+
+.wstepper__dot {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+  background: var(--color-surface);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.wstepper__label {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  text-align: center;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.wstepper__step--done .wstepper__dot {
+  border-color: var(--color-success);
+  background: var(--color-success);
+  color: var(--color-on-accent);
+}
+
+.wstepper__step--current .wstepper__dot {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.wstepper__step--current .wstepper__label {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.wstepper__step--skipped .wstepper__dot {
+  border-style: dashed;
+  color: var(--color-text-muted);
+}

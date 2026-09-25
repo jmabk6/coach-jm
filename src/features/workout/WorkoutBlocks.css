@@ -920,3 +920,57 @@
   font-size: 0.78rem;
   font-weight: 600;
 }
+
+/* Lot M.3 : tableau des séries (M9) — Série | Charge ou Assistance (kg) | Répétitions | RPE.
+   L'en-tête a la structure d'une ligne ; la colonne d'action a une largeur fixe pour que tout s'aligne. */
+.wseries--table .wseries__row {
+  grid-template-columns: 28px minmax(0, 1fr) 72px;
+}
+
+.wseries--table .wseries__row > :nth-child(3) {
+  justify-self: end;
+}
+
+.wseries__head {
+  border-color: transparent !important;
+  background: none !important;
+  padding-top: 0;
+  padding-bottom: 0;
+  color: var(--color-text-soft);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.wseries__head .wseries__bullet {
+  border: 0;
+  background: none;
+  font-size: 0.7rem;
+}
+
+.wseries--table .wseries__cells {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wseries--table .wseries__row:not(.wseries__head) .wseries__cells span {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--color-surface-soft);
+  text-align: center;
+}
+
+.wseries__head .wseries__cells span {
+  text-align: center;
+}
+
+.wseries--table .wseries__row--upcoming .wseries__cells span {
+  color: var(--color-text-soft);
+}
+
+.wseries--table .wseries__row--active .wseries__cells span {
+  background: var(--color-accent-soft) !important;
+  color: var(--color-accent-strong);
+  font-weight: 600;
+}

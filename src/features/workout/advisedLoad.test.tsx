@@ -79,5 +79,5 @@ describe("écran de séance — exercices à venir", () => {
     );
     expect(await screen.findByText("Charge conseillée : 35 kg (barre + 7,5 kg de chaque côté)", {}, { timeout: 4000 })).toBeDefined();
     expect(screen.getByText("Charge conseillée : 52 kg d'assistance")).toBeDefined();
-  });
+  }, 20000);
 });

@@ -99,7 +99,7 @@ export function TestBlockCard({
   const canEdit = editable && !stored && !skipped && !busy;
 
   return (
-    <li className={`wblock test-card ${expanded ? "wblock--open" : ""} ${performed ? "wblock--done" : ""} ${skipped ? "wblock--skipped" : ""}`}>
+    <li data-block-id={block.id} className={`wblock test-card ${expanded ? "wblock--open" : ""} ${performed ? "wblock--done" : ""} ${skipped ? "wblock--skipped" : ""}`}>
       <div className="wblock__row">
         <button type="button" className="wblock__head" onClick={onToggle} aria-expanded={expanded}>
           <span className="wblock__thumb test-card__icon" aria-hidden="true">

@@ -37,6 +37,12 @@ export function calculatePerformedNumbering(
   for (const block of [...blocks].sort((a, b) => a.position - b.position)) {
     if (block.kind === "note") continue;
 
+    /* Frise M9 (lot M.3) : une brique test est l'étape 0, les exercices partent de 1. */
+    if (block.kind === "test") {
+      numbering[block.id] = 0;
+      continue;
+    }
+
     visible += 1;
     numbering[block.id] = visible;
   }

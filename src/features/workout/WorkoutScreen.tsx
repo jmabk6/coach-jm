@@ -68,6 +68,8 @@ import { RaiseInset, StagnationInset } from "../strength/FrameInsets";
 import { readDismissedRaises, rememberDismissedRaise } from "../strength/frameDismissal";
 import { useFrameInsights } from "../strength/useFrameInsights";
 import { advisedLoadOf, formatAdvisedLoad } from "./advisedLoad";
+import { WorkoutStepper } from "./WorkoutStepper";
+import { workoutSteps } from "./workoutSteps";
 import { useClock, useWorkoutSession } from "./useWorkoutSession";
 import { calculatePerformedNumbering, describeNextUp } from "./workoutDisplay";
 import { formatClock } from "./workoutRecap";
@@ -460,6 +462,17 @@ export function WorkoutScreen() {
       )}
 
       {restCard && !restCardInBlock && restCard}
+
+      {/* Frise des étapes (M9, lot M.3) : 0 = test, puis chaque exercice. */}
+      <WorkoutStepper
+        steps={workoutSteps(blocks, numbering, workout.currentBlockId, exerciseById)}
+        onSelect={(id) => {
+          const target = blocks.find((block) => block.id === id);
+          if (!target) return;
+          if (!isExpanded(target)) toggleBlock(target);
+          requestAnimationFrame(() => document.querySelector(`[data-block-id="${id}"]`)?.scrollIntoView?.({ block: "start", behavior: "smooth" }));
+        }}
+      />
 
       {progress.total > 0 && (
         <div className="workout__progress">

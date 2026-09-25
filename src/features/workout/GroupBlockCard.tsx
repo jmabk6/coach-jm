@@ -92,6 +92,7 @@ export function GroupBlockCard({
 
   return (
     <li
+      data-block-id={block.id}
       className={`wblock ${expanded ? "wblock--open" : ""} ${performed ? "wblock--done" : ""} ${
         block.status === "skipped" ? "wblock--skipped" : ""
       }`}

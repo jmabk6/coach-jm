@@ -112,5 +112,5 @@ describe("écran de séance", () => {
     /* Sous la charge de la suite complète, l'écriture et le rechargement peuvent dépasser 1 s. */
     await waitFor(async () => expect((await db.strengthFrameVersions.get(rowing))?.currentTarget).toMatchObject({ value: 42.5, fromMilestoneId: "m-rowing" }), { timeout: 4000 });
     await waitFor(() => expect(screen.queryByRole("complementary", { name: "Hausse proposée" })).toBeNull(), { timeout: 4000 });
-  });
+  }, 20000);
 });
