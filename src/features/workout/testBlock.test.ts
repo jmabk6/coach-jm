@@ -259,7 +259,12 @@ describe("démarrage d'une séance de la semaine de tests", () => {
     expect(workout.blocks.some((block) => block.kind === "exercise" && block.exerciseId === "sprint-velo")).toBe(false);
   });
 
-  it("lundi soir : la routine vide démarre, son contenu est la Souplesse puis le Tronc", async () => {
+  it("lundi soir 26/10 (K.3) : la vraie routine du jour est remplacée par la Souplesse puis le Tronc", async () => {
+    const planned = (await db.plannedSessions.get("weekly-2026-10-26-evening"))!;
+    /* Rotation depuis le 27/09 : le 26/10 (29 jours, 29 mod 3 = 2) est la routine C, désormais remplie. */
+    expect(planned.sessionTemplateId).toBe("v1-routine-c");
+    expect((await db.sessionTemplates.get("v1-routine-c"))!.blocks.length).toBeGreaterThan(0);
+
     const workout = await startWorkout("weekly-2026-10-26-evening", T);
     expect(order(workout.blocks)).toEqual(["test:souplesse", "test:tronc"]);
   });

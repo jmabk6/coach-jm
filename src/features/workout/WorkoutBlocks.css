@@ -83,6 +83,15 @@
   display: block;
 }
 
+.wblock__note {
+  margin: 0 12px 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f9fafb;
+  color: var(--color-text-soft, #475467);
+  font-size: 0.82rem;
+}
+
 .wblock__added {
   padding: 1px 7px;
   border-radius: 999px;

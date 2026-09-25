@@ -200,6 +200,9 @@ export function ExerciseBlockCard({
         )}
       </div>
 
+      {/* Consigne du modèle (« +5 s de maintien par semaine… », « Même vélo… ») : lisible pendant la séance. */}
+      {expanded && !skipped && block.note && <p className="wblock__note">{block.note}</p>}
+
       {expanded && !skipped && block.series && (
         <div className="wblock__content">
           {restCard}
