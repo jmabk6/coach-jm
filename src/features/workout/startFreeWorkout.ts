@@ -3,20 +3,10 @@ import {
   getInProgressWorkout,
   saveWorkout,
 } from "../../db/repositories/workoutRepository";
-import type { SessionTemplate, WorkoutKind, WorkoutSession } from "../../domain";
+import type { SessionTemplate, WorkoutSession } from "../../domain";
 import { assertRoutineStartable } from "../../domain/rules/sessionTemplateRules";
-import { kindForCategory } from "../../domain/rules/workoutKindRules";
 import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { createWorkoutSnapshot } from "./createWorkoutSnapshot";
-
-export interface StartFreeWorkoutOptions {
-  /**
-   * Nature d'une séance libre **sans modèle** (v1.5, § 2.2) : le choix
-   * explicite « Bilan de mobilité » de la feuille d'Aujourd'hui. Ignorée
-   * quand un modèle est fourni : sa catégorie décide.
-   */
-  kind?: WorkoutKind;
-}
 
 /**
  * Démarre une réalisation libre (§10) : sans modèle, la séance part vide
@@ -29,7 +19,6 @@ export async function startFreeWorkout(
   date: string,
   now: string = new Date().toISOString(),
   template?: SessionTemplate,
-  options: StartFreeWorkoutOptions = {},
 ): Promise<WorkoutSession> {
   const inProgressWorkout =
     await getInProgressWorkout();
@@ -48,7 +37,7 @@ export async function startFreeWorkout(
   const workout: WorkoutSession = {
     id: `free-${date}-${now}`,
     ...(template ? { sessionTemplateId: template.id } : {}),
-    kind: template ? kindForCategory(template.category) : (options.kind ?? "training"),
+    kind: "training",
     ...(rpeScale ? { rpeScaleVersionId: rpeScale.id } : {}),
     source: "free",
     status: "in_progress",

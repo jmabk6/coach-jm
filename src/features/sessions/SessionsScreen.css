@@ -241,10 +241,6 @@
   color: var(--color-cat-routine);
 }
 
-.session-card__icon--bilan {
-  background: var(--color-cat-cardio-soft);
-  color: var(--color-cat-cardio);
-}
 
 .session-card__icon--routine {
   background: var(--color-cat-mobility-soft);

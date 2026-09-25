@@ -1,15 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import type {
-  CardioProtocol,
-  CardioProtocolVersion,
-  CardioTest,
-  CardioTestMeasure,
   Exercise,
-  LegacyGoalV1,
-  MobilityAssessment,
-  MobilityMeasure,
-  MobilityObservation,
-  MobilityProtocolVersion,
+  Id,
   PlannedSession,
   RpeScaleVersion,
   SessionTemplate,
@@ -21,6 +13,33 @@ import type {
   WorkoutSession,
 } from "../../domain";
 import { CoachJmDatabase, VERSION_1_STORES, VERSION_2_STORES, type CoachJmDatabaseOptions } from "../../db/database";
+
+/**
+ * Objectif sous la forme des schémas v1 et v2 (cible unique). Aucun code
+ * ne l'a jamais écrit ; la migration v3 refuse une base qui en contient
+ * (SCHEMA_DEXIE_V3_MIGRATION § 4.2). Sorti du domaine au lot N : il ne
+ * sert plus qu'aux tests de migration.
+ */
+export interface LegacyGoalV1 {
+  id: Id;
+  name: string;
+  target:
+    | { kind: "exercise"; exerciseId: Id; metric: "max_load" | "volume" | "reps" | "max_duration"; targetValue: number }
+    | { kind: "cardio_bpm"; exerciseId: Id; durationSec: number; speedKmh: number; inclinePercent: number; targetBpm: number }
+    | { kind: "weight"; targetKg: number; direction: "lose" | "gain" };
+  status: "active" | "achieved";
+  dueDate?: string;
+  note?: string;
+  achievedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Enregistrement d'un store des tests cardio ou de mobilité du schéma v2,
+ * retirés en v3 ; leurs types de domaine sont retirés au lot N.
+ */
+export type LegacyRecord = { id: Id } & Record<string, unknown>;
 
 /**
  * Bases de test **indépendantes** de `coach-jm`, nom unique :
@@ -44,14 +63,14 @@ export class CoachJmDatabaseV2 extends Dexie {
   strengthFrameVersions!: Table<StrengthFrameVersion, string>;
   strengthMilestones!: Table<StrengthMilestone, string>;
   rpeScaleVersions!: Table<RpeScaleVersion, string>;
-  cardioProtocols!: Table<CardioProtocol, string>;
-  cardioProtocolVersions!: Table<CardioProtocolVersion, string>;
-  cardioTests!: Table<CardioTest, string>;
-  cardioTestMeasures!: Table<CardioTestMeasure, string>;
-  mobilityProtocolVersions!: Table<MobilityProtocolVersion, string>;
-  mobilityAssessments!: Table<MobilityAssessment, string>;
-  mobilityMeasures!: Table<MobilityMeasure, string>;
-  mobilityObservations!: Table<MobilityObservation, string>;
+  cardioProtocols!: Table<LegacyRecord, string>;
+  cardioProtocolVersions!: Table<LegacyRecord, string>;
+  cardioTests!: Table<LegacyRecord, string>;
+  cardioTestMeasures!: Table<LegacyRecord, string>;
+  mobilityProtocolVersions!: Table<LegacyRecord, string>;
+  mobilityAssessments!: Table<LegacyRecord, string>;
+  mobilityMeasures!: Table<LegacyRecord, string>;
+  mobilityObservations!: Table<LegacyRecord, string>;
 
   constructor(name: string) {
     super(name);

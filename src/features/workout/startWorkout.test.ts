@@ -162,13 +162,13 @@ describe("startWorkout", () => {
     expect(result.kind).toBe("training");
   });
 
-  it("pose kind depuis la catégorie du modèle, sans choix : un modèle « Bilan de mobilité » donne un bilan", async () => {
-    getSessionTemplate.mockResolvedValue({ ...template, id: "bilan", name: "Bilan", category: "Bilan de mobilité" });
-    getPlannedSession.mockResolvedValue({ ...plannedSession, sessionTemplateId: "bilan" });
+  it("pose kind « training » quelle que soit la catégorie du modèle (lot N, plus de bilan)", async () => {
+    getSessionTemplate.mockResolvedValue({ ...template, id: "mob", name: "Mobilité", category: "Mobilité" });
+    getPlannedSession.mockResolvedValue({ ...plannedSession, sessionTemplateId: "mob" });
 
     const result = await startWorkout(plannedSession.id, "2026-09-14T18:00:00.000Z");
 
-    expect(result.kind).toBe("mobility_assessment");
+    expect(result.kind).toBe("training");
     expect(result.source).toBe("planned");
     expect(saveWorkout).toHaveBeenCalledWith(result);
   });

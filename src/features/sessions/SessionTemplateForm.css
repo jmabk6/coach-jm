@@ -110,11 +110,6 @@
   color: var(--color-cat-routine);
 }
 
-.session-form__category--active.session-form__category--bilan {
-  border-color: var(--color-cat-cardio);
-  background: var(--color-cat-cardio-soft);
-  color: var(--color-cat-cardio);
-}
 
 .session-form__category--active.session-form__category--routine {
   border-color: var(--color-cat-mobility);

@@ -102,15 +102,8 @@ describe("startFreeWorkout — nature de la séance (kind)", () => {
     expect(result.kind).toBe("training");
   });
 
-  it("sans modèle, avec le choix « Bilan de mobilité » : bilan", async () => {
-    const result = await startFreeWorkout("2026-09-14", now, undefined, { kind: "mobility_assessment" });
-    expect(result.kind).toBe("mobility_assessment");
-    expect(result.blocks).toEqual([]);
-  });
-
-  it("avec un modèle : la catégorie du modèle décide, le choix est ignoré", async () => {
-    expect((await startFreeWorkout("2026-09-14", now, template, { kind: "mobility_assessment" })).kind).toBe("training");
-    expect((await startFreeWorkout("2026-09-14", now, { ...template, category: "Bilan de mobilité" })).kind).toBe("mobility_assessment");
+  it("avec un modèle : entraînement, quelle que soit la catégorie (lot N, plus de bilan)", async () => {
+    expect((await startFreeWorkout("2026-09-14", now, template)).kind).toBe("training");
     expect((await startFreeWorkout("2026-09-14", now, { ...template, category: "Mobilité" })).kind).toBe("training");
   });
 });

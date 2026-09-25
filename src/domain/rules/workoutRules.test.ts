@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Exercise, PerformedBlock, PerformedSeries, SessionBlock } from "../models";
-import { calculateExecutionProgress, calculateSessionDuration, calculateSuggestedLoad, isMetricCompatible, isCardioStepComparable, calculateVisibleNumbering, calculateVolume, calculateZonesSummary } from "./workoutRules";
+import { calculateExecutionProgress, calculateSessionDuration, calculateSuggestedLoad, isCardioStepComparable, calculateVisibleNumbering, calculateVolume, calculateZonesSummary } from "./workoutRules";
 
 describe("calculateVolume", () => {
   it("calcule le volume avec une charge totale", () => {
@@ -522,29 +522,6 @@ describe("calculateSuggestedLoad", () => {
       },
       action: "increase",
     });
-  });
-});
-
-
-describe("isMetricCompatible", () => {
-  it("applique la matrice de compatibilité des métriques", () => {
-    expect(isMetricCompatible("load_reps", "max_load")).toBe(true);
-    expect(isMetricCompatible("load_reps", "volume")).toBe(true);
-    expect(isMetricCompatible("load_reps", "reps")).toBe(true);
-    expect(isMetricCompatible("load_reps", "max_duration")).toBe(false);
-
-    expect(isMetricCompatible("reps", "reps")).toBe(true);
-    expect(isMetricCompatible("reps", "max_load")).toBe(false);
-
-    expect(isMetricCompatible("duration", "max_duration")).toBe(true);
-    expect(isMetricCompatible("duration_per_side", "max_duration")).toBe(true);
-
-    expect(isMetricCompatible("reps_per_side", "reps")).toBe(true);
-    expect(isMetricCompatible("reps_per_side", "volume")).toBe(false);
-
-    expect(isMetricCompatible("duration_speed_incline", "max_duration")).toBe(false);
-    expect(isMetricCompatible("duration_distance", "max_duration")).toBe(false);
-    expect(isMetricCompatible("distance", "max_duration")).toBe(false);
   });
 });
 

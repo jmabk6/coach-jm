@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { TestWeekBanner } from "../tests/TestWeekBanner";
 import { GoalCards } from "./GoalCards";
-import type { Id, PlannedSession, SessionTemplate, WorkoutKind } from "../../domain";
+import type { Id, PlannedSession, SessionTemplate } from "../../domain";
 import { calculateExecutionProgress } from "../../domain/rules/workoutRules";
 import { formatDayLabel } from "../../domain/rules/programRules";
 import {
@@ -102,9 +102,9 @@ export function TodayScreen() {
       () => navigate(paths.workoutLive()),
     );
 
-  const startFree = (template?: SessionTemplate, kind?: WorkoutKind) =>
+  const startFree = (template?: SessionTemplate) =>
     run(
-      () => startFreeWorkout(data.today, new Date().toISOString(), template, kind ? { kind } : {}),
+      () => startFreeWorkout(data.today, new Date().toISOString(), template),
       () => navigate(paths.workoutLive()),
     );
 
@@ -177,9 +177,9 @@ export function TodayScreen() {
       {choosing && (
         <ChooseSessionSheet
           data={data}
-          onChoose={(template, kind) => {
+          onChoose={(template) => {
             setChoosing(false);
-            void startFree(template, kind);
+            void startFree(template);
           }}
           onDismiss={() => setChoosing(false)}
         />
@@ -575,15 +575,14 @@ function NextSessions({ data }: { data: TodayData }) {
 
 interface ChooseSessionSheetProps {
   data: TodayData;
-  onChoose: (template?: SessionTemplate, kind?: WorkoutKind) => void;
+  onChoose: (template?: SessionTemplate) => void;
   onDismiss: () => void;
 }
 
 /**
  * Feuille `Choisir une séance` (§10, décision du 17/09/2026) : les modèles
  * actifs — la réalisation copie leurs consignes sans créer d'instance —
- * puis le bilan de mobilité libre (v1.5, § 2.2 : seul endroit où un bilan
- * sans modèle peut naître) et la séance libre sans modèle, qui part vide.
+ * puis la séance libre sans modèle, qui part vide.
  */
 function ChooseSessionSheet({ data, onChoose, onDismiss }: ChooseSessionSheetProps) {
   const durationLabel = (templateId: Id) => {

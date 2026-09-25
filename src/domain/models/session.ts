@@ -1,14 +1,10 @@
 import type { Id } from "./exercise";
 
-/**
- * « Bilan de mobilité » (conception v1.5, § 2.2) sert à **planifier** un
- * bilan ; la nature réelle d'une séance faite est `WorkoutSession.kind`.
- */
+/** Catégorie d'un modèle ; « Bilan de mobilité » retirée au lot N (D2). */
 export type SessionCategory =
   | "Musculation"
   | "Cardio"
   | "Mobilité"
-  | "Bilan de mobilité"
   /** Routines du soir (conception V2 § 2.5, lot D). */
   | "Routine";
 

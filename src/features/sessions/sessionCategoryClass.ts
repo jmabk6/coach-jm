@@ -2,14 +2,13 @@ import type { SessionCategory } from "../../domain";
 
 /**
  * Suffixe de classe CSS par catégorie : un nom sans espace ni accent, pour
- * que `session-card__icon--bilan` ne dépende pas du libellé affiché.
+ * que `session-card__icon--mobilite` ne dépende pas du libellé affiché.
  * Exhaustif : le compilateur refuse une catégorie sans classe.
  */
 const classNames = {
   Musculation: "musculation",
   Cardio: "cardio",
   Mobilité: "mobilite",
-  "Bilan de mobilité": "bilan",
   Routine: "routine",
 } satisfies Record<SessionCategory, string>;
 

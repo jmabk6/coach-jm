@@ -953,10 +953,6 @@
   color: var(--color-cat-routine);
 }
 
-.program-chip--bilan {
-  background: var(--color-cat-cardio-soft);
-  color: var(--color-cat-cardio);
-}
 
 .program-chip--routine {
   background: var(--color-cat-mobility-soft);

@@ -132,7 +132,6 @@ describe("lectures d'un cadre", () => {
     expect(lines5[0]?.frameLine).toBe("Palier validé à 100 kg — 105 kg reste à confirmer sur 2 séries");
 
     expect(frameOutcomesOf(w1, versionById).size).toBe(0);
-    expect(frameOutcomesOf({ ...w3, kind: "mobility_assessment" }, versionById).size).toBe(0);
     expect(frameOutcomesOf({ ...w3, id: "import-x" }, versionById).size).toBe(0);
     const bare = withFrameLines(buildWorkoutRecapLines(w1, exerciseById), new Map(), exerciseById, versionById);
     expect(bare[0]).not.toHaveProperty("frameLine");

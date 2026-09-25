@@ -119,7 +119,7 @@ export function frameOutcomesOf(
 ): Map<Id, FrameValidationResult> {
   const outcomes = new Map<Id, FrameValidationResult>();
 
-  if (workout.id.startsWith("import-") || workout.kind === "mobility_assessment") return outcomes;
+  if (workout.id.startsWith("import-")) return outcomes;
 
   for (const [versionId, series] of seriesByFrameVersion(workout)) {
     const version = versionById.get(versionId);

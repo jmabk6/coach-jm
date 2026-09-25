@@ -24,9 +24,7 @@ export type PerformedBlockStatus =
  * sont des séances d'entraînement et conservent leur traitement
  * statistique. Posé au démarrage, jamais modifié après la clôture.
  */
-export type WorkoutKind =
-  | "training"
-  | "mobility_assessment";
+export type WorkoutKind = "training";
 
 /**
  * Rôle d'une série (v1.5, § 4.4), saisi explicitement, jamais dérivé du

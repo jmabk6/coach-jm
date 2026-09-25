@@ -366,36 +366,6 @@ export function calculateSuggestedLoad(
   };
 }
 
-export function isMetricCompatible(
-  measurementType: import("../models").MeasurementType,
-  metric: import("../models").ExerciseGoalMetric,
-): boolean {
-  switch (measurementType) {
-    case "load_reps":
-      return (
-        metric === "max_load" ||
-        metric === "volume" ||
-        metric === "reps"
-      );
-
-    case "reps":
-    case "reps_per_side":
-    case "reps_duration":
-      return metric === "reps";
-
-    case "duration":
-    case "duration_per_side":
-      return metric === "max_duration";
-    case "duration_speed_incline":
-    case "duration_distance":
-    case "duration_power":
-    case "distance":
-    case "distance_cm":
-    case "distance_cm_per_side":
-      return false;
-  }
-}
-
 export interface ComparableCardioStep {
   durationSec: number;
   speedKmh: number;

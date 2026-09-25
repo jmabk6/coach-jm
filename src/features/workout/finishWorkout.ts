@@ -14,7 +14,6 @@ import {
   validateFrame,
   type FrameValidationResult,
 } from "../../domain/rules/strengthRules";
-import { isMobilityAssessment } from "../../domain/rules/workoutKindRules";
 import { completeWorkoutSession, endWorkoutSession, isAwaitingConfirmation } from "./engine/workoutEngine";
 import { calculateActiveDurationSec } from "./engine/workoutTime";
 import { settleTestBlocks } from "../tests/settleTestBlocks";
@@ -54,11 +53,10 @@ export function milestoneIdFor(workoutId: Id, frameVersionId: Id): Id {
 
 /**
  * Les séances importées (`import-*`) ne passent pas par ici ; par sécurité,
- * elles et les bilans de mobilité ne produisent jamais de jalon ni de
- * figeage (conception v1.6, § 4.3).
+ * elles ne produisent jamais de jalon ni de figeage (conception v1.6, § 4.3).
  */
 function framesApply(workout: WorkoutSession): boolean {
-  return !workout.id.startsWith("import-") && !isMobilityAssessment(workout);
+  return !workout.id.startsWith("import-");
 }
 
 /**

@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type {
   Exercise,
-  LegacyGoalV1,
   PlannedSession,
   SessionTemplate,
   WeeklyProgram,
@@ -19,7 +18,7 @@ import { buildImportedWorkouts } from "../features/history/importedWorkouts";
 import { buildEstablishedDataset } from "../features/backup/fixtures/establishedDataset";
 import { isCountedWorkout } from "../features/program/countedWorkouts";
 import { DATABASE_VERSION, VERSION_1_STORES, VERSION_2_STORES, db } from "./database";
-import { CoachJmDatabaseV2 } from "../features/backup/testDatabase";
+import { CoachJmDatabaseV2, type LegacyGoalV1 } from "../features/backup/testDatabase";
 
 /* Lot C : ce fichier garde la migration v1 → v2 des lots 1 à B, sur la
    classe v2 figée ; la migration v2 → v3 est dans migrationV3.test.ts. */
@@ -312,7 +311,7 @@ describe("migration v1 → v2 — stabilité", () => {
     const current = await openCurrent(name);
 
     /* Champs absents sur les enregistrements anciens : 0 résultat, pas d'erreur. */
-    expect(await current.workouts.where("kind").equals("mobility_assessment").count()).toBe(0);
+    expect(await current.workouts.where("kind").equals("training").count()).toBe(0);
     expect(await current.exercises.where("movementFamily").equals("tirage_vertical").count()).toBe(0);
 
     /* Les index simples des anciens stores fonctionnent toujours. */
@@ -343,8 +342,8 @@ describe("migration v1 → v2 — stabilité", () => {
     expect(await current.mobilityAssessments.where("workoutId").equals("w-1").count()).toBe(1);
 
     /* Un nouveau champ indexé sur un ancien store est interrogeable dès qu'il est écrit. */
-    await current.workouts.put({ ...emptyCompletedWorkout, id: "fx-bilan", kind: "mobility_assessment" });
-    expect(await current.workouts.where("kind").equals("mobility_assessment").primaryKeys()).toEqual(["fx-bilan"]);
+    await current.workouts.put({ ...emptyCompletedWorkout, id: "fx-kind", kind: "training" });
+    expect(await current.workouts.where("kind").equals("training").primaryKeys()).toEqual(["fx-kind"]);
 
     current.close();
   });

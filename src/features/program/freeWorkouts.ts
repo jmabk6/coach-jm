@@ -1,5 +1,4 @@
 import type { Exercise, Id, SessionCategory, SessionTemplate, WorkoutSession } from "../../domain";
-import { isMobilityAssessment } from "../../domain/rules/workoutKindRules";
 
 /**
  * Réalisations libres affichées dans le Programme (décision du 16/09/2026) :
@@ -75,8 +74,7 @@ export function cardioSecondsOf(workout: Pick<WorkoutSession, "blocks">): number
 
 /**
  * Catégorie d'une séance **sans modèle** (séance libre, dont tout
- * l'historique de septembre) : un **bilan de mobilité** d'abord (`kind`
- * prime sur toute inférence, v1.5 § 11.4), puis mobilité seule →
+ * l'historique de septembre) : mobilité seule →
  * Mobilité ; puis (décision du 24/09/2026, option B) Cardio si la séance
  * ne contient que du cardio (une marche saisie en distance), ou si son
  * temps de cardio dépasse **strictement** 60 % de sa durée active ;
@@ -87,8 +85,6 @@ export function inferFreeWorkoutCategory(
   workout: WorkoutSession,
   exerciseById: Map<Id, Exercise>,
 ): SessionCategory {
-  if (isMobilityAssessment(workout)) return "Bilan de mobilité";
-
   const categories = new Set<string>();
 
   for (const block of workout.blocks) {
@@ -117,7 +113,5 @@ export function categoryForWorkout(
   template: SessionTemplate | undefined,
   exerciseById: Map<Id, Exercise>,
 ): SessionCategory {
-  if (isMobilityAssessment(workout)) return "Bilan de mobilité";
-
   return template?.category ?? inferFreeWorkoutCategory(workout, exerciseById);
 }

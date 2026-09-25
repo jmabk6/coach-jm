@@ -8,7 +8,7 @@ import { categoryForWorkout } from "./freeWorkouts";
  * Résumé du mois (conception V2 § 5.8, D23, N8) — fonction pure.
  *
  * - Périmètre : séances confirmées du mois civil, comptées selon
- *   `isCountedWorkout` (les bilans de mobilité n'y entrent pas).
+ *   `isCountedWorkout`.
  * - Lignes Musculation, Cardio, Routine, selon la catégorie du modèle ;
  *   une séance libre sans modèle prend la catégorie inférée, où une brique
  *   `warmup` ne fait jamais une séance cardio.
@@ -64,9 +64,6 @@ export function summarizeMonth(
         break;
       case "Mobilité":
         summary.mobility += 1;
-        break;
-      case "Bilan de mobilité":
-        /* Exclus par `isCountedWorkout` ; jamais atteint. */
         break;
     }
   }

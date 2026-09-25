@@ -14,7 +14,6 @@ import type {
   WorkoutSession,
 } from "../../domain";
 import { assertRoutineStartable } from "../../domain/rules/sessionTemplateRules";
-import { kindForCategory } from "../../domain/rules/workoutKindRules";
 import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { createWorkoutSnapshot, type SnapshotTest } from "./createWorkoutSnapshot";
 
@@ -91,8 +90,7 @@ export async function startWorkout(
     id: `workout-${plannedSession.id}`,
     plannedSessionId: plannedSession.id,
     sessionTemplateId: template.id,
-    /* Nature posée au démarrage, dérivée du modèle, sans choix (v1.5, § 11.3). */
-    kind: kindForCategory(template.category),
+    kind: "training",
     ...(rpeScale ? { rpeScaleVersionId: rpeScale.id } : {}),
     source: "planned",
     status: "in_progress",

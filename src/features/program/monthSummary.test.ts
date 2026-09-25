@@ -16,7 +16,6 @@ import { summarizeMonth } from "./monthSummary";
  * | w4     | 05/09 | libre : tapis seul                   | oui    | Cardio      |
  * | w5     | 08/09 | Routine A                            | oui    | Routine     |
  * | w6     | 10/09 | libre : étirement seul               | oui    | aucune (N8) |
- * | w7     | 12/09 | bilan de mobilité                    | non    | —           |
  * | w8     | 15/09 | enregistrée, rien de réalisé         | non    | —           |
  * | w9     | 16/09 | en cours                             | non    | —           |
  * | w10    | 24/09 | Muscu C (aujourd'hui)                | oui    | Musculation |
@@ -55,7 +54,6 @@ const workouts: WorkoutSession[] = [
   workout("w4", "2026-09-05", [block("tapis")]),
   workout("w5", "2026-09-08", [block("planche")], { sessionTemplateId: "v1-routine-a" }),
   workout("w6", "2026-09-10", [block("import-position-enfant")]),
-  workout("w7", "2026-09-12", [block("import-position-enfant")], { kind: "mobility_assessment" }),
   workout("w8", "2026-09-15", [block("presse-cuisses", { status: "not_performed" })]),
   workout("w9", "2026-09-16", [block("presse-cuisses")], { status: "in_progress" }),
   workout("w10", "2026-09-24", [block("presse-cuisses")], { sessionTemplateId: "v1-muscu-c" }),

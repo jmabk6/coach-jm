@@ -8,7 +8,6 @@ import { fixExercisePowerUnit } from "../../db/repositories/exerciseRepository";
 import type { Exercise, PerformedSeries, WorkoutSession } from "../../domain";
 import { canJoinGroup, defaultInstructionsFor, formatMeasurementType } from "../../domain/rules/blockInstructionRules";
 import { effectivePowerUnit, slowestRepSec } from "../../domain/rules/powerRules";
-import { isMetricCompatible } from "../../domain/rules/workoutRules";
 import {
   buildExercisePerformanceHistory,
   buildExercisePerformanceSummary,
@@ -84,8 +83,6 @@ describe("modèle et règles", () => {
     expect(defaultInstructionsFor(sprintVelo, () => "x")).toEqual({ shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 });
     expect(defaultInstructionsFor(tractionNegative, () => "x")).toMatchObject({ shape: "reps", reps: { min: 3, max: 5 } });
     expect(formatMeasurementType(sprintVelo)).toBe("Durée + puissance ou distance");
-    expect(isMetricCompatible("reps_duration", "reps")).toBe(true);
-    expect(isMetricCompatible("duration_power", "max_duration")).toBe(false);
   });
 
   it("la plus lente des répétitions, en ignorant les valeurs vides ou nulles", () => {

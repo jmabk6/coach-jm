@@ -62,7 +62,6 @@ describe("completeWorkoutSession", () => {
 
 describe("completeWorkoutSession — nature conservée", () => {
   it("garde kind tel quel à la clôture, et n'en invente pas sur une séance qui n'en a pas", () => {
-    expect(completeWorkoutSession({ ...freeWorkout, kind: "mobility_assessment" }, now).kind).toBe("mobility_assessment");
     expect(completeWorkoutSession({ ...freeWorkout, kind: "training" }, now).kind).toBe("training");
     expect("kind" in completeWorkoutSession(freeWorkout, now)).toBe(false);
   });
@@ -238,14 +237,11 @@ describe("finishWorkout — cadres, jalons et figeage", () => {
     expect((await db.strengthMilestones.toArray()).map((m) => m.id)).toEqual(["milestone-w2-v-presse-1"]);
   });
 
-  it("brique sans version, bilan de mobilité, séance import-* : aucun jalon, aucun figeage", async () => {
+  it("brique sans version, séance import-* : aucun jalon, aucun figeage", async () => {
     await seedFrame();
 
     await db.workouts.put({ ...freeWorkout, id: "w-nue", kind: "training", blocks: [presseBlock(validSeries, null)] });
     expect((await finishWorkout("w-nue", now)).frames).toEqual([]);
-
-    await db.workouts.put({ ...freeWorkout, id: "w-bilan", kind: "mobility_assessment", blocks: [presseBlock(validSeries)] });
-    expect((await finishWorkout("w-bilan", now)).frames).toEqual([]);
 
     await db.workouts.put({ ...freeWorkout, id: "import-2026-09-30", kind: "training", blocks: [presseBlock(validSeries)] });
     expect((await finishWorkout("import-2026-09-30", now)).frames).toEqual([]);

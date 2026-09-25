@@ -62,38 +62,3 @@ export interface Goal {
   createdAt: string;
   updatedAt: string;
 }
-
-/* -------------------------------------------------------------------------- */
-/* Forme v1, jamais écrite par l'application                                   */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Métriques de la progression par exercice, héritées de la forme v1 ;
- * encore lues par `workoutRules.isMetricCompatible`.
- */
-export type ExerciseGoalMetric =
-  | "max_load"
-  | "volume"
-  | "reps"
-  | "max_duration";
-
-/**
- * Objectif sous la forme des schémas v1 et v2 (cible unique). Aucun code
- * ne l'a jamais écrit ; la migration v3 refuse une base qui en contient
- * (SCHEMA_DEXIE_V3_MIGRATION § 4.2). Gardé pour les tests de migration et
- * la lecture d'anciennes sauvegardes ; retiré au lot N.
- */
-export interface LegacyGoalV1 {
-  id: Id;
-  name: string;
-  target:
-    | { kind: "exercise"; exerciseId: Id; metric: ExerciseGoalMetric; targetValue: number }
-    | { kind: "cardio_bpm"; exerciseId: Id; durationSec: number; speedKmh: number; inclinePercent: number; targetBpm: number }
-    | { kind: "weight"; targetKg: number; direction: "lose" | "gain" };
-  status: "active" | "achieved";
-  dueDate?: string;
-  note?: string;
-  achievedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
