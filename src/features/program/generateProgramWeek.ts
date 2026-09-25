@@ -10,6 +10,7 @@ import {
   generatePlannedSessionsForWeek,
   listWeekDates,
 } from "../../domain/rules/programRules";
+import { generateEveningRoutines } from "../../domain/rules/testCycleRules";
 import { attachTestPlan, type TestPlan } from "../../domain/rules/testPlanRules";
 
 /** Le calendrier des tests : cycle, place de chaque test, protocoles actifs. */
@@ -55,12 +56,16 @@ export async function generateProgramWeek(
   const existingSessions = existingByDay.flat();
   const generatedSessions = attachTestPlan({
     weekStartDate,
-    generated: generatePlannedSessionsForWeek({
-      program,
-      weekStartDate,
-      existingSessions,
-      now,
-    }),
+    generated: [
+      ...generatePlannedSessionsForWeek({
+        program,
+        weekStartDate,
+        existingSessions,
+        now,
+      }),
+      /* Lot K.2 : une routine chaque soir, en rotation. */
+      ...generateEveningRoutines({ program, weekStartDate, existingSessions, now }),
+    ],
     existingSessions,
     program,
     plan: await loadTestPlan(),

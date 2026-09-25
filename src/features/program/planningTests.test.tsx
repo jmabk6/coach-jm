@@ -67,7 +67,8 @@ describe("semaine de tests du 25/10", () => {
     fireEvent.click(screen.getByRole("button", { name: /Replanifier le test jambes/ }));
 
     const sheet = await screen.findByRole("dialog");
-    const target = await within(sheet).findByRole("radio", { name: /^sam\. 31 oct\./ });
+    /* Lot K.2 : le samedi a aussi sa routine du soir ; le test va sur le Cardio C. */
+    const target = await within(sheet).findByRole("radio", { name: /^sam\. 31 oct\..*Cardio C/ });
     fireEvent.click(target);
     fireEvent.click(within(sheet).getByRole("button", { name: /Replanifier sur sam\. 31 oct\. — Cardio C/ }));
 

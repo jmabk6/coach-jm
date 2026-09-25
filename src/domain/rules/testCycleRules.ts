@@ -1,6 +1,6 @@
 import { addDays, differenceInCalendarDays, parseISO } from "date-fns";
-import type { TestCycleSettings, TestProtocol, TestResult, TestScheduleEntry, WeeklyProgram } from "../models";
-import { formatLocalDate, getWeekStartDate, weekdays } from "./programRules";
+import type { PlannedSession, TestCycleSettings, TestProtocol, TestResult, TestScheduleEntry, WeeklyProgram } from "../models";
+import { formatLocalDate, getSourceDate, getWeekStartDate, isFutureWeek, listWeekDates, slotOf, weekdays } from "./programRules";
 
 /**
  * Semaine de tests (conception V2 § 2.3, § 5.9) : toutes les
@@ -41,6 +41,51 @@ export function eveningRoutineFor(program: Pick<WeeklyProgram, "eveningRotation"
   const days = differenceInCalendarDays(parseISO(date), parseISO(program.eveningRotationAnchor));
   const index = ((days % rotation.length) + rotation.length) % rotation.length;
   return rotation[index];
+}
+
+/**
+ * Routines du soir d'une semaine (lot K.2, § 2.5 « chaque soir : routine
+ * A / B / C en rotation ») : une instance par soir, dont la routine est
+ * donnée par la date (N3). Sauter ou déplacer une routine ne décale donc
+ * jamais les suivantes. Un soir qui a déjà eu son instance du programme —
+ * même déplacée, sautée ou retirée — n'en reçoit pas d'autre ; seules les
+ * semaines futures sont générées, comme les séances du jour.
+ */
+export function generateEveningRoutines({
+  program,
+  weekStartDate,
+  existingSessions,
+  now,
+}: {
+  program: Pick<WeeklyProgram, "eveningRotation" | "eveningRotationAnchor">;
+  weekStartDate: string;
+  existingSessions: ReadonlyArray<PlannedSession>;
+  now: string;
+}): PlannedSession[] {
+  if (!isFutureWeek(weekStartDate, now)) return [];
+
+  return listWeekDates(weekStartDate).flatMap((date, index): PlannedSession[] => {
+    const routineId = eveningRoutineFor(program, date);
+    if (!routineId) return [];
+    const already = existingSessions.some(
+      (session) => session.source === "weekly_program" && slotOf(session) === "evening" && getSourceDate(session) === date,
+    );
+    if (already) return [];
+    return [
+      {
+        id: `weekly-${date}-evening`,
+        date,
+        sessionTemplateId: routineId,
+        status: "upcoming",
+        slot: "evening",
+        sourceWeekday: weekdays[index]!,
+        sourceDate: date,
+        source: "weekly_program",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+  });
 }
 
 /* -------------------------------------------------------------------------- */

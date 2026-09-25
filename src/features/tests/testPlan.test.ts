@@ -91,9 +91,13 @@ describe("génération d'une semaine de tests", () => {
     expect(await db.plannedSessions.count()).toBe(week.length);
   });
 
-  it("semaine ordinaire : aucun test, aucune instance du soir", async () => {
+  it("semaine ordinaire : aucun test ; une routine chaque soir, en rotation (lot K.2)", async () => {
     const week = await generateProgramWeek("2026-11-01", NOW);
-    expect(week.some((session) => session.tests || session.slot === "evening")).toBe(false);
+    expect(week.some((session) => session.tests)).toBe(false);
+    const evenings = week.filter((session) => session.slot === "evening");
+    expect(evenings.map((session) => session.date)).toEqual(["2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07"]);
+    /* Ancre A le 27/09 : le 01/11 est 35 jours plus tard, 35 mod 3 = 2, soit C. */
+    expect(evenings.map((session) => session.sessionTemplateId.slice(-1))).toEqual(["c", "a", "b", "c", "a", "b", "c"]);
   });
 
   it("protocole en pause : jamais attaché", async () => {
