@@ -65,7 +65,7 @@ describe("Déplacer la séance", () => {
   it("vers un jour occupé : trois choix ; Échanger échange les deux dates", async () => {
     const sheet = await openMove();
 
-    expect(day(sheet, "ven. 25 sept.").textContent).toContain("Routine A — à définir (soir)");
+    expect(day(sheet, "ven. 25 sept.").textContent).toContain("Routine A — Avant du tronc et hanches (soir)");
     fireEvent.click(day(sheet, "sam. 26 sept."));
 
     expect(within(sheet).getByText(/Ce jour a déjà une séance : Cardio C/)).toBeTruthy();

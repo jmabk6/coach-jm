@@ -253,13 +253,90 @@ const cardioC: TemplateContent = {
 export const PROGRAM_V1_TEMPLATES: TemplateContent[] = [muscuA, muscuB, muscuC, cardioA, cardioB, cardioC];
 
 /** Routines du soir (correction B) : trois cadres vides, aucun exercice inventé. */
-export const PROGRAM_V1_ROUTINES: TemplateContent[] = (["A", "B", "C"] as const).map((letter) => ({
+/** Les routines installées vides au lot D : reconnues telles quelles pour être remplies (lot K.1). */
+export const PROGRAM_V1_ROUTINES_EMPTY: TemplateContent[] = (["A", "B", "C"] as const).map((letter) => ({
   id: `v1-routine-${letter.toLowerCase()}`,
   name: `Routine ${letter} — à définir`,
   category: "Routine",
   letter,
   blocks: [] as SessionBlock[],
 }));
+
+/* -------------------------------------------------------------------------- */
+/* Routines du soir (lot K.1, contenu validé le 25/09/2026, V1 à ajuster)       */
+/* -------------------------------------------------------------------------- */
+
+/** Consigne de progression des maintiens (décision du 25/09/2026). */
+export const HOLD_PROGRESSION = "+5 s de maintien par semaine tant que la position reste parfaite.";
+
+const hold = (sets: number, durationSec: number, restBetweenSetsSec: number): ExerciseInstructions => ({
+  shape: "duration",
+  sets,
+  durationSec,
+  restBetweenSetsSec,
+});
+
+const repsFixed = (sets: number, count: number, restBetweenSetsSec: number): ExerciseInstructions => ({
+  shape: "reps",
+  sets,
+  reps: { min: count, max: count },
+  restBetweenSetsSec,
+});
+
+export const PROGRAM_V1_ROUTINES: TemplateContent[] = [
+  {
+    id: "v1-routine-a",
+    name: "Routine A — Avant du tronc et hanches",
+    category: "Routine",
+    letter: "A",
+    subtitle: "Avant du tronc et hanches",
+    tags: ["Tronc", "Souplesse"],
+    description: "~12 min.",
+    blocks: [
+      exercise("v1-routine-a-planche", 0, "planche", hold(3, 30, 30), { notes: HOLD_PROGRESSION }),
+      exercise("v1-routine-a-dead-bug", 1, "dead-bug", repsFixed(2, 8, 30), { notes: "8 par côté." }),
+      exercise("v1-routine-a-flechisseurs", 2, "mobilite-flechisseur-hanche", hold(2, 30, 15), {
+        notes: "Par côté. Coussin sous le genou au sol ; en cas de gêne, le faire debout.",
+      }),
+      exercise("v1-routine-a-ischios", 3, "mobilite-ischio-jambiers", hold(2, 30, 15), { notes: "Par côté." }),
+      exercise("v1-routine-a-enfant", 4, "import-position-enfant", hold(1, 60, 0)),
+    ],
+  },
+  {
+    id: "v1-routine-b",
+    name: "Routine B — Côtés et dos",
+    category: "Routine",
+    letter: "B",
+    subtitle: "Côtés et dos",
+    tags: ["Tronc", "Souplesse"],
+    description: "~12 min.",
+    blocks: [
+      exercise("v1-routine-b-gainage-lateral", 0, "planche-laterale", hold(3, 20, 30), { notes: `Par côté. ${HOLD_PROGRESSION}` }),
+      exercise("v1-routine-b-bird-dog", 1, "bird-dog", repsFixed(2, 8, 30), { notes: "8 par côté." }),
+      exercise("v1-routine-b-chat-vache", 2, "mobilite-chat-vache", repsFixed(1, 10, 0)),
+      exercise("v1-routine-b-rotation-dos", 3, "import-rotation-dos-allonge", hold(2, 30, 15), { notes: "Par côté." }),
+      exercise("v1-routine-b-figure-4", 4, "mobilite-figure-4", hold(2, 30, 15), { notes: "Par côté." }),
+    ],
+  },
+  {
+    id: "v1-routine-c",
+    name: "Routine C — Abdos et épaules",
+    category: "Routine",
+    letter: "C",
+    subtitle: "Abdos et épaules",
+    tags: ["Tronc", "Souplesse"],
+    description: "~12 min.",
+    blocks: [
+      exercise("v1-routine-c-crunch-inverse", 0, "crunch-inverse", repsFixed(2, 10, 30)),
+      exercise("v1-routine-c-hollow", 1, "hollow-body-genoux", hold(3, 20, 30), { notes: HOLD_PROGRESSION }),
+      exercise("v1-routine-c-pectoraux", 2, "mobilite-ouverture-epaules-mur", hold(2, 30, 15), {
+        notes: "Par côté, contre une porte.",
+      }),
+      exercise("v1-routine-c-epaule", 3, "etirement-epaule-main-dos", hold(2, 30, 15), { notes: "Par côté." }),
+      exercise("v1-routine-c-papillon", 4, "papillon-assis", hold(1, 60, 0)),
+    ],
+  },
+];
 
 export const PROGRAM_V1_WEEKLY: Omit<WeeklyProgram, "id" | "createdAt" | "updatedAt"> = {
   name: "Programme V1",

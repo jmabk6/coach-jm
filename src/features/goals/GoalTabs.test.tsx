@@ -73,8 +73,16 @@ describe("M6 — Exercices", () => {
     expect(negative.querySelector("a")).toBeNull();
   });
 
-  it("Tronc et Souplesse : exercices à définir avec les routines du soir", async () => {
+  it("Tronc : les exercices de gainage des routines (lot K.1), lettre de la routine", async () => {
     renderTab("core", "exercices");
+    expect(await screen.findByText("Exercices pour progresser")).toBeDefined();
+    expect(document.querySelectorAll(".goal-exercises li")).toHaveLength(6);
+    expect(within(rowOf("Bird dog")).getByText("RB")).toBeDefined();
+  });
+
+  it("Tronc et Souplesse sans exercice lié : à définir avec les routines du soir", async () => {
+    await db.goals.update("goal-flexibility", { linkedExercises: [] });
+    renderTab("flexibility", "exercices");
     expect(await screen.findByText("Exercices à définir avec les routines du soir.")).toBeDefined();
   });
 });

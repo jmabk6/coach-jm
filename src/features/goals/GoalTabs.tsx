@@ -24,7 +24,7 @@ export function GoalExercisesTab({ goal }: { goal: Goal }) {
     };
   }, [goal]);
 
-  if (goal.key === "core" || goal.key === "flexibility") {
+  if (goal.linkedExercises.length === 0 && (goal.key === "core" || goal.key === "flexibility")) {
     return <p className="goal-detail__message">Exercices à définir avec les routines du soir.</p>;
   }
   if (goal.linkedExercises.length === 0) {

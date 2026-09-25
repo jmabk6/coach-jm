@@ -264,7 +264,7 @@ describe("démarrage d'une séance de la semaine de tests", () => {
     expect(order(workout.blocks)).toEqual(["test:souplesse", "test:tronc"]);
   });
 
-  it("un test replanifié ailleurs, ou d'un protocole en pause, n'entre pas dans la séance", async () => {
+  it("un test replanifié ailleurs, ou d'un protocole en pause, n'entre pas dans la séance : la routine du soir se fait (lot K)", async () => {
     await db.plannedSessions.update("weekly-2026-10-26-evening", {
       tests: [
         { protocolId: "protocol-souplesse", placement: "replace_all", rescheduledToPlannedSessionId: "ailleurs" },
@@ -273,6 +273,14 @@ describe("démarrage d'une séance de la semaine de tests", () => {
     });
     await db.testProtocols.update("protocol-tronc", { status: "paused" });
 
-    await expect(startWorkout("weekly-2026-10-26-evening", T)).rejects.toThrow(/aucun exercice/);
+    const workout = await startWorkout("weekly-2026-10-26-evening", T);
+    expect(workout.blocks.some((block) => block.kind === "test")).toBe(false);
+    expect(workout.blocks.map((block) => block.kind === "exercise" && block.exerciseId)).toEqual([
+      "crunch-inverse",
+      "hollow-body-genoux",
+      "mobilite-ouverture-epaules-mur",
+      "etirement-epaule-main-dos",
+      "papillon-assis",
+    ]);
   });
 });

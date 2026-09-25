@@ -17,7 +17,8 @@ import { DEFAULT_PREFERENCES, DEFAULT_TEST_CYCLE } from "./seedSettingsDefaults"
    seedRealBackup.test.ts) : sans cela, le seed du catalogue
    resynchroniserait les médias d'une sauvegarde réelle. */
 vi.stubEnv("BASE_URL", "/coach-jm/");
-import { CARDIO_A, CARDIO_A_FORMER } from "../program/programV1";
+import { CARDIO_A, CARDIO_A_FORMER, PROGRAM_V1_ROUTINES, PROGRAM_V1_ROUTINES_EMPTY } from "../program/programV1";
+import { CORE_LINKED, FLEXIBILITY_LINKED } from "../program/seedProgramV1";
 const { runSeeds, suspendSeeds, resumeSeedsForTests, SEEDS } = await import("./runSeeds");
 const { seedSettingsDefaults } = await import("./seedSettingsDefaults");
 
@@ -55,19 +56,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
     expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
     const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
-    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso });
+    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso });
     expect(await db.goals.count()).toBe(7);
     expect(await db.testProtocols.count()).toBe(7);
     expect(await db.exercises.count()).toBeGreaterThan(0);
@@ -190,8 +191,14 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     /* Lot H : les 7 objectifs s'installent ; ceux du fichier restent identiques. */
     const seededGoals = seeded.stores.goals as Array<{ id: string; key: string }>;
     expect(new Set(seededGoals.map((goal) => goal.key)).size).toBe(7);
-    for (const goal of (file.stores.goals ?? []) as Array<{ id: string }>) {
-      expect(canonicalStringify(seededGoals.find((item) => item.id === goal.id)), goal.id).toBe(canonicalStringify(goal));
+    for (const goal of (file.stores.goals ?? []) as Array<{ id: string; key: string; linkedExercises: unknown[]; updatedAt: string }>) {
+      const seededGoal = seededGoals.find((item) => item.id === goal.id) as { updatedAt?: string } | undefined;
+      /* Seed 13 (lot K.1) : Tronc et Souplesse reçoivent leurs exercices liés si leur liste était vide. */
+      const linked = goal.linkedExercises.length === 0 ? { core: CORE_LINKED, flexibility: FLEXIBILITY_LINKED }[goal.key] : undefined;
+      const expectedGoal = linked
+        ? { ...goal, linkedExercises: linked.map((exerciseId) => ({ exerciseId })), updatedAt: seededGoal?.updatedAt }
+        : goal;
+      expect(canonicalStringify(seededGoal), goal.id).toBe(canonicalStringify(expectedGoal));
     }
     /* Lot D.6 : les cadres du fichier restent identiques, ceux du programme s'ajoutent (T-21). */
     for (const store of ["strengthFrames", "strengthFrameVersions"]) {
@@ -205,9 +212,13 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     for (const template of fileTemplates) {
       const seededTemplate = seededTemplates.find((item) => item.id === template.id) as { updatedAt?: string } | undefined;
       /* Seed 9 (24/09/2026) : l'ancien Cardio A intact passe en un seul bloc ; rien d'autre ne change. */
+      /* Seed 13 (lot K.1) : une routine encore vide et non modifiée reçoit son contenu. */
+      const routine = emptyRoutineContent(template);
       const expected = isFormerCardioA(template)
         ? { ...template, mainBlockId: CARDIO_A.mainBlockId, blocks: CARDIO_A.blocks, updatedAt: seededTemplate?.updatedAt }
-        : template;
+        : routine
+          ? { ...template, ...routine, updatedAt: seededTemplate?.updatedAt }
+          : template;
       expect(canonicalStringify(seededTemplate), template.id).toBe(canonicalStringify(expected));
     }
     expect(seededTemplates.filter((item) => !fileTemplates.some((t) => t.id === item.id)).every((item) => item.id.startsWith("v1-"))).toBe(true);
@@ -232,4 +243,10 @@ function isFormerCardioA(template: { id: string; mainBlockId?: string; blocks?: 
     template.mainBlockId === CARDIO_A_FORMER.mainBlockId &&
     canonicalStringify(template.blocks) === canonicalStringify(CARDIO_A_FORMER.blocks)
   );
+}
+
+function emptyRoutineContent(template: { id: string; name?: string; blocks?: unknown[] }) {
+  const empty = PROGRAM_V1_ROUTINES_EMPTY.find((item) => item.id === template.id);
+  if (!empty || template.name !== empty.name || (template.blocks ?? []).length > 0) return undefined;
+  return PROGRAM_V1_ROUTINES.find((item) => item.id === template.id);
 }

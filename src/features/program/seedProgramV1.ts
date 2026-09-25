@@ -1,7 +1,7 @@
 import { db } from "../../db/database";
 import { WEEKLY_PROGRAM_ID } from "../../db/repositories/programRepository";
 import type { InstallMarkers, SessionTemplate } from "../../domain";
-import { PROGRAM_V1_ROUTINES, PROGRAM_V1_TEMPLATES, PROGRAM_V1_TEST_SCHEDULE, PROGRAM_V1_WEEKLY } from "./programV1";
+import { PROGRAM_V1_ROUTINES, PROGRAM_V1_ROUTINES_EMPTY, PROGRAM_V1_TEMPLATES, PROGRAM_V1_TEST_SCHEDULE, PROGRAM_V1_WEEKLY } from "./programV1";
 
 /**
  * Seeds 5 et 6 (SCHEMA_DEXIE_V3_MIGRATION.md § 5.2). Chacun est une
@@ -73,5 +73,51 @@ export async function seedRoutines(now: string = new Date().toISOString()): Prom
 
     await addMissingTemplates(PROGRAM_V1_ROUTINES, now);
     await markInstalled("routines", now);
+  });
+}
+
+/** Exercices liés (lot K.1) : gainage et abdos des 3 routines pour le Tronc, leurs étirements pour la Souplesse. */
+export const CORE_LINKED = ["planche", "dead-bug", "planche-laterale", "bird-dog", "crunch-inverse", "hollow-body-genoux"];
+export const FLEXIBILITY_LINKED = [
+  "mobilite-flechisseur-hanche",
+  "mobilite-ischio-jambiers",
+  "import-position-enfant",
+  "mobilite-chat-vache",
+  "import-rotation-dos-allonge",
+  "mobilite-figure-4",
+  "mobilite-ouverture-epaules-mur",
+  "etirement-epaule-main-dos",
+  "papillon-assis",
+];
+
+function isEmptyRoutine(template: SessionTemplate): boolean {
+  const empty = PROGRAM_V1_ROUTINES_EMPTY.find((item) => item.id === template.id);
+  return empty !== undefined && template.blocks.length === 0 && template.name === empty.name;
+}
+
+/**
+ * Seed 13 (lot K.1) : le contenu des 3 routines du soir, validé le
+ * 25/09/2026. Une routine n'est remplie que si elle est encore vide et non
+ * modifiée (nom d'origine, aucun bloc) ; une routine modifiée n'est jamais
+ * écrasée. Les exercices liés de Tronc et de Souplesse ne sont posés que si
+ * leur liste est encore vide. Marqueur `install.routinesContent`.
+ */
+export async function seedRoutinesContent(now: string = new Date().toISOString()): Promise<void> {
+  await db.transaction("rw", db.sessionTemplates, db.goals, db.settings, async () => {
+    if ((await readInstall())?.routinesContent !== undefined) return;
+
+    for (const content of PROGRAM_V1_ROUTINES) {
+      const template = await db.sessionTemplates.get(content.id);
+      if (!template || !isEmptyRoutine(template)) continue;
+      await db.sessionTemplates.put({ ...template, ...structuredClone(content), updatedAt: now });
+    }
+
+    for (const [key, linked] of [["core", CORE_LINKED], ["flexibility", FLEXIBILITY_LINKED]] as const) {
+      const goal = await db.goals.where("key").equals(key).first();
+      if (!goal || goal.linkedExercises.length > 0) continue;
+      await db.goals.put({ ...goal, linkedExercises: linked.map((exerciseId) => ({ exerciseId })), updatedAt: now });
+    }
+
+    await markInstalled("routinesContent", now);
   });
 }

@@ -74,7 +74,7 @@ describe("Planning Semaine", () => {
     const friday = day("Ven");
     expect(within(friday).getByText("Repos")).toBeTruthy();
     expect(within(friday).getByText("Soir")).toBeTruthy();
-    expect(within(friday).getByText("Routine A — à définir")).toBeTruthy();
+    expect(within(friday).getByText("Routine A — Avant du tronc et hanches")).toBeTruthy();
     expect(within(day("Sam")).queryByText("Soir")).toBeNull();
   });
 });

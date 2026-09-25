@@ -69,7 +69,7 @@ describe("les 7 objectifs", () => {
     }
 
     const counts = Object.fromEntries((await getAllGoals()).map((goal) => [goal.key, goal.linkedExercises.length]));
-    expect(counts).toEqual({ traction: 6, upper_body: 7, legs: 8, cardio: 2, core: 0, flexibility: 0, weight: 0 });
+    expect(counts).toEqual({ traction: 6, upper_body: 7, legs: 8, cardio: 2, core: 6, flexibility: 9, weight: 0 });
   });
 
   it("idempotent ; un objectif existant n'est jamais écrasé", async () => {

@@ -12,7 +12,7 @@ import { exerciseCatalog } from "../exercises/exerciseCatalog";
 import { runSeeds, resumeSeedsForTests } from "../seed/runSeeds";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import { generateProgramWeek } from "./generateProgramWeek";
-import { PROGRAM_V1_ROUTINES, PROGRAM_V1_TEMPLATES, PROGRAM_V1_TEST_SCHEDULE } from "./programV1";
+import { PROGRAM_V1_ROUTINES_EMPTY, PROGRAM_V1_TEMPLATES, PROGRAM_V1_TEST_SCHEDULE } from "./programV1";
 import { seedProgramV1, seedRoutines } from "./seedProgramV1";
 
 /**
@@ -108,7 +108,8 @@ describe("seeds 5 et 6 sur une base neuve", () => {
     const templates = await db.sessionTemplates.orderBy("position").toArray();
     expect(templates.map((template) => template.id)).toEqual([...V1_IDS, ...ROUTINE_IDS]);
     expect(templates.every((template) => template.origin === "program_v1" && template.status === "active")).toBe(true);
-    expect(templates.filter((template) => template.category === "Routine").every((template) => template.blocks.length === 0)).toBe(true);
+    /* Lot K.1 : une base neuve reçoit directement les routines remplies. */
+    expect(templates.filter((template) => template.category === "Routine").map((template) => template.blocks.length)).toEqual([5, 5, 5]);
 
     const program = (await db.weeklyPrograms.get(WEEKLY_PROGRAM_ID)) as WeeklyProgram;
     expect(program.days.map((day) => [day.weekday, day.sessionTemplateId])).toEqual([
@@ -201,7 +202,7 @@ describe("existant : jamais écrasé", () => {
 
 describe("routines vides : non démarrables, raison affichée", () => {
   it("« Contenu à définir » ; un modèle vide ordinaire garde sa raison habituelle", async () => {
-    const routine = { ...PROGRAM_V1_ROUTINES[0]!, status: "active" as const, position: 0, createdAt: NOW, updatedAt: NOW };
+    const routine = { ...PROGRAM_V1_ROUTINES_EMPTY[0]!, status: "active" as const, position: 0, createdAt: NOW, updatedAt: NOW };
     expect(startBlockedReason(routine)).toBe(EMPTY_ROUTINE_REASON);
     expect(startBlockedReason(draft)).toBe("Ajoutez au moins une brique pour démarrer");
     expect(startBlockedReason(PROGRAM_V1_TEMPLATES[0]!)).toBeUndefined();
