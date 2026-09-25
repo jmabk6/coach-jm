@@ -15,28 +15,6 @@
   color: var(--color-text-soft, #667085);
 }
 
-.goals__banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
-  font-size: 0.85rem;
-  line-height: 1.4;
-  text-decoration: none;
-}
-
-.goals__banner span {
-  flex: 1;
-  color: var(--color-text-soft, #475467);
-}
-
-.goals__banner strong {
-  color: var(--color-text, #101828);
-}
-
 .goals__list {
   display: grid;
   gap: 10px;

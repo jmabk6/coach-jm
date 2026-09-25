@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { loadTestNames } from "../tests/testRecapCards";
 import { addDays, parseISO } from "date-fns";
 import type {
   Exercise,
@@ -46,6 +47,8 @@ export interface TodayData {
   templateById: Map<Id, SessionTemplate>;
   exerciseById: Map<Id, Exercise>;
   activeTemplates: SessionTemplate[];
+  /** Nom des protocoles, pour les tests attachés à une séance du jour (lot J.1). */
+  testNameById: Map<Id, string>;
   /** Séance terminée, pas encore enregistrée : elle n'empêche pas d'en démarrer une autre. */
   pendingWorkout?: WorkoutSession;
   /**
@@ -100,6 +103,7 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
           exercises,
           completedWorkouts,
           pendingWorkout,
+          testNameById,
         ] = await Promise.all([
           getPlannedSessionsByDate(today),
           getPlannedSessionsBetween(shiftDate(today, 1), horizonEnd),
@@ -109,6 +113,7 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
           getAllExercises(),
           getCompletedWorkouts(),
           getPendingWorkout(),
+          loadTestNames(),
         ]);
 
         if (cancelled) return;
@@ -135,7 +140,12 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
             workouts: workoutsToday,
             ...(inProgressWorkout ? { inProgressWorkout } : {}),
           }),
-          nextSessions: listNextPlannedSessions(plannedAhead, today),
+          /* Les routines du soir (lot K.2) ne sont pas des « prochaines séances ». */
+          nextSessions: listNextPlannedSessions(
+            plannedAhead.filter((session) => session.slot !== "evening"),
+            today,
+          ),
+          testNameById,
           ...(pendingWorkout ? { pendingWorkout } : {}),
           templateById,
           exerciseById: new Map(

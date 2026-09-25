@@ -1,10 +1,9 @@
-import { CalendarDays, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { paths } from "../../app/paths";
-import { formatWeekRange } from "../../domain/rules/programRules";
-import { daysUntilNextTestWeek, nextTestWeekStart } from "../../domain/rules/testCycleRules";
 import { PictogramTile } from "../exercises/ExercisePictogram";
+import { TestWeekBanner } from "../tests/TestWeekBanner";
 import { todayLocalDate } from "../today/useTodayData";
 import { goalIcon, goalTone } from "./goalIcons";
 import { loadGoalList, type GoalList, type GoalListRow } from "./goalList";
@@ -46,22 +45,6 @@ export function GoalsScreen() {
         </ol>
       )}
     </section>
-  );
-}
-
-function TestWeekBanner({ today, cycle }: { today: string; cycle: NonNullable<GoalList["cycle"]> }) {
-  const weekStart = nextTestWeekStart(today, cycle);
-  const days = daysUntilNextTestWeek(today, cycle);
-  return (
-    <Link to={paths.planning({ date: weekStart })} className="goals__banner">
-      <CalendarDays size={20} strokeWidth={2} aria-hidden="true" />
-      <span>
-        <strong>Semaine de tests{days > 0 ? ` dans ${days} jour${days > 1 ? "s" : ""}` : ""}</strong>
-        <br />
-        {formatWeekRange(weekStart)}
-      </span>
-      <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
-    </Link>
   );
 }
 

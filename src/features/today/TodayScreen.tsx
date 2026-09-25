@@ -5,10 +5,12 @@ import {
   ChevronRight,
   Clock,
   Info,
+  Moon,
   PersonStanding,
   Play,
   Plus,
 } from "lucide-react";
+import { TestWeekBanner } from "../tests/TestWeekBanner";
 import type { Id, PlannedSession, SessionTemplate, WorkoutKind } from "../../domain";
 import { calculateExecutionProgress } from "../../domain/rules/workoutRules";
 import { formatDayLabel } from "../../domain/rules/programRules";
@@ -84,7 +86,14 @@ export function TodayScreen() {
 
   const data = state;
   const inProgress = data.state.kind === "in_progress";
-  const canChoose = !inProgress && data.state.kind !== "planned";
+  /* Le soir (lot K.2) : la routine prévue se lit à part, sous la séance du jour. */
+  const evenings = data.state.entries.filter(
+    (entry): entry is Extract<TodayEntry, { kind: "planned" }> => entry.kind === "planned" && entry.session.slot === "evening",
+  );
+  const eveningIds = new Set(evenings.map((entry) => entry.session.id));
+  const dayEntries = data.state.entries.filter((entry) => entry.kind !== "planned" || !eveningIds.has(entry.session.id));
+  const dayPlanned = dayEntries.some((entry) => entry.kind === "planned");
+  const canChoose = !inProgress && !dayPlanned;
 
   const startPlanned = (session: PlannedSession) =>
     run(
@@ -111,20 +120,26 @@ export function TodayScreen() {
           <h2 className="today-card__title">Séance du {formatFullDate(data.pendingWorkout.date)} à enregistrer</h2>
           <p className="today-card__text">Terminée, pas encore enregistrée. Tu peux démarrer la séance du jour avant.</p>
           <Link to={paths.workoutEnd()} className="today__secondary">
-            Enregistrer la séance
+            Terminer l'enregistrement
           </Link>
         </section>
       )}
 
-      {data.state.kind === "rest" && <RestCard />}
+      <TestWeekBanner today={data.today} />
 
-      {data.state.entries.map((entry) => (
+      {dayEntries.length === 0 && <RestCard />}
+
+      {dayEntries.map((entry) => (
         <TodayEntryCard
           key={entryKey(entry)}
           entry={entry}
           data={data}
           onStart={startPlanned}
         />
+      ))}
+
+      {evenings.map((entry) => (
+        <EveningCard key={entry.session.id} session={entry.session} data={data} />
       ))}
 
       {/* Pesée du jour (lot I.1). */}
@@ -279,6 +294,11 @@ function PlannedCard({ session, data, onStart }: PlannedCardProps) {
             {formatSessionTemplateSummary(summary, template.description)}
           </span>
           {cardioLine && <span className="today-card__text">{cardioLine}</span>}
+          {testNamesOf(session, data).map((name) => (
+            <span key={name} className="today-badge today-badge--test">
+              Test {name.toLowerCase()}
+            </span>
+          ))}
         </span>
         <ChevronRight
           className="today-card__chevron"
@@ -410,7 +430,7 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
       {running && workout.endedAt !== undefined ? (
         <Link to={paths.workoutEnd()} className="today__primary">
           <Play size={18} strokeWidth={2.2} aria-hidden="true" />
-          Enregistrer la séance
+          Terminer l'enregistrement
         </Link>
       ) : running ? (
         <Link to={paths.workoutLive()} className="today__primary">
@@ -426,6 +446,48 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
         </Link>
       )}
     </section>
+  );
+}
+
+/** Tests attachés à l'instance, sauf ceux replanifiés ailleurs (lot J.1). */
+function testNamesOf(session: PlannedSession, data: TodayData): string[] {
+  return (session.tests ?? [])
+    .filter((test) => test.rescheduledToPlannedSessionId === undefined)
+    .map((test) => data.testNameById.get(test.protocolId) ?? "Test");
+}
+
+/**
+ * « Ce soir » (lot J.1) : la routine du soir, en ligne compacte sous la
+ * séance du jour ; « contenu à définir » tant qu'elle est vide, et les
+ * tests qui la remplacent le lundi d'une semaine de tests.
+ */
+function EveningCard({ session, data }: { session: PlannedSession; data: TodayData }) {
+  const template = data.templateById.get(session.sessionTemplateId);
+  if (!template) return null;
+  const empty = template.blocks.length === 0;
+  const tests = testNamesOf(session, data);
+  const duration = data.durationOf(template.id);
+  const skipped = session.status === "skipped";
+
+  return (
+    <Link to={`/aujourdhui/apercu/${session.id}`} className="today-evening" aria-label={`Ce soir : ${template.name}`}>
+      <span className="today-evening__icon" aria-hidden="true">
+        <Moon size={20} strokeWidth={2} />
+      </span>
+      <span className="today-evening__body">
+        <small>{skipped ? "Ce soir · sautée" : "Ce soir"}</small>
+        <strong>{empty ? (template.letter ? `Routine ${template.letter} — contenu à définir` : `${template.name} — contenu à définir`) : template.name}</strong>
+        {tests.length > 0 ? (
+          <span>{tests.map((name) => `Test ${name.toLowerCase()}`).join(" · ")}</span>
+        ) : (
+          template.subtitle && !empty && <span>{template.subtitle}</span>
+        )}
+      </span>
+      {duration && !empty && tests.length === 0 && (
+        <span className="today-evening__duration">{formatSessionTemplateDuration(duration.duration)}</span>
+      )}
+      <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+    </Link>
   );
 }
 
