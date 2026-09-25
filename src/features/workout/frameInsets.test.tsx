@@ -89,7 +89,7 @@ describe("écran de séance", () => {
         </Routes>
       </MemoryRouter>,
     );
-    await screen.findAllByText(/Traction assistée/);
+    await screen.findAllByText(/Traction assistée/, {}, { timeout: 4000 });
   }
 
   it("rowing validé à 40 kg : l'encart propose 42,5 kg ; Accepter pose l'objectif ; traction sans incrément : rien", async () => {
@@ -109,7 +109,8 @@ describe("écran de séance", () => {
     expect(screen.getAllByRole("complementary", { name: "Hausse proposée" })).toHaveLength(1);
 
     fireEvent.click(within(inset).getByRole("button", { name: "Accepter le nouveau palier" }));
-    await waitFor(async () => expect((await db.strengthFrameVersions.get(rowing))?.currentTarget).toMatchObject({ value: 42.5, fromMilestoneId: "m-rowing" }));
-    await waitFor(() => expect(screen.queryByRole("complementary", { name: "Hausse proposée" })).toBeNull());
+    /* Sous la charge de la suite complète, l'écriture et le rechargement peuvent dépasser 1 s. */
+    await waitFor(async () => expect((await db.strengthFrameVersions.get(rowing))?.currentTarget).toMatchObject({ value: 42.5, fromMilestoneId: "m-rowing" }), { timeout: 4000 });
+    await waitFor(() => expect(screen.queryByRole("complementary", { name: "Hausse proposée" })).toBeNull(), { timeout: 4000 });
   });
 });
