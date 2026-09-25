@@ -157,7 +157,8 @@ export function formatExerciseInstructionsRow(
         formatSets(instructions.sets),
         `${formatRange(instructions.reps)} reps`,
         formatRpe(instructions.targetRpe),
-        `repos ${formatDurationShort(instructions.restBetweenSetsSec)}`,
+        /* Une seule série : pas de repos (décision du 25/09/2026). */
+        instructions.sets > 1 ? `repos ${formatDurationShort(instructions.restBetweenSetsSec)}` : undefined,
       ]
         .filter(Boolean)
         .join(" · ");
@@ -167,7 +168,7 @@ export function formatExerciseInstructionsRow(
         formatSets(instructions.sets),
         formatDurationRange(instructions.durationSec),
         formatRpe(instructions.targetRpe),
-        `repos ${formatDurationShort(instructions.restBetweenSetsSec)}`,
+        instructions.sets > 1 ? `repos ${formatDurationShort(instructions.restBetweenSetsSec)}` : undefined,
       ]
         .filter(Boolean)
         .join(" · ");

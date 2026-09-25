@@ -114,6 +114,12 @@ describe("libellés de l'écran de séance", () => {
     expect(formatPlannedLine(block)).toBe("8–10 reps · Repos 1 min 30");
     expect(formatPlannedLine({ ...block, addedDuringWorkout: true })).toBeUndefined();
   });
+
+  it("une seule série : ni « Repos » dans le sous-titre, ni dans Prévu (décision du 25/09/2026)", () => {
+    const single = { ...block, series: block.series!.slice(0, 1) };
+    expect(formatExerciseSubtitle(single)).toBe("1 série");
+    expect(formatPlannedLine(single)).toBe("8–10 reps");
+  });
 });
 
 describe("carte de repos : chrono et bloc Ensuite", () => {

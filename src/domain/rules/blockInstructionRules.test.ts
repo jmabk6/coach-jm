@@ -123,7 +123,10 @@ describe("formatExerciseInstructionsRow", () => {
         reps: { min: 12, max: 12 },
         restBetweenSetsSec: 60,
       }),
-    ).toBe("1 série · 12 reps · repos 1 min");
+    ).toBe("1 série · 12 reps");
+    /* Une seule série : pas de repos, même à 0 s (décision du 25/09/2026). */
+    expect(formatExerciseInstructionsRow({ shape: "duration", sets: 1, durationSec: 60, restBetweenSetsSec: 0 })).toBe("1 série · 1 min");
+    expect(formatExerciseInstructionsRow({ shape: "duration", sets: 2, durationSec: 30, restBetweenSetsSec: 15 })).toBe("2 séries · 30 s · repos 15 s");
 
     expect(formatExerciseInstructionsRow({ shape: "steps", steps: [] })).toBe(
       "Paliers à définir",

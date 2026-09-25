@@ -64,9 +64,10 @@ export function formatExerciseSubtitle(block: PerformedExerciseBlock): string {
 
   if (instructions.shape === "reps" || instructions.shape === "duration") {
     const count = block.series?.length ?? instructions.sets;
-    const sets = count === 1 ? "1 série" : `${count} séries`;
+    /* Une seule série : pas de repos à annoncer (décision du 25/09/2026). */
+    if (count === 1) return "1 série";
 
-    return `${sets} · Repos ${formatDurationShort(instructions.restBetweenSetsSec)}`;
+    return `${count} séries · Repos ${formatDurationShort(instructions.restBetweenSetsSec)}`;
   }
 
   if (instructions.shape === "steps") {
@@ -101,7 +102,8 @@ export function formatPlannedLine(block: PerformedExerciseBlock): string | undef
     parts.push(`RPE ${formatRange(instructions.targetRpe)}`);
   }
 
-  parts.push(`Repos ${formatDurationShort(instructions.restBetweenSetsSec)}`);
+  const count = block.series?.length ?? instructions.sets;
+  if (count > 1) parts.push(`Repos ${formatDurationShort(instructions.restBetweenSetsSec)}`);
 
   return parts.join(" · ");
 }
