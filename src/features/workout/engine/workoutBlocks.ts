@@ -323,13 +323,15 @@ const ADDED_STEP_DISTANCE_KM = 0.5;
 export function addedBlockInstructions(
   exercise: Exercise,
   newId: () => Id,
+  /** Repos de la séance libre (Réglages, lot L.2) : remplace le repos par défaut du catalogue. */
+  restSec?: number,
 ): ExerciseInstructions {
   const defaults = defaultInstructionsFor(exercise, newId);
 
   switch (defaults.shape) {
     case "reps":
     case "duration":
-      return { ...defaults, sets: 1 };
+      return { ...defaults, sets: 1, ...(restSec !== undefined ? { restBetweenSetsSec: restSec } : {}) };
 
     case "steps": {
       const first = defaults.steps[0];
@@ -363,9 +365,10 @@ export function createAddedExerciseBlock(
   newId: () => Id,
   /** Point de capture 2 (§ 4.3) : la version active du cadre de l'exercice ajouté. */
   frameVersionId?: Id,
+  restSec?: number,
 ): PerformedExerciseBlock {
   const id = `added-${newId()}`;
-  const instructions = addedBlockInstructions(exercise, newId);
+  const instructions = addedBlockInstructions(exercise, newId, restSec);
 
   const block: PerformedExerciseBlock = {
     id,

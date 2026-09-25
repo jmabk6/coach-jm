@@ -27,6 +27,8 @@ export const ROUTES = {
   plusTests: "/plus/protocoles",
   /** Plus > Mon profil (M11, lot L.1). */
   plusProfile: "/plus/profil",
+  /** Plus > Réglages (M11, lot L.2). */
+  plusSettings: "/plus/reglages",
 } as const;
 
 /**
@@ -92,6 +94,7 @@ export const paths = {
   plus: () => ROUTES.plus,
   plusTests: () => ROUTES.plusTests,
   plusProfile: () => ROUTES.plusProfile,
+  plusSettings: () => ROUTES.plusSettings,
 } as const;
 
 /** Vrai si `pathname` est la route `base` ou l'une de ses sous-routes. */

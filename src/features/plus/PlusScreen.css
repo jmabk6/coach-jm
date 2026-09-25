@@ -232,3 +232,66 @@
   background: var(--color-accent, #2f6fed);
   color: #fff;
 }
+
+/* Lot L.2 : Réglages. */
+.plus-setting {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-border, #eaecf0);
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface, #fff);
+}
+
+.plus-setting__label {
+  display: grid;
+  gap: 2px;
+  font-weight: 600;
+}
+
+.plus-setting__label small {
+  color: var(--color-text-soft, #667085);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.plus-setting select {
+  padding: 8px;
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: 10px;
+  background: var(--color-surface, #fff);
+  color: inherit;
+  font: inherit;
+}
+
+.plus-segmented {
+  display: flex;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--color-surface-muted, #f2f4f7);
+}
+
+.plus-segmented__option {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text-soft, #475467);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.plus-segmented__option--active {
+  background: var(--color-accent, #2f6fed);
+  color: #fff;
+}
+
+.plus-switch {
+  width: 44px;
+  height: 26px;
+  accent-color: var(--color-accent, #2f6fed);
+}

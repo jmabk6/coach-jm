@@ -61,6 +61,7 @@ import { findLastComparableStep } from "./lastPerformance";
 import { RestBar } from "./RestBar";
 import { RestCard } from "./RestCard";
 import { playRestSignal, primeRestSignal } from "./restSignal";
+import { usePreferences } from "../plus/usePreferences";
 import { useClock, useWorkoutSession } from "./useWorkoutSession";
 import { calculatePerformedNumbering, describeNextUp } from "./workoutDisplay";
 import { formatClock } from "./workoutRecap";
@@ -93,6 +94,7 @@ export function WorkoutScreen() {
   const [finishError, setFinishError] = useState<string>();
 
   const workout = state.status === "ready" ? state.workout : undefined;
+  const preferences = usePreferences();
   useClock(Boolean(workout?.activeRest));
 
   /* Signal au premier plan quand le compte à rebours atteint zéro (§12) :
@@ -117,9 +119,10 @@ export function WorkoutScreen() {
       restPhase === "done" &&
       document.visibilityState === "visible"
     ) {
-      playRestSignal();
+      /* Réglages (lot L.2) : le son du minuteur peut être coupé. */
+      if (preferences?.timerSound !== false) playRestSignal();
     }
-  }, [rest, restPhase]);
+  }, [rest, restPhase, preferences]);
 
   /* Retour de la bibliothèque : `?add=<id>` dans l'ordre de sélection —
      ou, avec `substitute=<brique>[&child=<enfant>]`, le remplaçant choisi. */
@@ -129,7 +132,8 @@ export function WorkoutScreen() {
   const handledAddKey = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (state.status !== "ready" || pendingAddIds.length === 0) return;
+    /* Les réglages d'abord : le repos de la séance libre s'applique à l'ajout (lot L.2). */
+    if (state.status !== "ready" || pendingAddIds.length === 0 || !preferences) return;
 
     const key = `${substituteBlockId ?? ""}:${substituteChildId ?? ""}:${pendingAddIds.join(",")}`;
     if (handledAddKey.current === key) return;
@@ -158,8 +162,10 @@ export function WorkoutScreen() {
       return;
     }
 
-    void apply((current, at) => addExerciseBlocks(current, exercises, at, undefined, versionIdByExercise));
-  }, [state, pendingAddIds, substituteBlockId, substituteChildId, apply, setSearchParams]);
+    void apply((current, at) =>
+      addExerciseBlocks(current, exercises, at, undefined, versionIdByExercise, preferences?.freeWorkoutRestSec),
+    );
+  }, [state, pendingAddIds, substituteBlockId, substituteChildId, apply, setSearchParams, preferences]);
 
   /* Une séance qui n'a pas encore de brique courante s'ouvre sur sa
      première brique exécutable (§11 : la brique active dépliée). */

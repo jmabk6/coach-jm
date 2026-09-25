@@ -1454,6 +1454,8 @@ export function addExerciseBlocks(
   newId: NewId = defaultNewId,
   /** Versions actives par exercice (§ 4.3) : chargées par l'écran, jamais ici. */
   frameVersionByExercise: ReadonlyMap<Id, Id> = new Map(),
+  /** Repos de la séance libre (Réglages, lot L.2) : ne vaut que pour une séance libre. */
+  freeWorkoutRestSec?: number,
 ): WorkoutSession {
   assertInProgress(workout);
 
@@ -1461,10 +1463,11 @@ export function addExerciseBlocks(
     return workout;
   }
 
+  const restSec = workout.source === "free" ? freeWorkoutRestSec : undefined;
   const ordered = sortBlocks(workout.blocks);
   const index = findInsertionIndex(ordered);
   const added = exercises.map((exercise, offset) =>
-    createAddedExerciseBlock(exercise, index + offset, newId, frameVersionByExercise.get(exercise.id)),
+    createAddedExerciseBlock(exercise, index + offset, newId, frameVersionByExercise.get(exercise.id), restSec),
   );
 
   const blocks = [...ordered.slice(0, index), ...added, ...ordered.slice(index)].map(
