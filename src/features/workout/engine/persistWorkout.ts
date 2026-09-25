@@ -4,6 +4,7 @@ import {
   saveWorkout,
   updateWorkout,
 } from "../../../db/repositories/workoutRepository";
+import { db } from "../../../db/database";
 import type { Id, WorkoutSession } from "../../../domain";
 import { recordPresence } from "./workoutEngine";
 
@@ -19,21 +20,26 @@ export async function applyWorkoutAction(
   action: WorkoutAction,
   now: string = new Date().toISOString(),
 ): Promise<WorkoutSession> {
-  const workout = await getWorkout(workoutId);
+  /* Lecture, geste et écriture dans une seule transaction : deux gestes
+     presque simultanés (l'ouverture automatique de la première brique et
+     un appui, lot M.3) s'enchaînent au lieu de s'écraser. */
+  return db.transaction("rw", db.workouts, async () => {
+    const workout = await getWorkout(workoutId);
 
-  if (!workout) {
-    throw new Error("Séance réalisée introuvable");
-  }
+    if (!workout) {
+      throw new Error("Séance réalisée introuvable");
+    }
 
-  if (workout.status !== "in_progress") {
-    throw new Error("Cette séance est terminée");
-  }
+    if (workout.status !== "in_progress") {
+      throw new Error("Cette séance est terminée");
+    }
 
-  const next = action(workout, now);
+    const next = action(workout, now);
 
-  await saveWorkout(next);
+    await saveWorkout(next);
 
-  return next;
+    return next;
+  });
 }
 
 /**
