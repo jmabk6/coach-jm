@@ -86,8 +86,8 @@ export type ExerciseStatus =
  * sous-ensemble suivi par le module Musculation. Sa cohérence avec
  * `zone` (Jambes → Quadriceps / Ischio-jambiers / Fessiers, Dos → Dos,
  * Pecs → Pectoraux, Épaules → Épaules, Bras → Bras, Core → Abdominaux,
- * zone absente → aucun) sera validée par `domain/rules/exerciseRules.ts`
- * dans un lot ultérieur ; ici le type seul.
+ * zone absente → aucun) est vérifiée par `checkClassification`
+ * (`domain/rules/exerciseRules.ts`).
  */
 export type ProgressionGroup =
   | "Quadriceps"
@@ -214,11 +214,8 @@ interface ExerciseBase {
   muscles?: string[];
 
   /**
-   * On ne stocke ici que les épinglages manuels.
-   *
-   * Les alternatives automatiques ne pourront être calculées
-   * par zone + mouvement + équipement que lorsque ces propriétés
-   * existent réellement sur l'exercice.
+   * Épinglages manuels seulement : aucune alternative automatique
+   * n'est calculée.
    */
   pinnedAlternativeExerciseIds?: Id[];
 
@@ -227,7 +224,7 @@ interface ExerciseBase {
    * sur tous les enregistrements antérieurs au schéma v2 et sur les
    * exercices créés par l'utilisateur tant qu'il ne l'a pas saisie.
    * Un exercice sans `progressionGroup` n'entre dans aucun total par
-   * groupe. Renseignée par le catalogue dans un lot ultérieur.
+   * groupe. Renseignée par le catalogue officiel.
    */
   progressionGroup?: ProgressionGroup;
   movementFamily?: MovementFamily;

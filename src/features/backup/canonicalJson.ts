@@ -1,8 +1,8 @@
 /**
  * Forme canonique d'une valeur JSON et empreinte SHA-256 (conception
- * sauvegarde lot 0, § 4). La même règle vit dans `scripts/backup-canonical.mjs`
- * pour la vérification hors appareil ; un test garantit que les deux
- * implémentations coïncident.
+ * sauvegarde lot 0, § 4). La même règle vit dans `scripts/verify-backup.mjs`
+ * (`canonicalStringify`) pour la vérification hors appareil ; un test
+ * garantit que les deux implémentations coïncident.
  *
  * Règle `sorted-keys-json-v1` : clés d'objet triées par code point,
  * aucun espace, `undefined` omis (comme `JSON.stringify`), tableaux dans
