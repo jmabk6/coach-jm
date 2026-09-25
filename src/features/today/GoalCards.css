@@ -1,0 +1,89 @@
+/* « Mes 7 objectifs » sur l'Accueil (lot J.2). */
+
+.goal-cards-home {
+  display: grid;
+  gap: 10px;
+}
+
+.goal-cards-home__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.goal-cards-home__head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.goal-cards-home__head a {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-accent, #2f6fed);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.goal-cards-home__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goal-card-home {
+  display: grid;
+  gap: 6px;
+  height: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border, #eaecf0);
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface, #fff);
+  color: inherit;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.goal-card-home__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.goal-card-home__icon {
+  display: block;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.goal-card-home__title {
+  font-size: 0.95rem;
+}
+
+.goal-card-home__value {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f2f4f7;
+  font-size: 0.8rem;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.goal-card-home__foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-soft, #667085);
+  font-size: 0.72rem;
+}
+
+.goal-card-home__foot--reschedule {
+  color: #b54708;
+  font-weight: 600;
+}

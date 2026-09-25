@@ -11,6 +11,7 @@ import {
   Plus,
 } from "lucide-react";
 import { TestWeekBanner } from "../tests/TestWeekBanner";
+import { GoalCards } from "./GoalCards";
 import type { Id, PlannedSession, SessionTemplate, WorkoutKind } from "../../domain";
 import { calculateExecutionProgress } from "../../domain/rules/workoutRules";
 import { formatDayLabel } from "../../domain/rules/programRules";
@@ -141,6 +142,9 @@ export function TodayScreen() {
       {evenings.map((entry) => (
         <EveningCard key={entry.session.id} session={entry.session} data={data} />
       ))}
+
+      {/* Mes 7 objectifs (lot J.2). */}
+      <GoalCards today={data.today} />
 
       {/* Pesée du jour (lot I.1). */}
       <WeightCard today={data.today} />

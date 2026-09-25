@@ -61,7 +61,12 @@ export async function loadGoalList(today: string): Promise<GoalList> {
       const protocolId = goalProtocolId(goal, segment);
       const protocol = protocolId ? protocolById.get(protocolId) : undefined;
       const measureKey = segment.measure?.source === "test" ? segment.measure.measureKey : undefined;
-      const text = goalRowText(goal, segment, evaluation, formatterFor(goal, measureKey, protocolId ? versionByProtocol.get(protocolId) : undefined));
+      const format = formatterFor(goal, measureKey, protocolId ? versionByProtocol.get(protocolId) : undefined);
+      const text = goalRowText(goal, segment, evaluation, format);
+      /* Poids sans semaine complète : la moyenne de la semaine en cours, provisoire (M1). */
+      if (evaluation.kind === "no_result" && progress.curve.provisional) {
+        text.value = `${format(progress.curve.provisional.value)} · moyenne provisoire`;
+      }
       const badge = goalBadge({
         goal,
         segment,
