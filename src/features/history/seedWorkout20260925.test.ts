@@ -59,8 +59,11 @@ describe("séance du 25/09", () => {
     expect(blocks[3]!.series![1]).toMatchObject({ load: { kind: "total", kg: 25 }, reps: 6, note: "limite" });
     expect(blocks[3]!.series![1]!.rpe).toBeUndefined();
     expect(blocks[8]!.series![1]).toMatchObject({ load: { kind: "total", kg: 10 }, reps: 10, rpe: 9, note: "je suis cuit" });
-    expect(workout.startedAt).toBe("2026-09-25T16:00:00.000Z");
-    expect(workout.completedAt! > workout.startedAt).toBe(true);
+    /* 10 h 00 → 11 h 30 à Paris : 1 h 30. */
+    expect(workout).toMatchObject({ startedAt: "2026-09-25T08:00:00.000Z", completedAt: "2026-09-25T09:30:00.000Z", activeDurationSec: 5400 });
+    const times = blocks.flatMap((block) => [...(block.cardioSteps ?? []), ...(block.series ?? [])].map((entry) => entry.completedAt!));
+    expect(times.every((time) => time > workout.startedAt && time <= workout.completedAt!)).toBe(true);
+    expect([...times].sort()).toEqual(times);
   });
 
   it("une seule fois ; jamais en double ; jamais dans une autre base", async () => {

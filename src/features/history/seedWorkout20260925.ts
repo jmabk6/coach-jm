@@ -17,8 +17,9 @@ import { buildImportedWorkout, type WorkoutSpec } from "./importedWorkouts";
 
 export const WORKOUT_20260925_ID = "import-2026-09-25";
 
-/** Heure de début (Paris), à défaut de chronométrage. */
-const START = "2026-09-25T16:00:00.000Z";
+/** 10 h 00 → 11 h 30 à Paris, donnés par l'utilisateur. */
+const START = "2026-09-25T08:00:00.000Z";
+const END = "2026-09-25T09:30:00.000Z";
 
 const SPEC: WorkoutSpec = {
   date: "2026-09-25",
@@ -96,20 +97,23 @@ const SPEC: WorkoutSpec = {
   ],
 };
 
-function shift(iso: string | undefined, deltaMs: number): string | undefined {
-  return iso === undefined ? undefined : new Date(Date.parse(iso) + deltaMs).toISOString();
+/** Place un instant de la séance construite sur la plage réelle, proportionnellement. */
+function retime(iso: string | undefined, from: { start: number; span: number }): string | undefined {
+  if (iso === undefined) return undefined;
+  const ratio = (Date.parse(iso) - from.start) / from.span;
+  return new Date(Date.parse(START) + ratio * (Date.parse(END) - Date.parse(START))).toISOString();
 }
 
 export function buildWorkout20260925(now: string): WorkoutSession {
   const built = buildImportedWorkout(SPEC);
-  const delta = Date.parse(START) - Date.parse(built.startedAt);
+  const from = { start: Date.parse(built.startedAt), span: Date.parse(built.completedAt!) - Date.parse(built.startedAt) };
 
   const blocks: PerformedBlock[] = built.blocks.map((block) => {
     if (block.kind !== "exercise") return block;
     const moved: PerformedExerciseBlock = {
       ...block,
-      ...(block.series ? { series: block.series.map((series) => ({ ...series, completedAt: shift(series.completedAt, delta)! })) } : {}),
-      ...(block.cardioSteps ? { cardioSteps: block.cardioSteps.map((step) => ({ ...step, completedAt: shift(step.completedAt, delta)! })) } : {}),
+      ...(block.series ? { series: block.series.map((series) => ({ ...series, completedAt: retime(series.completedAt, from)! })) } : {}),
+      ...(block.cardioSteps ? { cardioSteps: block.cardioSteps.map((step) => ({ ...step, completedAt: retime(step.completedAt, from)! })) } : {}),
     };
     /* Le tapis est l'échauffement ; les deux premières séries de presse aussi. */
     if (block.exerciseId === "tapis") moved.role = "warmup";
@@ -136,9 +140,10 @@ export function buildWorkout20260925(now: string): WorkoutSession {
   return {
     ...built,
     id: WORKOUT_20260925_ID,
-    startedAt: shift(built.startedAt, delta)!,
-    completedAt: shift(built.completedAt, delta)!,
-    lastActionAt: shift(built.lastActionAt, delta)!,
+    startedAt: START,
+    completedAt: END,
+    lastActionAt: END,
+    activeDurationSec: (Date.parse(END) - Date.parse(START)) / 1000,
     blocks: blocks.map((block, position) => ({ ...block, position })),
     createdAt: now,
     updatedAt: now,
