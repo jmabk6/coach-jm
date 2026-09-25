@@ -1,45 +1,59 @@
-import { useState } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpDown, BarChart3, ClipboardCheck, DatabaseBackup, Dumbbell, Settings, UserRound } from "lucide-react";
-import { BottomSheet } from "../../components/ui/BottomSheet";
-import {
-  importSeptember2026History,
-  type ImportHistoryResult,
-} from "../history/importHistory";
+import { ArrowUpDown, BarChart3, ClipboardCheck, Dumbbell, Info, Moon, Settings, UserRound } from "lucide-react";
 import "./PlusScreen.css";
 import { paths } from "../../app/paths";
 
-type ImportState =
-  | { status: "idle" }
-  | { status: "confirm" }
-  | { status: "running" }
-  | { status: "done"; result: ImportHistoryResult }
-  | { status: "error"; message: string };
+interface Entry {
+  to: string;
+  icon: ReactNode;
+  title: string;
+  meta: string;
+}
 
 /**
- * Écran Plus : réglages et outils secondaires. La bibliothèque d'exercices
- * s'ouvre d'ici (§18 : Plus = gestion) ; Séances est un onglet depuis le
- * lot B. « Statistiques » ouvre l'ancien écran Progression, provisoire
- * jusqu'au lot N (conception V2 § 2.1.3, D6).
+ * Écran Plus (M11, lot L) : profil, bibliothèque d'exercices, routines du
+ * soir, protocoles de tests ; puis réglages, sauvegarde, à propos.
+ * « Statistiques » ouvre l'ancien écran Progression, provisoire jusqu'au
+ * lot N (conception V2 § 2.1.3, D6). L'import des séances de septembre
+ * n'est plus proposé (D3).
  */
+const TOOLS: Entry[] = [
+  { to: paths.plusProfile(), icon: <UserRound size={22} strokeWidth={2} />, title: "Mon profil", meta: "Mes informations personnelles" },
+  { to: "/exercises", icon: <Dumbbell size={22} strokeWidth={2} />, title: "Exercices", meta: "Bibliothèque, fiches et création d'exercices" },
+  { to: paths.plusRoutines(), icon: <Moon size={22} strokeWidth={2} />, title: "Routines du soir", meta: "Tronc et souplesse, chaque soir" },
+  { to: paths.plusTests(), icon: <ClipboardCheck size={22} strokeWidth={2} />, title: "Protocoles de tests", meta: "Résultats, saisie d'un test passé, tests à replanifier" },
+  { to: paths.progression(), icon: <BarChart3 size={22} strokeWidth={2} />, title: "Statistiques", meta: "Ancien écran Progression, provisoire" },
+];
+
+const APP: Entry[] = [
+  { to: paths.plusSettings(), icon: <Settings size={22} strokeWidth={2} />, title: "Réglages", meta: "Thème, son du minuteur, repos de la séance libre" },
+  { to: paths.plusBackup(), icon: <ArrowUpDown size={22} strokeWidth={2} />, title: "Sauvegarde", meta: "Exporter, importer, effacer mes données" },
+  { to: paths.plusAbout(), icon: <Info size={22} strokeWidth={2} />, title: "À propos", meta: `Version ${__APP_VERSION__}` },
+];
+
+function EntryList({ entries, label }: { entries: Entry[]; label: string }) {
+  return (
+    <nav className="plus-list" aria-label={label}>
+      {entries.map((entry) => (
+        <Link key={entry.to} to={entry.to} className="plus-list__item">
+          <span className="plus-list__icon" aria-hidden="true">
+            {entry.icon}
+          </span>
+          <span className="plus-list__content">
+            <span className="plus-list__title">{entry.title}</span>
+            <span className="plus-list__meta">{entry.meta}</span>
+          </span>
+          <span className="plus-list__chevron" aria-hidden="true">
+            ›
+          </span>
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 export function PlusScreen() {
-  const [importState, setImportState] = useState<ImportState>({ status: "idle" });
-
-  async function runImport() {
-    setImportState({ status: "running" });
-
-    try {
-      const result = await importSeptember2026History();
-      setImportState({ status: "done", result });
-    } catch (error) {
-      setImportState({
-        status: "error",
-        message:
-          error instanceof Error ? error.message : "L'import a échoué",
-      });
-    }
-  }
-
   return (
     <section className="plus-screen">
       <header className="plus-screen__header">
@@ -47,173 +61,8 @@ export function PlusScreen() {
         <p>Outils et réglages de Coach JM.</p>
       </header>
 
-      <nav className="plus-list" aria-label="Outils">
-        <Link to={paths.plusProfile()} className="plus-list__item">
-          <span className="plus-list__icon" aria-hidden="true">
-            <UserRound size={22} strokeWidth={2} />
-          </span>
-          <span className="plus-list__content">
-            <span className="plus-list__title">Mon profil</span>
-            <span className="plus-list__meta">Mes informations personnelles</span>
-          </span>
-          <span className="plus-list__chevron" aria-hidden="true">
-            ›
-          </span>
-        </Link>
-
-        <Link to="/exercises" className="plus-list__item">
-          <span className="plus-list__icon" aria-hidden="true">
-            <Dumbbell size={22} strokeWidth={2} />
-          </span>
-          <span className="plus-list__content">
-            <span className="plus-list__title">Exercices</span>
-            <span className="plus-list__meta">
-              Bibliothèque, fiches et création d'exercices
-            </span>
-          </span>
-          <span className="plus-list__chevron" aria-hidden="true">
-            ›
-          </span>
-        </Link>
-
-        <Link to={paths.plusTests()} className="plus-list__item">
-          <span className="plus-list__icon" aria-hidden="true">
-            <ClipboardCheck size={22} strokeWidth={2} />
-          </span>
-          <span className="plus-list__content">
-            <span className="plus-list__title">Protocoles de tests</span>
-            <span className="plus-list__meta">
-              Résultats, et saisie d'un test passé
-            </span>
-          </span>
-          <span className="plus-list__chevron" aria-hidden="true">
-            ›
-          </span>
-        </Link>
-
-        <Link to={paths.plusSettings()} className="plus-list__item">
-          <span className="plus-list__icon" aria-hidden="true">
-            <Settings size={22} strokeWidth={2} />
-          </span>
-          <span className="plus-list__content">
-            <span className="plus-list__title">Réglages</span>
-            <span className="plus-list__meta">Thème, son du minuteur, repos de la séance libre</span>
-          </span>
-          <span className="plus-list__chevron" aria-hidden="true">
-            ›
-          </span>
-        </Link>
-
-        <Link to={paths.plusBackup()} className="plus-list__item">
-          <span className="plus-list__icon" aria-hidden="true">
-            <ArrowUpDown size={22} strokeWidth={2} />
-          </span>
-          <span className="plus-list__content">
-            <span className="plus-list__title">Sauvegarde</span>
-            <span className="plus-list__meta">Exporter, importer, effacer mes données</span>
-          </span>
-          <span className="plus-list__chevron" aria-hidden="true">
-            ›
-          </span>
-        </Link>
-
-        <Link to={paths.progression()} className="plus-list__item">
-          <span className="plus-list__icon" aria-hidden="true">
-            <BarChart3 size={22} strokeWidth={2} />
-          </span>
-          <span className="plus-list__content">
-            <span className="plus-list__title">Statistiques</span>
-            <span className="plus-list__meta">
-              Ancien écran Progression, provisoire
-            </span>
-          </span>
-          <span className="plus-list__chevron" aria-hidden="true">
-            ›
-          </span>
-        </Link>
-      </nav>
-
-      <h2 className="plus-screen__section">Données</h2>
-
-      <div className="plus-list">
-        <button
-          type="button"
-          className="plus-list__item plus-list__item--button"
-          disabled={importState.status === "running"}
-          onClick={() => setImportState({ status: "confirm" })}
-        >
-          <span className="plus-list__icon" aria-hidden="true">
-            <DatabaseBackup size={22} strokeWidth={2} />
-          </span>
-          <span className="plus-list__content">
-            <span className="plus-list__title">
-              Importer mes séances de septembre 2026
-            </span>
-            <span className="plus-list__meta">
-              10 séances des feuilles SEMAINE_1 à 3, du 1er au 16 septembre
-            </span>
-          </span>
-          <span className="plus-list__chevron" aria-hidden="true">
-            ›
-          </span>
-        </button>
-        <p className="plus-list__hint">Sauvegardez avant d'importer.</p>
-      </div>
-
-      {importState.status === "running" && (
-        <p className="plus-screen__status">Import en cours…</p>
-      )}
-
-      {importState.status === "done" && (
-        <p className="plus-screen__status plus-screen__status--ok">
-          {formatResult(importState.result)}
-        </p>
-      )}
-
-      {importState.status === "error" && (
-        <p className="plus-screen__status plus-screen__status--error">
-          {importState.message}
-        </p>
-      )}
-
-
-      <p className="plus-screen__version">
-        Version du{" "}
-        {new Date(__BUILD_TIME__).toLocaleString("fr-FR", {
-          dateStyle: "short",
-          timeStyle: "short",
-        })}
-      </p>
-
-      {importState.status === "confirm" && (
-        <BottomSheet
-          title="Importer mes séances de septembre 2026 ?"
-          message="10 séances réalisées (tapis, musculation, gainage, mobilité, marche) rejoignent l'historique et alimentent les fiches exercices. Sauvegardez vos données avant d'importer."
-          actions={[
-            {
-              label: "Importer",
-              hint: "Relancer l'import ne crée pas de doublon et ne supprime rien",
-              tone: "primary",
-              onSelect: () => void runImport(),
-            },
-          ]}
-          onDismiss={() => setImportState({ status: "idle" })}
-        />
-      )}
+      <EntryList entries={TOOLS} label="Outils" />
+      <EntryList entries={APP} label="Application" />
     </section>
   );
-}
-
-function formatResult(result: ImportHistoryResult): string {
-  const parts: string[] = [];
-
-  if (result.workoutsCreated > 0) {
-    parts.push(`${result.workoutsCreated} séance${result.workoutsCreated > 1 ? "s" : ""} ajoutée${result.workoutsCreated > 1 ? "s" : ""}`);
-  }
-
-  if (result.workoutsUpdated > 0) {
-    parts.push(`${result.workoutsUpdated} séance${result.workoutsUpdated > 1 ? "s" : ""} déjà présente${result.workoutsUpdated > 1 ? "s" : ""}, réécrite${result.workoutsUpdated > 1 ? "s" : ""} à l'identique`);
-  }
-
-  return `Import terminé : ${parts.join(", ")}.`;
 }

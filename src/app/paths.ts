@@ -31,6 +31,9 @@ export const ROUTES = {
   plusSettings: "/plus/reglages",
   /** Plus > Sauvegarde (M11, lot L.4). */
   plusBackup: "/plus/sauvegarde",
+  /** Plus > Routines du soir, Plus > À propos (M11, lot L.5). */
+  plusRoutines: "/plus/routines",
+  plusAbout: "/plus/a-propos",
 } as const;
 
 /**
@@ -98,6 +101,8 @@ export const paths = {
   plusProfile: () => ROUTES.plusProfile,
   plusSettings: () => ROUTES.plusSettings,
   plusBackup: () => ROUTES.plusBackup,
+  plusRoutines: () => ROUTES.plusRoutines,
+  plusAbout: () => ROUTES.plusAbout,
 } as const;
 
 /** Vrai si `pathname` est la route `base` ou l'une de ses sous-routes. */

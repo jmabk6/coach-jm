@@ -4,7 +4,8 @@ import { ClipboardCheck, Plus, Trash2 } from "lucide-react";
 import { getAllTestProtocols, getAllTestResults } from "../../db/repositories/testRepository";
 import { db } from "../../db/database";
 import type { PerformedTestBlock, TestProtocol, TestProtocolVersion, TestResult, WorkoutSession } from "../../domain";
-import { formatFullDate, formatLocalDate } from "../../domain/rules/programRules";
+import { formatFullDate, formatLocalDate, formatShortDay } from "../../domain/rules/programRules";
+import { listTestsToReschedule, type TestToReschedule } from "../../domain/rules/testPlanRules";
 import { formatTestNumber, measureUnit, primaryValue } from "../../domain/rules/testResultRules";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import type { WorkoutAction } from "../workout/engine/persistWorkout";
@@ -20,10 +21,20 @@ interface Loaded {
   protocols: TestProtocol[];
   versionById: Map<string, TestProtocolVersion>;
   results: TestResult[];
+  /** Lot L.5 : tests attachés à une séance manquée, pas encore replanifiés (D26). */
+  toReschedule: TestToReschedule[];
 }
 
 function today(): string {
   return formatLocalDate(new Date());
+}
+
+/** « Version 1 », « Version 2 · 1 version archivée » (lot L.5). */
+function versionLine(protocol: TestProtocol, versionById: ReadonlyMap<string, TestProtocolVersion>): string {
+  const all = [...versionById.values()].filter((version) => version.protocolId === protocol.id);
+  const active = versionById.get(protocol.activeVersionId);
+  const archived = all.filter((version) => version.id !== protocol.activeVersionId).length;
+  return `Version ${active?.number ?? "?"}${archived > 0 ? ` · ${archived} version${archived > 1 ? "s" : ""} archivée${archived > 1 ? "s" : ""}` : ""}`;
 }
 
 /**
@@ -45,12 +56,13 @@ export function TestProtocolsScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([getAllTestProtocols(), db.testProtocolVersions.toArray(), getAllTestResults()]).then(([protocols, versions, results]) => {
+    void Promise.all([getAllTestProtocols(), db.testProtocolVersions.toArray(), getAllTestResults(), db.plannedSessions.toArray()]).then(([protocols, versions, results, sessions]) => {
       if (cancelled) return;
       setData({
         protocols: [...protocols].sort((a, b) => ORDER.indexOf(a.key) - ORDER.indexOf(b.key)),
         versionById: new Map(versions.map((version) => [version.id, version])),
         results: [...results].sort((a, b) => b.date.localeCompare(a.date)),
+        toReschedule: listTestsToReschedule(sessions, results, today()).sort((a, b) => a.session.date.localeCompare(b.session.date)),
       });
     });
     return () => {
@@ -97,6 +109,24 @@ export function TestProtocolsScreen() {
       </header>
       {message && <p className="tests-screen__message">{message}</p>}
 
+      {data.toReschedule.length > 0 && (
+        <section className="tests-screen__reschedule" aria-label="Tests à replanifier">
+          <h2>Tests à replanifier</h2>
+          <ul>
+            {data.toReschedule.map(({ session, test }) => (
+              <li key={`${session.id}-${test.protocolId}`}>
+                <Link to={paths.planning({ date: session.date })}>
+                  <span>
+                    {data.protocols.find((protocol) => protocol.id === test.protocolId)?.name ?? "Test"} · prévu {formatShortDay(session.date)}
+                  </span>
+                  <span className="tests-screen__reschedule-action">Replanifier ›</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <ul className="tests-screen__list">
         {data.protocols.map((protocol) => {
           const results = data.results.filter((result) => result.protocolId === protocol.id);
@@ -111,6 +141,7 @@ export function TestProtocolsScreen() {
                   {protocol.status === "paused" && <span className="tests-screen__paused">En pause</span>}
                 </span>
               </div>
+              <p className="tests-screen__version">{versionLine(protocol, data.versionById)}</p>
               <p className="tests-screen__last">
                 {results[0]
                   ? `Dernier : ${formatFullDate(results[0].date)} · ${describe(results[0], data.versionById.get(results[0].versionId))}`

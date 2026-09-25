@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import Dexie from "dexie";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { db } from "../../db/database";
 import { buildImportedWorkouts } from "../history/importedWorkouts";
 import { PlusScreen } from "../plus/PlusScreen";
 import { buildEstablishedDataset } from "../progression/fixtures/establishedDataset";
@@ -189,29 +188,14 @@ describe("Sauvegarder mes données — écran", () => {
   });
 });
 
-describe("écran Plus — rappels", () => {
-  afterEach(async () => {
-    db.close();
-    await db.delete();
-  });
-
-  it("affiche en permanence « Sauvegardez avant d'importer » sous l'import, et le répète dans la confirmation", async () => {
-    await db.delete();
-    await db.open();
+describe("écran Plus", () => {
+  it("plus d'import des séances de septembre (D3) ; la sauvegarde s'ouvre sur son écran", () => {
     render(
       <MemoryRouter>
         <PlusScreen />
       </MemoryRouter>,
     );
-
-    const importButton = screen.getByRole("button", { name: /Importer mes séances de septembre 2026/ });
-    expect(importButton.nextElementSibling?.textContent).toBe("Sauvegardez avant d'importer.");
-    /* Lot L.4 : la sauvegarde a son écran, ouvert depuis Plus. */
+    expect(screen.queryByText(/septembre 2026/)).toBeNull();
     expect(screen.getByRole("link", { name: /Sauvegarde/ }).getAttribute("href")).toBe("/plus/sauvegarde");
-
-    fireEvent.click(importButton);
-    await waitFor(() => expect(screen.getByText(/Sauvegardez vos données avant d'importer\./)).toBeTruthy());
-    /* Rien n'a été importé : la confirmation attend. */
-    expect(await db.workouts.count()).toBe(0);
   });
 });
