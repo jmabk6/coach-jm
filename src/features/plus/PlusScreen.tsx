@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, ClipboardCheck, DatabaseBackup, Dumbbell } from "lucide-react";
+import { BarChart3, ClipboardCheck, DatabaseBackup, Dumbbell, UserRound } from "lucide-react";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { db } from "../../db/database";
 import { BackupSection } from "../backup/BackupSection";
@@ -51,6 +51,19 @@ export function PlusScreen() {
       </header>
 
       <nav className="plus-list" aria-label="Outils">
+        <Link to={paths.plusProfile()} className="plus-list__item">
+          <span className="plus-list__icon" aria-hidden="true">
+            <UserRound size={22} strokeWidth={2} />
+          </span>
+          <span className="plus-list__content">
+            <span className="plus-list__title">Mon profil</span>
+            <span className="plus-list__meta">Mes informations personnelles</span>
+          </span>
+          <span className="plus-list__chevron" aria-hidden="true">
+            ›
+          </span>
+        </Link>
+
         <Link to="/exercises" className="plus-list__item">
           <span className="plus-list__icon" aria-hidden="true">
             <Dumbbell size={22} strokeWidth={2} />
