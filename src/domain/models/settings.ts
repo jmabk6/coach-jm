@@ -54,6 +54,8 @@ export interface InstallMarkers {
   fixWorkout20260924?: string;
   /** Les blocs « sautés » de cette séance supprimés (seed 11). */
   removeSkipped20260924?: string;
+  /** La séance du 25/09/2026, transcrite de la feuille de l'utilisateur (seed 12). */
+  addWorkout20260925?: string;
 }
 
 export type SettingsRecord =

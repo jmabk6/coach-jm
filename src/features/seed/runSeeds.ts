@@ -3,6 +3,7 @@ import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
 import { seedProgramV1, seedRoutines } from "../program/seedProgramV1";
 import { seedCardioASingleBlock } from "../program/seedCardioASingleBlock";
 import { seedFixWorkout20260924, seedRemoveSkipped20260924 } from "../workout/seedFixWorkout20260924";
+import { seedWorkout20260925 } from "../history/seedWorkout20260925";
 import { seedProgramFrames } from "../strength/seedProgramFrames";
 import { seedRpeScale } from "../strength/seedRpeScale";
 import { seedGoals } from "../goals/seedGoals";
@@ -43,6 +44,8 @@ export const SEEDS: SeedStep[] = [
   { name: "fixWorkout20260924", run: () => seedFixWorkout20260924() },
   /* Seed 11 : « Retirer ce bloc » supprime ; les blocs sautés de cette séance aussi. */
   { name: "removeSkipped20260924", run: () => seedRemoveSkipped20260924() },
+  /* Seed 12 : la séance du 25/09, que l'utilisateur n'a pas pu saisir. */
+  { name: "addWorkout20260925", dependsOn: ["exerciseCatalog"], run: () => seedWorkout20260925() },
 ];
 
 export interface SeedReport {

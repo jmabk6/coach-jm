@@ -52,7 +52,7 @@ type BlockSpec =
   | { exercise: Id; steps: StepSpec[]; note?: string }
   | { exercise: Id; distanceKm: number; note?: string };
 
-interface WorkoutSpec {
+export interface WorkoutSpec {
   date: string;
   blocks: BlockSpec[];
 }

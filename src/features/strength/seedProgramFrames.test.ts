@@ -12,6 +12,7 @@ import { WRITE_METHODS, writePrototypeOf } from "../backup/testDatabase";
 import { PROGRAM_V1_TEMPLATES } from "../program/programV1";
 import { createWorkoutSnapshot } from "../workout/createWorkoutSnapshot";
 import { FIX_WORKOUT_ID, fixesOf20260924 } from "../workout/seedFixWorkout20260924";
+import { buildWorkout20260925, WORKOUT_20260925_ID } from "../history/seedWorkout20260925";
 import { updateFrameVersion } from "./frameActions";
 
 vi.stubEnv("BASE_URL", "/coach-jm/");
@@ -208,12 +209,17 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
     }
     const workouts = await db.workouts.orderBy("id").toArray();
     /* Seed 10 : seule la Cardio A du 24/09, dans l'état constaté, est corrigée. */
-    const expected = (file.stores.workouts as WorkoutSession[]).map(
-      (workout) =>
-        workout.id === FIX_WORKOUT_ID
-          ? fixesOf20260924(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "")
-          : workout,
-    );
+    /* Seed 12 : la séance du 25/09 ajoutée dans la base de l'utilisateur. */
+    const added = workouts.find((workout) => workout.id === WORKOUT_20260925_ID);
+    const expected = [
+      ...(file.stores.workouts as WorkoutSession[]).map(
+        (workout) =>
+          workout.id === FIX_WORKOUT_ID
+            ? fixesOf20260924(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "")
+            : workout,
+      ),
+      ...(added ? [buildWorkout20260925(added.createdAt)] : []),
+    ];
     expect(canonicalStringify(workouts)).toBe(
       canonicalStringify(expected.sort((a, b) => (a.id < b.id ? -1 : 1))),
     );
