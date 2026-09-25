@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { recordExport } from "./lastExport";
 import { HardDriveDownload } from "lucide-react";
 import type Dexie from "dexie";
 import {
@@ -73,6 +74,8 @@ export interface BackupSectionProps {
   /** Format 1 pour l'export de secours d'une base restée en v2 (écran d'échec). */
   formatVersion?: BackupFormatVersion;
   appVersion?: string;
+  /** Fichier parti (partage lancé, téléchargement, copie) : « Dernier export » (lot L.4). */
+  onExported?: (at: Date) => void;
 }
 
 export function BackupSection({
@@ -83,6 +86,7 @@ export function BackupSection({
   window: win = window,
   formatVersion,
   appVersion = __APP_VERSION__,
+  onExported,
 }: BackupSectionProps) {
   const [state, setState] = useState<BackupState>({ status: "idle" });
   const [showText, setShowText] = useState(false);
@@ -110,6 +114,12 @@ export function BackupSection({
 
   function deliver(message: DeliveryMessage) {
     setState((current) => (current.status === "ready" ? { ...current, delivery: message } : current));
+    /* Un partage refermé sans destination ou une copie ratée n'est pas un export. */
+    if (message !== DELIVERY_MESSAGES.cancelled && message !== DELIVERY_MESSAGES["copy-failed"]) {
+      const at = now();
+      recordExport(at);
+      onExported?.(at);
+    }
   }
 
   async function share() {

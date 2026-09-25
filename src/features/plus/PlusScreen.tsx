@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, ClipboardCheck, DatabaseBackup, Dumbbell, Settings, UserRound } from "lucide-react";
+import { ArrowUpDown, BarChart3, ClipboardCheck, DatabaseBackup, Dumbbell, Settings, UserRound } from "lucide-react";
 import { BottomSheet } from "../../components/ui/BottomSheet";
-import { db } from "../../db/database";
-import { BackupSection } from "../backup/BackupSection";
-import { DataResetSection } from "../backup/DataResetSection";
 import {
   importSeptember2026History,
   type ImportHistoryResult,
@@ -107,6 +104,19 @@ export function PlusScreen() {
           </span>
         </Link>
 
+        <Link to={paths.plusBackup()} className="plus-list__item">
+          <span className="plus-list__icon" aria-hidden="true">
+            <ArrowUpDown size={22} strokeWidth={2} />
+          </span>
+          <span className="plus-list__content">
+            <span className="plus-list__title">Sauvegarde</span>
+            <span className="plus-list__meta">Exporter, importer, effacer mes données</span>
+          </span>
+          <span className="plus-list__chevron" aria-hidden="true">
+            ›
+          </span>
+        </Link>
+
         <Link to={paths.progression()} className="plus-list__item">
           <span className="plus-list__icon" aria-hidden="true">
             <BarChart3 size={22} strokeWidth={2} />
@@ -166,11 +176,6 @@ export function PlusScreen() {
         </p>
       )}
 
-      <div className="plus-list">
-        <BackupSection database={db} />
-      </div>
-
-      <DataResetSection database={db} />
 
       <p className="plus-screen__version">
         Version du{" "}

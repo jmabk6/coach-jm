@@ -206,7 +206,8 @@ describe("écran Plus — rappels", () => {
 
     const importButton = screen.getByRole("button", { name: /Importer mes séances de septembre 2026/ });
     expect(importButton.nextElementSibling?.textContent).toBe("Sauvegardez avant d'importer.");
-    expect(screen.getByRole("button", { name: /Sauvegarder mes données/ })).toBeTruthy();
+    /* Lot L.4 : la sauvegarde a son écran, ouvert depuis Plus. */
+    expect(screen.getByRole("link", { name: /Sauvegarde/ }).getAttribute("href")).toBe("/plus/sauvegarde");
 
     fireEvent.click(importButton);
     await waitFor(() => expect(screen.getByText(/Sauvegardez vos données avant d'importer\./)).toBeTruthy());

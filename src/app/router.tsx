@@ -5,6 +5,7 @@ import { legacyRedirectRoutes } from "./legacyRedirects";
 import { GoalsScreen } from "../features/goals/GoalsScreen";
 import { ProfileScreen } from "../features/plus/ProfileScreen";
 import { SettingsScreen } from "../features/plus/SettingsScreen";
+import { BackupScreen } from "../features/plus/BackupScreen";
 import { GoalDetailScreen } from "../features/goals/GoalDetailScreen";
 import { ExercisesScreen } from "../features/exercises/ExercisesScreen";
 import { ExerciseDetailScreen } from "../features/exercises/ExerciseDetailScreen";
@@ -58,6 +59,7 @@ export const router = createHashRouter([
       { path: routeSegment(ROUTES.plusTests), element: <TestProtocolsScreen /> },
       { path: routeSegment(ROUTES.plusProfile), element: <ProfileScreen /> },
       { path: routeSegment(ROUTES.plusSettings), element: <SettingsScreen /> },
+      { path: routeSegment(ROUTES.plusBackup), element: <BackupScreen /> },
       { path: routeSegment(ROUTES.sessions), element: <SessionsScreen /> },
       { path: `${routeSegment(ROUTES.sessions)}/new`, element: <SessionCreateScreen /> },
       { path: `${routeSegment(ROUTES.sessions)}/:sessionId/edit`, element: <SessionEditScreen /> },

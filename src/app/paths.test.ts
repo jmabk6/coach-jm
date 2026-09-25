@@ -24,6 +24,7 @@ describe("chemins de l'application", () => {
       plusTests: "/plus/protocoles",
       plusProfile: "/plus/profil",
       plusSettings: "/plus/reglages",
+      plusBackup: "/plus/sauvegarde",
     });
     expect(paths.goals()).toBe("/objectifs");
     expect(paths.plusTests()).toBe("/plus/protocoles");
