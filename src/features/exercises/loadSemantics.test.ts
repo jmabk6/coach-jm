@@ -4,9 +4,6 @@ import { compareAssistedSeries, loadSemanticsOf } from "../../domain/rules/loadS
 import { frameTypesFor } from "../../domain/rules/strengthRules";
 import { calculateVolume } from "../../domain/rules/workoutRules";
 import { buildImportedWorkout, buildImportedWorkouts } from "../history/importedWorkouts";
-import { calculateWorkoutVolumeKg } from "../progression/overview";
-import { resolvePeriod } from "../progression/period";
-import { buildExerciseTrend, isExerciseTrend } from "../progression/trends";
 import { formatLoadSuggestion } from "../workout/suggestedLoad";
 import { pickBestSeries } from "../workout/workoutBlockDetail";
 import { summarizeWorkout } from "../workout/workoutRecap";
@@ -92,11 +89,6 @@ describe("séance réelle du 15/09/2026 — traction assistée 49 × 10, 49 × 6
     const withAssistance = summarizeWorkout(workout).volumeKg;
     expect(summarizeWorkout(workout, undefined, byId).volumeKg).toBe(withAssistance - assistedKg);
 
-    /* Vue générale (Renforcement). */
-    const legacyById = new Map(byId);
-    legacyById.set("traction-assistee", withoutSemantics(traction));
-    expect(calculateWorkoutVolumeKg(workout, byId)).toBe(calculateWorkoutVolumeKg(workout, legacyById) - assistedKg);
-
     /* Fiche exercice : aucun volume pour l'assistance. */
     const [entry] = buildExercisePerformanceHistory(traction, [workout]);
     expect(entry?.volumeKg).toBeUndefined();
@@ -128,7 +120,6 @@ describe("séance réelle du 15/09/2026 — traction assistée 49 × 10, 49 × 6
     calculateVolume(tractionBlock(workout).series ?? [], "assistance");
     pickBestSeries(tractionBlock(workout).series ?? [], "assistance");
     summarizeWorkout(workout, undefined, byId);
-    calculateWorkoutVolumeKg(workout, byId);
     buildExercisePerformanceSummary(buildExercisePerformanceHistory(traction, [workout]), "chargeMax", "assistance");
 
     expect(workout).toEqual(before);
@@ -178,36 +169,6 @@ describe("meilleure réalisation et progression depuis le début", () => {
     const best = pickBestSeries(series.series ?? []);
     expect([best?.load, best?.reps]).toEqual([{ kind: "total", kg: 35 }, 10]);
     expect(pickBestSeries(series.series ?? [], "external")).toBe(best);
-  });
-});
-
-describe("tendance sur la période", () => {
-  const period = resolvePeriod("12w", "2026-09-30");
-
-  it("assistance qui baisse = En progression ; qui monte = En baisse", () => {
-    const falling = [tractionOn("2026-09-01", [[56, 8]]), tractionOn("2026-09-10", [[52, 8]]), tractionOn("2026-09-20", [[46, 8]])];
-    const rising = [tractionOn("2026-09-01", [[46, 8]]), tractionOn("2026-09-10", [[52, 8]]), tractionOn("2026-09-20", [[56, 8]])];
-
-    const down = buildExerciseTrend(traction, falling, period, "chargeMax");
-    const up = buildExerciseTrend(traction, rising, period, "chargeMax");
-
-    expect(isExerciseTrend(down) && down.status).toBe("up");
-    expect(isExerciseTrend(down) && down.percent).toBeLessThan(0);
-    expect(isExerciseTrend(up) && up.status).toBe("down");
-  });
-
-  it("non-régression : le même exercice sans le champ garde le sens historique", () => {
-    const falling = [tractionOn("2026-09-01", [[56, 8]]), tractionOn("2026-09-10", [[52, 8]]), tractionOn("2026-09-20", [[46, 8]])];
-    const legacy = buildExerciseTrend(withoutSemantics(traction), falling, period, "chargeMax");
-
-    expect(isExerciseTrend(legacy) && legacy.status).toBe("down");
-  });
-
-  it("les répétitions gardent leur sens, même pour une assistance", () => {
-    const more = [tractionOn("2026-09-01", [[49, 6]]), tractionOn("2026-09-10", [[49, 8]]), tractionOn("2026-09-20", [[49, 10]])];
-    const trend = buildExerciseTrend(traction, more, period, "reps");
-
-    expect(isExerciseTrend(trend) && trend.status).toBe("up");
   });
 });
 

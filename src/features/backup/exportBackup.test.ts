@@ -6,7 +6,7 @@ import { DATABASE_VERSION, db, STORE_NAMES, VERSION_2_STORES } from "../../db/da
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
 import { seedExerciseCatalog } from "../exercises/seedExerciseCatalog";
 import { buildImportedWorkouts } from "../history/importedWorkouts";
-import { buildEstablishedDataset } from "../progression/fixtures/establishedDataset";
+import { buildEstablishedDataset } from "./fixtures/establishedDataset";
 import { canonicalStringify } from "./canonicalJson";
 import {
   BackupSerializationError,

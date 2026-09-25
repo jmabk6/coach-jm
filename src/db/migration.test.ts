@@ -16,9 +16,8 @@ import { exerciseCatalog } from "../features/exercises/exerciseCatalog";
 import { seedExerciseCatalog } from "../features/exercises/seedExerciseCatalog";
 import { importSeptember2026History } from "../features/history/importHistory";
 import { buildImportedWorkouts } from "../features/history/importedWorkouts";
-import { buildEstablishedDataset } from "../features/progression/fixtures/establishedDataset";
-import { isCountedWorkout, listCountedWorkouts } from "../features/progression/overview";
-import { resolvePeriod } from "../features/progression/period";
+import { buildEstablishedDataset } from "../features/backup/fixtures/establishedDataset";
+import { isCountedWorkout } from "../features/program/countedWorkouts";
 import { DATABASE_VERSION, VERSION_1_STORES, VERSION_2_STORES, db } from "./database";
 import { CoachJmDatabaseV2 } from "../features/backup/testDatabase";
 
@@ -199,8 +198,7 @@ describe("migration v1 → v2 — données existantes préservées", () => {
 
   it("scénario 4 : séances faites dans l'app — `kind` absent partout, traitement statistique antérieur conservé (séance vide hors statistiques)", async () => {
     const workouts = [...dataset.workouts, emptyCompletedWorkout];
-    const period = resolvePeriod("12w", dataset.today);
-    const countedBefore = listCountedWorkouts(workouts, period).map((w) => w.id).sort();
+    const countedBefore = workouts.filter(isCountedWorkout).map((w) => w.id).sort();
     expect(isCountedWorkout(emptyCompletedWorkout)).toBe(false);
 
     const name = await createLegacy(async (legacy) => {
@@ -213,7 +211,7 @@ describe("migration v1 → v2 — données existantes préservées", () => {
 
     expect(after).toHaveLength(workouts.length);
     expect(after.every((w) => w.kind === undefined)).toBe(true);
-    expect(listCountedWorkouts(after, period).map((w) => w.id).sort()).toEqual(countedBefore);
+    expect(after.filter(isCountedWorkout).map((w) => w.id).sort()).toEqual(countedBefore);
     expect(after.find((w) => w.id === emptyCompletedWorkout.id)).toEqual(emptyCompletedWorkout);
     expect(isCountedWorkout(after.find((w) => w.id === emptyCompletedWorkout.id)!)).toBe(false);
     expect(await current.plannedSessions.count()).toBe(dataset.plannedSessions.length);

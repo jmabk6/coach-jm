@@ -823,8 +823,7 @@
   white-space: nowrap;
 }
 
-.program-day-card__link,
-.program-summary__history {
+.program-day-card__link {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -835,8 +834,7 @@
   font-weight: 600;
 }
 
-.program-day-card__link span,
-.program-summary__history span {
+.program-day-card__link span {
   flex: 1;
 }
 
@@ -924,10 +922,6 @@
   margin: 8px 0;
   color: var(--color-text-soft);
   font-size: 0.8rem;
-}
-
-.program-summary__history {
-  margin-top: 10px;
 }
 
 /* Grille du Mois (lot F.3 bis, M3) : une pastille par séance, icône de

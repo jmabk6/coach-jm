@@ -11,8 +11,7 @@ import { ProgramScreen } from "./ProgramScreen";
 
 /**
  * Lot F.3 — Planning Mois (M3) : passé = séances réalisées, futur =
- * planifiées, aujourd'hui les deux ; fiche d'un jour ; résumé du mois ;
- * accès à l'historique.
+ * planifiées, aujourd'hui les deux ; fiche d'un jour ; résumé du mois.
  */
 
 const T = "2026-09-01T08:00:00.000Z";
@@ -108,7 +107,7 @@ describe("Planning Mois", () => {
     expect(recap.getAttribute("href")).toMatch(/^\/workouts\/w-sun\?returnTo=/);
   });
 
-  it("résumé du mois et accès à l'historique", async () => {
+  it("résumé du mois, sans lien vers l'ancien historique (lot N)", async () => {
     renderMonth("2026-09-24");
     const summary = await screen.findByRole("region", { name: "Résumé du mois" });
 
@@ -118,6 +117,6 @@ describe("Planning Mois", () => {
     expect(within(summary).getByText("jours sans séance").previousSibling?.textContent).toBe("21");
     const lines = within(summary).getByRole("list", { name: "Types de séances" });
     expect(lines.textContent).toBe("Musculation 2Cardio 0Routine 0");
-    expect(within(summary).getByRole("link", { name: /Voir l'historique/ }).getAttribute("href")).toBe("/historique");
+    expect(within(summary).queryByRole("link", { name: /Voir l'historique/ })).toBeNull();
   });
 });

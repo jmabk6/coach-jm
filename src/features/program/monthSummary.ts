@@ -1,7 +1,7 @@
 import { addDays, addMonths, parseISO } from "date-fns";
 import type { Exercise, Id, SessionTemplate, WorkoutSession } from "../../domain";
 import { formatLocalDate } from "../../domain/rules/programRules";
-import { isCountedWorkout } from "../progression/overview";
+import { isCountedWorkout } from "./countedWorkouts";
 import { categoryForWorkout } from "./freeWorkouts";
 
 /**

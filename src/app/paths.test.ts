@@ -18,8 +18,6 @@ describe("chemins de l'application", () => {
       workoutLive: "/seance-en-cours",
       quickExercise: "/seance-en-cours/exercice-rapide",
       workoutEnd: "/seance-en-cours/fin",
-      progression: "/progression",
-      history: "/historique",
       plus: "/plus",
       plusTests: "/plus/protocoles",
       plusProfile: "/plus/profil",
@@ -48,8 +46,6 @@ describe("chemins de l'application", () => {
     expect(paths.workoutLive()).toBe(ROUTES.workoutLive);
     expect(paths.quickExercise()).toBe(ROUTES.quickExercise);
     expect(paths.workoutEnd()).toBe(ROUTES.workoutEnd);
-    expect(paths.progression()).toBe(ROUTES.progression);
-    expect(paths.history()).toBe(ROUTES.history);
     expect(paths.plus()).toBe(ROUTES.plus);
   });
 
@@ -61,11 +57,7 @@ describe("chemins de l'application", () => {
     substitute.set("child", "child-1");
     expect(paths.workoutLive(substitute)).toBe(`${ROUTES.workoutLive}?substitute=block-1&child=child-1`);
 
-    const returnTo = `${ROUTES.progression}?tab=cardio&period=4w`;
-    expect(paths.cardioDetail("tapis", { period: "4w", returnTo })).toBe(
-      `${ROUTES.progression}/cardio/tapis?period=4w&returnTo=${encodeURIComponent(returnTo)}`,
-    );
-    expect(paths.progression({ tab: "cardio", period: undefined })).toBe(`${ROUTES.progression}?tab=cardio`);
+    expect(paths.planning({ view: "mois" })).toBe(`${ROUTES.planning}?view=mois`);
   });
 
   it("segments de route et appartenance", () => {

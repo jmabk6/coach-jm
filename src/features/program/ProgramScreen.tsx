@@ -6,7 +6,6 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  History,
   Plus,
 } from "lucide-react";
 import { addDays, addMonths, parseISO } from "date-fns";
@@ -916,7 +915,7 @@ function DayCard({ entry, data }: { entry: ProgramEntry; data: ProgramData }) {
   );
 }
 
-/** Résumé du mois (§ 5.8, N8) et accès à l'historique. */
+/** Résumé du mois (§ 5.8, N8). Les séances réalisées se lisent dans la grille (lot N). */
 function MonthSummaryCard({ data, monthStart, today }: { data: ProgramData; monthStart: string; today: string }) {
   const summary = summarizeMonth(data.completedWorkouts, monthStart, today, data.templateById, data.exerciseById);
   const plural = (count: number) => (count > 1 ? "s" : "");
@@ -956,11 +955,6 @@ function MonthSummaryCard({ data, monthStart, today }: { data: ProgramData; mont
           Dont {summary.mobility} séance{plural(summary.mobility)} de mobilité, comptée{plural(summary.mobility)} au total seulement.
         </p>
       )}
-      <Link to={paths.history()} className="program-summary__history">
-        <History size={18} strokeWidth={2} aria-hidden="true" />
-        <span>Voir l'historique</span>
-        <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
-      </Link>
     </section>
   );
 }

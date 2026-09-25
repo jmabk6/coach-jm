@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { verifyBackup as scriptVerify } from "../../../scripts/verify-backup.mjs";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
 import { buildImportedWorkouts } from "../history/importedWorkouts";
-import { buildEstablishedDataset } from "../progression/fixtures/establishedDataset";
+import { buildEstablishedDataset } from "./fixtures/establishedDataset";
 import { readBackup, readStores, serializeBackup, type BackupContext, type BackupEnvelope } from "./exportBackup";
 import { BackupValidationError, parseBackup, restoreBackup, verifyBackupIntegrity } from "./restoreBackup";
 import { canonicalStringify } from "./canonicalJson";

@@ -7,7 +7,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildImportedWorkouts } from "../history/importedWorkouts";
 import { PlusScreen } from "../plus/PlusScreen";
-import { buildEstablishedDataset } from "../progression/fixtures/establishedDataset";
+import { buildEstablishedDataset } from "./fixtures/establishedDataset";
 import { BackupSection } from "./BackupSection";
 import { readStores } from "./exportBackup";
 import { canonicalStringify } from "./canonicalJson";

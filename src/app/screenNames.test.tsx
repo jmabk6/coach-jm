@@ -9,8 +9,8 @@ import { ProgramScreen } from "../features/program/ProgramScreen";
 
 /**
  * Lot B.4 : noms d'écran (Accueil, Planning), écran Objectifs provisoire
- * sans aucune donnée, Plus sans « Séances » (devenu un onglet) et avec
- * « Statistiques » (ancien Progression, provisoire).
+ * sans aucune donnée, Plus sans « Séances » (devenu un onglet) ; sans
+ * « Statistiques » depuis le lot N (ancien Progression retiré, D6).
  */
 function inRouter(node: React.ReactNode, entry = "/") {
   return render(<MemoryRouter initialEntries={[entry]}>{node}</MemoryRouter>);
@@ -33,10 +33,9 @@ describe("noms d'écran et écrans provisoires (lot B.4)", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Planning" })).toBeTruthy();
   });
 
-  it("Plus : Statistiques mène à l'ancien Progression, Séances n'y est plus", () => {
+  it("Plus : ni Statistiques (lot N), ni Séances", () => {
     inRouter(<PlusScreen />, "/plus");
-    const stats = screen.getByText("Statistiques").closest("a");
-    expect(stats?.getAttribute("href")).toBe("/progression");
+    expect(screen.queryByText("Statistiques")).toBeNull();
     expect(screen.queryByText("Séances")).toBeNull();
     expect(screen.getByText("Exercices").closest("a")?.getAttribute("href")).toBe("/exercises");
   });

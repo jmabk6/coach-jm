@@ -56,6 +56,11 @@ describe("redirections permanentes des anciennes adresses", () => {
     ["/seance?add=tirage-vertical", "/seance-en-cours?add=tirage-vertical"],
     ["/seance?substitute=b&child=c", "/seance-en-cours?substitute=b&child=c"],
     ["/seance/exercice-rapide", "/seance-en-cours/exercice-rapide"],
+    /* Lot N (D6) : les anciens écrans Progression et Historique mènent à Planning > Mois. */
+    ["/progression", "/planning?view=mois"],
+    ["/progression?tab=cardio&period=4w", "/planning?view=mois"],
+    ["/progression/cardio/tapis?period=4w", "/planning?view=mois"],
+    ["/historique", "/planning?view=mois"],
   ])("%s → %s", async (from, to) => {
     open([from]);
     expect((await screen.findByTestId("where")).textContent).toBe(to);

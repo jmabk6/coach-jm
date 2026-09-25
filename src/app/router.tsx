@@ -30,9 +30,6 @@ import { WorkoutBlockDetailScreen } from "../features/workout/WorkoutBlockDetail
 import { WorkoutScreen } from "../features/workout/WorkoutScreen";
 import { QuickExerciseScreen } from "../features/workout/QuickExerciseScreen";
 import { TodayScreen } from "../features/today/TodayScreen";
-import { ProgressionScreen } from "../features/progression/ProgressionScreen";
-import { HistoryScreen } from "../features/progression/HistoryScreen";
-import { CardioDetailScreen } from "../features/progression/CardioDetailScreen";
 import { SessionPreviewScreen } from "../features/today/SessionPreviewScreen";
 
 export const router = createHashRouter([
@@ -52,9 +49,6 @@ export const router = createHashRouter([
       { path: routeSegment(ROUTES.weeklyProgram), element: <WeeklyProgramScreen /> },
       { path: "workouts/:workoutId", element: <WorkoutRecapScreen /> },
       { path: "workouts/:workoutId/blocks/:blockId", element: <WorkoutBlockDetailScreen /> },
-      { path: routeSegment(ROUTES.progression), element: <ProgressionScreen /> },
-      { path: routeSegment(ROUTES.history), element: <HistoryScreen /> },
-      { path: `${routeSegment(ROUTES.progression)}/cardio/:exerciseId`, element: <CardioDetailScreen /> },
       { path: routeSegment(ROUTES.goals), element: <GoalsScreen /> },
       { path: routeSegment(ROUTES.goal), element: <GoalDetailScreen /> },
       { path: routeSegment(ROUTES.plus), element: <PlusScreen /> },

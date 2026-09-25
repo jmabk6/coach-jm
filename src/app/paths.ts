@@ -20,8 +20,6 @@ export const ROUTES = {
   quickExercise: "/seance-en-cours/exercice-rapide",
   /** Fin de séance (M10) : séance terminée, en attente d'enregistrement (lot E). */
   workoutEnd: "/seance-en-cours/fin",
-  progression: "/progression",
-  history: "/historique",
   plus: "/plus",
   /** Plus > Protocoles de tests (M11, lot G.6). */
   plusTests: "/plus/protocoles",
@@ -46,6 +44,16 @@ export const LEGACY_PREFIXES: ReadonlyArray<{ from: string; to: string }> = [
   { from: "/programme", to: ROUTES.planning },
   { from: "/sessions", to: ROUTES.sessions },
   { from: "/seance", to: ROUTES.workoutLive },
+];
+
+/**
+ * Anciens écrans retirés au lot N (D6) : l'adresse et toutes ses
+ * sous-adresses mènent à une destination fixe, Planning > Mois, où se
+ * lisent désormais le résumé du mois et les séances réalisées.
+ */
+export const RETIRED_SCREENS: ReadonlyArray<{ from: string; to: string }> = [
+  { from: "/progression", to: "/planning?view=mois" },
+  { from: "/historique", to: "/planning?view=mois" },
 ];
 
 type Query = URLSearchParams | Record<string, string | undefined>;
@@ -91,10 +99,6 @@ export const paths = {
   workoutLive: (query?: Query) => withQuery(ROUTES.workoutLive, query),
   quickExercise: () => ROUTES.quickExercise,
   workoutEnd: () => ROUTES.workoutEnd,
-
-  progression: (query?: Query) => withQuery(ROUTES.progression, query),
-  cardioDetail: (exerciseId: string, query?: Query) => withQuery(`${ROUTES.progression}/cardio/${exerciseId}`, query),
-  history: () => ROUTES.history,
 
   plus: () => ROUTES.plus,
   plusTests: () => ROUTES.plusTests,

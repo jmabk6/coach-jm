@@ -25,9 +25,8 @@ export const TABS: readonly Tab[] = [
 ];
 
 /**
- * L'onglet allumé pour une adresse. La bibliothèque d'exercices et
- * l'ancien écran Progression (provisoire, Plus > Statistiques) relèvent de
- * Plus ; un récapitulatif de séance n'allume aucun onglet, puisqu'on y
+ * L'onglet allumé pour une adresse. La bibliothèque d'exercices relève
+ * de Plus ; un récapitulatif de séance n'allume aucun onglet, puisqu'on y
  * arrive de partout.
  */
 export function activeTabFor(pathname: string): TabKey | undefined {
@@ -35,14 +34,7 @@ export function activeTabFor(pathname: string): TabKey | undefined {
   if (isUnder(pathname, ROUTES.planning)) return "planning";
   if (isUnder(pathname, ROUTES.goals)) return "goals";
   if (isUnder(pathname, ROUTES.sessions)) return "sessions";
-  if (
-    isUnder(pathname, ROUTES.plus) ||
-    isUnder(pathname, "/exercises") ||
-    isUnder(pathname, ROUTES.progression) ||
-    isUnder(pathname, ROUTES.history)
-  ) {
-    return "plus";
-  }
+  if (isUnder(pathname, ROUTES.plus) || isUnder(pathname, "/exercises")) return "plus";
 
   return undefined;
 }

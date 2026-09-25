@@ -23,9 +23,6 @@ describe("barre d'onglets (lot B)", () => {
     ["/plus", "plus"],
     ["/exercises", "plus"],
     ["/exercises/tirage-vertical", "plus"],
-    ["/progression", "plus"],
-    ["/progression/cardio/tapis", "plus"],
-    ["/historique", "plus"],
     ["/workouts/w1", undefined],
     ["/workouts/w1/blocks/b1", undefined],
   ])("%s allume %s", (pathname, expected) => {

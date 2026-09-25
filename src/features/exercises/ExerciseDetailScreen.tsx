@@ -34,7 +34,6 @@ import {
 import { FrameSection } from "../strength/FrameSection";
 import { ExerciseDemonstration } from "./ExerciseDemonstration";
 import "./ExerciseDetailScreen.css";
-import { ROUTES } from "../../app/paths";
 
 type LoadState =
   | { status: "loading" }
@@ -118,8 +117,6 @@ export function ExerciseDetailScreen() {
   const exercisesBackTarget =
     cameFrom ??
     (selectionMode ? `/exercises?${searchParams.toString()}` : "/exercises");
-  /* Le libellé suit la provenance : depuis Progression, on y retourne. */
-  const backLabel = cameFrom?.startsWith(ROUTES.progression) ? "← Progression" : "← Exercices";
 
   const [state, setState] = useState<LoadState>({
     status: "loading",
@@ -269,7 +266,7 @@ export function ExerciseDetailScreen() {
           className="exercise-detail__back"
           onClick={() => navigate(exercisesBackTarget)}
         >
-          {backLabel}
+          ← Exercices
         </button>
 
         <h1>Erreur</h1>
@@ -286,7 +283,7 @@ export function ExerciseDetailScreen() {
           className="exercise-detail__back"
           onClick={() => navigate(exercisesBackTarget)}
         >
-          {backLabel}
+          ← Exercices
         </button>
 
         <h1>Exercice introuvable</h1>
@@ -347,7 +344,7 @@ export function ExerciseDetailScreen() {
         className="exercise-detail__back"
         onClick={() => navigate(exercisesBackTarget)}
       >
-        {backLabel}
+        ← Exercices
       </button>
 
       <header className="exercise-detail__header">

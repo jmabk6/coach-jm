@@ -43,10 +43,10 @@ afterEach(async () => {
 });
 
 describe("Plus", () => {
-  it("profil, exercices, routines, protocoles, statistiques ; puis réglages, sauvegarde, à propos", () => {
+  it("profil, exercices, routines, protocoles ; puis réglages, sauvegarde, à propos", () => {
     inRouter(<PlusScreen />);
     const titles = Array.from(document.querySelectorAll(".plus-list__title")).map((node) => node.textContent);
-    expect(titles).toEqual(["Mon profil", "Exercices", "Routines du soir", "Protocoles de tests", "Statistiques", "Réglages", "Sauvegarde", "À propos"]);
+    expect(titles).toEqual(["Mon profil", "Exercices", "Routines du soir", "Protocoles de tests", "Réglages", "Sauvegarde", "À propos"]);
     expect(screen.queryByText(/Vibration/)).toBeNull();
   });
 

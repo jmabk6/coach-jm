@@ -6,13 +6,25 @@ import type {
   SessionTemplate,
   WorkoutSession,
 } from "../../../domain";
-import { shiftDate } from "../period";
-import type { ProgressionSources } from "../overview";
+import { addDays, parseISO } from "date-fns";
+import { formatLocalDate } from "../../../domain/rules/programRules";
+
+function shiftDate(date: string, days: number): string {
+  return formatLocalDate(addDays(parseISO(date), days));
+}
+
+/** Les quatre tables que le jeu remplit. */
+export interface EstablishedSources {
+  workouts: WorkoutSession[];
+  plannedSessions: PlannedSession[];
+  templates: SessionTemplate[];
+  exercises: Exercise[];
+}
 
 /**
  * Jeu de référence « état établi » (§16) : 26 semaines **fictives** mais
- * cohérentes, communes aux trois onglets de Progression, pour valider les
- * agrégats avec une période précédente réellement couverte. Identifiants
+ * cohérentes, écrit pour l'ancien écran Progression (retiré au lot N) et
+ * gardé pour les tests de sauvegarde et de migration. Identifiants
  * préfixés `fx-` : jamais mêlés aux données réelles, jamais injectés
  * durablement dans une base — les tests le construisent en mémoire, une
  * vérification dans le navigateur le retire derrière elle.
@@ -27,7 +39,7 @@ import type { ProgressionSources } from "../overview";
 export const ESTABLISHED_WEEKS = 26;
 const T0 = "2026-01-01T00:00:00.000Z";
 
-export interface EstablishedDataset extends ProgressionSources {
+export interface EstablishedDataset extends EstablishedSources {
   today: string;
   /** Début de la collecte du jeu fictif : le lundi de sa première semaine. */
   coverageStart: string;
