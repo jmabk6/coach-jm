@@ -10,9 +10,9 @@
   grid-template-rows: auto auto;
   gap: 8px 12px;
   padding: 12px;
-  border: 1px solid var(--color-border, #e4e7ec);
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface, white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 
 .group-edit__icon {
@@ -22,8 +22,8 @@
   width: 64px;
   height: 64px;
   border-radius: 12px;
-  background: #efe9ff;
-  color: #6b3fd6;
+  background: var(--color-purple-soft);
+  color: var(--color-purple);
 }
 
 .group-edit__field {
@@ -34,7 +34,7 @@
 .group-edit__field > span {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .group-edit__field small {
@@ -45,9 +45,9 @@
   width: 100%;
   min-height: 38px;
   padding: 0 10px;
-  border: 1px solid var(--color-border, #d0d5dd);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: var(--color-surface, white);
+  background: var(--color-surface);
   font-weight: 600;
 }
 
@@ -65,24 +65,24 @@
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
   align-items: stretch;
-  border: 1px solid var(--color-border, #e4e7ec);
-  border-radius: var(--radius-sm, 10px);
-  background: var(--color-surface, white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
 }
 
 .group-edit__child--dragging {
   z-index: 2;
-  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.18);
+  box-shadow: 0 8px 24px var(--color-shadow-strong);
 }
 
 .group-edit__handle {
   display: grid;
   place-items: center;
   border: 0;
-  border-right: 1px solid var(--color-border, #e4e7ec);
-  border-radius: var(--radius-sm, 10px) 0 0 var(--radius-sm, 10px);
-  background: var(--color-surface-soft, #f2f4f7);
-  color: var(--color-text-soft, #666);
+  border-right: 1px solid var(--color-border);
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  background: var(--color-surface-soft);
+  color: var(--color-text-soft);
   cursor: grab;
   touch-action: none;
 }
@@ -100,7 +100,7 @@
 }
 
 .group-edit__chevron {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .group-edit__add {
@@ -111,9 +111,9 @@
   min-height: 46px;
   padding: 0 14px;
   border: 0;
-  border-radius: var(--radius-sm, 10px);
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-weight: 600;
   text-align: left;
 }

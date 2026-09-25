@@ -1,13 +1,13 @@
 .plus-list__icon--danger {
-  background: #fdeaea;
-  color: var(--color-danger, #c2413b);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .data-reset__review {
   margin: 14px 0 0;
   padding: 14px;
-  border: 1px solid var(--color-border, #e5e5e5);
-  border-radius: var(--radius-md, 14px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 .data-reset__lead {
@@ -24,8 +24,8 @@
 .data-reset__button {
   flex: 1;
   min-height: 44px;
-  border: 1px solid var(--color-border, #e5e5e5);
-  border-radius: var(--radius-sm, 10px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -33,7 +33,7 @@
 }
 
 .data-reset__button--danger {
-  border-color: var(--color-danger, #c2413b);
-  background: var(--color-danger, #c2413b);
-  color: #fff;
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: var(--color-on-accent);
 }

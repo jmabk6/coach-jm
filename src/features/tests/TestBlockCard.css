@@ -2,8 +2,8 @@
 .test-card__icon {
   display: grid;
   place-items: center;
-  background: #efe9ff;
-  color: #6b3fd6;
+  background: var(--color-purple-soft);
+  color: var(--color-purple);
 }
 
 .test-card__content {
@@ -22,8 +22,8 @@
 
 .test-card__instructions {
   padding: 10px 12px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface-soft, #f2f4f7);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
   font-size: 0.9rem;
 }
 
@@ -51,23 +51,23 @@
 .test-card__trials th,
 .test-card__trials td {
   padding: 6px 4px;
-  border-bottom: 1px solid var(--color-border, #e4e7ec);
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
 }
 
 .test-card__trials th {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.75rem;
   font-weight: 600;
 }
 
 .test-card__ok {
-  color: #1f8a3b;
+  color: var(--color-success);
   font-weight: 600;
 }
 
 .test-card__ko {
-  color: var(--color-danger, #c2413b);
+  color: var(--color-danger);
   font-weight: 600;
 }
 
@@ -79,21 +79,21 @@
   border: 0;
   border-radius: 999px;
   background: none;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .test-card__rest {
   margin: 0;
   padding: 10px 12px;
-  border-radius: var(--radius-md, 14px);
-  background: #fff4e5;
-  color: #8a4b08;
+  border-radius: var(--radius-md);
+  background: var(--color-warning-soft);
+  color: var(--color-warning-strong);
   font-weight: 600;
 }
 
 .test-card__rest--done {
-  background: #e6f6ea;
-  color: #1f8a3b;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .test-card__trial-form {
@@ -114,19 +114,19 @@
 .test-card__unit button {
   min-height: 48px;
   border: 0;
-  border-radius: var(--radius-md, 14px);
+  border-radius: var(--radius-md);
   font: inherit;
   font-weight: 700;
 }
 
 .test-card__success {
-  background: #1f8a3b;
-  color: white;
+  background: var(--color-success);
+  color: var(--color-on-accent);
 }
 
 .test-card__failure {
-  background: var(--color-danger, #c2413b);
-  color: white;
+  background: var(--color-danger);
+  color: var(--color-on-accent);
 }
 
 .test-card__success:disabled,
@@ -137,14 +137,14 @@
 
 .test-card__done {
   margin: 0;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.9rem;
 }
 
 .test-card__unit {
   padding: 10px 12px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-accent-soft, #eaf1ff);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
 }
 
 .test-card__unit p {
@@ -159,12 +159,12 @@
 }
 
 .test-card__unit button {
-  background: var(--color-accent, #2f6fed);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .test-card__error {
-  color: var(--color-danger, #c2413b);
+  color: var(--color-danger);
 }
 
 .test-card__fields {
@@ -187,7 +187,7 @@
 }
 
 .test-card__field small {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .test-card__field--sides {
@@ -214,7 +214,7 @@
   width: 100%;
   min-height: 44px;
   padding: 8px 10px;
-  border: 1px solid var(--color-border, #e4e7ec);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   font: inherit;
   font-size: 16px;
@@ -222,19 +222,19 @@
 
 .test-card__optional summary {
   margin-bottom: 8px;
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
   font-weight: 600;
   cursor: pointer;
 }
 
 .test-card__result {
   padding: 12px;
-  border-radius: var(--radius-md, 14px);
-  background: #e6f6ea;
+  border-radius: var(--radius-md);
+  background: var(--color-success-soft);
 }
 
 .test-card__result--incomplete {
-  background: var(--color-surface-soft, #f2f4f7);
+  background: var(--color-surface-soft);
 }
 
 .test-card__result h3 {
@@ -267,7 +267,7 @@
 .test-card__messages {
   margin: 8px 0 0;
   padding-left: 18px;
-  color: #8a4b08;
+  color: var(--color-warning-strong);
   font-size: 0.85rem;
 }
 
@@ -281,7 +281,7 @@
   box-sizing: border-box;
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid var(--color-border, #e4e7ec);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   font: inherit;
   font-size: 16px;
@@ -298,13 +298,13 @@
 }
 
 .test-card__finish {
-  background: var(--color-accent, #2f6fed);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .test-card__skip {
   background: none;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-weight: 600;
 }
 
@@ -316,6 +316,6 @@
 }
 
 .test-card__lowest {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-weight: 400;
 }

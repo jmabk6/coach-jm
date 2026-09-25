@@ -527,6 +527,12 @@ export function ExerciseDetailScreen() {
                     />
 
                     <Tooltip
+                      /* Thème (lot L.3) : la bulle suit les jetons, pas le blanc par défaut de Recharts. */
+                      contentStyle={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-border)",
+                        color: "var(--color-text)",
+                      }}
                       formatter={(value) => [
                         formatMetricValue(
                           Number(value),

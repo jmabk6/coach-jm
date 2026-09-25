@@ -1,17 +1,69 @@
+/*
+ * Jetons de l'application (lot L.3) : **seul** endroit où une couleur est
+ * écrite. Les écrans n'utilisent que ces variables ; le thème sombre les
+ * redéfinit sous `:root[data-theme="dark"]` (posé par ThemeController,
+ * « Auto » suit le système).
+ */
 :root {
+  color-scheme: light;
+
   --color-bg: #f7f8fa;
   --color-surface: #ffffff;
   --color-surface-soft: #f2f4f7;
+  --color-surface-muted: #eef2f6;
+  --color-glass: rgba(255, 255, 255, 0.9);
+  --color-hover: rgba(0, 0, 0, 0.05);
 
   --color-text: #1f2937;
   --color-text-soft: #667085;
+  --color-text-muted: #98a2b3;
   --color-border: #e4e7ec;
+  --color-border-strong: #d0d5dd;
 
   --color-accent: #2f6fed;
+  --color-accent-strong: #175cd3;
   --color-accent-soft: #eaf1ff;
+  --color-on-accent: #ffffff;
+  --color-on-accent-soft: rgba(255, 255, 255, 0.18);
 
-  --color-warning-soft: #fff6e5;
+  --color-success: #1f8a3b;
+  --color-success-strong: #067647;
+  --color-success-soft: #e6f6ea;
+
+  --color-warning: #b45309;
+  --color-warning-strong: #8a4b08;
+  --color-warning-soft: #fff4e5;
+  --color-warning-border: #fedf89;
+
   --color-danger: #c2413b;
+  --color-danger-strong: #b42318;
+  --color-danger-soft: #fdeaea;
+
+  --color-purple: #6b3fd6;
+  --color-purple-strong: #4b2bb0;
+  --color-purple-soft: #efe9ff;
+  --color-purple-border: #d9ccff;
+
+  --color-rose: #c01048;
+  --color-rose-soft: #fff1f3;
+  --color-orange: #c4320a;
+  --color-orange-soft: #fff6ed;
+  --color-sky: #026aa2;
+  --color-sky-soft: #f0f9ff;
+
+  /* Catégories de séance (Planning, Séances). */
+  --color-cat-cardio: #2a6f97;
+  --color-cat-cardio-soft: #e8f1f8;
+  --color-cat-mobility: #5b3fa8;
+  --color-cat-mobility-soft: #efeafb;
+  --color-cat-routine: #d9740e;
+  --color-cat-routine-soft: #fff0e0;
+
+  --color-overlay: rgba(0, 0, 0, 0.28);
+  --color-overlay-soft: rgba(0, 0, 0, 0.12);
+  --color-shadow: rgba(16, 24, 40, 0.06);
+  --color-shadow-raised: rgba(16, 24, 40, 0.08);
+  --color-shadow-strong: rgba(16, 24, 40, 0.18);
 
   --radius-sm: 10px;
   --radius-md: 14px;
@@ -26,6 +78,8 @@
   --space-8: 32px;
 
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-raised: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --shadow-pop: 0 8px 24px rgba(16, 24, 40, 0.18);
 
   --tabbar-height: 72px;
   --content-max-width: 520px;
@@ -38,4 +92,69 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #0f1115;
+  --color-surface: #181b21;
+  --color-surface-soft: #22262e;
+  --color-surface-muted: #262b34;
+  --color-glass: rgba(24, 27, 33, 0.9);
+  --color-hover: rgba(255, 255, 255, 0.06);
+
+  --color-text: #e6e8eb;
+  --color-text-soft: #a0a8b6;
+  --color-text-muted: #6f7886;
+  --color-border: #2c313a;
+  --color-border-strong: #3a404b;
+
+  --color-accent: #5b8cff;
+  --color-accent-strong: #9db9ff;
+  --color-accent-soft: #1c2a4a;
+  --color-on-accent: #ffffff;
+  --color-on-accent-soft: rgba(255, 255, 255, 0.18);
+
+  --color-success: #4cc26b;
+  --color-success-strong: #6fd48c;
+  --color-success-soft: #16301f;
+
+  --color-warning: #f0a045;
+  --color-warning-strong: #f5b86a;
+  --color-warning-soft: #3a2a14;
+  --color-warning-border: #6b4d1e;
+
+  --color-danger: #ff6b64;
+  --color-danger-strong: #ff8a84;
+  --color-danger-soft: #3d1c1c;
+
+  --color-purple: #a48bff;
+  --color-purple-strong: #c2b2ff;
+  --color-purple-soft: #2a2145;
+  --color-purple-border: #4a3a80;
+
+  --color-rose: #ff6b9a;
+  --color-rose-soft: #3d1824;
+  --color-orange: #ff8a5c;
+  --color-orange-soft: #3b2416;
+  --color-sky: #5cc2f2;
+  --color-sky-soft: #13303d;
+
+  --color-cat-cardio: #6fb3de;
+  --color-cat-cardio-soft: #16303f;
+  --color-cat-mobility: #a48bff;
+  --color-cat-mobility-soft: #2a2145;
+  --color-cat-routine: #f0a045;
+  --color-cat-routine-soft: #3a2a14;
+
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-overlay-soft: rgba(0, 0, 0, 0.4);
+  --color-shadow: rgba(0, 0, 0, 0.4);
+  --color-shadow-raised: rgba(0, 0, 0, 0.45);
+  --color-shadow-strong: rgba(0, 0, 0, 0.6);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.6);
 }

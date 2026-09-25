@@ -5,9 +5,9 @@
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-size: 0.85rem;
   line-height: 1.4;
   text-decoration: none;
@@ -15,9 +15,9 @@
 
 .test-week-banner span {
   flex: 1;
-  color: var(--color-text-soft, #475467);
+  color: var(--color-text-soft);
 }
 
 .test-week-banner strong {
-  color: var(--color-text, #101828);
+  color: var(--color-text);
 }

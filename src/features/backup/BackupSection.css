@@ -1,9 +1,9 @@
 .backup-card {
   margin: 12px 0 4px;
   padding: 14px;
-  border: 1px solid var(--color-border, #e5e5e5);
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface, white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 
 .backup-card__title {
@@ -13,7 +13,7 @@
 
 .backup-card__meta {
   margin: 4px 0 10px;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.85rem;
   overflow-wrap: anywhere;
 }
@@ -30,13 +30,13 @@
   justify-content: space-between;
   gap: 8px;
   padding: 6px 8px;
-  border-radius: var(--radius-sm, 10px);
-  background: var(--color-surface-soft, #f2f4f7);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-soft);
   font-size: 0.9rem;
 }
 
 .backup-card__counts dt {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .backup-card__counts dd {
@@ -55,8 +55,8 @@
 .backup-card__hash code {
   padding: 2px 8px;
   border-radius: 6px;
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -64,7 +64,7 @@
 
 .backup-card__hash small {
   flex-basis: 100%;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .backup-card__warnings {
@@ -73,14 +73,14 @@
 }
 
 .backup-card__warnings summary {
-  color: #b45309;
+  color: var(--color-warning);
   font-weight: 600;
 }
 
 .backup-card__warnings ul {
   margin: 6px 0 0;
   padding-left: 18px;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .backup-card__actions {
@@ -100,14 +100,14 @@
 
 .backup-card__primary {
   border: 0;
-  background: var(--color-accent, #2f6fed);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .backup-card__secondary {
-  border: 1px solid var(--color-border, #e5e5e5);
+  border: 1px solid var(--color-border);
   background: transparent;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-weight: 500;
 }
 
@@ -118,7 +118,7 @@
 }
 
 .backup-card__delivery--warn {
-  color: #b45309;
+  color: var(--color-warning);
 }
 
 .backup-card__text {
@@ -126,14 +126,14 @@
   min-height: 160px;
   margin-top: 10px;
   padding: 8px;
-  border: 1px solid var(--color-border, #e5e5e5);
-  border-radius: var(--radius-sm, 10px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   font-family: ui-monospace, monospace;
   font-size: 0.75rem;
 }
 
 .plus-list__hint {
   margin: 6px 0 0;
-  color: #b45309;
+  color: var(--color-warning);
   font-size: 0.85rem;
 }

@@ -18,7 +18,7 @@
 
 .today__date {
   margin: 2px 0 0;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.95rem;
 }
 
@@ -28,17 +28,17 @@
   width: 40px;
   height: 40px;
   border-radius: 999px;
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
 }
 
 .today__message {
   padding: 24px 0;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .today__message--error {
   padding: 12px 0;
-  color: var(--color-danger, #b00020);
+  color: var(--color-danger);
 }
 
 /* Cartes */
@@ -49,15 +49,15 @@
   gap: 12px;
   margin: 0 0 14px;
   padding: 16px;
-  border: 1px solid var(--color-border, #e4e7ec);
-  border-radius: var(--radius-lg, 18px);
-  background: var(--color-surface, white);
-  box-shadow: var(--shadow-card, 0 1px 2px rgba(16, 24, 40, 0.06));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
 }
 
 .today-card--soft {
   border-style: dashed;
-  background: var(--color-surface-soft, #f2f4f7);
+  background: var(--color-surface-soft);
   box-shadow: none;
 }
 
@@ -76,7 +76,7 @@
 
 .today-card__chevron {
   align-self: center;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .today-card__icon {
@@ -106,7 +106,7 @@
 
 .today-card__text {
   margin: 0;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.9rem;
   line-height: 1.35;
 }
@@ -124,17 +124,17 @@
   gap: 12px;
   margin: 0;
   padding-top: 12px;
-  border-top: 1px solid var(--color-border, #e4e7ec);
-  color: var(--color-accent, #2f6fed);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-accent);
 }
 
 .today-card__duration strong {
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
   font-size: 0.95rem;
 }
 
 .today-card__duration small {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.8rem;
 }
 
@@ -151,23 +151,23 @@
 }
 
 .today-badge--planned {
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .today-badge--running {
-  background: var(--color-accent, #2f6fed);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .today-badge--done {
-  background: #e6f6ea;
-  color: #1f8a3b;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .today-badge--skipped {
-  background: #fdeaea;
-  color: var(--color-danger, #c2413b);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 /* Séance en cours : trois chiffres et une barre */
@@ -178,7 +178,7 @@
   gap: 8px;
   margin: 0;
   padding-top: 12px;
-  border-top: 1px solid var(--color-border, #e4e7ec);
+  border-top: 1px solid var(--color-border);
 }
 
 .today-stats div {
@@ -189,11 +189,11 @@
 
 .today-stats div + div {
   padding-left: 10px;
-  border-left: 1px solid var(--color-border, #e4e7ec);
+  border-left: 1px solid var(--color-border);
 }
 
 .today-stats dt {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.75rem;
 }
 
@@ -207,14 +207,14 @@
   height: 6px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--color-surface-soft, #f2f4f7);
+  background: var(--color-surface-soft);
 }
 
 .today-progress span {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--color-accent, #2f6fed);
+  background: var(--color-accent);
   transition: width 0.3s ease;
 }
 
@@ -226,9 +226,9 @@
   gap: 10px;
   margin: 0;
   padding: 12px 14px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-size: 0.85rem;
   line-height: 1.4;
 }
@@ -249,24 +249,24 @@
   justify-content: center;
   gap: 8px;
   border: 0;
-  border-radius: var(--radius-md, 14px);
+  border-radius: var(--radius-md);
   font-size: 1rem;
   font-weight: 700;
   text-decoration: none;
 }
 
 .today__primary {
-  background: var(--color-accent, #2f6fed);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .today__secondary {
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .today__link {
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
@@ -284,7 +284,7 @@
 }
 
 .today-next li + li {
-  border-top: 1px solid var(--color-border, #e4e7ec);
+  border-top: 1px solid var(--color-border);
 }
 
 .today-next__row {
@@ -299,7 +299,7 @@
 
 .today-next__day {
   min-width: 84px;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.85rem;
   white-space: nowrap;
 }
@@ -320,13 +320,13 @@
 }
 
 .today-next__meta {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.8rem;
   white-space: nowrap;
 }
 
 .today-next__row svg:last-child {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 /* Aperçu de la séance (mockup 21.2) */
@@ -334,7 +334,7 @@
 .preview__back {
   display: inline-block;
   margin-bottom: 12px;
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
   font-weight: 600;
   text-decoration: none;
 }
@@ -353,16 +353,16 @@
   align-items: center;
   gap: 8px;
   margin-top: 4px;
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
 }
 
 .preview__duration strong {
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
   font-size: 0.9rem;
 }
 
 .preview__duration small {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.78rem;
 }
 
@@ -387,9 +387,9 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border: 1px solid var(--color-border, #e4e7ec);
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface, white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 
 .preview__row--group {
@@ -401,7 +401,7 @@
 }
 
 .preview__number {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.85rem;
   font-weight: 700;
   text-align: center;
@@ -417,7 +417,7 @@
 }
 
 .preview__link svg:last-child {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .preview__thumb {
@@ -426,9 +426,9 @@
   width: 44px;
   height: 44px;
   overflow: hidden;
-  border-radius: var(--radius-sm, 10px);
-  background: var(--color-surface-soft, #f2f4f7);
-  color: var(--color-accent, #2f6fed);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-soft);
+  color: var(--color-accent);
 }
 
 .preview__thumb img {
@@ -438,13 +438,13 @@
 }
 
 .preview__thumb--note {
-  color: #2f6fed;
-  background: var(--color-accent-soft, #eaf1ff);
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 
 .preview__thumb--group {
-  color: #6b3fd6;
-  background: #efe9ff;
+  color: var(--color-purple);
+  background: var(--color-purple-soft);
 }
 
 .preview__body {
@@ -459,7 +459,7 @@
 }
 
 .preview__meta {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.82rem;
   line-height: 1.3;
 }
@@ -481,7 +481,7 @@
 }
 
 .preview__child-number {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-weight: 700;
 }
 
@@ -494,8 +494,8 @@
 
 /* Lot J.1 : test attaché à la séance du jour. */
 .today-badge--test {
-  background: #fff1f3;
-  color: #c01048;
+  background: var(--color-rose-soft);
+  color: var(--color-rose);
 }
 
 /* Lot J.1 : « Ce soir », la routine du soir en ligne compacte. */
@@ -505,8 +505,8 @@
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border-radius: var(--radius-md, 14px);
-  background: #f4f3ff;
+  border-radius: var(--radius-md);
+  background: var(--color-purple-soft);
   color: inherit;
   text-decoration: none;
 }
@@ -517,8 +517,8 @@
   height: 40px;
   place-items: center;
   border-radius: 50%;
-  background: #6938ef;
-  color: #fff;
+  background: var(--color-purple);
+  color: var(--color-on-accent);
 }
 
 .today-evening__body {
@@ -529,15 +529,15 @@
 }
 
 .today-evening__body small {
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
 }
 
 .today-evening__body span {
-  color: var(--color-text-soft, #475467);
+  color: var(--color-text-soft);
 }
 
 .today-evening__duration {
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
   font-size: 0.8rem;
   white-space: nowrap;
 }

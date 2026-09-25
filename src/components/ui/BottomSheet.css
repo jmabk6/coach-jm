@@ -5,18 +5,18 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.28);
+  background: var(--color-overlay);
 }
 
 .bottom-sheet {
   display: flex;
-  width: min(100%, var(--content-max-width, 720px));
+  width: min(100%, var(--content-max-width));
   max-height: min(82dvh, 760px);
   flex-direction: column;
   padding: 18px 16px calc(16px + env(safe-area-inset-bottom));
   border-radius: 18px 18px 0 0;
-  background: var(--color-bg, white);
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.12);
+  background: var(--color-bg);
+  box-shadow: 0 -10px 30px var(--color-overlay-soft);
   overflow-y: auto;
 }
 
@@ -32,7 +32,7 @@
 
 .bottom-sheet__header p {
   margin: 6px 0 0;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.9rem;
   line-height: 1.4;
 }
@@ -50,10 +50,10 @@
   justify-content: center;
   gap: 2px;
   padding: 8px 14px;
-  border: 1px solid var(--color-border, #e4e7ec);
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface, white);
-  color: var(--color-text, #1f2937);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
   text-align: center;
 }
 
@@ -62,27 +62,27 @@
 }
 
 .bottom-sheet__action-hint {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.8rem;
 }
 
 .bottom-sheet__action--primary {
-  border-color: var(--color-accent, #2f6fed);
-  background: var(--color-accent, #2f6fed);
-  color: white;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .bottom-sheet__action--primary .bottom-sheet__action-hint {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--color-glass);
 }
 
 .bottom-sheet__action--danger {
-  color: var(--color-danger, #c2413b);
+  color: var(--color-danger);
 }
 
 .bottom-sheet__action:disabled {
-  background: var(--color-surface-soft, #f2f4f7);
-  color: var(--color-text-soft, #666);
+  background: var(--color-surface-soft);
+  color: var(--color-text-soft);
   cursor: default;
 }
 
@@ -90,5 +90,5 @@
   margin-top: 6px;
   border-color: transparent;
   background: transparent;
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
 }

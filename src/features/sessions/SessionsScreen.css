@@ -18,7 +18,7 @@
 
 .sessions-screen__header p {
   margin: 4px 0 0;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.9rem;
 }
 
@@ -30,28 +30,28 @@
   gap: 6px;
   padding: 0 14px;
   border: 0;
-  border-radius: var(--radius-sm, 10px);
-  background: var(--color-accent, #2f6fed);
-  color: white;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   font-weight: 600;
 }
 
 .sessions-screen__secondary {
   min-height: 44px;
   padding: 0 16px;
-  border: 1px solid var(--color-border, #ddd);
-  border-radius: var(--radius-sm, 10px);
-  background: var(--color-surface, white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
   font-weight: 600;
 }
 
 .sessions-screen__message {
   padding: 24px 0;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .sessions-screen__message--error {
-  color: var(--color-danger, #b00020);
+  color: var(--color-danger);
 }
 
 /* Recherche */
@@ -63,10 +63,10 @@
   min-height: 46px;
   margin-bottom: 12px;
   padding: 0 14px;
-  border: 1px solid var(--color-border, #ddd);
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface, white);
-  color: var(--color-text-soft, #666);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-soft);
 }
 
 .sessions-screen__search input {
@@ -74,7 +74,7 @@
   min-width: 0;
   border: 0;
   background: transparent;
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
   outline: none;
 }
 
@@ -101,12 +101,12 @@
   margin-left: auto;
   border-color: transparent;
   background: transparent;
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
   font-weight: 600;
 }
 
 .session-chip--action:disabled {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   opacity: 0.6;
   cursor: default;
 }
@@ -118,18 +118,18 @@
   align-items: center;
   gap: 6px;
   padding: 0 13px;
-  border: 1px solid var(--color-border, #ddd);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: var(--color-surface, white);
-  color: var(--color-text, #1f2937);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 500;
 }
 
 .session-chip--active {
-  border-color: var(--color-accent, #2f6fed);
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-weight: 600;
 }
 
@@ -153,10 +153,10 @@
   align-items: center;
   gap: 6px;
   padding: 14px 10px 14px 14px;
-  border: 1px solid var(--color-border, #e4e7ec);
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface, white);
-  box-shadow: var(--shadow-card, 0 1px 2px rgba(16, 24, 40, 0.06));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
 }
 
 .session-card__link {
@@ -184,7 +184,7 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .session-card--sortable {
@@ -198,7 +198,7 @@
 
 .session-card--dragging {
   z-index: 2;
-  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.18);
+  box-shadow: 0 8px 24px var(--color-shadow-strong);
 }
 
 .session-card__handle {
@@ -210,10 +210,10 @@
   place-items: center;
   width: 52px;
   border: 0;
-  border-left: 1px solid var(--color-border, #e4e7ec);
-  border-radius: 0 var(--radius-md, 14px) var(--radius-md, 14px) 0;
-  background: var(--color-surface-soft, #f2f4f7);
-  color: var(--color-text-soft, #666);
+  border-left: 1px solid var(--color-border);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--color-surface-soft);
+  color: var(--color-text-soft);
   cursor: grab;
   touch-action: none;
 }
@@ -223,32 +223,32 @@
   place-items: center;
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-sm, 10px);
+  border-radius: var(--radius-sm);
 }
 
 .session-card__icon--musculation {
-  background: #efe9ff;
-  color: #6b3fd6;
+  background: var(--color-purple-soft);
+  color: var(--color-purple);
 }
 
 .session-card__icon--cardio {
-  background: #e6f6ea;
-  color: #1f8a3b;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .session-card__icon--mobilite {
-  background: #fff0e0;
-  color: #d9740e;
+  background: var(--color-cat-routine-soft);
+  color: var(--color-cat-routine);
 }
 
 .session-card__icon--bilan {
-  background: #e8f1f8;
-  color: #2a6f97;
+  background: var(--color-cat-cardio-soft);
+  color: var(--color-cat-cardio);
 }
 
 .session-card__icon--routine {
-  background: #efeafb;
-  color: #5b3fa8;
+  background: var(--color-cat-mobility-soft);
+  color: var(--color-cat-mobility);
 }
 
 .session-card__body {
@@ -265,12 +265,12 @@
 
 .session-card__summary {
   font-size: 0.85rem;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .session-card__cardio {
   font-size: 0.85rem;
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
 }
 
 .session-card__aside {
@@ -282,12 +282,12 @@
 
 .session-card__stat {
   font-size: 0.8rem;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   white-space: nowrap;
 }
 
 .session-card__chevron {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 /* Badge : `Non programmée` est un état normal, ton neutre (§5, §18) */
@@ -297,16 +297,16 @@
   align-items: center;
   padding: 3px 9px;
   border-radius: 999px;
-  background: var(--color-surface-soft, #f2f4f7);
-  color: var(--color-text-soft, #666);
+  background: var(--color-surface-soft);
+  color: var(--color-text-soft);
   font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .session-badge--scheduled {
-  background: #e6f6ea;
-  color: #1f8a3b;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 /* Bas de liste */
@@ -319,7 +319,7 @@
   padding: 8px 0;
   border: 0;
   background: transparent;
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
   font-weight: 600;
 }
 
@@ -329,9 +329,9 @@
   gap: 10px;
   margin: 18px 0 0;
   padding: 12px 14px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-size: 0.85rem;
   line-height: 1.4;
 }
@@ -359,7 +359,7 @@
 .sessions-screen__empty p {
   max-width: 320px;
   margin: 0 0 24px;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   line-height: 1.45;
 }
 
@@ -375,7 +375,7 @@
 
 .sessions-screen__no-result p {
   margin: 0 0 16px;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 @media (max-width: 400px) {

@@ -7,6 +7,16 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="theme-color" content="#f7f8fa" />
+    <script>
+      /* Thème posé avant le premier rendu (lot L.3), repris des Réglages au démarrage. */
+      try {
+        var theme = localStorage.getItem("coach-jm-theme");
+        if (theme === "dark" || theme === "light") {
+          document.documentElement.dataset.theme = theme;
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", theme === "dark" ? "#0f1115" : "#f7f8fa");
+        }
+      } catch (error) {}
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Coach JM" />

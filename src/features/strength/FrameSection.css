@@ -6,7 +6,7 @@
 .frame-section__outcome,
 .frame-section__notice {
   margin: 0 0 12px;
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
   font-size: 0.9rem;
   line-height: 1.45;
 }
@@ -18,12 +18,12 @@
 }
 
 .frame-section__summary span {
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
   font-size: 0.9rem;
 }
 
 .frame-section__freeze--archived {
-  color: #b54708;
+  color: var(--color-warning);
 }
 
 .frame-section__cards {
@@ -38,25 +38,25 @@
 }
 
 .frame-section__empty {
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .frame-section__target strong,
 .frame-section__outcome strong {
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 }
 
 .frame-section__outcome--ok {
-  color: #067647;
+  color: var(--color-success-strong);
 }
 
 .frame-section__notice {
   padding: 8px 10px;
   border-radius: 10px;
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .frame-section__actions {
@@ -72,8 +72,8 @@
   padding: 0 16px;
   border: 0;
   border-radius: 10px;
-  background: var(--color-accent, #2f6fed);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   font: inherit;
   font-weight: 700;
 }
@@ -82,9 +82,9 @@
 .frame-form__cancel {
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid #d0d5dd;
+  border: 1px solid var(--color-border-strong);
   border-radius: 10px;
-  background: white;
+  background: var(--color-surface);
   color: inherit;
   font: inherit;
   font-weight: 600;
@@ -99,7 +99,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--color-border, #e5e5e5);
+  border-top: 1px solid var(--color-border);
 }
 
 .frame-section__history li {
@@ -108,12 +108,12 @@
   justify-content: space-between;
   gap: 4px 12px;
   padding: 8px 0;
-  border-bottom: 1px solid var(--color-border, #e5e5e5);
+  border-bottom: 1px solid var(--color-border);
   font-size: 0.9rem;
 }
 
 .frame-section__history small {
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
 }
 
 /* Formulaire d'une version */
@@ -122,9 +122,9 @@
   display: grid;
   gap: 12px;
   padding: 14px;
-  border: 1px solid var(--color-border, #e5e5e5);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: white;
+  background: var(--color-surface);
 }
 
 .frame-form h3 {
@@ -134,7 +134,7 @@
 
 .frame-form__type {
   margin: 0;
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
   font-size: 0.9rem;
 }
 
@@ -149,7 +149,7 @@
   gap: 4px;
   min-width: 0;
   font-size: 0.85rem;
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
 }
 
 .frame-form__field--wide {
@@ -161,23 +161,23 @@
   width: 100%;
   min-height: 42px;
   padding: 0 10px;
-  border: 1px solid var(--color-border, #e4e7ec);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   font: inherit;
   font-size: 1rem;
-  color: var(--color-text, #1f2937);
-  background: white;
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .frame-form__field small {
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
   font-size: 0.78rem;
   line-height: 1.4;
 }
 
 .frame-form__error {
   margin: 0;
-  color: #b42318;
+  color: var(--color-danger-strong);
   font-size: 0.9rem;
 }
 
@@ -197,9 +197,9 @@
   gap: 8px;
   margin: 0 0 12px;
   padding: 12px 14px;
-  border: 1px solid var(--color-accent-soft, #eaf1ff);
+  border: 1px solid var(--color-accent-soft);
   border-radius: 12px;
-  background: var(--color-accent-soft, #eaf1ff);
+  background: var(--color-accent-soft);
   font-size: 0.9rem;
   line-height: 1.45;
 }
@@ -207,7 +207,7 @@
 .frame-section__suggestion p,
 .frame-section__suggestion ul {
   margin: 0;
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 }
 
 .frame-section__suggestion ul {
@@ -219,6 +219,6 @@
 }
 
 .frame-section__suggestion--warn {
-  border-color: #fedf89;
-  background: #fffaeb;
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-soft);
 }

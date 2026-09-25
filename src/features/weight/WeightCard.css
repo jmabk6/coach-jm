@@ -9,9 +9,9 @@
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-sm, 10px);
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .weight-card__today {
@@ -55,7 +55,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-weight: 400;
 }
 
@@ -64,9 +64,9 @@
 .weight-card__form--inline input[type="date"] {
   min-height: 44px;
   padding: 0 10px;
-  border: 1px solid var(--color-border, #d0d5dd);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: var(--color-surface, white);
+  background: var(--color-surface);
   color: inherit;
   font: inherit;
 }
@@ -80,13 +80,13 @@
 
 .weight-card__hint {
   margin: 0;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-size: 0.85rem;
 }
 
 .weight-card__error {
   margin: 0;
-  color: var(--color-danger, #c2413b);
+  color: var(--color-danger);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -100,15 +100,15 @@
 .weight-card__cancel {
   flex: 1;
   min-height: 46px;
-  border-radius: var(--radius-md, 14px);
+  border-radius: var(--radius-md);
   font: inherit;
   font-weight: 700;
 }
 
 .weight-card__submit {
   border: 0;
-  background: var(--color-accent, #2f6fed);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .weight-card__submit:disabled {
@@ -116,8 +116,8 @@
 }
 
 .weight-card__cancel {
-  border: 1px solid var(--color-border, #d0d5dd);
-  background: var(--color-surface, white);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
   color: inherit;
 }
 
@@ -135,12 +135,12 @@
   align-items: center;
   gap: 4px;
   padding: 6px 0;
-  border-top: 1px solid var(--color-border, #e4e7ec);
+  border-top: 1px solid var(--color-border);
 }
 
 .weight-card__day {
   overflow: hidden;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -154,14 +154,14 @@
   padding: 0 4px;
   border: 0;
   background: none;
-  color: var(--color-accent, #2f6fed);
+  color: var(--color-accent);
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
 .weight-card__row-action--danger {
-  color: var(--color-danger, #c2413b);
+  color: var(--color-danger);
 }
 
 .weight-card__form--inline {
@@ -174,8 +174,8 @@
   gap: 8px;
   margin: 0;
   padding: 10px 12px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface-soft, #f2f4f7);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
 }
 
 .weight-card__averages div {
@@ -192,17 +192,17 @@
 
 .weight-card__averages dt small {
   margin-left: 4px;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
   font-weight: 400;
 }
 
 .weight-card__averages dd {
   margin: 0;
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .weight-card__averages dd strong {
-  color: var(--color-text, #1b1f24);
+  color: var(--color-text);
 }
 
 .weight-card__today-actions {

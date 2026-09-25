@@ -9,7 +9,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--color-accent, #2563eb);
+  color: var(--color-accent);
   font: inherit;
   font-weight: 600;
 }
@@ -31,9 +31,9 @@
 
 /* Classification de progression (groupe · famille) : même pastille, ton accentué. */
 .exercise-detail__tags .exercise-detail__classification {
-  border-color: var(--color-accent-soft, #eaf1ff);
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  border-color: var(--color-accent-soft);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .exercise-detail__tags span {
@@ -41,9 +41,9 @@
   min-height: 32px;
   align-items: center;
   padding: 0 11px;
-  border: 1px solid var(--color-border, #ddd);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: white;
+  background: var(--color-surface);
   font-size: 13px;
 }
 
@@ -72,7 +72,7 @@
   gap: 12px;
   padding: 10px 0;
   border: 0;
-  border-bottom: 1px solid var(--color-border, #e5e5e5);
+  border-bottom: 1px solid var(--color-border);
   background: transparent;
   color: inherit;
   text-align: left;
@@ -90,20 +90,20 @@
 }
 
 .exercise-detail__alternative small {
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
 }
 
 .exercise-detail__alternative span:last-child {
-  color: var(--color-text-soft, #98a2b3);
+  color: var(--color-text-soft);
   font-size: 28px;
 }
 
 .exercise-detail__accordions {
-  border-top: 1px solid var(--color-border, #e5e5e5);
+  border-top: 1px solid var(--color-border);
 }
 
 .exercise-detail__accordions details {
-  border-bottom: 1px solid var(--color-border, #e5e5e5);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .exercise-detail__accordions summary {
@@ -116,7 +116,7 @@
 .exercise-detail__accordions ul {
   margin: 0;
   padding: 0 0 16px;
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
 }
 
 .exercise-detail__accordions ul {
@@ -138,9 +138,9 @@
 .exercise-detail__metric-select {
   min-height: 38px;
   padding: 0 10px;
-  border: 1px solid var(--color-border, #ddd);
+  border: 1px solid var(--color-border);
   border-radius: 9px;
-  background: white;
+  background: var(--color-surface);
   color: inherit;
   font: inherit;
   font-size: 14px;
@@ -157,14 +157,14 @@
   gap: 6px;
   min-width: 0;
   padding: 14px;
-  border: 1px solid var(--color-border, #e5e5e5);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: white;
+  background: var(--color-surface);
 }
 
 .exercise-detail__performance-card small,
 .exercise-detail__performance-card span {
-  color: var(--color-text-soft, #667085);
+  color: var(--color-text-soft);
 }
 
 .exercise-detail__performance-card strong {
@@ -185,10 +185,10 @@
   width: 100%;
   margin-top: 18px;
   padding: 14px 8px 4px;
-  border: 1px solid var(--color-border, #e5e5e5);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: white;
-  color: var(--color-text, #1f2937);
+  background: var(--color-surface);
+  color: var(--color-text);
   overflow: hidden;
 }
 
@@ -209,9 +209,9 @@
 .exercise-detail__edit-button {
   min-height: 40px;
   padding: 0 14px;
-  border: 1px solid #d0d5dd;
+  border: 1px solid var(--color-border-strong);
   border-radius: 10px;
-  background: white;
+  background: var(--color-surface);
   color: inherit;
   font: inherit;
   font-weight: 600;

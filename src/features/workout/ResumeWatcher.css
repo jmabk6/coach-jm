@@ -6,8 +6,8 @@
   gap: 6px 14px;
   margin: 0 0 12px;
   padding: 12px 14px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface-soft, #f2f4f7);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
   font-size: 0.9rem;
 }
 
@@ -16,7 +16,7 @@
 }
 
 .resume-sheet__facts dt {
-  color: var(--color-text-soft, #666);
+  color: var(--color-text-soft);
 }
 
 .resume-sheet__facts dd {
@@ -30,9 +30,9 @@
   gap: 10px;
   margin: 0 0 12px;
   padding: 12px 14px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-accent-soft, #eaf1ff);
-  color: var(--color-accent, #2f6fed);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-size: 0.85rem;
   line-height: 1.4;
 }
@@ -44,6 +44,6 @@
 
 .resume-sheet__error {
   margin: 0 0 8px;
-  color: var(--color-danger, #c2413b);
+  color: var(--color-danger);
   font-size: 0.9rem;
 }

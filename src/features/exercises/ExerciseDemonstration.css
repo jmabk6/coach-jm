@@ -5,7 +5,7 @@
   overflow: hidden;
   border-radius: 14px;
   /* Les illustrations officielles sont transparentes : la couleur vient d'ici. */
-  background: #f5f6f7;
+  background: var(--color-surface-soft);
 }
 
 .exercise-demonstration img {
@@ -33,8 +33,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #eef1f5;
-  color: var(--color-text-soft, #667085);
+  background: var(--color-surface-muted);
+  color: var(--color-text-soft);
 }
 
 .exercise-demonstration--placeholder span {
