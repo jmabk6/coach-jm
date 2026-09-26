@@ -347,6 +347,15 @@ export const exerciseMedia = {
       "media/exercises/core/pallof-press-frame3.76bcbdfa.webp",
     ],
   },
+  "papillon-assis": {
+    thumbnail: "media/exercises/mobilite/papillon-assis-thumb.cc0f08ee.webp",
+    photo: "media/exercises/mobilite/papillon-assis.e65faf11.webp",
+    frames: [
+      "media/exercises/mobilite/papillon-assis-frame1.59ef8614.webp",
+      "media/exercises/mobilite/papillon-assis-frame2.7ed4bea1.webp",
+      "media/exercises/mobilite/papillon-assis-frame3.34e5c4cb.webp",
+    ],
+  },
   "planche": {
     thumbnail: "media/exercises/core/planche-thumb.c2920d46.webp",
     photo: "media/exercises/core/planche.a1f38b83.webp",
@@ -428,6 +437,15 @@ export const exerciseMedia = {
       "media/exercises/jambes/souleve-terre-roumain-frame3.92f49a03.webp",
     ],
   },
+  "sprint-velo": {
+    thumbnail: "media/exercises/cardio/sprint-velo-thumb.303494b5.webp",
+    photo: "media/exercises/cardio/sprint-velo.2bf2b0af.webp",
+    frames: [
+      "media/exercises/cardio/sprint-velo-frame1.7a594db8.webp",
+      "media/exercises/cardio/sprint-velo-frame2.52bca8ec.webp",
+      "media/exercises/cardio/sprint-velo-frame3.e063b38c.webp",
+    ],
+  },
   "squat": {
     thumbnail: "media/exercises/jambes/squat-thumb.0ea66019.webp",
     photo: "media/exercises/jambes/squat.188e7558.webp",
@@ -498,6 +516,15 @@ export const exerciseMedia = {
       "media/exercises/dos/traction-assistee-frame1.0cde1df9.webp",
       "media/exercises/dos/traction-assistee-frame2.6c7ed397.webp",
       "media/exercises/dos/traction-assistee-frame3.9a13b4b9.webp",
+    ],
+  },
+  "traction-negative": {
+    thumbnail: "media/exercises/dos/traction-negative-thumb.538d6d23.webp",
+    photo: "media/exercises/dos/traction-negative.487674a0.webp",
+    frames: [
+      "media/exercises/dos/traction-negative-frame1.54d24537.webp",
+      "media/exercises/dos/traction-negative-frame2.bd60e1af.webp",
+      "media/exercises/dos/traction-negative-frame3.6b1077b6.webp",
     ],
   },
   "velo": {
