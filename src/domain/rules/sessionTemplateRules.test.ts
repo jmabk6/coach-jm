@@ -301,12 +301,13 @@ describe("durée d'un modèle", () => {
   }
 
   it("estime le travail en répétitions, les repos et les transitions", () => {
-    // 3 exercices autonomes : 3 × (3 séries × (10 reps × 3 s + 45 s de mise en place) + 3 repos × 120 s + 60 s) = 1935
+    // 3 exercices autonomes : 3 × (3 séries × (10 reps × 3 s + 45 s de mise en place) + 3 repos × 120 s) = 1755
     //   (le repos après la dernière série compte : c'est le passage à l'exercice suivant, 26/09/2026)
-    // groupe : 2 × 60 s de transition + 2 enfants × 3 tours × (10 reps × 3 s + 45 s) + 2 × 60 s de repos = 690
-    expect(estimateSessionTemplateDurationSec(muscuABlocks)).toBe(2625);
+    // groupe : 2 enfants × 3 tours × 10 reps × 3 s + 2 × 60 s de repos = 300 (circuit : pas de mise en place)
+    // transitions : entre deux briques seulement, 4 × 60 s = 240
+    expect(estimateSessionTemplateDurationSec(muscuABlocks)).toBe(2295);
     /* Une routine au sol n'a pas de mise en place par série. */
-    expect(estimateSessionTemplateDurationSec(muscuABlocks, "Routine")).toBe(1590 + 3 * 120);
+    expect(estimateSessionTemplateDurationSec(muscuABlocks, "Routine")).toBe(1890);
   });
 
   it("affiche Estimé avant trois réalisations", () => {
@@ -315,8 +316,8 @@ describe("durée d'un modèle", () => {
       completed(3300),
     ]);
 
-    expect(duration).toEqual({ kind: "estimated", minutes: 44 });
-    expect(formatSessionTemplateDuration(duration)).toBe("Estimé 44 min");
+    expect(duration).toEqual({ kind: "estimated", minutes: 38 });
+    expect(formatSessionTemplateDuration(duration)).toBe("Estimé 38 min");
   });
 
   it("affiche la moyenne de la durée active à partir de trois", () => {

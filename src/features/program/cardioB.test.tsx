@@ -35,8 +35,8 @@ describe("Cardio B", () => {
     expect(steps.map((step) => step.position)).toEqual(steps.map((_, index) => index));
   });
 
-  it("durée estimée : 40 min (39 min de paliers + l'installation)", () => {
-    expect(estimateSessionTemplateDurationSec(cardioB.blocks)).toBe(40 * 60);
+  it("durée estimée : 39 min, la somme des paliers (plus de transition avant le premier bloc, 26/09/2026)", () => {
+    expect(estimateSessionTemplateDurationSec(cardioB.blocks)).toBe(39 * 60);
     expect(formatExerciseInstructionsRow({ shape: "steps", steps })).toBe("18 paliers · 39 min");
   });
 

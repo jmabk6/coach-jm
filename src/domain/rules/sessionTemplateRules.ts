@@ -241,7 +241,8 @@ const ESTIMATED_SECONDS_PER_REP = 3;
 const ESTIMATED_TRANSITION_SEC = 60;
 
 /**
- * Mise en place de chaque série (charger, régler la machine, se placer).
+ * Mise en place de chaque série en répétitions hors circuit (charger,
+ * régler la machine, se placer).
  * Calibrée le 26/09/2026 sur les séances réelles : 200 à 250 s par série,
  * repos compris, contre environ 120 s estimées jusque-là.
  */
@@ -261,6 +262,9 @@ export function estimateSessionTemplateDurationSec(
   /* Mise en place par série : en salle seulement, pas pour une routine au sol. */
   const setupSec = category === "Routine" || category === "Mobilité" ? 0 : ESTIMATED_SET_SETUP_SEC;
   let totalSec = calculateSessionDuration(blocks);
+  /* Une transition entre deux briques : aucune avant la première (26/09/2026,
+     une séance cardio d'un seul bloc dure exactement la somme de ses paliers). */
+  let transitions = 0;
 
   for (const block of blocks) {
     if (block.kind === "note") {
@@ -268,7 +272,7 @@ export function estimateSessionTemplateDurationSec(
     }
 
     if (block.kind === "exercise") {
-      totalSec += ESTIMATED_TRANSITION_SEC;
+      transitions += 1;
 
       if (block.instructions.shape === "reps") {
         const { sets, reps, restBetweenSetsSec } = block.instructions;
@@ -277,17 +281,14 @@ export function estimateSessionTemplateDurationSec(
         /* Travail, mise en place de chaque série, et repos après la dernière avant l'exercice suivant. */
         totalSec += sets * averageReps * ESTIMATED_SECONDS_PER_REP + sets * setupSec + restBetweenSetsSec;
       } else if (block.instructions.shape === "duration") {
-        const { sets, restBetweenSetsSec } = block.instructions;
-
-        totalSec += sets * setupSec + restBetweenSetsSec;
+        /* Séries en durée (sprints, maintiens) : enchaînées sans mise en place ; le repos après la dernière compte. */
+        totalSec += block.instructions.restBetweenSetsSec;
       }
 
       continue;
     }
 
-    totalSec += block.children.length * ESTIMATED_TRANSITION_SEC;
-
-    totalSec += block.rounds * block.children.length * setupSec;
+    transitions += block.children.length;
 
     for (const child of block.children) {
       if (child.instructions.shape === "reps") {
@@ -299,6 +300,8 @@ export function estimateSessionTemplateDurationSec(
       }
     }
   }
+
+  totalSec += Math.max(0, transitions - 1) * ESTIMATED_TRANSITION_SEC;
 
   return totalSec;
 }
