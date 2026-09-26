@@ -11,6 +11,7 @@ import { reachedLabel } from "../../domain/rules/goalRules";
 import { formatTestNumber } from "../../domain/rules/testResultRules";
 import { todayLocalDate } from "../today/useTodayData";
 import { activateNextSegment, editGoalSegment, LEGS_MEASURES } from "./goalActions";
+import { BodyCompositionSection } from "./BodyCompositionSection";
 import { GoalCurveChart } from "./GoalCurveChart";
 import { GoalAdviceTab, GoalExercisesTab } from "./GoalTabs";
 import { loadGoalDetail, type GoalDetail } from "./goalDetail";
@@ -211,6 +212,8 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
           </ul>
         </section>
       )}
+
+      {detail.composition && <BodyCompositionSection summaries={detail.composition} />}
 
       {goal.linkedExercises.length > 0 && (
         <section className="goal-section">

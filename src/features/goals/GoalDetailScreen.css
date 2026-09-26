@@ -464,3 +464,42 @@
   padding-left: 0;
   list-style: none;
 }
+
+/* Composition corporelle de l'objectif Poids (26/09/2026) : neutre, jamais un statut. */
+.composition-card__missing {
+  font-size: 0.95rem;
+}
+
+.composition-card__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.composition-card__curve {
+  margin: 4px 0 0;
+  color: var(--color-accent);
+}
+
+.composition-card__curve svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.composition-card__curve figcaption {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+}
+
+.composition-card__source {
+  margin-top: 2px;
+  color: var(--color-text-soft);
+  font-size: 0.7rem;
+  font-style: italic;
+}
