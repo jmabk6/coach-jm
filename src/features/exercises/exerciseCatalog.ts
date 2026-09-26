@@ -290,6 +290,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "duration",
+    media: officialExerciseMedia("suspension-omoplates"),
     technique: "Suspends-toi à la barre bras tendus. Abaisse et rapproche les omoplates sans plier les coudes, tiens, relâche légèrement, puis recommence pendant toute la durée.",
     description: "Suspension active qui prépare les épaules et le haut du dos aux tractions.",
     advice: "Les bras restent tendus : le mouvement vient des omoplates. Garde les jambes serrées et le tronc gainé.",

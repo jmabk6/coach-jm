@@ -401,6 +401,15 @@ export const exerciseMedia = {
       "media/exercises/jambes/squat-frame3.5ee0aa52.webp",
     ],
   },
+  "suspension-omoplates": {
+    thumbnail: "media/exercises/dos/suspension-omoplates-thumb.550c41c3.webp",
+    photo: "media/exercises/dos/suspension-omoplates.05a397bf.webp",
+    frames: [
+      "media/exercises/dos/suspension-omoplates-frame1.48af4c0a.webp",
+      "media/exercises/dos/suspension-omoplates-frame2.cd14fcc6.webp",
+      "media/exercises/dos/suspension-omoplates-frame3.bb049b04.webp",
+    ],
+  },
   "tapis": {
     thumbnail: "media/exercises/cardio/tapis-thumb.c268f271.webp",
     photo: "media/exercises/cardio/tapis.037552a0.webp",
