@@ -203,6 +203,15 @@ export const exerciseMedia = {
       "media/exercises/jambes/leg-curl-assis-frame3.67aae6db.webp",
     ],
   },
+  "marche-laterale-elastique": {
+    thumbnail: "media/exercises/jambes/marche-laterale-elastique-thumb.eb636aa1.webp",
+    photo: "media/exercises/jambes/marche-laterale-elastique.178fb705.webp",
+    frames: [
+      "media/exercises/jambes/marche-laterale-elastique-frame1.e6b82614.webp",
+      "media/exercises/jambes/marche-laterale-elastique-frame2.93cdc394.webp",
+      "media/exercises/jambes/marche-laterale-elastique-frame3.5b41eeda.webp",
+    ],
+  },
   "mobilite-chat-vache": {
     thumbnail: "media/exercises/mobilite/mobilite-chat-vache-thumb.c61f603a.webp",
     photo: "media/exercises/mobilite/mobilite-chat-vache.c7312d63.webp",

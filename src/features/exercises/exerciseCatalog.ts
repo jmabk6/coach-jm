@@ -161,6 +161,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "reps_per_side",
+    media: officialExerciseMedia("marche-laterale-elastique"),
     measurementLabels: { value: "pas" },
     technique: "Élastique autour des chevilles ou au-dessus des genoux, fléchis légèrement les jambes. Fais des pas latéraux en gardant l'élastique tendu et le bassin à la même hauteur.",
     description: "Renforcement des fessiers moyens pour la stabilité des déplacements latéraux.",
