@@ -181,6 +181,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "load_reps",
+    media: officialExerciseMedia("mollets-debout"),
     technique: "Avant du pied sur la marche, talons dans le vide. Monte le plus haut possible sur la pointe des pieds, marque un temps, puis redescends lentement sous l'horizontale.",
     description: "Renforcement des mollets, utile pour les appuis et les changements de direction.",
     advice: "Cherche l'amplitude complète plutôt que la charge. Évite de rebondir en bas du mouvement.",

@@ -284,6 +284,15 @@ export const exerciseMedia = {
       "media/exercises/mobilite/mobilite-rotation-thoracique-frame3.44dd654b.webp",
     ],
   },
+  "mollets-debout": {
+    thumbnail: "media/exercises/jambes/mollets-debout-thumb.d21e8a3b.webp",
+    photo: "media/exercises/jambes/mollets-debout.ec0b1bce.webp",
+    frames: [
+      "media/exercises/jambes/mollets-debout-frame1.f95b6362.webp",
+      "media/exercises/jambes/mollets-debout-frame2.129beb73.webp",
+      "media/exercises/jambes/mollets-debout-frame3.960ac7af.webp",
+    ],
+  },
   "montee-banc": {
     thumbnail: "media/exercises/jambes/montee-banc-thumb.f5599f14.webp",
     photo: "media/exercises/jambes/montee-banc.48405b1f.webp",
