@@ -57,10 +57,13 @@ export async function saveWeightEntry(
       .first();
 
     if (existing && existing.id !== entry.id) {
-      await db.weightEntries.update(existing.id, {
+      /* La composition suit la nouvelle saisie : une grandeur absente est effacée. */
+      await db.weightEntries.put(merged(existing, {
         kg: entry.kg,
+        fatPct: entry.fatPct,
+        muscleKg: entry.muscleKg,
         updatedAt: entry.updatedAt,
-      });
+      }));
 
       return;
     }
@@ -69,12 +72,22 @@ export async function saveWeightEntry(
   });
 }
 
+type WeightChanges = { [K in Exclude<keyof WeightEntry, "id" | "createdAt">]?: K extends "fatPct" | "muscleKg" ? WeightEntry[K] | undefined : WeightEntry[K] };
+
+/** Applique des changements ; une clé à `undefined` disparaît de l'enregistrement (composition effacée). */
+function merged(entry: WeightEntry, changes: WeightChanges): WeightEntry {
+  const next: Record<string, unknown> = { ...entry, ...changes };
+  for (const key of Object.keys(next)) if (next[key] === undefined) delete next[key];
+  return next as unknown as WeightEntry;
+}
+
 /**
  * Mise à jour partielle d'une pesée.
  */
 export async function updateWeightEntry(
   id: Id,
-  changes: Omit<Partial<WeightEntry>, "id" | "createdAt" | "updatedAt">,
+  /* `undefined` sur une grandeur de composition l'efface. */
+  changes: Omit<WeightChanges, "updatedAt">,
 ): Promise<void> {
   await db.transaction("rw", db.weightEntries, async () => {
     const entry = await db.weightEntries.get(id);
@@ -94,10 +107,10 @@ export async function updateWeightEntry(
       }
     }
 
-    await db.weightEntries.update(id, {
+    await db.weightEntries.put(merged(entry, {
       ...changes,
       updatedAt: new Date().toISOString(),
-    });
+    }));
   });
 }
 
