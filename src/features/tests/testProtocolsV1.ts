@@ -106,10 +106,10 @@ export const TEST_PROTOCOLS_V1: TestProtocolContent[] = [
         "6 sprints de 12 s sur le vélo, 48 s de récupération entre deux.",
         "Effort maximal à chaque sprint.",
         "Même vélo, même résistance à chaque test.",
-        "Puis la chaise contre le mur, durée maximale : dos plaqué au mur, genoux fléchis d'environ 60°, moins bas que la position assise.",
+        "Puis la chaise contre le mur, durée maximale : dos plaqué au mur, cuisses parallèles au sol, genoux au-dessus des chevilles ; arrêt en cas de douleur au genou.",
       ],
       /* `unit` (watts ou mètres) n'est pas fixée : elle l'est au premier test (D17). */
-      settings: { sprintCount: 6, sprintSec: 12, recoverySec: 48, chairAngleDeg: 60 },
+      settings: { sprintCount: 6, sprintSec: 12, recoverySec: 48, chairAngleDeg: 90 },
       measures: [
         ...[1, 2, 3, 4, 5, 6].map((index) => entered(`sprint_${index}`, `Sprint ${index}`, "", { exerciseId: "sprint-velo" })),
         derived("sprint_puissance_moy", "Moyenne des sprints", ""),

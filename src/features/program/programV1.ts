@@ -104,6 +104,9 @@ const muscuB: TemplateContent = {
   ],
 };
 
+/** Consigne de la chaise (décision du 26/09/2026 : 90°, et non plus 60°). */
+export const CHAISE_NOTE = "Dos plaqué au mur, cuisses parallèles au sol, genoux au-dessus des chevilles ; arrêt en cas de douleur au genou.";
+
 const resterBas: GroupBlock = {
   id: "v1-muscu-c-rester-bas",
   kind: "group",
@@ -112,7 +115,7 @@ const resterBas: GroupBlock = {
   rounds: 3,
   restBetweenRoundsSec: 90,
   children: [
-    { id: "v1-muscu-c-chaise", position: 0, exerciseId: "chaise-60", instructions: { shape: "duration", durationSec: { min: 30, max: 45 } } },
+    { id: "v1-muscu-c-chaise", position: 0, exerciseId: "chaise-60", instructions: { shape: "duration", durationSec: { min: 30, max: 45 } }, notes: CHAISE_NOTE },
     { id: "v1-muscu-c-marche-laterale", position: 1, exerciseId: "marche-laterale-elastique", instructions: { shape: "reps", reps: { min: 10, max: 10 } }, notes: "10 pas par côté." },
     { id: "v1-muscu-c-mollets", position: 2, exerciseId: "mollets-debout", instructions: { shape: "reps", reps: { min: 15, max: 20 } } },
   ],

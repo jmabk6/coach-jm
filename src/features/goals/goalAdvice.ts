@@ -95,7 +95,7 @@ export const GOAL_ADVICE: Record<string, GoalAdvice> = {
     technique: [
       "Genoux dans l'axe des pieds (squat, presse, montée sur banc).",
       "Dos neutre.",
-      "Chaise à 60° : dos plaqué au mur, poids sur les talons.",
+      "Chaise contre le mur : dos plaqué au mur, cuisses parallèles au sol, poids sur les talons.",
     ],
     mistakes: ["Laisser les genoux rentrer vers l'intérieur.", "Réduire l'amplitude pour tenir la charge.", "Sprinter sans échauffement."],
   },

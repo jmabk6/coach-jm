@@ -60,6 +60,8 @@ export interface InstallMarkers {
   themeLight?: string;
   /** Premières cibles de trois cadres de Muscu B recalées d'après le 25/09 (seed 15). */
   frameTargets20260925?: string;
+  /** Chaise contre le mur à 90° : nom, technique, consigne du test Jambes et de Muscu C (seed 16). */
+  chair90?: string;
 }
 
 export type SettingsRecord =

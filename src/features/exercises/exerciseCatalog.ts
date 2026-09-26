@@ -132,7 +132,7 @@ export const exerciseCatalog = [
   },
   {
     id: "chaise-60",
-    name: "Chaise contre le mur à 60°",
+    name: "Chaise contre le mur",
     category: "Musculation",
     zone: "Jambes",
     movement: "Squat",
@@ -142,7 +142,7 @@ export const exerciseCatalog = [
     mode: "series",
     measurementType: "duration",
     media: officialExerciseMedia("chaise-60"),
-    technique: "Dos plaqué au mur, descends jusqu'à un angle d'environ 60° aux genoux, pieds à plat et genoux au-dessus des chevilles. Tiens la position sans t'appuyer avec les mains.",
+    technique: "Dos plaqué au mur, descends jusqu'à avoir les cuisses parallèles au sol, pieds à plat et genoux au-dessus des chevilles. Tiens la position sans t'appuyer avec les mains ; arrête en cas de douleur au genou.",
     description: "Gainage des jambes en position basse, utile pour tenir les appuis fléchis du padel.",
     advice: "Garde le même angle d'une séance à l'autre : c'est lui qui rend les durées comparables. Arrête si une douleur apparaît au genou.",
     muscles: ["Quadriceps", "Fessiers"],

@@ -194,7 +194,7 @@ L'ancien écran Progression reste accessible pendant le chantier (Plus > « Stat
 |---|---|
 | Traction | traction assistée · traction négative · tirage vertical · rowing poulie basse · pullover poulie bras tendus · suspension + activation des omoplates |
 | Haut du corps | chest press · développé épaules machine · développé incliné haltères · élévations latérales · rowing poulie basse · tirage vertical · extension triceps poulie |
-| Jambes | squat barre · presse à cuisses · leg curl assis · montée sur banc · chaise 60° · marche latérale élastique · mollets debout · sprints vélo |
+| Jambes | squat barre · presse à cuisses · leg curl assis · montée sur banc · chaise contre le mur (90°) · marche latérale élastique · mollets debout · sprints vélo |
 | Cardio | tapis (`tapis`), vélo (`velo`) : exercices de Cardio A, B, C |
 | Tronc, Souplesse | exercices des routines du soir, **à définir** (correction B) : liste vide tant que les routines n'ont pas de contenu |
 | Poids | aucun |
@@ -277,7 +277,7 @@ L'ancien écran Progression reste accessible pendant le chantier (Plus > « Stat
 |---|---|
 | **Muscu A — Traction force / dos** (~60 min), A | échauffement cardio 8-10 min ; traction assistée 3×6-8, repos 150 s (**52 kg d'aide**) ; squat barre 3×8-10, repos 120 s (**35 kg**, barre 20 kg, saisie par côté 7,5 kg) ; rowing poulie basse 3×8-12 (**37,5 kg**) ; chest press 3×8-12 (**37,5 kg**) ; leg curl assis 3×10-12 (**30 kg**) ; élévations latérales 2×12-15, repos **90 s** (D15) (**5 kg**) |
 | **Muscu B — Pecs / épaules** (~60 min), B | échauffement ; traction négative 3×3-5, descente visée ≥ 5 s ; développé épaules machine 3×8-10 (**27,5 kg**) ; presse à cuisses 3×10-12 (**130 kg**) ; **développé incliné haltères** 3×8-12 (*à étalonner* : vide) ; tirage vertical 3×8-12 (**40 kg**) ; élévations latérales 2×12-15, repos 90 s (**5 kg**) ; extension triceps poulie 2×10-15 (**15 kg**) |
-| **Muscu C — Jambes padel** (~60 min), C | échauffement ; suspension + activation des omoplates 3×20-30 s ; sprints vélo 6×12 s / 48 s ; montée sur banc bas 3×8/jambe ; **groupe « Rester bas »** ×3 tours, 90 s entre les tours : chaise 60° 30-45 s, marche latérale élastique 10 pas/côté, mollets debout 15-20 ; pullover poulie bras tendus 3×10-15 (*à étalonner* : vide) ; leg curl assis 2×12 (**30 kg**) → N5 |
+| **Muscu C — Jambes padel** (~60 min), C | échauffement ; suspension + activation des omoplates 3×20-30 s ; sprints vélo 6×12 s / 48 s ; montée sur banc bas 3×8/jambe ; **groupe « Rester bas »** ×3 tours, 90 s entre les tours : chaise contre le mur 30-45 s (90°, décision du 26/09), marche latérale élastique 10 pas/côté, mollets debout 15-20 ; pullover poulie bras tendus 3×10-15 (*à étalonner* : vide) ; leg curl assis 2×12 (**30 kg**) → N5 |
 | **Cardio A — Endurance facile** (45 min), A | tapis : 5 min à 4,5 km/h, 0 % ; **35 min à 5 km/h, pente 6-8 %** (`mainBlockId`) ; 5 min de retour au calme |
 | **Cardio B — Intervalles vélo** (40 min), B | 10 min progressif ; 8 × (1 min RPE 7-8 / 2 min facile) ; 5 min de retour au calme |
 | **Cardio C — Endurance longue** (55 min), C | 5 / 45 / 5 min, réglages de Cardio A ou randonnée ; consigne « +5 min quand c'est confortable, jusqu'à 90 min » |
@@ -289,7 +289,7 @@ L'ancien écran Progression reste accessible pendant le chantier (Plus > « Stat
 | `traction-negative` | Traction négative | Musculation / Dos / Tirage / Poids du corps | `reps_duration` : répétitions + **durée de chaque descente** (D25) |
 | `suspension-omoplates` | Suspension + activation des omoplates | Musculation / Dos / Tirage / Poids du corps | `duration` |
 | `montee-banc` | Montée sur banc bas | Musculation / Jambes / Squat / Poids du corps | `reps_per_side` |
-| `chaise-60` | Chaise contre le mur à 60° | Musculation / Jambes / Squat / Poids du corps | `duration` |
+| `chaise-60` | Chaise contre le mur (90° depuis le 26/09 ; identifiant inchangé) | Musculation / Jambes / Squat / Poids du corps | `duration` |
 | `marche-laterale-elastique` | Marche latérale élastique | Musculation / Jambes / Isolation / Élastique | `reps_per_side`, libellé « pas » |
 | `mollets-debout` | Mollets debout | Musculation / Jambes / Isolation / Machine | `load_reps` |
 | `sprint-velo` | Sprints vélo | Cardio / — / — / Vélo | `duration_power` : durée + résultat en watts **ou** mètres + résistance (D17) |
@@ -721,7 +721,7 @@ interface TestResult {
 | `traction` | `trials_descending` | échauffement : 2 séries faciles à ~55 kg d'aide, non enregistrées ; 1er essai à 40 kg ; −2 à 3 kg par essai ; 3 min de repos ; jusqu'au premier échec ; même machine | **`assistance_min_kg`** (dérivée : dernier essai réussi) ; `essais_nb` (dérivée) |
 | `traction_stricte` | `single_attempt` | à la barre, sans aide ; amplitude complète ; statut `paused` | **`tractions_barre`** (nombre) |
 | `cardio` | `measures` | 20 min de tapis, 5 km/h, pente 8 % | `fc_16`, `fc_17`, `fc_18`, `fc_19`, `fc_20` (saisies) ; **`fc_moy_16_20`** (dérivée, D28) ; `fc_5`, `fc_10`, `fc_15` ; `fc_max` ; `fc_recup_1min` ; `rpe_final` |
-| `jambes` | `measures` | 6 sprints vélo de 12 s, 48 s de récupération, même vélo, même résistance ; puis chaise contre le mur à 60°, durée max ; `settings.unit` fixée au 1er test (D17) | `sprint_1` … `sprint_6` ; `sprint_puissance_moy` (dérivée) ; `sprint_baisse_pct` (dérivée) ; `chaise_duree_s` ; `resistance` |
+| `jambes` | `measures` | 6 sprints vélo de 12 s, 48 s de récupération, même vélo, même résistance ; puis chaise contre le mur, durée max : dos plaqué au mur, cuisses parallèles au sol, genoux au-dessus des chevilles, arrêt en cas de douleur au genou (90°, décision du 26/09 ; V1 modifiée sur place, aucun résultat) ; `settings.unit` fixée au 1er test (D17) | `sprint_1` … `sprint_6` ; `sprint_puissance_moy` (dérivée) ; `sprint_baisse_pct` (dérivée) ; `chaise_duree_s` ; `resistance` |
 | `souplesse` | `measures` | protocole mobilité V1 (v1.6 § 6.2 : état, position, méthode, consigne d'arrêt) ; doigts-sol signé : 0 = contact, positif = au-dessus du sol, négatif = au-delà (D8) | **`doigts_sol_cm`** (`signed`) ; `apley_cm` G/D ; `papillon_cm` |
 | `mensurations` | `measures` | le matin, même mètre ruban | `epaules_cm` ; `taille_cm` ; **`ratio_epaules_taille`** (dérivée) |
 | `tronc` | `single_attempt` | planche sur les avant-bras, **1 essai**, durée maximale en bonne forme ; arrêt dès que le bassin descend ou monte franchement (D7) | **`planche_duree_s`** |
@@ -1222,7 +1222,7 @@ N1 est **modifiée** (voir ci-dessous) ; N2 à N12 sont **validées telles que p
 - **Points techniques** :
   - genoux dans l'axe des pieds (squat, presse, montée sur banc) ;
   - dos neutre ;
-  - chaise à 60° : dos plaqué au mur, poids sur les talons.
+  - chaise contre le mur : dos plaqué au mur, cuisses parallèles au sol, poids sur les talons.
 - **Erreurs à éviter** :
   - laisser les genoux rentrer vers l'intérieur ;
   - réduire l'amplitude pour tenir la charge ;

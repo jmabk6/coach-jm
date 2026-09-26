@@ -133,7 +133,7 @@ describe("figeage des versions (§ 3.7.2)", () => {
   beforeEach(() => seedTestProtocols(NOW));
 
   it("avant le premier résultat officiel : modification sur place (unité des sprints, D17)", async () => {
-    const edited = await reviseTestProtocol("protocol-jambes", { settings: { sprintCount: 6, sprintSec: 12, recoverySec: 48, chairAngleDeg: 60, unit: "watts" } }, NOW);
+    const edited = await reviseTestProtocol("protocol-jambes", { settings: { sprintCount: 6, sprintSec: 12, recoverySec: 48, chairAngleDeg: 90, unit: "watts" } }, NOW);
     expect(edited).toMatchObject({ id: "protocol-jambes-v1", number: 1, settings: { unit: "watts" } });
     expect(await db.testProtocolVersions.where("protocolId").equals("protocol-jambes").count()).toBe(1);
   });
