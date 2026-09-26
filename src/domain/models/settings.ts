@@ -58,6 +58,8 @@ export interface InstallMarkers {
   addWorkout20260925?: string;
   /** Thème Clair par défaut : l'ancien « Auto » par défaut passe à « Clair » (seed 14). */
   themeLight?: string;
+  /** Premières cibles de trois cadres de Muscu B recalées d'après le 25/09 (seed 15). */
+  frameTargets20260925?: string;
 }
 
 export type SettingsRecord =

@@ -3,7 +3,8 @@ import "fake-indexeddb/auto";
 import { readFile } from "node:fs/promises";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
-import type { SettingsRecord, WorkoutSession } from "../../domain";
+import type { SettingsRecord, StrengthFrame, StrengthFrameVersion, WorkoutSession } from "../../domain";
+import { expectedAfterFrameTargets } from "../strength/seedFrameTargets20260925";
 import { FIX_WORKOUT_ID, fixesOf20260924 } from "../workout/seedFixWorkout20260924";
 import { buildWorkout20260925, WORKOUT_20260925_ID } from "../history/seedWorkout20260925";
 import { canonicalStringify } from "../backup/canonicalJson";
@@ -56,19 +57,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
     expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
     const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
-    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso });
+    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso });
     expect(await db.goals.count()).toBe(7);
     expect(await db.testProtocols.count()).toBe(7);
     expect(await db.exercises.count()).toBeGreaterThan(0);
@@ -203,11 +204,18 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
         : goal;
       expect(canonicalStringify(seededGoal), goal.id).toBe(canonicalStringify(expectedGoal));
     }
-    /* Lot D.6 : les cadres du fichier restent identiques, ceux du programme s'ajoutent (T-21). */
+    /* Lot D.6 : les cadres du fichier restent identiques, ceux du programme s'ajoutent (T-21) ;
+       seed 15 : trois cadres de Muscu B encore en V1 semée passent en V2. */
+    const seededVersions = seeded.stores.strengthFrameVersions as StrengthFrameVersion[];
+    const recalibrated = expectedAfterFrameTargets(
+      (file.stores.strengthFrames ?? []) as StrengthFrame[],
+      (file.stores.strengthFrameVersions ?? []) as StrengthFrameVersion[],
+      (frameId) => seededVersions.find((version) => version.id === `${frameId}-v2`),
+    );
     for (const store of ["strengthFrames", "strengthFrameVersions"]) {
       const seededById = new Map((seeded.stores[store] as Array<{ id: string }>).map((item) => [item.id, item]));
       for (const item of (file.stores[store] ?? []) as Array<{ id: string }>) {
-        expect(canonicalStringify(seededById.get(item.id)), `${store} ${item.id}`).toBe(canonicalStringify(item));
+        expect(canonicalStringify(seededById.get(item.id)), `${store} ${item.id}`).toBe(canonicalStringify(recalibrated.get(item.id) ?? item));
       }
     }
     const fileTemplates = (file.stores.sessionTemplates ?? []) as Array<{ id: string }>;

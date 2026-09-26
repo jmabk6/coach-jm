@@ -6,6 +6,7 @@ import { seedFixWorkout20260924, seedRemoveSkipped20260924 } from "../workout/se
 import { seedWorkout20260925 } from "../history/seedWorkout20260925";
 import { seedProgramFrames } from "../strength/seedProgramFrames";
 import { seedRpeScale } from "../strength/seedRpeScale";
+import { seedFrameTargets20260925 } from "../strength/seedFrameTargets20260925";
 import { seedGoals } from "../goals/seedGoals";
 import { seedTestProtocols } from "../tests/seedTestProtocols";
 import { seedSettingsDefaults, seedThemeLight } from "./seedSettingsDefaults";
@@ -50,6 +51,8 @@ export const SEEDS: SeedStep[] = [
   { name: "addWorkout20260925", dependsOn: ["exerciseCatalog"], run: () => seedWorkout20260925() },
   /* Seed 14 : thème Clair par défaut. */
   { name: "themeLight", dependsOn: ["settingsDefaults"], run: () => seedThemeLight() },
+  /* Seed 15 : premières cibles de trois cadres de Muscu B, d'après la séance du 25/09. */
+  { name: "frameTargets20260925", dependsOn: ["frames"], run: () => seedFrameTargets20260925() },
 ];
 
 export interface SeedReport {

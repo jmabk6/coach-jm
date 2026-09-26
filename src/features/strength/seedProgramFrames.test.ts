@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 import { db } from "../../db/database";
 import type { PerformedExerciseBlock, SessionTemplate, StrengthFrame, StrengthFrameVersion, StrengthMilestone, WorkoutSession } from "../../domain";
 import { frameParametersChanged, nextStep, proposeRaise } from "../../domain/rules/strengthRules";
+import { expectedAfterFrameTargets } from "./seedFrameTargets20260925";
 import { canonicalStringify } from "../backup/canonicalJson";
 import { resetAndRestore } from "../backup/resetAndRestore";
 import { parseBackup } from "../backup/restoreBackup";
@@ -16,7 +17,7 @@ import { buildWorkout20260925, WORKOUT_20260925_ID } from "../history/seedWorkou
 import { updateFrameVersion } from "./frameActions";
 
 vi.stubEnv("BASE_URL", "/coach-jm/");
-const { runSeeds, resumeSeedsForTests } = await import("../seed/runSeeds");
+const { runSeeds, resumeSeedsForTests, SEEDS } = await import("../seed/runSeeds");
 const { PROGRAM_V1_FRAMES, programFrameIds, seedProgramFrames } = await import("./seedProgramFrames");
 
 /**
@@ -52,7 +53,8 @@ async function versionOf(exerciseId: string): Promise<StrengthFrameVersion | und
 
 describe("seed 7 sur une base neuve", () => {
   it("un cadre par exercice à charge du programme, avec ses premières cibles", async () => {
-    await runSeeds();
+    /* Le seed 7 seul (et ceux dont il dépend) : le seed 15 recale ensuite trois cibles, testé à part. */
+    await runSeeds(SEEDS.filter((seed) => seed.name !== "frameTargets20260925"));
     const install = (await db.settings.get("install"))?.value as { frames?: string };
     expect(install.frames).toEqual(expect.any(String));
 
@@ -91,7 +93,7 @@ describe("seed 7 sur une base neuve", () => {
     }
 
     const spies = spyWrites();
-    await runSeeds();
+    await runSeeds(SEEDS.filter((seed) => seed.name !== "frameTargets20260925"));
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
   });
 
@@ -194,12 +196,17 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
 
     const fileFrames = (file.stores.strengthFrames ?? []) as StrengthFrame[];
     const fileVersions = (file.stores.strengthFrameVersions ?? []) as StrengthFrameVersion[];
+    /* Seed 15 : trois cadres de Muscu B encore en V1 semée passent en V2. */
+    const seededVersions = await db.strengthFrameVersions.toArray();
+    const recalibrated = expectedAfterFrameTargets(fileFrames, fileVersions, (frameId) =>
+      seededVersions.find((version) => version.id === `${frameId}-v2`),
+    );
     for (const frame of fileFrames) {
-      expect(canonicalStringify(await db.strengthFrames.get(frame.id)), frame.id).toBe(canonicalStringify(frame));
+      expect(canonicalStringify(await db.strengthFrames.get(frame.id)), frame.id).toBe(canonicalStringify(recalibrated.get(frame.id) ?? frame));
       expect(await db.strengthFrames.where("exerciseId").equals(frame.exerciseId).count(), frame.exerciseId).toBe(1);
     }
     for (const version of fileVersions) {
-      expect(canonicalStringify(await db.strengthFrameVersions.get(version.id)), version.id).toBe(canonicalStringify(version));
+      expect(canonicalStringify(await db.strengthFrameVersions.get(version.id)), version.id).toBe(canonicalStringify(recalibrated.get(version.id) ?? version));
     }
 
     const covered = new Set(fileFrames.map((frame) => frame.exerciseId));
