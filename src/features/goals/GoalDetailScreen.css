@@ -497,6 +497,10 @@
   font-size: 0.68rem;
 }
 
+.composition-card__curve figcaption.composition-card__curve-single {
+  justify-content: center;
+}
+
 .composition-card__source {
   margin-top: 2px;
   color: var(--color-text-soft);

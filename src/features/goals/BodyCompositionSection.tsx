@@ -114,7 +114,7 @@ function MonthCurve({ months, format, label }: { months: CompositionSummary["mon
           <circle key={month.month} cx={x(index)} cy={y(month.mean!)} r={3} fill="currentColor" />
         ))}
       </svg>
-      <figcaption>
+      <figcaption className={months.length === 1 ? "composition-card__curve-single" : undefined}>
         <span>{formatMonthShort(first.month)}</span>
         {months.length > 1 && <span>{formatMonthShort(last.month)}</span>}
       </figcaption>

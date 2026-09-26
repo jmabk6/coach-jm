@@ -213,7 +213,7 @@
 
 /* Composition corporelle (26/09/2026) : facultative, discrète. */
 .weight-card__field--optional small {
-  margin-left: 4px;
+  display: block;
   color: var(--color-text-soft);
   font-size: 0.75rem;
   font-weight: 400;
@@ -234,4 +234,9 @@
 .weight-card__row-composition {
   grid-column: 1 / -1;
   margin-top: -4px;
+}
+
+/* Unité de largeur fixe : les champs kg et % restent alignés. */
+.weight-card__input > span {
+  min-width: 1.4em;
 }
