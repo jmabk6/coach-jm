@@ -93,7 +93,10 @@ describe("création d'un exercice avec classification", () => {
     const saved = (await db.exercises.toArray())[0]!;
     expect(saved).toMatchObject({ name: "Fentes bulgares", zone: "Dos", movement: "Tirage", progressionGroup: "Dos", movementFamily: "tirage_horizontal" });
 
-    /* La fiche affiche « Groupe · Famille ». */
+    /* La fiche s'ouvre ; « Groupe · Famille » se lit dans ⋯ > Réglages de progression (refonte du 26/09). */
+    expect(await screen.findByRole("heading", { level: 1, name: "Fentes bulgares" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Autres actions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Réglages de progression" }));
     expect(await screen.findByText("Dos · Tirage horizontal")).toBeTruthy();
   });
 

@@ -1,3 +1,5 @@
+/* Fiche exercice (refonte du 26/09/2026, maquette validée). */
+
 .exercise-detail {
   max-width: 720px;
   margin: 0 auto;
@@ -5,7 +7,7 @@
 
 .exercise-detail__back {
   min-height: 40px;
-  margin: 0 0 12px;
+  margin: 0 0 4px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -15,58 +17,374 @@
 }
 
 .exercise-detail__header {
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
-.exercise-detail__header h1 {
-  margin: 0 0 12px;
-  font-size: 2rem;
+.exercise-detail__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
-.exercise-detail__tags {
+.exercise-detail__title-row h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+
+.exercise-detail__more {
+  display: grid;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.exercise-detail__tags,
+.exercise-detail__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-/* Classification de progression (groupe · famille) : même pastille, ton accentué. */
-.exercise-detail__tags .exercise-detail__classification {
-  border-color: var(--color-accent-soft);
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-}
-
-.exercise-detail__tags span {
+.exercise-detail__tags span,
+.exercise-detail__chips span {
   display: inline-flex;
-  min-height: 32px;
+  min-height: 30px;
   align-items: center;
-  padding: 0 11px;
+  padding: 0 12px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-surface);
   font-size: 13px;
 }
 
-.exercise-detail__media {
-  margin-bottom: 26px;
+.exercise-detail__chips span {
+  border-color: var(--color-accent-soft);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
-.exercise-detail__section {
-  margin-bottom: 26px;
-}
-
-.exercise-detail__section h2 {
+.exercise-detail__classification {
   margin: 0 0 12px;
-  font-size: 1.2rem;
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
 }
 
+.exercise-detail__classification strong {
+  color: var(--color-text);
+}
+
+.exercise-detail__media {
+  margin-bottom: 14px;
+}
+
+/* Onglets : Progression | Comment faire | Alternatives. */
+.exercise-detail__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--color-surface-muted);
+}
+
+.exercise-detail__tab {
+  min-height: 38px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-text-soft);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.exercise-detail__tab--active {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.exercise-detail__panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.exercise-detail__card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.exercise-detail__card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.exercise-detail__card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.exercise-detail__card-heading h2 {
+  margin: 0;
+}
+
+.exercise-detail__chevron {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-soft);
+}
+
+/* Prochaine séance */
+.exercise-detail__next {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exercise-detail__next-icon {
+  display: grid;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.exercise-detail__next strong {
+  display: block;
+  font-size: 1.3rem;
+}
+
+.exercise-detail__next p {
+  margin: 2px 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+}
+
+.exercise-detail__rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: 0.9rem;
+}
+
+.exercise-detail__rule svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Dernières séances */
+.exercise-detail__sessions {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.exercise-detail__sessions td,
+.exercise-detail__sessions th {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.exercise-detail__sessions th {
+  color: var(--color-text-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.exercise-detail__sessions td:first-child {
+  color: var(--color-text-soft);
+}
+
+.exercise-detail__sessions-load {
+  font-weight: 700;
+}
+
+.exercise-detail__sessions tr:last-child td {
+  border-bottom: 0;
+}
+
+.exercise-detail__link {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.exercise-detail__empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 18px 8px;
+  color: var(--color-text-soft);
+  text-align: center;
+}
+
+.exercise-detail__empty strong {
+  color: var(--color-text);
+}
+
+.exercise-detail__empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Graphique */
+.exercise-detail__better {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-success);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.exercise-detail__chart {
+  width: 100%;
+  color: var(--color-accent);
+  overflow: hidden;
+}
+
+.exercise-detail__chart .recharts-text {
+  fill: var(--color-text-soft);
+  font-size: 11px;
+}
+
+.exercise-detail__chart .recharts-label-list .recharts-text {
+  fill: var(--color-accent);
+  font-weight: 600;
+}
+
+.exercise-detail__best {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-surface-muted);
+}
+
+.exercise-detail__best svg {
+  flex-shrink: 0;
+  color: var(--color-warning);
+}
+
+.exercise-detail__best span {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+.exercise-detail__best small {
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+}
+
+/* Comment faire */
+.exercise-detail__steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.exercise-detail__steps li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  color: var(--color-text-soft);
+  counter-increment: step;
+}
+
+.exercise-detail__steps li::before {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  content: counter(step);
+  font-weight: 700;
+}
+
+.exercise-detail__card--warning {
+  border-color: var(--color-danger-soft);
+  background: var(--color-danger-soft);
+}
+
+.exercise-detail__card--warning h2 {
+  color: var(--color-danger-strong);
+}
+
+.exercise-detail__card--warning ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.exercise-detail__muted {
+  margin: 0;
+  color: var(--color-text-soft);
+}
+
+/* Alternatives */
 .exercise-detail__alternatives {
   display: grid;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 
 .exercise-detail__alternative {
   display: flex;
-  min-height: 64px;
+  min-height: 60px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -79,7 +397,6 @@
   font: inherit;
 }
 
-/* Le bloc des rubriques qui suit porte déjà son filet haut : pas de double trait. */
 .exercise-detail__alternative:last-child {
   border-bottom: 0;
 }
@@ -96,125 +413,4 @@
 .exercise-detail__alternative span:last-child {
   color: var(--color-text-soft);
   font-size: 28px;
-}
-
-.exercise-detail__accordions {
-  border-top: 1px solid var(--color-border);
-}
-
-.exercise-detail__accordions details {
-  border-bottom: 1px solid var(--color-border);
-}
-
-.exercise-detail__accordions summary {
-  padding: 16px 0;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.exercise-detail__accordions p,
-.exercise-detail__accordions ul {
-  margin: 0;
-  padding: 0 0 16px;
-  color: var(--color-text-soft);
-}
-
-.exercise-detail__accordions ul {
-  padding-left: 20px;
-}
-
-.exercise-detail__section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.exercise-detail__section-heading h2 {
-  margin: 0;
-}
-
-.exercise-detail__metric-select {
-  min-height: 38px;
-  padding: 0 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 9px;
-  background: var(--color-surface);
-  color: inherit;
-  font: inherit;
-  font-size: 14px;
-}
-
-.exercise-detail__performance-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.exercise-detail__performance-card {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  padding: 14px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-}
-
-.exercise-detail__performance-card small,
-.exercise-detail__performance-card span {
-  color: var(--color-text-soft);
-}
-
-.exercise-detail__performance-card strong {
-  font-size: 1.25rem;
-}
-
-@media (max-width: 600px) {
-  .exercise-detail__performance-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .exercise-detail__section-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-.exercise-detail__chart {
-  width: 100%;
-  margin-top: 18px;
-  padding: 14px 8px 4px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  overflow: hidden;
-}
-
-.exercise-detail__chart .recharts-text {
-  font-size: 12px;
-}
-.exercise-detail__title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.exercise-detail__title-row h1 {
-  margin: 0;
-}
-
-.exercise-detail__edit-button {
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
-  background: var(--color-surface);
-  color: inherit;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  flex-shrink: 0;
 }
