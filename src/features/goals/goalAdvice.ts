@@ -20,7 +20,7 @@ export interface AdviceSession {
 export interface GoalAdvice {
   draft: boolean;
   frequency: string;
-  /** Traction : les trois séances du programme V1 qui la travaillent. */
+  /** Traction : les séances du programme qui la travaillent. */
   sessions?: AdviceSession[];
   progress: Array<{ label?: string; text: string }>;
   technique: string[];
@@ -31,19 +31,23 @@ export interface GoalAdvice {
 export const GOAL_ADVICE: Record<string, GoalAdvice> = {
   traction: {
     draft: false,
-    frequency: "3 séances par semaine, selon ton programme V1.",
+    frequency: "2 séances par semaine : A (force), B (rappel léger).",
     sessions: [
-      { letter: "A", title: "Séance A — Force", exercises: ["Traction assistée", "Rowing poulie basse"], aim: "Objectif : gagner de la force." },
-      { letter: "B", title: "Séance B — Contrôle", exercises: ["Traction négative", "Tirage vertical"], aim: "Objectif : améliorer le contrôle." },
       {
-        letter: "C",
-        title: "Séance C — Technique",
-        exercises: ["Pullover poulie bras tendus", "Suspension + omoplates"],
-        aim: "Objectif : renforcer le dos et la connexion aux omoplates.",
+        letter: "A",
+        title: "Séance A — Force",
+        exercises: ["Traction assistée", "Rowing poulie basse", "Tirage vertical"],
+        aim: "Objectif : gagner de la force.",
+      },
+      {
+        letter: "B",
+        title: "Séance B — Rappel léger",
+        exercises: ["Traction assistée légère (plus d'assistance qu'en A)"],
+        aim: "Objectif : entretenir le mouvement sans entamer la récupération.",
       },
     ],
     progress: [
-      { label: "Régularité", text: "3 séances par semaine (A, B, C)." },
+      { label: "Régularité", text: "2 séances par semaine : A (force), B (rappel léger)." },
       { label: "Qualité du mouvement", text: "amplitude complète, menton au-dessus de la barre." },
       {
         label: "Règle de progression",
@@ -63,7 +67,7 @@ export const GOAL_ADVICE: Record<string, GoalAdvice> = {
 
   upper_body: {
     draft: true,
-    frequency: "2 séances par semaine qui le travaillent (Muscu A et Muscu B).",
+    frequency: "3 séances par semaine (A, B, C).",
     progress: [
       { text: "Double progression." },
       { text: "Quand toutes les séries atteignent le haut de la fourchette à RPE ≤ 8, ajouter 2,5 kg à la séance suivante." },
@@ -84,7 +88,7 @@ export const GOAL_ADVICE: Record<string, GoalAdvice> = {
 
   legs: {
     draft: true,
-    frequency: "2 séances par semaine qui les travaillent (Muscu A et Muscu C).",
+    frequency: "3 séances par semaine qui les travaillent (A, B, C).",
     progress: [
       { label: "Charges", text: "+5 kg quand toutes les séries atteignent le haut de la fourchette à RPE ≤ 8." },
       {
@@ -93,7 +97,7 @@ export const GOAL_ADVICE: Record<string, GoalAdvice> = {
       },
     ],
     technique: [
-      "Genoux dans l'axe des pieds (squat, presse, montée sur banc).",
+      "Genoux dans l'axe des pieds (presse, montée sur banc).",
       "Dos neutre.",
       "Chaise contre le mur : dos plaqué au mur, cuisses parallèles au sol, poids sur les talons.",
     ],
@@ -105,14 +109,15 @@ export const GOAL_ADVICE: Record<string, GoalAdvice> = {
     frequency: "3 séances par semaine (Cardio A, B et C).",
     progress: [
       {
-        label: "La durée d'abord",
-        text: "allonger Cardio C de 5 min quand c'est confortable, jusqu'à 90 min, avant d'augmenter l'intensité.",
+        label: "Étalonnage",
+        text: "les premières séances se font au ressenti (RPE) ; après 2-3 séances, les réglages personnels sont fixés dans les modèles : le volume d'abord, l'intensité ensuite.",
       },
       { text: "L'indicateur baisse quand la forme s'améliore : même effort, cœur plus calme." },
     ],
     technique: [
-      "Cardio A et C à allure où l'on peut parler.",
-      "Cardio B : effort franc sur la minute rapide, récupération réelle sur les deux minutes lentes.",
+      "Cardio A : tu parles en phrases complètes (RPE 4-5).",
+      "Cardio B : marche inclinée, 3 min à RPE 8 puis 2 min de récupération ; marche uniquement, sans tenir les barres.",
+      "Cardio C : phrases courtes sur les blocs soutenus (RPE ~6).",
     ],
     mistakes: [
       "Transformer chaque séance en séance difficile.",
