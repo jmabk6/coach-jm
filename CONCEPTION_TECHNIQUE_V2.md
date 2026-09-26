@@ -253,6 +253,7 @@ L'ancien écran Progression reste accessible pendant le chantier (Plus > « Stat
 - **Indicateur (D9)** : moyenne de la **dernière semaine complète** (dimanche → samedi) qui compte **au moins 3 pesées**. La semaine en cours est affichée « **provisoire** » et n'entre pas dans le statut. Détail au § 5.4.
 - **Mensurations** (épaules, taille) : protocole `mensurations` du modèle générique, **sans table dédiée** (D13). Le ratio est dérivé.
 - **Photos** : hors de l'app en V1.
+- **Composition corporelle** (décision « composition corporelle » du 26/09/2026, balance Withings Body Smart) : avec la pesée, deux champs **facultatifs**, masse grasse (%, une décimale, 3-60) et masse musculaire (kg, une décimale, 20-120). Sur l'objectif Poids, deux **indicateurs secondaires** : moyenne du mois (au moins 4 relevés, sinon « pas assez de relevés »), petite courbe mois par mois, flèche de tendance, mention « estimation de la balance ». Le poids reste l'indicateur principal ; la composition **n'entre dans aucun calcul de statut**. Détail au § 5.4 bis.
 
 ### 2.5 Programme V1
 
@@ -732,6 +733,8 @@ La saisie en cm accepte déjà les négatifs dans le code actuel (`SimpleMeasure
 
 Inchangé. `weightRepository.ts` est enfin appelé (lot I).
 
+Composition corporelle (26/09/2026) : deux champs **facultatifs**, `fatPct?: number` (masse grasse, %) et `muscleKg?: number` (masse musculaire, kg). **Aucune migration** : pas d'index, les pesées d'avant restent valides telles quelles et les anciennes sauvegardes se restaurent sans transformation. Une pesée sans composition n'a **pas** ces clés (jamais `undefined` stocké). La seconde saisie du même jour remplace aussi la composition : une grandeur laissée vide est effacée. La correction « poids seul » la conserve.
+
 ### 3.9 `settings`
 
 | Clé | Valeur | Défaut |
@@ -916,6 +919,18 @@ Toutes les mesures dérivées sont calculées et stockées **une fois à l'enreg
 - **Départ** = première semaine complète valide.
 - **Statut** : § 5.1, décroissant, cible 75 kg, échéance 31/03/2027.
 
+### 5.4 bis Composition corporelle (26/09/2026)
+
+Règles : `domain/rules/bodyCompositionRules.ts`.
+
+- **Saisie** : facultative ; vide = rien. Virgule ou point, arrondi à 0,1. Masse grasse 3-60 %, masse musculaire 20-120 kg ; hors bornes, message et rien d'écrit.
+- **Mois** : mois civil de la date locale de la pesée. Seules comptent les pesées qui portent la grandeur, jamais une pesée future.
+- **Moyenne du mois** = moyenne arithmétique exacte (arrondi d'affichage à 0,1). Elle n'est **valide** qu'avec **au moins 4 relevés** dans le mois.
+- **Affichage** : la moyenne du mois en cours si elle est valide ; sinon « Pas assez de relevés » (n sur 4 minimum), avec la dernière moyenne valide rappelée.
+- **Courbe** : une moyenne par mois valide (12 derniers au plus), reliées.
+- **Tendance** : dernier mois valide comparé au mois valide précédent. Écart sous 0,1 : « stable ». Sinon « en hausse » ou « en baisse ». La flèche est **neutre**, sans couleur de réussite.
+- **Statut** : aucun. La composition n'entre ni dans le statut, ni dans le départ, ni dans l'atteinte de l'objectif Poids, qui reste la moyenne hebdomadaire du poids (§ 5.4).
+
 ### 5.5 Tonnage
 
 - `Σ charge × répétitions` des séries validées des exercices `external` à charge.
@@ -990,6 +1005,7 @@ Ce sont les objectifs dont au moins un exercice lié a été réellement effectu
   - Jambes sans mesure : « Indicateur à choisir après 2 tests » ;
   - Poids : « Moyenne provisoire » ou « Pesée demain » ;
   - segment intermédiaire atteint : « Palier atteint ».
+- **Carte « Pesée du jour »** (lot I) : le poids, puis masse grasse et masse musculaire, facultatives (26/09/2026, § 5.4 bis). La composition s'affiche sous le poids et dans les pesées récentes.
 
 ### M2 — Planning Semaine (`/planning`)
 
@@ -1017,6 +1033,7 @@ Ce sont les objectifs dont au moins un exercice lié a été réellement effectu
 - **Écrit** : saisie d'un test passé (`testResult` manuel) ; édition de la cible, de l'échéance et de la mesure (Jambes) ; « Démarrer le test » (séance du jour qui le porte, sinon séance libre avec la seule brique test).
 - **Cartes** : Aujourd'hui, Statut, Échéance.
 - **Courbe** par segments.
+- **Objectif Poids** : section « Composition corporelle », deux cartes (masse grasse, masse musculaire), moyenne du mois, courbe mensuelle, tendance, « Estimation de la balance » (§ 5.4 bis). Aucun effet sur les cartes Aujourd'hui et Statut.
 - **Indicateurs secondaires** : meilleure série depuis le début de l'historique, et son écart.
 - **Séances liées** : 10 dernières.
 - **États** : aucun résultat → « Les résultats apparaîtront ici après ton premier test ».
@@ -1160,6 +1177,7 @@ Ce sont les objectifs dont au moins un exercice lié a été réellement effectu
 | Relecture 3 | Élévations latérales : incrément = plus petit écart d'haltères disponible, 1 kg par défaut | § 2.5.1 |
 | Relecture 4 | Presse à cuisses : première cible 130 kg | § 2.5, lot D |
 | Relecture 5 | N2 à N12 validées telles que proposées | § 8.2 |
+| Composition corporelle (26/09) | Masse grasse et masse musculaire facultatives avec la pesée ; indicateurs secondaires de l'objectif Poids, moyenne du mois dès 4 relevés ; hors statut ; sans migration | § 2.4, § 3.8, § 5.4 bis, M1, M5 |
 
 **Corrections faites à la révision 1** (vérification demandée par la correction B)
 - « Tronc — protocole à définir » est remplacé par D7.
