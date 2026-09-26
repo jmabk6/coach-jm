@@ -92,6 +92,12 @@
   font-weight: 600;
 }
 
+.block-edit__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .block-edit__swap {
   display: inline-flex;
   align-items: center;

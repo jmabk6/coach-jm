@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeftRight,
+  BookOpen,
   ChevronDown,
   ChevronRight,
   Info,
@@ -186,6 +187,8 @@ function BlockEditForm({ template, exerciseById, target, exercise, save }: Block
   const [draft, setDraft] = useState<Draft>(() => initialDraft(target));
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [sheet, setSheet] = useState<"discard" | "remove" | "leave">();
+  /* Destination d'« Abandonner » : le modèle, ou la fiche de l'exercice. */
+  const [leaveTo, setLeaveTo] = useState<{ to: string; state?: unknown }>();
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
 
@@ -261,6 +264,16 @@ function BlockEditForm({ template, exerciseById, target, exercise, save }: Block
       swappingRef.current = false;
     });
   }, [exercise.id, exerciseById, replacementId, save, searchParams, setSearchParams, target, template]);
+
+  function openSheet() {
+    const destination = { to: `/exercises/${exercise.id}`, state: { from: selfPath } };
+    if (dirty) {
+      setLeaveTo(destination);
+      setSheet("discard");
+      return;
+    }
+    navigate(destination.to, { state: destination.state });
+  }
 
   function openLibrary() {
     const params = new URLSearchParams();
@@ -357,14 +370,21 @@ function BlockEditForm({ template, exerciseById, target, exercise, save }: Block
               {groupLabel} · exercice {numbering[target.child.id]}
             </span>
           )}
-          <button
-            type="button"
-            className="block-edit__swap"
-            onClick={() => (dirty ? setSheet("discard") : openLibrary())}
-          >
-            <ArrowLeftRight size={15} strokeWidth={2.2} aria-hidden="true" />
-            Changer d'exercice
-          </button>
+          <div className="block-edit__links">
+            <button
+              type="button"
+              className="block-edit__swap"
+              onClick={() => (dirty ? setSheet("discard") : openLibrary())}
+            >
+              <ArrowLeftRight size={15} strokeWidth={2.2} aria-hidden="true" />
+              Changer d'exercice
+            </button>
+            {/* La fiche (image, animation, technique) ; son retour ramène ici (26/09/2026). */}
+            <button type="button" className="block-edit__swap" onClick={openSheet}>
+              <BookOpen size={15} strokeWidth={2.2} aria-hidden="true" />
+              Voir la fiche
+            </button>
+          </div>
         </div>
         <div className="block-edit__measure">
           <span className="block-edit__measure-badge">
@@ -509,9 +529,16 @@ function BlockEditForm({ template, exerciseById, target, exercise, save }: Block
           title="Abandonner les modifications ?"
           message="Les changements non enregistrés seront perdus."
           dismissLabel="Continuer à modifier"
-          onDismiss={() => setSheet(undefined)}
+          onDismiss={() => {
+            setLeaveTo(undefined);
+            setSheet(undefined);
+          }}
           actions={[
-            { label: "Abandonner", tone: "danger", onSelect: () => navigate(backTo) },
+            {
+              label: "Abandonner",
+              tone: "danger",
+              onSelect: () => (leaveTo ? navigate(leaveTo.to, { state: leaveTo.state }) : navigate(backTo)),
+            },
           ]}
         />
       )}

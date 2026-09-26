@@ -117,6 +117,8 @@ export function ExerciseDetailScreen() {
   const exercisesBackTarget =
     cameFrom ??
     (selectionMode ? `/exercises?${searchParams.toString()}` : "/exercises");
+  /* Venue d'ailleurs que la bibliothèque (une séance, un objectif) : « Retour ». */
+  const backLabel = cameFrom && !cameFrom.startsWith("/exercises") ? "← Retour" : "← Exercices";
 
   const [state, setState] = useState<LoadState>({
     status: "loading",
@@ -266,7 +268,7 @@ export function ExerciseDetailScreen() {
           className="exercise-detail__back"
           onClick={() => navigate(exercisesBackTarget)}
         >
-          ← Exercices
+          {backLabel}
         </button>
 
         <h1>Erreur</h1>
@@ -283,7 +285,7 @@ export function ExerciseDetailScreen() {
           className="exercise-detail__back"
           onClick={() => navigate(exercisesBackTarget)}
         >
-          ← Exercices
+          {backLabel}
         </button>
 
         <h1>Exercice introuvable</h1>
@@ -344,7 +346,7 @@ export function ExerciseDetailScreen() {
         className="exercise-detail__back"
         onClick={() => navigate(exercisesBackTarget)}
       >
-        ← Exercices
+        {backLabel}
       </button>
 
       <header className="exercise-detail__header">
