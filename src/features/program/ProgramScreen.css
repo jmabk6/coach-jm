@@ -162,16 +162,25 @@
   list-style: none;
 }
 
+/* L'étiquette du jour en haut, en face de la première séance, et un
+   séparateur entre deux jours : une journée à plusieurs séances ne
+   déborde plus visuellement sur la suivante (correctif du 26/09/2026). */
 .program-day {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   gap: 8px;
+}
+
+.program-day + .program-day {
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
 }
 
 .program-day__label {
   display: flex;
   flex-direction: column;
+  padding-top: 12px;
   line-height: 1.2;
 }
 
