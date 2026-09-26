@@ -5,6 +5,15 @@
  */
 
 export const exerciseMedia = {
+  "bird-dog": {
+    thumbnail: "media/exercises/core/bird-dog-thumb.d01921e8.webp",
+    photo: "media/exercises/core/bird-dog.25e7eadc.webp",
+    frames: [
+      "media/exercises/core/bird-dog-frame1.ed21239e.webp",
+      "media/exercises/core/bird-dog-frame2.16b15fe0.webp",
+      "media/exercises/core/bird-dog-frame3.79e840f1.webp",
+    ],
+  },
   "chaise-60": {
     thumbnail: "media/exercises/jambes/chaise-60-thumb.0339d925.webp",
     photo: "media/exercises/jambes/chaise-60.84ec66de.webp",
@@ -21,6 +30,15 @@ export const exerciseMedia = {
       "media/exercises/pecs/chest-press-frame1.9b868ac0.webp",
       "media/exercises/pecs/chest-press-frame2.0cf837a8.webp",
       "media/exercises/pecs/chest-press-frame3.281391b0.webp",
+    ],
+  },
+  "crunch-inverse": {
+    thumbnail: "media/exercises/core/crunch-inverse-thumb.35a3e678.webp",
+    photo: "media/exercises/core/crunch-inverse.47e26f77.webp",
+    frames: [
+      "media/exercises/core/crunch-inverse-frame1.969ea918.webp",
+      "media/exercises/core/crunch-inverse-frame2.2fa6e4ed.webp",
+      "media/exercises/core/crunch-inverse-frame3.dc30c9fe.webp",
     ],
   },
   "crunch-poulie": {
