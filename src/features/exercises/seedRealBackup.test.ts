@@ -72,10 +72,15 @@ describe("seed du lot 3 sur la sauvegarde réelle", () => {
       delete strippedAfter.progressionGroup;
       delete strippedAfter.movementFamily;
       delete strippedAfter.loadSemantics;
+      delete strippedAfter.media;
       const strippedBefore: Partial<Exercise> = { ...previous };
       delete strippedBefore.progressionGroup;
       delete strippedBefore.movementFamily;
       delete strippedBefore.loadSemantics;
+      delete strippedBefore.media;
+      /* Les médias officiels suivent toujours le catalogue (nouvelles images comprises). */
+      const officialMedia = exerciseCatalog.find((entry) => entry.id === exercise.id)?.media;
+      expect(exercise.media, `${exercise.id} media`).toEqual(officialMedia ?? previous.media);
 
       /* Seuls les deux champs de classification — et, depuis le lot a, le
          sens de la charge — peuvent différer ; updatedAt et createdAt sont intacts. */
