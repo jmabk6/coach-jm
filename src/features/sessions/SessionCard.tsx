@@ -21,6 +21,7 @@ import {
 import { SessionCategoryIcon } from "./sessionCategory";
 import { categoryClassName } from "./sessionCategoryClass";
 import { paths } from "../../app/paths";
+import { SessionName } from "./SessionName";
 
 interface SessionCardProps {
   template: SessionTemplate;
@@ -53,7 +54,7 @@ export function SessionCard({
         <SessionCardIcon template={template} />
 
         <span className="session-card__body">
-          <span className="session-card__name">{template.name}</span>
+          <span className="session-card__name"><SessionName name={template.name} /></span>
           <span className="session-card__summary">
             {formatSessionTemplateSummary(summary, template.description)}
           </span>
@@ -126,7 +127,7 @@ export function SortableSessionCard({ template }: SortableSessionCardProps) {
       <div className="session-card__link">
         <SessionCardIcon template={template} />
         <span className="session-card__body">
-          <span className="session-card__name">{template.name}</span>
+          <span className="session-card__name"><SessionName name={template.name} /></span>
           <span className="session-card__summary">{template.category}</span>
         </span>
       </div>

@@ -3,6 +3,7 @@ import type {
   Id,
   MuscleZone,
   SessionBlock,
+  SessionCategory,
   SessionTemplate,
   WeeklyProgram,
   WorkoutSession,
@@ -76,6 +77,9 @@ export interface SessionTemplateSummary {
    * Vide pour une séance sans exercice de musculation.
    */
   zones: MuscleZone[];
+
+  /** Nombre d'exercices par zone, pour dégager les zones dominantes. */
+  zoneCounts: Partial<Record<MuscleZone, number>>;
 
   /**
    * Noms des exercices cardio, dans l'ordre de la séance.
@@ -152,10 +156,14 @@ export function summarizeSessionTemplate(
     exerciseCount: 0,
     cardioCount: 0,
     zones: [],
+    zoneCounts: {},
     cardioNames: [],
   };
 
-  for (const exercise of listTemplateExercises(blocks, exerciseById)) {
+  /* L'échauffement (D14) n'est ni un « exercice cardio » ni une zone travaillée (26/09/2026). */
+  const worked = blocks.filter((block) => !(block.kind === "exercise" && block.role === "warmup"));
+
+  for (const exercise of listTemplateExercises(worked, exerciseById)) {
     if (exercise.category === "Cardio") {
       summary.cardioCount += 1;
       summary.cardioNames.push(exercise.name);
@@ -164,8 +172,9 @@ export function summarizeSessionTemplate(
 
     summary.exerciseCount += 1;
 
-    if (exercise.zone && !summary.zones.includes(exercise.zone)) {
-      summary.zones.push(exercise.zone);
+    if (exercise.zone) {
+      if (!summary.zones.includes(exercise.zone)) summary.zones.push(exercise.zone);
+      summary.zoneCounts[exercise.zone] = (summary.zoneCounts[exercise.zone] ?? 0) + 1;
     }
   }
 
@@ -173,9 +182,18 @@ export function summarizeSessionTemplate(
 }
 
 /**
- * Nombre de zones au-delà duquel le résumé dit `Full body` (§5).
+ * Nombre de zones au-delà duquel le résumé ne cite que les zones
+ * dominantes (décision du 26/09/2026 : plus de `Full body`, faux pour
+ * Muscu A et B).
  */
-const FULL_BODY_ZONE_THRESHOLD = 3;
+const ALL_ZONES_THRESHOLD = 3;
+
+/** Les deux zones qui comptent le plus d'exercices ; à égalité, l'ordre de la séance. */
+function dominantZones(summary: SessionTemplateSummary): MuscleZone[] {
+  return [...summary.zones]
+    .sort((a, b) => (summary.zoneCounts[b] ?? 0) - (summary.zoneCounts[a] ?? 0) || summary.zones.indexOf(a) - summary.zones.indexOf(b))
+    .slice(0, 2);
+}
 
 /**
  * Première ligne du résumé : `6 exercices · Jambes, Dos, Core`.
@@ -208,8 +226,8 @@ export function formatSessionTemplateSummary(
   }
 
   const zones =
-    summary.zones.length > FULL_BODY_ZONE_THRESHOLD
-      ? "Full body"
+    summary.zones.length > ALL_ZONES_THRESHOLD
+      ? dominantZones(summary).join(", ")
       : summary.zones.join(", ");
 
   return `${count} · ${zones}`;
@@ -255,6 +273,13 @@ const ESTIMATED_SECONDS_PER_REP = 3;
 const ESTIMATED_TRANSITION_SEC = 60;
 
 /**
+ * Mise en place de chaque série (charger, régler la machine, se placer).
+ * Calibrée le 26/09/2026 sur les séances réelles : 200 à 250 s par série,
+ * repos compris, contre environ 120 s estimées jusque-là.
+ */
+const ESTIMATED_SET_SETUP_SEC = 45;
+
+/**
  * Estimation de la durée d'un modèle jamais (ou peu) réalisé.
  *
  * `calculateSessionDuration` ne compte que les temps mesurés (repos,
@@ -263,7 +288,10 @@ const ESTIMATED_TRANSITION_SEC = 60;
  */
 export function estimateSessionTemplateDurationSec(
   blocks: SessionBlock[],
+  category?: SessionCategory,
 ): number {
+  /* Mise en place par série : en salle seulement, pas pour une routine au sol. */
+  const setupSec = category === "Routine" || category === "Mobilité" ? 0 : ESTIMATED_SET_SETUP_SEC;
   let totalSec = calculateSessionDuration(blocks);
 
   for (const block of blocks) {
@@ -275,16 +303,23 @@ export function estimateSessionTemplateDurationSec(
       totalSec += ESTIMATED_TRANSITION_SEC;
 
       if (block.instructions.shape === "reps") {
-        const { sets, reps } = block.instructions;
+        const { sets, reps, restBetweenSetsSec } = block.instructions;
         const averageReps = (reps.min + reps.max) / 2;
 
-        totalSec += sets * averageReps * ESTIMATED_SECONDS_PER_REP;
+        /* Travail, mise en place de chaque série, et repos après la dernière avant l'exercice suivant. */
+        totalSec += sets * averageReps * ESTIMATED_SECONDS_PER_REP + sets * setupSec + restBetweenSetsSec;
+      } else if (block.instructions.shape === "duration") {
+        const { sets, restBetweenSetsSec } = block.instructions;
+
+        totalSec += sets * setupSec + restBetweenSetsSec;
       }
 
       continue;
     }
 
     totalSec += block.children.length * ESTIMATED_TRANSITION_SEC;
+
+    totalSec += block.rounds * block.children.length * setupSec;
 
     for (const child of block.children) {
       if (child.instructions.shape === "reps") {
@@ -327,7 +362,7 @@ export function calculateSessionTemplateDuration(
   return {
     kind: "estimated",
     minutes: Math.round(
-      estimateSessionTemplateDurationSec(template.blocks) / 60,
+      estimateSessionTemplateDurationSec(template.blocks, template.category) / 60,
     ),
   };
 }

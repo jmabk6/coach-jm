@@ -899,7 +899,7 @@ function DayCard({ entry, data }: { entry: ProgramEntry; data: ProgramData }) {
               <span className="program-day-card__number">{index + 1}</span>
               <span className="program-day-card__name">{dayBlockLabel(block, data.exerciseById, index)}</span>
               <span className="program-day-card__duration">
-                ≈ {Math.max(1, Math.round(estimateSessionTemplateDurationSec([block]) / 60))} min
+                ≈ {Math.max(1, Math.round(estimateSessionTemplateDurationSec([block], template.category) / 60))} min
               </span>
             </li>
           ))}

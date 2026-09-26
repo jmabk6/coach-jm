@@ -28,6 +28,7 @@ import { applyWeeklyProgram } from "./applyWeeklyProgram";
 import { TemplateSheet } from "./ProgramSheets";
 import "./ProgramScreen.css";
 import { paths } from "../../app/paths";
+import { SessionName } from "../sessions/SessionName";
 
 type LoadState =
   | { status: "loading" }
@@ -179,7 +180,7 @@ export function WeeklyProgramScreen() {
                       <SessionCategoryIcon category={template.category} size={22} />
                     </span>
                     <span className="program-row__body">
-                      <span className="program-row__name">{template.name}</span>
+                      <span className="program-row__name"><SessionName name={template.name} /></span>
                       <span className="program-row__meta">
                         {durationLabel(template.id)}
                       </span>

@@ -60,7 +60,8 @@ describe("Planning Semaine", () => {
         <ProgramScreen />
       </MemoryRouter>,
     );
-    await screen.findByText("Muscu C — Jambes padel");
+    /* Nom en deux lignes (26/09/2026) : « Muscu C », puis « Jambes padel ». */
+    await screen.findByText("Jambes padel");
 
     const badge = (weekday: string) => day(weekday).querySelector(".program-badge")?.textContent;
     expect(badge("Dim")).toBe("Faite");
@@ -74,7 +75,7 @@ describe("Planning Semaine", () => {
     const friday = day("Ven");
     expect(within(friday).getByText("Repos")).toBeTruthy();
     expect(within(friday).getByText("Soir")).toBeTruthy();
-    expect(within(friday).getByText("Routine A — Avant du tronc et hanches")).toBeTruthy();
+    expect(within(friday).getByText("Avant du tronc et hanches")).toBeTruthy();
     expect(within(day("Sam")).queryByText("Soir")).toBeNull();
   });
 });

@@ -51,9 +51,10 @@ afterEach(async () => {
 describe("Accueil — bloc Aujourd'hui", () => {
   it("dimanche 27/09 : Muscu A et son test traction ; ce soir, la routine A ; bandeau « Semaine de tests »", async () => {
     await renderOn("2026-09-27");
-    expect(await screen.findByText("Muscu A — Traction force / dos")).toBeDefined();
+    /* Nom en deux lignes (26/09/2026). */
+    expect(await screen.findByText("Traction force / dos")).toBeDefined();
     expect(screen.getByText("Test traction assistée")).toBeDefined();
-    expect(within(evening()).getByText("Routine A — Avant du tronc et hanches")).toBeDefined();
+    expect(within(evening()).getByText("Routine A")).toBeDefined();
     expect(within(evening()).getByText("Avant du tronc et hanches")).toBeDefined();
     expect(screen.getByText("Semaine de tests")).toBeDefined();
     /* Une journée prévue : pas de carte Repos, pas de « Choisir une séance ». */
@@ -62,7 +63,7 @@ describe("Accueil — bloc Aujourd'hui", () => {
 
   it("lundi 28/09 : ce soir, la Souplesse et le Tronc à la place de la routine", async () => {
     await renderOn("2026-09-28");
-    expect(await screen.findByText("Cardio B — Intervalles vélo")).toBeDefined();
+    expect(await screen.findByText("Intervalles vélo")).toBeDefined();
     expect(within(evening()).getByText("Test souplesse · Test tronc")).toBeDefined();
   });
 

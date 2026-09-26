@@ -87,6 +87,7 @@ import { computeWorkoutRecords } from "./workoutRecords";
 import { loadTestNames, loadTestRecapCards, type TestRecapCard } from "../tests/testRecapCards";
 import "./WorkoutRecapScreen.css";
 import { paths } from "../../app/paths";
+import { SessionName } from "../sessions/SessionName";
 
 /** Horizon de « Prochaine séance » (M10.3) : les deux semaines qui suivent la séance. */
 const NEXT_SESSION_HORIZON_DAYS = 14;
@@ -378,7 +379,7 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
       <header className="recap__nav">
         {back}
         <div className="recap__title">
-          <h1>{title}</h1>
+          <h1><SessionName name={title} /></h1>
           <p>{subtitle}</p>
         </div>
         {menuButton}
@@ -870,7 +871,7 @@ function NextSessionCard({ next }: { next: NextSession | undefined }) {
           <CalendarDays size={24} strokeWidth={2} aria-hidden="true" />
           <span className="end-next-session__body">
             <strong>{capitalize(formatFullDate(next.planned.date))}</strong>
-            <span>{next.template?.name ?? "Séance"}</span>
+            <span><SessionName name={next.template?.name ?? "Séance"} /></span>
             {next.minutes !== undefined && <span>Durée : {next.minutes} min</span>}
           </span>
         </div>

@@ -168,7 +168,8 @@ describe("vue 3 — prochaine séance, ressenti, notes, Enregistrer", () => {
 
     expect(await screen.findByText("Prochaine séance")).toBeDefined();
     expect(screen.getByText("Lundi 28 septembre 2026")).toBeDefined();
-    expect(screen.getByText("Cardio B — Intervalles vélo")).toBeDefined();
+    /* Nom en deux lignes (26/09/2026). */
+    expect(screen.getByText("Intervalles vélo")).toBeDefined();
 
     fireEvent.click(screen.getByRole("button", { name: "Facile" }));
     await waitFor(async () => expect((await db.workouts.get("w1"))?.feeling).toBe(4));

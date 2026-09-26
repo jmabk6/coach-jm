@@ -76,6 +76,7 @@ import { formatClock } from "./workoutRecap";
 import "./WorkoutScreen.css";
 import "./WorkoutBlocks.css";
 import { paths } from "../../app/paths";
+import { SessionName } from "../sessions/SessionName";
 
 /**
  * Séance en cours (§11, mockups 15–16) : liste déroulante de toutes les
@@ -434,7 +435,7 @@ export function WorkoutScreen() {
           </button>
         </div>
         <h1 className="workout__title">
-          {name} — {paused ? "En pause" : "En cours"}
+          <SessionName name={name} suffix={` · ${paused ? "En pause" : "En cours"}`} />
         </h1>
         <p className="workout__subtitle">
           Débutée à {formatClock(workout.startedAt)}

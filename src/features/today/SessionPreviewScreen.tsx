@@ -45,6 +45,7 @@ import { startWorkout } from "../workout/startWorkout";
 import { todayLocalDate } from "./useTodayData";
 import "./TodayScreen.css";
 import { paths } from "../../app/paths";
+import { SessionName } from "../sessions/SessionName";
 
 type LoadState =
   | { status: "loading" }
@@ -173,7 +174,7 @@ export function SessionPreviewScreen() {
           <SessionCategoryIcon category={template.category} size={26} />
         </span>
         <div className="today-card__body">
-          <h1 className="preview__title">{template.name}</h1>
+          <h1 className="preview__title"><SessionName name={template.name} /></h1>
           <span className="today-badge today-badge--planned">{badge}</span>
           <span className="today-card__text">
             {formatSessionTemplateSummary(summary, template.description)}

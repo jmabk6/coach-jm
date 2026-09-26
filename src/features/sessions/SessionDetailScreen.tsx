@@ -41,6 +41,7 @@ import {
 import { useSessionTemplate } from "./useSessionTemplate";
 import "./SessionDetailScreen.css";
 import { paths } from "../../app/paths";
+import { SessionName } from "./SessionName";
 
 /**
  * Détail d'une séance (§5–§7, mockups p. 12–13) : la liste ordonnée des
@@ -296,7 +297,7 @@ export function SessionDetailScreen() {
             ‹ Séances
           </Link>
         )}
-        <h1>{template.name}</h1>
+        <h1><SessionName name={template.name} /></h1>
         {selecting ? (
           <button
             type="button"

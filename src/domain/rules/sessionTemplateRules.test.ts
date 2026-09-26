@@ -172,6 +172,7 @@ describe("summarizeSessionTemplate", () => {
       exerciseCount: 5,
       cardioCount: 0,
       zones: ["Jambes", "Dos", "Core"],
+      zoneCounts: { Jambes: 2, Dos: 2, Core: 1 },
       cardioNames: [],
     });
     expect(formatSessionTemplateSummary(summary)).toBe(
@@ -203,7 +204,7 @@ describe("summarizeSessionTemplate", () => {
     );
   });
 
-  it("dit Full body au-delà de trois zones", () => {
+  it("au-delà de trois zones, cite les deux dominantes (plus de Full body, 26/09/2026)", () => {
     const blocks: SessionBlock[] = [
       ...muscuABlocks,
       repsBlock("b-chest", 5, "chest-press"),
@@ -213,7 +214,7 @@ describe("summarizeSessionTemplate", () => {
       formatSessionTemplateSummary(
         summarizeSessionTemplate(blocks, exerciseById),
       ),
-    ).toBe("6 exercices · Full body");
+    ).toBe("6 exercices · Jambes, Dos");
   });
 
   it("résume une séance cardio seule par ses exercices", () => {
@@ -291,9 +292,12 @@ describe("durée d'un modèle", () => {
   }
 
   it("estime le travail en répétitions, les repos et les transitions", () => {
-    // 3 exercices autonomes : 3 × (3 séries × 10 reps × 3 s + 2 repos × 120 s + 60 s) = 1170
-    // groupe : 2 × 60 s de transition + 2 enfants × 3 tours × 10 reps × 3 s + 2 × 60 s de repos = 420
-    expect(estimateSessionTemplateDurationSec(muscuABlocks)).toBe(1590);
+    // 3 exercices autonomes : 3 × (3 séries × (10 reps × 3 s + 45 s de mise en place) + 3 repos × 120 s + 60 s) = 1935
+    //   (le repos après la dernière série compte : c'est le passage à l'exercice suivant, 26/09/2026)
+    // groupe : 2 × 60 s de transition + 2 enfants × 3 tours × (10 reps × 3 s + 45 s) + 2 × 60 s de repos = 690
+    expect(estimateSessionTemplateDurationSec(muscuABlocks)).toBe(2625);
+    /* Une routine au sol n'a pas de mise en place par série. */
+    expect(estimateSessionTemplateDurationSec(muscuABlocks, "Routine")).toBe(1590 + 3 * 120);
   });
 
   it("affiche Estimé avant trois réalisations", () => {
@@ -302,8 +306,8 @@ describe("durée d'un modèle", () => {
       completed(3300),
     ]);
 
-    expect(duration).toEqual({ kind: "estimated", minutes: 27 });
-    expect(formatSessionTemplateDuration(duration)).toBe("Estimé 27 min");
+    expect(duration).toEqual({ kind: "estimated", minutes: 44 });
+    expect(formatSessionTemplateDuration(duration)).toBe("Estimé 44 min");
   });
 
   it("affiche la moyenne de la durée active à partir de trois", () => {

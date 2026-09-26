@@ -17,6 +17,7 @@ import {
   formatFreeWorkoutSummary,
   inferFreeWorkoutCategory,
 } from "./freeWorkouts";
+import { SessionName } from "../sessions/SessionName";
 
 /** Un test attaché à l'instance (lot G.7) : son nom, et s'il est en retard (D26). */
 export interface RowTest {
@@ -70,7 +71,7 @@ export function PlannedSessionRow({
         </span>
 
         <span className="program-row__body">
-          <span className="program-row__name">{name}</span>
+          <span className="program-row__name"><SessionName name={name} /></span>
           <span className="program-row__meta">{durationLabel}</span>
           {tests.map((test) => (
             <span key={test.name} className="program-row__test">

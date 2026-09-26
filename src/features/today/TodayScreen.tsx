@@ -42,6 +42,7 @@ import { paths } from "../../app/paths";
 import { formatFullDate } from "../../domain/rules/programRules";
 import { WeightCard } from "../weight/WeightCard";
 import { MeasurementsCard } from "../weight/MeasurementsCard";
+import { SessionName } from "../sessions/SessionName";
 
 /**
  * Aujourd'hui (§10, mockups 21–22) : la journée telle qu'elle est
@@ -286,7 +287,7 @@ function PlannedCard({ session, data, onStart }: PlannedCardProps) {
       >
         <TemplateIcon template={template} />
         <span className="today-card__body">
-          <span className="today-card__name">{template.name}</span>
+          <span className="today-card__name"><SessionName name={template.name} /></span>
           <span
             className={`today-badge ${
               skipped ? "today-badge--skipped" : "today-badge--planned"
@@ -376,7 +377,7 @@ function WorkoutCard({ entry, data }: WorkoutCardProps) {
           <SessionCategoryIcon category={category} size={26} />
         </span>
         <div className="today-card__body">
-          <h2 className="today-card__name">{name}</h2>
+          <h2 className="today-card__name"><SessionName name={name} /></h2>
           <span
             className={`today-badge ${
               running ? "today-badge--running" : "today-badge--done"
@@ -480,12 +481,9 @@ function EveningCard({ session, data }: { session: PlannedSession; data: TodayDa
       </span>
       <span className="today-evening__body">
         <small>{skipped ? "Ce soir · sautée" : "Ce soir"}</small>
-        <strong>{empty ? (template.letter ? `Routine ${template.letter} — contenu à définir` : `${template.name} — contenu à définir`) : template.name}</strong>
-        {tests.length > 0 ? (
-          <span>{tests.map((name) => `Test ${name.toLowerCase()}`).join(" · ")}</span>
-        ) : (
-          template.subtitle && !empty && <span>{template.subtitle}</span>
-        )}
+        <strong>{empty ? (template.letter ? `Routine ${template.letter} — contenu à définir` : `${template.name} — contenu à définir`) : <SessionName name={template.name} />}</strong>
+        {/* Le sous-titre de la routine est la seconde ligne du nom (26/09/2026). */}
+        {tests.length > 0 && <span>{tests.map((name) => `Test ${name.toLowerCase()}`).join(" · ")}</span>}
       </span>
       {duration && !empty && tests.length === 0 && (
         <span className="today-evening__duration">{formatSessionTemplateDuration(duration.duration)}</span>
@@ -551,7 +549,7 @@ function NextSessions({ data }: { data: TodayData }) {
                     )}
                   </span>
                   <span className="today-next__name">
-                    {template?.name ?? "Séance supprimée"}
+                    <SessionName name={template?.name ?? "Séance supprimée"} />
                   </span>
                   <span className="today-next__meta">
                     {durationInfo

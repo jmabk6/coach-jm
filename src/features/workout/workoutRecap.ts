@@ -459,7 +459,7 @@ export function summarizeWorkout(
   return {
     activeDurationSec: workout.activeDurationSec,
     ...(template && workout.sessionTemplateId
-      ? { plannedDurationSec: estimateSessionTemplateDurationSec(template.blocks) }
+      ? { plannedDurationSec: estimateSessionTemplateDurationSec(template.blocks, template.category) }
       : {}),
     startedAt: workout.startedAt,
     ...(workout.completedAt ? { completedAt: workout.completedAt } : {}),
