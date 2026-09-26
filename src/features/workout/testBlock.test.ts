@@ -98,6 +98,16 @@ describe("placements (§ 3.5.1)", () => {
     expect(cooldown.snapshotInstructions).toMatchObject({ shape: "steps", steps: [{ id: "v1-cardio-a-retour-p1", position: 0 }] });
   });
 
+  it("programme V2 : plusieurs paliers consécutifs remplacés par le test, le reste du bloc garde sa place", () => {
+    const blocks = createWorkoutSnapshot(template("v1-cardio-c"), undefined, undefined, [
+      test("cardio", { placement: "replace_block", targetBlockId: "v1-cardio-c-tapis", targetStepIds: ["v1-cardio-c-p2", "v1-cardio-c-p1"] }),
+    ]);
+    expect(order(blocks)).toEqual(["test:cardio", "v1-cardio-c-tapis"]);
+    const [, rest] = blocks as [PerformedTestBlock, PerformedExerciseBlock];
+    expect(rest.cardioSteps?.map((step) => step.id)).toEqual(["workout-block-v1-cardio-c-tapis-step-v1-cardio-c-p3"]);
+    expect(rest.id).toBe("workout-block-v1-cardio-c-tapis-suite");
+  });
+
   it("palier visé introuvable : le bloc entier est remplacé", () => {
     const blocks = createWorkoutSnapshot(template("v1-cardio-a"), undefined, undefined, [
       test("cardio", { placement: "replace_block", targetBlockId: "v1-cardio-a-tapis", targetStepId: "absent" }),

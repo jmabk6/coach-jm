@@ -116,6 +116,12 @@ export interface PlannedTest {
    * le bloc est coupé autour du test (Cardio A, décision du 24/09/2026).
    */
   targetStepId?: Id;
+  /**
+   * `replace_block` sur plusieurs paliers consécutifs (programme V2,
+   * Cardio A : le bloc de 30 min en 6 paliers de 5 min) : ils sont tous
+   * remplacés par le test. Prime sur `targetStepId`.
+   */
+  targetStepIds?: Id[];
   adjustments?: Array<{ blockId: Id; sets: number }>;
   /** D26 : posé par « Replanifier ». */
   rescheduledToPlannedSessionId?: Id;

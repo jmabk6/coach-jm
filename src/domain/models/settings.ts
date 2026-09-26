@@ -36,6 +36,7 @@ export interface TestScheduleEntry {
   placement?: PlannedTest["placement"];
   targetBlockId?: Id;
   targetStepId?: Id;
+  targetStepIds?: Id[];
   adjustments?: PlannedTest["adjustments"];
 }
 
