@@ -141,6 +141,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "duration",
+    media: officialExerciseMedia("chaise-60"),
     technique: "Dos plaqué au mur, descends jusqu'à un angle d'environ 60° aux genoux, pieds à plat et genoux au-dessus des chevilles. Tiens la position sans t'appuyer avec les mains.",
     description: "Gainage des jambes en position basse, utile pour tenir les appuis fléchis du padel.",
     advice: "Garde le même angle d'une séance à l'autre : c'est lui qui rend les durées comparables. Arrête si une douleur apparaît au genou.",

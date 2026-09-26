@@ -5,6 +5,15 @@
  */
 
 export const exerciseMedia = {
+  "chaise-60": {
+    thumbnail: "media/exercises/jambes/chaise-60-thumb.0339d925.webp",
+    photo: "media/exercises/jambes/chaise-60.84ec66de.webp",
+    frames: [
+      "media/exercises/jambes/chaise-60-frame1.75a959ec.webp",
+      "media/exercises/jambes/chaise-60-frame2.98410cd2.webp",
+      "media/exercises/jambes/chaise-60-frame3.d2d1ebae.webp",
+    ],
+  },
   "chest-press": {
     thumbnail: "media/exercises/pecs/chest-press-thumb.1066a109.webp",
     photo: "media/exercises/pecs/chest-press.2efeeed2.webp",
