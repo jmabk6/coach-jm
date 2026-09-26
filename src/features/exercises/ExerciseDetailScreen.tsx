@@ -333,41 +333,30 @@ export function ExerciseDetailScreen() {
                 <p>La première séance posera ta référence et affichera ici ta progression.</p>
               </div>
             ) : cardio ? (
-              <table className="exercise-detail__sessions exercise-detail__sessions--cardio">
-                <thead>
-                  <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">Durée</th>
-                    <th scope="col">Vitesse</th>
-                    <th scope="col">Pente</th>
-                    <th scope="col">FC</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(showAllSessions ? cardioRows : cardioRows.slice(0, 3)).map((row) => (
-                    <tr key={row.workoutId}>
-                      <td>{row.date}</td>
-                      <td>{row.duration}</td>
-                      <td>{row.speed}</td>
-                      <td>{row.incline}</td>
-                      <td>{row.bpm}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ul className="exercise-detail__sessions">
+                {(showAllSessions ? cardioRows : cardioRows.slice(0, 3)).map((row) => (
+                  <li key={row.workoutId}>
+                    <span className="exercise-detail__sessions-date">{row.date}</span>
+                    <strong className="exercise-detail__sessions-main">{row.duration}</strong>
+                    <span className="exercise-detail__sessions-detail">
+                      {[row.speed, row.incline, row.bpm].filter((value) => value && value !== "—").join(" · ") || "—"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <table className="exercise-detail__sessions">
-                <tbody>
-                  {(showAllSessions ? rows : rows.slice(0, 3)).map((row) => (
-                    <tr key={row.workoutId}>
-                      <td>{row.date}</td>
-                      <td className="exercise-detail__sessions-load">{row.load}</td>
-                      <td>{row.reps}</td>
-                      <td>{row.rpe}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              /* Deux lignes par séance (correctif du 26/09/2026) : 6 séries ne débordent plus de l'écran. */
+              <ul className="exercise-detail__sessions">
+                {(showAllSessions ? rows : rows.slice(0, 3)).map((row) => (
+                  <li key={row.workoutId}>
+                    <span className="exercise-detail__sessions-date">{row.date}</span>
+                    <strong className="exercise-detail__sessions-main">{row.load || row.reps}</strong>
+                    <span className="exercise-detail__sessions-detail">
+                      {[row.load ? row.reps : "", row.rpe].filter((value) => value && value !== "—").join(" · ") || "—"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
             {sessionCount > 3 && (
               <button type="button" className="exercise-detail__link" onClick={() => setShowAllSessions((value) => !value)}>

@@ -2,6 +2,7 @@
 
 .exercise-detail {
   max-width: 720px;
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -205,38 +206,47 @@
   margin-top: 1px;
 }
 
-/* Dernières séances */
+/* Dernières séances : une séance sur deux lignes, qui passent à la ligne au besoin. */
 .exercise-detail__sessions {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.88rem;
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
   font-variant-numeric: tabular-nums;
 }
 
-.exercise-detail__sessions td,
-.exercise-detail__sessions th {
-  padding: 6px 4px;
+.exercise-detail__sessions li {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 2px;
+  padding: 8px 0;
   border-bottom: 1px solid var(--color-border);
-  text-align: left;
-  white-space: nowrap;
 }
 
-.exercise-detail__sessions th {
-  color: var(--color-text-soft);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.exercise-detail__sessions td:first-child {
-  color: var(--color-text-soft);
-}
-
-.exercise-detail__sessions-load {
-  font-weight: 700;
-}
-
-.exercise-detail__sessions tr:last-child td {
+.exercise-detail__sessions li:last-child {
   border-bottom: 0;
+}
+
+.exercise-detail__sessions-date {
+  grid-row: span 2;
+  color: var(--color-text-soft);
+  font-size: 0.88rem;
+}
+
+.exercise-detail__sessions-main,
+.exercise-detail__sessions-detail {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.exercise-detail__sessions-main {
+  font-size: 0.92rem;
+}
+
+.exercise-detail__sessions-detail {
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
 }
 
 .exercise-detail__link {
