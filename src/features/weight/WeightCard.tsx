@@ -12,13 +12,15 @@ import {
   MIN_WEIGHINGS_PER_WEEK,
   weightWeekSummary,
 } from "../../domain/rules/weightRules";
-import { correctWeight, recordWeight, removeWeight, todayForWeight } from "./weightActions";
+import { COMPOSITION_SPECS, formatComposition, type CompositionKey } from "../../domain/rules/bodyCompositionRules";
+import { correctWeight, recordWeight, removeWeight, todayForWeight, type WeightForm } from "./weightActions";
 import "./WeightCard.css";
 
 /**
  * Carte « Pesée du jour » de l'Accueil (lot I.1). Pas encore de pesée
  * aujourd'hui : le champ est ouvert. Déjà une pesée : la valeur s'affiche,
- * modifiable (remplacement, jamais de doublon). Un jour passé se choisit
+ * modifiable (remplacement, jamais de doublon). Masse grasse et masse
+ * musculaire se notent avec, facultatives (26/09/2026). Un jour passé se choisit
  * pour une pesée oubliée ; jamais un jour futur. La liste des pesées
  * récentes permet de corriger et de supprimer.
  */
@@ -35,6 +37,53 @@ function formatKgInput(kg: number | undefined): string {
   return kg === undefined ? "" : String(kg).replace(".", ",");
 }
 
+const EMPTY_FORM: Required<WeightForm> = { kg: "", fatPct: "", muscleKg: "" };
+
+function formOf(entry: WeightEntry | undefined): Required<WeightForm> {
+  return { kg: formatKgInput(entry?.kg), fatPct: formatKgInput(entry?.fatPct), muscleKg: formatKgInput(entry?.muscleKg) };
+}
+
+const COMPOSITION_KEYS: readonly CompositionKey[] = ["fatPct", "muscleKg"];
+
+/** « MG 18,4 % · MM 62,1 kg », ou rien sans composition. */
+function compositionLine(entry: WeightEntry): string | undefined {
+  const parts = COMPOSITION_KEYS.flatMap((key) => (entry[key] === undefined ? [] : [`${key === "fatPct" ? "MG" : "MM"} ${formatComposition(key, entry[key])}`]));
+  return parts.length > 0 ? parts.join(" · ") : undefined;
+}
+
+/**
+ * Masse grasse et masse musculaire (26/09/2026) : facultatives, estimées
+ * par la balance ; vides, rien n'est enregistré.
+ */
+function CompositionFields({ form, onChange, labelSuffix = "" }: { form: Required<WeightForm>; onChange: (form: Required<WeightForm>) => void; labelSuffix?: string }) {
+  return (
+    <>
+      {COMPOSITION_KEYS.map((key) => {
+        const spec = COMPOSITION_SPECS[key];
+        return (
+          <label key={key} className="weight-card__field weight-card__field--optional">
+            <span>
+              {spec.label} <small>facultatif</small>
+            </span>
+            <span className="weight-card__input">
+              <input
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder={key === "fatPct" ? "ex. 18,4" : "ex. 62,1"}
+                aria-label={`${spec.label} en ${spec.unit}${labelSuffix}`}
+                value={form[key]}
+                onChange={(event) => onChange({ ...form, [key]: event.target.value })}
+              />
+              <span>{spec.unit}</span>
+            </span>
+          </label>
+        );
+      })}
+    </>
+  );
+}
+
 interface WeightCardProps {
   /** Jour local courant ; remplaçable pour les tests. */
   today?: string;
@@ -44,7 +93,7 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
   const [entries, setEntries] = useState<WeightEntry[] | undefined>();
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(today);
-  const [input, setInput] = useState("");
+  const [form, setForm] = useState<Required<WeightForm>>(EMPTY_FORM);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
@@ -78,8 +127,8 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
     setBusy(true);
     setError(undefined);
     try {
-      await recordWeight(date, input);
-      setInput("");
+      await recordWeight(date, form);
+      setForm(EMPTY_FORM);
       setDate(today);
       setEditing(false);
       await load();
@@ -103,7 +152,10 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
 
       {todayEntry && !editing && (
         <div className="weight-card__today">
-          <strong className="weight-card__value">{formatWeightKg(todayEntry.kg)}</strong>
+          <span className="weight-card__today-values">
+            <strong className="weight-card__value">{formatWeightKg(todayEntry.kg)}</strong>
+            {compositionLine(todayEntry) && <span className="weight-card__composition">{compositionLine(todayEntry)}</span>}
+          </span>
           <span className="weight-card__today-actions">
             <button
               type="button"
@@ -111,7 +163,7 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
               onClick={() => {
                 setEditing(true);
                 setDate(today);
-                setInput(formatKgInput(todayEntry.kg));
+                setForm(formOf(todayEntry));
               }}
             >
               Modifier
@@ -123,7 +175,7 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
               onClick={() => {
                 setEditing(true);
                 setDate(formatLocalDate(addDays(parseISO(today), -1)));
-                setInput("");
+                setForm(EMPTY_FORM);
               }}
             >
               Autre jour
@@ -151,12 +203,13 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
                 autoComplete="off"
                 placeholder="ex. 81,4"
                 aria-label="Poids en kg"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
+                value={form.kg}
+                onChange={(event) => setForm({ ...form, kg: event.target.value })}
               />
               <span>kg</span>
             </span>
           </label>
+          <CompositionFields form={form} onChange={setForm} />
           <label className="weight-card__field">
             <span>Jour</span>
             <input
@@ -231,6 +284,7 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
                   >
                     Supprimer
                   </button>
+                  {compositionLine(entry) && <span className="weight-card__row-composition">{compositionLine(entry)}</span>}
                 </>
               )}
             </li>
@@ -275,7 +329,7 @@ function CorrectionForm({
   onSaved: () => Promise<void>;
 }) {
   const [date, setDate] = useState(entry.date);
-  const [input, setInput] = useState(formatKgInput(entry.kg));
+  const [form, setForm] = useState(formOf(entry));
   const [error, setError] = useState<string>();
 
   return (
@@ -286,7 +340,7 @@ function CorrectionForm({
         event.preventDefault();
         void (async () => {
           try {
-            await correctWeight(entry.id, date, input);
+            await correctWeight(entry.id, date, form);
             await onSaved();
           } catch (caught) {
             setError(caught instanceof Error ? caught.message : String(caught));
@@ -299,11 +353,12 @@ function CorrectionForm({
           type="text"
           inputMode="decimal"
           aria-label={`Poids corrigé du ${entry.date}`}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
+          value={form.kg}
+          onChange={(event) => setForm({ ...form, kg: event.target.value })}
         />
         <span>kg</span>
       </span>
+      <CompositionFields form={form} onChange={setForm} labelSuffix={` corrigée du ${entry.date}`} />
       <input type="date" aria-label={`Jour corrigé du ${entry.date}`} max={today} value={date} onChange={(event) => setDate(event.target.value)} />
       {error && (
         <p className="weight-card__error" role="alert">

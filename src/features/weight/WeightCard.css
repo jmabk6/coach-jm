@@ -210,3 +210,28 @@
   gap: 16px;
 }
 
+
+/* Composition corporelle (26/09/2026) : facultative, discrète. */
+.weight-card__field--optional small {
+  margin-left: 4px;
+  color: var(--color-text-soft);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.weight-card__today-values {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.weight-card__composition,
+.weight-card__row-composition {
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+}
+
+.weight-card__row-composition {
+  grid-column: 1 / -1;
+  margin-top: -4px;
+}
