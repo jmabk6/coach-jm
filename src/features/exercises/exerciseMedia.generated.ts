@@ -140,6 +140,15 @@ export const exerciseMedia = {
       "media/exercises/epaules/elevations-laterales-halteres-frame3.6c88dcfd.webp",
     ],
   },
+  "etirement-epaule-main-dos": {
+    thumbnail: "media/exercises/mobilite/etirement-epaule-main-dos-thumb.07eafe99.webp",
+    photo: "media/exercises/mobilite/etirement-epaule-main-dos.289c6155.webp",
+    frames: [
+      "media/exercises/mobilite/etirement-epaule-main-dos-frame1.3300a283.webp",
+      "media/exercises/mobilite/etirement-epaule-main-dos-frame2.f2f5e6fd.webp",
+      "media/exercises/mobilite/etirement-epaule-main-dos-frame3.44296779.webp",
+    ],
+  },
   "extension-triceps-dessus-tete": {
     thumbnail: "media/exercises/bras/extension-triceps-dessus-tete-thumb.195fea48.webp",
     photo: "media/exercises/bras/extension-triceps-dessus-tete.39b48057.webp",
@@ -174,6 +183,15 @@ export const exerciseMedia = {
       "media/exercises/jambes/hip-thrust-frame1.2ef233b2.webp",
       "media/exercises/jambes/hip-thrust-frame2.aeba1731.webp",
       "media/exercises/jambes/hip-thrust-frame3.ded61e5b.webp",
+    ],
+  },
+  "hollow-body-genoux": {
+    thumbnail: "media/exercises/core/hollow-body-genoux-thumb.8b5139f2.webp",
+    photo: "media/exercises/core/hollow-body-genoux.542901c9.webp",
+    frames: [
+      "media/exercises/core/hollow-body-genoux-frame1.60552bc1.webp",
+      "media/exercises/core/hollow-body-genoux-frame2.8a3ae15a.webp",
+      "media/exercises/core/hollow-body-genoux-frame3.9f39a153.webp",
     ],
   },
   "import-curl-biceps-ez": {
