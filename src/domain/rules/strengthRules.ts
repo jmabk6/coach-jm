@@ -283,6 +283,7 @@ export const strengthArchiveReasonLabels: Record<StrengthArchiveReason, string> 
   plafond_atteint: "Plafond atteint",
   erreur_calibration: "Erreur de calibration",
   changement_materiel: "Changement de matériel",
+  changement_programme: "Changement de programme",
 };
 
 /**

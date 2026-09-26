@@ -9,7 +9,7 @@ import { EMPTY_ROUTINE_REASON, startBlockedReason } from "../../domain/rules/ses
 import { canonicalStringify } from "../backup/canonicalJson";
 import { WRITE_METHODS, writePrototypeOf } from "../backup/testDatabase";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
-import { runSeeds, resumeSeedsForTests } from "../seed/runSeeds";
+import { runSeeds, resumeSeedsForTests, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import { generateProgramWeek } from "./generateProgramWeek";
 import { PROGRAM_V1_ROUTINES_EMPTY, PROGRAM_V1_TEMPLATES, PROGRAM_V1_TEST_SCHEDULE } from "./programV1";
@@ -103,7 +103,7 @@ describe("contenu du programme V1", () => {
 
 describe("seeds 5 et 6 sur une base neuve", () => {
   it("installe les modèles, les routines, la règle et la place des tests ; second passage sans écriture", async () => {
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
 
     const templates = await db.sessionTemplates.orderBy("position").toArray();
     expect(templates.map((template) => template.id)).toEqual([...V1_IDS, ...ROUTINE_IDS]);
@@ -128,13 +128,13 @@ describe("seeds 5 et 6 sur une base neuve", () => {
 
     const before = canonicalStringify(await db.sessionTemplates.toArray());
     const spies = spyWrites();
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
     expect(canonicalStringify(await db.sessionTemplates.toArray())).toBe(before);
   });
 
   it("semaine future générée du dimanche au samedi : Muscu A le dimanche, rien le vendredi", async () => {
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
     /* La semaine qui suit celle du 24/09 : dimanche 27/09. */
     const nextWeek = getWeekStartDate("2026-10-01");
     expect(nextWeek).toBe("2026-09-27");

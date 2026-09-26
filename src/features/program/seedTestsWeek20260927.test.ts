@@ -7,7 +7,7 @@ import type { PlannedSession, WorkoutSession } from "../../domain";
 import { slotOf } from "../../domain/rules/programRules";
 import { parseBackup } from "../backup/restoreBackup";
 import { resetAndRestore } from "../backup/resetAndRestore";
-import { resumeSeedsForTests, runSeeds, SEEDS } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { generateProgramWeek } from "./generateProgramWeek";
 import { seedTestsWeek20260927, TESTS_WEEK_START } from "./seedTestsWeek20260927";
 
@@ -42,7 +42,7 @@ describe("seed 17 — les tests de la semaine du 27/09", () => {
   });
 
   it("séances de journée sans tests (générées avant le lot G) : traction, cardio et jambes s'attachent ; le soir et une séance démarrée ne bougent pas", async () => {
-    await runSeeds(SEEDS.filter((seed) => seed.name !== "testsWeek20260927"));
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "testsWeek20260927"));
     await generateProgramWeek(TESTS_WEEK_START, NOW);
     const expected = testsOf(await week());
     expect(expected.map(([date, , protocols]) => [date, protocols])).toEqual([
@@ -85,7 +85,7 @@ describe("seed 17 — les tests de la semaine du 27/09", () => {
     await resetAndRestore(file, db);
     resumeSeedsForTests();
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
 
     const sessions = await week();
     /* Chaque séance du fichier reste, avec au moins ses tests d'origine ; aucune n'est créée ni supprimée. */

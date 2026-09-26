@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../../db/database";
 import type { GroupBlock, TestResult } from "../../domain";
 import { CHAISE_NOTE } from "../program/programV1";
-import { resumeSeedsForTests, runSeeds, SEEDS } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { testProtocolVersionId } from "../tests/testProtocolsV1";
 import { CHAIR_60_INSTRUCTION, CHAIR_60_NAME, CHAIR_60_TECHNIQUE, CHAIR_90_INSTRUCTION, seedChair90 } from "./seedChair90";
 
@@ -25,7 +25,7 @@ function withoutNotes<T extends { notes?: string }>(child: T): T {
 
 /** La base telle que l'iPhone l'a avant ce seed : chaise à 60°, sans consigne dans Muscu C. */
 async function installAt60(): Promise<void> {
-  await runSeeds(SEEDS.filter((seed) => seed.name !== "chair90"));
+  await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "chair90"));
   const chair = (await db.exercises.get("chaise-60"))!;
   await db.exercises.put({ ...chair, name: CHAIR_60_NAME, technique: CHAIR_60_TECHNIQUE });
   const version = (await db.testProtocolVersions.get(JAMBES_V1))!;

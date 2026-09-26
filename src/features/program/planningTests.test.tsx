@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { generateProgramWeek } from "./generateProgramWeek";
 import { ProgramScreen } from "./ProgramScreen";
 
@@ -21,7 +21,7 @@ async function setup(today: Date) {
   await db.delete();
   await db.open();
   resumeSeedsForTests();
-  await runSeeds();
+  await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
   await generateProgramWeek("2026-10-25", "2026-09-24T10:00:00.000Z");
 }
 

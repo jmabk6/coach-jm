@@ -5,7 +5,7 @@ import { db } from "../../db/database";
 import { getAllGoals } from "../../db/repositories/goalRepository";
 import type { Goal } from "../../domain";
 import { exerciseCatalog } from "../exercises/exerciseCatalog";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { seedGoals } from "./seedGoals";
 
 /**
@@ -19,7 +19,7 @@ beforeEach(async () => {
   await db.delete();
   await db.open();
   resumeSeedsForTests();
-  await runSeeds();
+  await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
 });
 
 afterEach(async () => {

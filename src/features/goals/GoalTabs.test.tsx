@@ -5,7 +5,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { GOAL_ADVICE } from "./goalAdvice";
 import { GoalDetailScreen } from "./GoalDetailScreen";
 import { GOALS_V1 } from "./goalsV1";
@@ -34,7 +34,7 @@ beforeEach(async () => {
   await db.delete();
   await db.open();
   resumeSeedsForTests();
-  await runSeeds();
+  await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
 });
 
 afterEach(async () => {

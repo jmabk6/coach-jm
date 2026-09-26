@@ -8,7 +8,7 @@ import { daysUntilNextTestWeek, eveningRoutineFor, isTestWeek, nextTestWeekStart
 import { listTestsToReschedule } from "../../domain/rules/testPlanRules";
 import { generateProgramWeek } from "../program/generateProgramWeek";
 import { PROGRAM_V1_WEEKLY } from "../program/programV1";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { rescheduleTest } from "./rescheduleTest";
 
 /**
@@ -48,7 +48,7 @@ describe("génération d'une semaine de tests", () => {
     await db.delete();
     await db.open();
     resumeSeedsForTests();
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
   });
 
   afterEach(async () => {

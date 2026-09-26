@@ -35,7 +35,7 @@ export interface SessionTemplate {
   /** « Haut du corps · Dos » (M2). */
   tags?: string[];
   /** Modèle installé par le seed du programme V1. */
-  origin?: "program_v1";
+  origin?: "program_v1" | "program_v2";
   /** Bloc principal, remplacé par un test (Cardio A). */
   mainBlockId?: Id;
 

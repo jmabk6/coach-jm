@@ -3,7 +3,7 @@ import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../../db/database";
 import type { InstallMarkers, PlannedSession, SessionTemplate, TestScheduleEntry } from "../../domain";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { CARDIO_A, CARDIO_A_FORMER } from "./programV1";
 import { seedCardioASingleBlock } from "./seedCardioASingleBlock";
 
@@ -41,7 +41,7 @@ beforeEach(async () => {
   await db.delete();
   await db.open();
   resumeSeedsForTests();
-  await runSeeds();
+  await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
 });
 
 afterEach(async () => {

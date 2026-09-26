@@ -31,7 +31,9 @@ export type StrengthProgressionType =
 export type StrengthArchiveReason =
   | "plafond_atteint"
   | "erreur_calibration"
-  | "changement_materiel";
+  | "changement_materiel"
+  /** Programme V2 (26/09/2026) : nouvelle prescription décidée par l'utilisateur. */
+  | "changement_programme";
 
 export type StrengthUnit =
   | "kg"

@@ -11,6 +11,7 @@ import { seedFrameTargets20260925 } from "../strength/seedFrameTargets20260925";
 import { seedChair90 } from "../exercises/seedChair90";
 import { seedTestsWeek20260927 } from "../program/seedTestsWeek20260927";
 import { seedRemoveOldMuscuA } from "../sessions/seedRemoveOldMuscuA";
+import { seedArchiveProgramV1, seedProgramV2 } from "../program/seedProgramV2";
 import { seedGoals } from "../goals/seedGoals";
 import { seedTestProtocols } from "../tests/seedTestProtocols";
 import { seedSettingsDefaults, seedThemeLight } from "./seedSettingsDefaults";
@@ -65,7 +66,17 @@ export const SEEDS: SeedStep[] = [
   { name: "removeOldMuscuA", run: () => seedRemoveOldMuscuA() },
   /* Seed 21 (27/09/2026) : le leg curl couché et la durée de la Muscu A du 27/09. */
   { name: "legCurlCouche20260927", dependsOn: ["exerciseCatalog"], run: () => seedLegCurlCouche20260927() },
+  /* Seed 19 : le programme V2, à partir du 04/10/2026 (la semaine de tests reste en V1). */
+  { name: "programV2", dependsOn: ["exerciseCatalog", "programV1", "frames", "goals", "testProtocols"], run: () => seedProgramV2() },
+  /* Seed 20 : les modèles V1 archivés, pas avant le 04/10. */
+  { name: "archiveProgramV1", dependsOn: ["programV2"], run: () => seedArchiveProgramV1() },
 ];
+
+/**
+ * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
+ * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
+ */
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => seed.name !== "programV2" && seed.name !== "archiveProgramV1");
 
 export interface SeedReport {
   ran: string[];

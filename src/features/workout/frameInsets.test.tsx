@@ -6,7 +6,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../../db/database";
 import type { PerformedExerciseBlock, StrengthFrameVersion, StrengthMilestone, WorkoutSession } from "../../domain";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { programFrameIds } from "../strength/seedProgramFrames";
 import { frameInsightsFor } from "../strength/useFrameInsights";
 import { startFreeWorkout } from "./startFreeWorkout";
@@ -69,7 +69,7 @@ describe("écran de séance", () => {
     await db.delete();
     await db.open();
     resumeSeedsForTests();
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
   });
 
   afterEach(async () => {

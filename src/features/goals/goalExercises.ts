@@ -40,9 +40,10 @@ function occurrences(template: SessionTemplate, exerciseId: string): string[] {
 
 export function goalExerciseRows(goal: Goal, exercises: ReadonlyArray<Exercise>, templates: ReadonlyArray<SessionTemplate>): GoalExerciseRow[] {
   const byId = new Map(exercises.map((exercise) => [exercise.id, exercise]));
-  const program = templates
-    .filter((template) => template.origin === "program_v1" && template.status === "active" && template.letter)
-    .sort((a, b) => a.position - b.position);
+  /* Programme V2 dès qu'il est installé (26/09/2026), sinon V1 : jamais les deux lettres A à la fois. */
+  const active = templates.filter((template) => template.status === "active" && template.letter);
+  const origin = active.some((template) => template.origin === "program_v2") ? "program_v2" : "program_v1";
+  const program = active.filter((template) => template.origin === origin).sort((a, b) => a.position - b.position);
 
   return goal.linkedExercises.map(({ exerciseId }) => {
     const exercise = byId.get(exerciseId);

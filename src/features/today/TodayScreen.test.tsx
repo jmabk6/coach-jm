@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
 import { generateProgramWeek } from "../program/generateProgramWeek";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { endWorkout } from "../workout/finishWorkout";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import { TodayScreen } from "./TodayScreen";
@@ -36,7 +36,7 @@ beforeEach(async () => {
   await db.delete();
   await db.open();
   resumeSeedsForTests();
-  await runSeeds();
+  await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
   await generateProgramWeek("2026-09-27", "2026-09-24T08:00:00.000Z");
 });
 

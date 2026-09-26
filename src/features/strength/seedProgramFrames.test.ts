@@ -18,7 +18,7 @@ import { buildWorkout20260925, WORKOUT_20260925_ID } from "../history/seedWorkou
 import { updateFrameVersion } from "./frameActions";
 
 vi.stubEnv("BASE_URL", "/coach-jm/");
-const { runSeeds, resumeSeedsForTests, SEEDS } = await import("../seed/runSeeds");
+const { runSeeds, resumeSeedsForTests, SEEDS_BEFORE_PROGRAM_V2 } = await import("../seed/runSeeds");
 const { PROGRAM_V1_FRAMES, programFrameIds, seedProgramFrames } = await import("./seedProgramFrames");
 
 /**
@@ -55,7 +55,7 @@ async function versionOf(exerciseId: string): Promise<StrengthFrameVersion | und
 describe("seed 7 sur une base neuve", () => {
   it("un cadre par exercice à charge du programme, avec ses premières cibles", async () => {
     /* Le seed 7 seul (et ceux dont il dépend) : le seed 15 recale ensuite trois cibles, testé à part. */
-    await runSeeds(SEEDS.filter((seed) => seed.name !== "frameTargets20260925"));
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "frameTargets20260925"));
     const install = (await db.settings.get("install"))?.value as { frames?: string };
     expect(install.frames).toEqual(expect.any(String));
 
@@ -94,12 +94,12 @@ describe("seed 7 sur une base neuve", () => {
     }
 
     const spies = spyWrites();
-    await runSeeds(SEEDS.filter((seed) => seed.name !== "frameTargets20260925"));
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "frameTargets20260925"));
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
   });
 
   it("un exercice qui a déjà un cadre n'en reçoit pas un second ; l'existant reste identique", async () => {
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
     await db.strengthFrames.clear();
     await db.strengthFrameVersions.clear();
     const install = (await db.settings.get("install"))!;
@@ -123,7 +123,7 @@ describe("seed 7 sur une base neuve", () => {
   });
 
   it("leg curl de Muscu C : 2 séries contre un cadre à 3, prescription réduite au démarrage", async () => {
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
     const frames = await db.strengthFrames.toArray();
     const versions = await db.strengthFrameVersions.toArray();
     const muscuC = (await db.sessionTemplates.get("v1-muscu-c")) as SessionTemplate;
@@ -162,7 +162,7 @@ describe("incrément facultatif (D18) et N4", () => {
   });
 
   it("version figée : saisir le cran de la machine la met à jour en place, sans nouvelle version", async () => {
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
     const { frameId, versionId } = programFrameIds("traction-assistee");
     await db.strengthFrameVersions.update(versionId, { firstOfficialWorkoutId: "w1", frozenAt: T });
     const frame = (await db.strengthFrames.get(frameId))!;
@@ -193,7 +193,7 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
     resumeSeedsForTests();
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    expect(await runSeeds()).toMatchObject({ failed: [], skipped: [] });
+    expect(await runSeeds(SEEDS_BEFORE_PROGRAM_V2)).toMatchObject({ failed: [], skipped: [] });
 
     const fileFrames = (file.stores.strengthFrames ?? []) as StrengthFrame[];
     const fileVersions = (file.stores.strengthFrameVersions ?? []) as StrengthFrameVersion[];
@@ -238,7 +238,7 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
     );
 
     const spies = spyWrites();
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
   });
 });

@@ -3,7 +3,7 @@ import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../../db/database";
 import type { InstallMarkers } from "../../domain";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { FRAME_TARGETS_20260925, seedFrameTargets20260925 } from "./seedFrameTargets20260925";
 import { programFrameIds } from "./seedProgramFrames";
 
@@ -35,7 +35,7 @@ describe("seed 15 — premières cibles recalées d'après le 25/09", () => {
   });
 
   it("chaque cadre passe en V2 avec la nouvelle cible ; la V1 est archivée, paramètres identiques ; les autres cadres ne bougent pas", async () => {
-    await runSeeds(); // installation complète, seed 15 compris
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2); // installation complète, seed 15 compris
     const others = (await db.strengthFrameVersions.toArray()).filter(
       (version) => !FRAME_TARGETS_20260925.some((spec) => version.frameId === programFrameIds(spec.exerciseId).frameId),
     );
@@ -60,7 +60,7 @@ describe("seed 15 — premières cibles recalées d'après le 25/09", () => {
   });
 
   it("idempotent : le marqueur posé, un second passage n'écrit rien", async () => {
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
     const before = await db.strengthFrameVersions.toArray();
     await seedFrameTargets20260925(NOW);
     expect(await db.strengthFrameVersions.toArray()).toEqual(before);
@@ -68,7 +68,7 @@ describe("seed 15 — premières cibles recalées d'après le 25/09", () => {
 
   it("un cadre déjà modifié par l'utilisateur est laissé tel quel ; les autres sont recalés", async () => {
     const markers = await import("../seed/runSeeds");
-    await markers.runSeeds(markers.SEEDS.filter((seed) => seed.name !== "frameTargets20260925"));
+    await markers.runSeeds(markers.SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "frameTargets20260925"));
     const { versionId } = programFrameIds("developpe-epaules-machine");
     const touched = (await db.strengthFrameVersions.get(versionId))!;
     await db.strengthFrameVersions.put({ ...touched, currentTarget: { value: 30, unit: "kg", acceptedAt: NOW } });

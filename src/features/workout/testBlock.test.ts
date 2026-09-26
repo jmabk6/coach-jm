@@ -13,7 +13,7 @@ import type {
 } from "../../domain";
 import { generateProgramWeek } from "../program/generateProgramWeek";
 import { PROGRAM_V1_ROUTINES, PROGRAM_V1_TEMPLATES } from "../program/programV1";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
 import { createWorkoutSnapshot, type SnapshotTest } from "./createWorkoutSnapshot";
 import { endAndConfirm } from "./endAndConfirmForTests";
 import {
@@ -224,7 +224,7 @@ describe("démarrage d'une séance de la semaine de tests", () => {
     await db.delete();
     await db.open();
     resumeSeedsForTests();
-    await runSeeds();
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
     await generateProgramWeek("2026-10-25", "2026-09-24T10:00:00.000Z");
   });
 
