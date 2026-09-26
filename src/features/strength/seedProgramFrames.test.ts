@@ -210,7 +210,9 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
     const workouts = await db.workouts.orderBy("id").toArray();
     /* Seed 10 : seule la Cardio A du 24/09, dans l'état constaté, est corrigée. */
     /* Seed 12 : la séance du 25/09 ajoutée dans la base de l'utilisateur. */
-    const added = workouts.find((workout) => workout.id === WORKOUT_20260925_ID);
+    /* Ajoutée par le seed, pas déjà dans le fichier (sauvegarde prise après le seed 12). */
+    const inFile = (file.stores.workouts as WorkoutSession[]).some((workout) => workout.id === WORKOUT_20260925_ID);
+    const added = inFile ? undefined : workouts.find((workout) => workout.id === WORKOUT_20260925_ID);
     const expected = [
       ...(file.stores.workouts as WorkoutSession[]).map(
         (workout) =>

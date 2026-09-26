@@ -174,7 +174,10 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     const byId = (a: WorkoutSession, b: WorkoutSession) => (a.id < b.id ? -1 : 1);
     /* Seed 12 : la séance du 25/09 s'ajoute dans la base de l'utilisateur, si ce jour-là est vide. */
     const fileWorkouts = (file.stores.workouts ?? []) as WorkoutSession[];
-    const added = seededWorkouts.find((workout) => workout.id === WORKOUT_20260925_ID);
+    /* Ajoutée par le seed, pas déjà dans le fichier (sauvegarde prise après le seed 12). */
+    const added = fileWorkouts.some((workout) => workout.id === WORKOUT_20260925_ID)
+      ? undefined
+      : seededWorkouts.find((workout) => workout.id === WORKOUT_20260925_ID);
     expect(added !== undefined, "séance du 25/09").toBe(
       fileWorkouts.some((workout) => workout.id === FIX_WORKOUT_ID) &&
         !fileWorkouts.some((workout) => workout.date === "2026-09-25" && workout.status === "completed"),
