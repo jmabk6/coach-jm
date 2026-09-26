@@ -227,9 +227,9 @@ describe("critère de fin — Muscu A du mockup", () => {
     expect(blocks.map((block) => block.position)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
     expect(JSON.stringify(reloaded)).not.toContain('"3a"');
 
-    /* Résumé de la carte Séances : 8 exercices, 5 zones → les deux dominantes (26/09/2026, plus de « Full body »). */
+    /* Résumé de la carte Séances : le nombre d'exercices, sans zones (26/09/2026). */
     expect(
       formatSessionTemplateSummary(summarizeSessionTemplate(blocks, exerciseById)),
-    ).toBe("8 exercices · Jambes, Dos");
+    ).toBe("8 exercices");
   });
 });

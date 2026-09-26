@@ -165,18 +165,16 @@ describe("calculateBlockNumbering", () => {
 });
 
 describe("summarizeSessionTemplate", () => {
-  it("compte les enfants de groupe et ordonne les zones par apparition", () => {
+  it("compte les enfants de groupe ; plus de zones dans le résumé (26/09/2026)", () => {
     const summary = summarizeSessionTemplate(muscuABlocks, exerciseById);
 
     expect(summary).toEqual({
       exerciseCount: 5,
       cardioCount: 0,
-      zones: ["Jambes", "Dos", "Core"],
-      zoneCounts: { Jambes: 2, Dos: 2, Core: 1 },
       cardioNames: [],
     });
     expect(formatSessionTemplateSummary(summary)).toBe(
-      "5 exercices · Jambes, Dos, Core",
+      "5 exercices",
     );
     expect(formatSessionTemplateCardioLine(summary)).toBeUndefined();
   });
@@ -197,14 +195,14 @@ describe("summarizeSessionTemplate", () => {
     expect(summary.exerciseCount).toBe(5);
     expect(summary.cardioCount).toBe(1);
     expect(formatSessionTemplateSummary(summary)).toBe(
-      "5 exercices · Jambes, Dos, Core",
+      "5 exercices",
     );
     expect(formatSessionTemplateCardioLine(summary)).toBe(
       "+ 1 exercice cardio",
     );
   });
 
-  it("au-delà de trois zones, cite les deux dominantes (plus de Full body, 26/09/2026)", () => {
+  it("aucune zone, même au-delà de trois (26/09/2026 : le nom suffit)", () => {
     const blocks: SessionBlock[] = [
       ...muscuABlocks,
       repsBlock("b-chest", 5, "chest-press"),
@@ -214,7 +212,7 @@ describe("summarizeSessionTemplate", () => {
       formatSessionTemplateSummary(
         summarizeSessionTemplate(blocks, exerciseById),
       ),
-    ).toBe("6 exercices · Jambes, Dos");
+    ).toBe("6 exercices");
   });
 
   it("résume une séance cardio seule par ses exercices", () => {

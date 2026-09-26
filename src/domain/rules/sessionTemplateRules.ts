@@ -1,7 +1,6 @@
 import type {
   Exercise,
   Id,
-  MuscleZone,
   SessionBlock,
   SessionCategory,
   SessionTemplate,
@@ -72,14 +71,6 @@ export interface SessionTemplateSummary {
    */
   cardioCount: number;
 
-  /**
-   * Zones travaillées, dans l'ordre d'apparition dans la séance.
-   * Vide pour une séance sans exercice de musculation.
-   */
-  zones: MuscleZone[];
-
-  /** Nombre d'exercices par zone, pour dégager les zones dominantes. */
-  zoneCounts: Partial<Record<MuscleZone, number>>;
 
   /**
    * Noms des exercices cardio, dans l'ordre de la séance.
@@ -155,12 +146,10 @@ export function summarizeSessionTemplate(
   const summary: SessionTemplateSummary = {
     exerciseCount: 0,
     cardioCount: 0,
-    zones: [],
-    zoneCounts: {},
     cardioNames: [],
   };
 
-  /* L'échauffement (D14) n'est ni un « exercice cardio » ni une zone travaillée (26/09/2026). */
+  /* L'échauffement (D14) n'est pas un « exercice cardio » (26/09/2026). */
   const worked = blocks.filter((block) => !(block.kind === "exercise" && block.role === "warmup"));
 
   for (const exercise of listTemplateExercises(worked, exerciseById)) {
@@ -171,32 +160,13 @@ export function summarizeSessionTemplate(
     }
 
     summary.exerciseCount += 1;
-
-    if (exercise.zone) {
-      if (!summary.zones.includes(exercise.zone)) summary.zones.push(exercise.zone);
-      summary.zoneCounts[exercise.zone] = (summary.zoneCounts[exercise.zone] ?? 0) + 1;
-    }
   }
 
   return summary;
 }
 
 /**
- * Nombre de zones au-delà duquel le résumé ne cite que les zones
- * dominantes (décision du 26/09/2026 : plus de `Full body`, faux pour
- * Muscu A et B).
- */
-const ALL_ZONES_THRESHOLD = 3;
-
-/** Les deux zones qui comptent le plus d'exercices ; à égalité, l'ordre de la séance. */
-function dominantZones(summary: SessionTemplateSummary): MuscleZone[] {
-  return [...summary.zones]
-    .sort((a, b) => (summary.zoneCounts[b] ?? 0) - (summary.zoneCounts[a] ?? 0) || summary.zones.indexOf(a) - summary.zones.indexOf(b))
-    .slice(0, 2);
-}
-
-/**
- * Première ligne du résumé : `6 exercices · Jambes, Dos, Core`.
+ * Première ligne du résumé : `6 exercices` (les zones sont retirées le 26/09/2026 : le nom suffit).
  *
  * Une seule syntaxe (§5). Les exercices cardio ne comptent pas ici ;
  * une séance qui n'en contient que du cardio est résumée par ses exercices,
@@ -221,16 +191,8 @@ export function formatSessionTemplateSummary(
       ? "1 exercice"
       : `${summary.exerciseCount} exercices`;
 
-  if (summary.zones.length === 0) {
-    return count;
-  }
-
-  const zones =
-    summary.zones.length > ALL_ZONES_THRESHOLD
-      ? dominantZones(summary).join(", ")
-      : summary.zones.join(", ");
-
-  return `${count} · ${zones}`;
+  /* Plus de zones (décision du 26/09/2026) : le nom de la séance suffit. */
+  return count;
 }
 
 /**
