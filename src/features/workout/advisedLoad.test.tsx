@@ -50,6 +50,12 @@ describe("charge conseillée", () => {
     expect(advisedLoadOf(byId("tirage-vertical"), undefined, [])).toBeUndefined();
     expect(advisedLoadOf(byId("squat"), version(), undefined)).toBeUndefined();
   });
+
+  it("barre à vide sans poids connu (curl EZ de septembre) : « barre à vide », jamais « 0 kg »", () => {
+    const empty: PerformedSeries = { id: "e", position: 0, status: "completed", load: { kind: "empty" }, reps: 12 };
+    expect(formatAdvisedLoad(advisedLoadOf(byId("import-curl-biceps-ez"), version(), [empty])!)).toBe("barre à vide");
+    expect(formatAdvisedLoad(advisedLoadOf(byId("import-curl-biceps-ez"), undefined, [empty])!)).toBe("barre à vide");
+  });
 });
 
 describe("écran de séance — exercices à venir", () => {

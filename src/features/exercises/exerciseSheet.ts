@@ -18,6 +18,8 @@ const number = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 /* Prochaine séance                                                           */
 /* -------------------------------------------------------------------------- */
 
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
 export interface NextSession {
   /** « 52 kg d'assistance », « 35 kg (barre + 7,5 kg de chaque côté) », « Charge à trouver ». */
   headline: string;
@@ -68,7 +70,7 @@ export function nextSessionOf(
   const advised = advisedLoadOf(exercise, version, lastSeries);
 
   if (!version) {
-    return advised ? { headline: formatAdvisedLoad(advised), details: "D'après ta dernière séance.", toFind: false } : undefined;
+    return advised ? { headline: capitalize(formatAdvisedLoad(advised)), details: "D'après ta dernière séance.", toFind: false } : undefined;
   }
 
   const rest = `repos ${formatDurationShort(version.restSec)}`;
@@ -85,7 +87,7 @@ export function nextSessionOf(
   }
 
   return {
-    headline: formatAdvisedLoad(advised),
+    headline: capitalize(formatAdvisedLoad(advised)),
     details: [prescription(version), rpe, rest].filter(Boolean).join(" · "),
     rule: frameRuleSentence(version),
     toFind: false,
