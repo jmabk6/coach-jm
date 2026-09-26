@@ -266,6 +266,15 @@ export const exerciseMedia = {
       "media/exercises/mobilite/mobilite-rotation-thoracique-frame3.44dd654b.webp",
     ],
   },
+  "montee-banc": {
+    thumbnail: "media/exercises/jambes/montee-banc-thumb.f5599f14.webp",
+    photo: "media/exercises/jambes/montee-banc.48405b1f.webp",
+    frames: [
+      "media/exercises/jambes/montee-banc-frame1.73bf1826.webp",
+      "media/exercises/jambes/montee-banc-frame2.a9a5e97c.webp",
+      "media/exercises/jambes/montee-banc-frame3.1a7864a1.webp",
+    ],
+  },
   "pallof-press": {
     thumbnail: "media/exercises/core/pallof-press-thumb.d8add18d.webp",
     photo: "media/exercises/core/pallof-press.203dbe73.webp",

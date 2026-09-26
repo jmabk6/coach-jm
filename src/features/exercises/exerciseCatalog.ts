@@ -121,6 +121,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "reps_per_side",
+    media: officialExerciseMedia("montee-banc"),
     technique: "Pose tout le pied sur un banc bas. Pousse dans le talon de la jambe d'appui pour monter sans t'aider de la jambe arrière, puis redescends lentement en contrôlant le genou dans l'axe du pied.",
     description: "Exercice unilatéral qui renforce les quadriceps et les fessiers et améliore l'équilibre sur une jambe.",
     advice: "Choisis une hauteur qui te permet de garder le buste droit et le genou stable. Fais toutes les répétitions d'une jambe, puis change.",

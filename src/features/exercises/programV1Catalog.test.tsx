@@ -39,12 +39,11 @@ afterEach(cleanup);
 afterAll(() => vi.unstubAllEnvs());
 
 describe("catalogue : les 7 exercices du programme V1", () => {
-  it("classification et mesure conformes à la conception, classification valide, sans média", () => {
+  it("classification et mesure conformes à la conception, classification valide", () => {
     for (const [id, expected] of Object.entries(PROGRAM_V1)) {
       const exercise = byId.get(id);
       expect(exercise, id).toMatchObject({ ...expected, mode: "series", status: "active" });
       expect(checkClassification(exercise!), id).toEqual([]);
-      expect(exercise?.media, id).toBeUndefined();
     }
     expect(byId.get("marche-laterale-elastique")?.measurementLabels).toEqual({ value: "pas" });
     /* Aucun groupe « Mollets » : mollets debout reste sans groupe. */
