@@ -320,6 +320,32 @@ L'ancien écran Progression reste accessible pendant le chantier (Plus > « Stat
 - **Cardio** : « la durée d'abord ». C'est une consigne, sans algorithme.
 - **Cran de la machine (D18)** : paramètre saisi par l'utilisateur sur la version de cadre de la traction assistée. Tant qu'il est absent, `nextStep` et `proposeRaise` ne proposent rien. Sa saisie après la première séance officielle pose la question du figeage → **N4**.
 
+### 2.5 bis Programme V2 (à partir du 04/10/2026)
+
+Contenu sportif validé le 26/09/2026, **figé**. Les séances du 27/09 au 03/10 (semaine de tests) restent en V1 ; le programme V2 s'applique à partir du dimanche 04/10.
+
+**Mise en place (seeds 19 et 20)** — six nouveaux modèles à identifiants fixes `v2-*` (origine `program_v2`), à côté des modèles V1 :
+- règle hebdomadaire : mêmes jours (dim. Muscu A, lun. Cardio B, mar. Muscu B, mer. Cardio A, jeu. Muscu C, ven. repos, sam. Cardio C), routines du soir inchangées ;
+- toute séance à venir datée du 04/10 ou après, non démarrée, qui porte un modèle V1 de musculation ou de cardio passe au modèle V2 de la même lettre ; ses tests suivent la place V2 ;
+- les modèles V1 de musculation et de cardio sont archivés à partir du 04/10 (seed 20, qui réessaie à chaque lancement avant cette date) ; leur historique reste.
+
+| Modèle | Contenu (échauffement tapis 8-10 min en tête des trois muscu) |
+|---|---|
+| **Muscu A — Dos / traction / biceps** | traction assistée 3×6-8 ; rowing poulie basse 3×8-12 ; tirage vertical 2×8-12 ; chest press 2×8-12 (N5) ; élévations latérales 3×12-15 ; curl biceps barre EZ 3×8-12 ; leg curl 2×10-12 |
+| **Muscu B — Pecs / épaules / triceps** | chest press 3×8-12 ; développé incliné haltères 3×8-12 ; traction assistée légère 2×8-10 (N5, plus d'assistance qu'en A) ; développé épaules machine 3×8-10 ; élévations latérales 3×12-15 ; extension triceps poulie 3×10-15 ; presse à cuisses 3×10-12 |
+| **Muscu C — Jambes padel + rappel haut** | sprints vélo 6×12 s / 48 s ; montée sur banc bas 3×8/jambe ; groupe « Rester bas » ×3 (chaise 90° 30-45 s, marche latérale élastique 10 pas/côté, mollets debout 15-20) ; pullover poulie 3×10-15 ; face pull 3×12-15 ; curl marteau 3×10-15 ; extension triceps au-dessus de la tête 2×10-15 |
+| **Cardio A — Endurance facile** (~45 min) | un bloc tapis : 10 min progressives ; 30 min à 5,5 km/h, pente 6-8 %, RPE 4-5, en 6 paliers de 5 min (un relevé de FC chacun) ; 5 min de retour au calme |
+| **Cardio B — Intervalles en marche inclinée** (~38 min) | un bloc tapis : 10 min progressives ; 5 × 3 min à 5,5 km/h, pente 10-15 %, RPE 8, séparés de 4 × 2 min à 4,5 km/h, pente 2-3 % (pas de récupération après le 5e) ; 5 min de retour au calme |
+| **Cardio C — Endurance soutenue** (~57 min) | un bloc tapis : 10 min progressives ; 2 × 12 min à 5,5 km/h, pente 8-12 %, RPE ~6, séparés de 3 min à 4,5 km/h / 3 % ; 15 min faciles RPE 4-5 (réglage facile de Cardio A) ; 5 min de retour au calme ; randonnée possible |
+
+- **Repos** : gros mouvements 2 min (traction de A 2 min 30), isolations 90 s.
+- **Cardio en étalonnage** : plages indicatives, le ressenti décide ; « Douleur au genou : arrêt » sur les trois ; pas de progression automatique — après 2-3 séances, réglages fixés par mise à jour explicite des modèles.
+- **Sortent du programme** : squat, traction négative, suspension + omoplates (restent au catalogue).
+- **Tests** : traction en étape 0 de Muscu A après l'échauffement, traction assistée à 2 séries ce jour-là ; jambes à la place des sprints de Muscu C ; cardio à la place des 6 paliers du bloc principal de Cardio A (`targetStepIds`).
+- **Cadres** (nouvelle version, motif « changement de programme », jamais d'écrasement) : chest press 3×8-12, 40 kg ; rowing 3×8-12, 40 kg ; développé incliné 3×8-12, 8 kg ; élévations 3×12-15, 5 kg ; tirage vertical 2×8-12, 40 kg ; leg curl 2×10-12, 32,5 kg ; développé épaules 3×8-10 sans cible ; extension triceps poulie 3×10-15, 10 kg ; presse 3×10-12, 120 kg ; curl biceps EZ, curl marteau, face pull, extension au-dessus de la tête : cadres créés sans cible. Traction assistée inchangée (3×6-8, 52 kg d'aide). N5 automatique : une brique à moins de séries que son cadre (chest press de A, traction légère de B) ne valide pas de palier et ne compte pas en stagnation.
+- **Objectifs** : exercices liés remplacés — Traction (traction assistée, tirage vertical, rowing, pullover) ; Haut du corps (11 exercices, curls, face pull et triceps compris) ; Jambes (sans squat) ; Cardio (tapis). Conseils : Traction 2 séances (A force, B rappel léger), Haut du corps 3 séances.
+- **Durées estimées** : Muscu A 72 min, B 79 min (au-dessus de la cible 65-75), C 71 min ; Cardio A 45, B 38, C 57.
+
 ### 2.6 Séance et fin de séance
 
 - **Plein écran** : `/seance-en-cours`.

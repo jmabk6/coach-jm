@@ -309,6 +309,18 @@ Décisions du 24/09 : mollets debout sans groupe ni cible ; repos non précisés
 
 ---
 
+## 13 bis. Programme V2 (26/09/2026)
+
+**Référence** : CT § 2.5 bis. **Mise en ligne** : pas avant la confirmation « Muscu C du 01/10 faite » et la sauvegarde ; effet au 04/10.
+
+| Étape | Contenu | Critère de fin |
+|---|---|---|
+| **V2.1** | Un test peut remplacer plusieurs paliers consécutifs (`targetStepIds`) | Cardio A V2 : les 6 paliers du bloc principal remplacés, progressif et retour au calme gardés |
+| **V2.2** | Le programme V2 en données : 6 modèles, règle, place des tests, cadres, exercices liés ; estimation de durée (transition entre deux briques, mise en place pour les séries en répétitions hors circuit) | contenu conforme au brief ; cardio 45 / 38 / 57 min |
+| **V2.3** | Seed 19 (bascule au 04/10) et seed 20 (archivage V1 à partir du 04/10) | semaine du 27/09 en V1, 04/10 en V2, tests du 25/10 re-placés ; cadres en nouvelle version ; sauvegarde réelle : historique intact |
+| **V2.4** | Conseils des objectifs | Traction 2 séances, Haut du corps 3 séances |
+| **V2.5** | Conception et plan | — |
+
 ## 14. Lot O — Recette iPhone de la V2
 
 - **Préalable** : sauvegarde fraîche, `verify` OK.
