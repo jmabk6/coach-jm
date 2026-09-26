@@ -9,6 +9,7 @@ import { seedRpeScale } from "../strength/seedRpeScale";
 import { seedFrameTargets20260925 } from "../strength/seedFrameTargets20260925";
 import { seedChair90 } from "../exercises/seedChair90";
 import { seedTestsWeek20260927 } from "../program/seedTestsWeek20260927";
+import { seedRemoveOldMuscuA } from "../sessions/seedRemoveOldMuscuA";
 import { seedGoals } from "../goals/seedGoals";
 import { seedTestProtocols } from "../tests/seedTestProtocols";
 import { seedSettingsDefaults, seedThemeLight } from "./seedSettingsDefaults";
@@ -59,6 +60,8 @@ export const SEEDS: SeedStep[] = [
   { name: "chair90", dependsOn: ["exerciseCatalog", "testProtocols", "programV1"], run: () => seedChair90() },
   /* Seed 17 : les tests de la semaine du 27/09 sur les séances de journée générées avant le lot G. */
   { name: "testsWeek20260927", dependsOn: ["testProtocols", "programV1"], run: () => seedTestsWeek20260927() },
+  /* Seed 18 : l'ancien modèle « Muscu A » du 17/09, jamais utilisé, supprimé. */
+  { name: "removeOldMuscuA", run: () => seedRemoveOldMuscuA() },
 ];
 
 export interface SeedReport {

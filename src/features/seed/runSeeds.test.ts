@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 import { db } from "../../db/database";
 import type { PlannedSession, SessionTemplate, SettingsRecord, StrengthFrame, StrengthFrameVersion, WorkoutSession } from "../../domain";
 import { muscuCWithChairNote } from "../exercises/seedChair90";
+import { OLD_MUSCU_A_ID } from "../sessions/seedRemoveOldMuscuA";
 import { expectedAfterFrameTargets } from "../strength/seedFrameTargets20260925";
 import { FIX_WORKOUT_ID, fixesOf20260924 } from "../workout/seedFixWorkout20260924";
 import { buildWorkout20260925, WORKOUT_20260925_ID } from "../history/seedWorkout20260925";
@@ -58,19 +59,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
     expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
     const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
-    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso, testsWeek20260927: iso });
+    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso, testsWeek20260927: iso, removeOldMuscuA: iso });
     expect(await db.goals.count()).toBe(7);
     expect(await db.testProtocols.count()).toBe(7);
     expect(await db.exercises.count()).toBeGreaterThan(0);
@@ -233,6 +234,11 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     const fileTemplates = (file.stores.sessionTemplates ?? []) as Array<{ id: string }>;
     const seededTemplates = seeded.stores.sessionTemplates as Array<{ id: string }>;
     for (const template of fileTemplates) {
+      /* Seed 18 : l'ancien « Muscu A » du 17/09, jamais utilisé, disparaît. */
+      if (template.id === OLD_MUSCU_A_ID) {
+        expect(seededTemplates.some((item) => item.id === OLD_MUSCU_A_ID)).toBe(false);
+        continue;
+      }
       const seededTemplate = seededTemplates.find((item) => item.id === template.id) as { updatedAt?: string } | undefined;
       /* Seed 9 (24/09/2026) : l'ancien Cardio A intact passe en un seul bloc ; rien d'autre ne change. */
       /* Seed 13 (lot K.1) : une routine encore vide et non modifiée reçoit son contenu. */

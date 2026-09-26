@@ -64,6 +64,8 @@ export interface InstallMarkers {
   chair90?: string;
   /** Tests de la semaine du 27/09 attachés aux séances de journée générées avant le lot G (seed 17). */
   testsWeek20260927?: string;
+  /** Ancien modèle « Muscu A » du 17/09, jamais utilisé, supprimé (seed 18). */
+  removeOldMuscuA?: string;
 }
 
 export type SettingsRecord =
