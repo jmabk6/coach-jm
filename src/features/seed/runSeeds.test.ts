@@ -3,7 +3,7 @@ import "fake-indexeddb/auto";
 import { readFile } from "node:fs/promises";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
-import type { SessionTemplate, SettingsRecord, StrengthFrame, StrengthFrameVersion, WorkoutSession } from "../../domain";
+import type { PlannedSession, SessionTemplate, SettingsRecord, StrengthFrame, StrengthFrameVersion, WorkoutSession } from "../../domain";
 import { muscuCWithChairNote } from "../exercises/seedChair90";
 import { expectedAfterFrameTargets } from "../strength/seedFrameTargets20260925";
 import { FIX_WORKOUT_ID, fixesOf20260924 } from "../workout/seedFixWorkout20260924";
@@ -58,19 +58,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
     expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
     const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
-    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso });
+    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso, testsWeek20260927: iso });
     expect(await db.goals.count()).toBe(7);
     expect(await db.testProtocols.count()).toBe(7);
     expect(await db.exercises.count()).toBeGreaterThan(0);
@@ -170,7 +170,18 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     /* Lots C et D : réglages, place des tests, modèles V1 et routines ajoutés ; rien d'existant n'est réécrit. */
     const settingsKeys = Object.keys(await settingsByKey()).sort();
     expect(settingsKeys).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
-    const untouched = ["plannedSessions", "weightEntries", "strengthMilestones"];
+    const untouched = ["weightEntries", "strengthMilestones"];
+    /* Seed 17 : dans la semaine du 27/09, une séance de journée sans test reçoit le test de son jour ; rien d'autre ne change. */
+    const DAY_TESTS: Record<string, string> = { "2026-09-27": "protocol-traction", "2026-09-30": "protocol-cardio", "2026-10-01": "protocol-jambes" };
+    const seededPlanned = seeded.stores.plannedSessions as PlannedSession[];
+    expect(seededPlanned.map((session) => session.id).sort()).toEqual(((file.stores.plannedSessions ?? []) as PlannedSession[]).map((session) => session.id).sort());
+    for (const original of (file.stores.plannedSessions ?? []) as PlannedSession[]) {
+      const after = seededPlanned.find((session) => session.id === original.id)!;
+      const gained = (original.tests ?? []).length === 0 && (after.tests ?? []).length > 0;
+      if (gained) expect(after.tests?.map((test) => test.protocolId), original.id).toEqual([DAY_TESTS[original.date]]);
+      const expectedSession = gained ? { ...original, tests: after.tests, updatedAt: after.updatedAt } : original;
+      expect(canonicalStringify(after), original.id).toBe(canonicalStringify(expectedSession));
+    }
     /* Seed 10 : seule la Cardio A du 24/09, si elle est dans l'état constaté, est corrigée. */
     const seededWorkouts = seeded.stores.workouts as WorkoutSession[];
     const byId = (a: WorkoutSession, b: WorkoutSession) => (a.id < b.id ? -1 : 1);

@@ -62,6 +62,8 @@ export interface InstallMarkers {
   frameTargets20260925?: string;
   /** Chaise contre le mur à 90° : nom, technique, consigne du test Jambes et de Muscu C (seed 16). */
   chair90?: string;
+  /** Tests de la semaine du 27/09 attachés aux séances de journée générées avant le lot G (seed 17). */
+  testsWeek20260927?: string;
 }
 
 export type SettingsRecord =

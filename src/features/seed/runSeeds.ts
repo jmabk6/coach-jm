@@ -8,6 +8,7 @@ import { seedProgramFrames } from "../strength/seedProgramFrames";
 import { seedRpeScale } from "../strength/seedRpeScale";
 import { seedFrameTargets20260925 } from "../strength/seedFrameTargets20260925";
 import { seedChair90 } from "../exercises/seedChair90";
+import { seedTestsWeek20260927 } from "../program/seedTestsWeek20260927";
 import { seedGoals } from "../goals/seedGoals";
 import { seedTestProtocols } from "../tests/seedTestProtocols";
 import { seedSettingsDefaults, seedThemeLight } from "./seedSettingsDefaults";
@@ -56,6 +57,8 @@ export const SEEDS: SeedStep[] = [
   { name: "frameTargets20260925", dependsOn: ["frames"], run: () => seedFrameTargets20260925() },
   /* Seed 16 : la chaise contre le mur à 90° (nom, technique, test Jambes, Muscu C). */
   { name: "chair90", dependsOn: ["exerciseCatalog", "testProtocols", "programV1"], run: () => seedChair90() },
+  /* Seed 17 : les tests de la semaine du 27/09 sur les séances de journée générées avant le lot G. */
+  { name: "testsWeek20260927", dependsOn: ["testProtocols", "programV1"], run: () => seedTestsWeek20260927() },
 ];
 
 export interface SeedReport {

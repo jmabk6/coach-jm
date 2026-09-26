@@ -14,7 +14,7 @@ import { generateEveningRoutines } from "../../domain/rules/testCycleRules";
 import { attachTestPlan, type TestPlan } from "../../domain/rules/testPlanRules";
 
 /** Le calendrier des tests : cycle, place de chaque test, protocoles actifs. */
-async function loadTestPlan(): Promise<TestPlan | undefined> {
+export async function loadTestPlan(): Promise<TestPlan | undefined> {
   const [cycle, schedule, protocols] = await Promise.all([
     getSetting("testCycle"),
     getSetting("testSchedule"),
