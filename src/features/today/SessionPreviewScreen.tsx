@@ -316,6 +316,7 @@ function PreviewRow({ block, number, numbering, exerciseById }: PreviewRowProps)
           {url ? <img src={url} alt="" loading="lazy" /> : null}
         </span>
         <span className="preview__body">
+          {block.role === "warmup" && <span className="preview__role">Échauffement</span>}
           <span className="preview__name">{exercise?.name ?? "Exercice supprimé"}</span>
           <span className="preview__meta">
             {formatExerciseInstructionsRow(block.instructions)}

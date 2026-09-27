@@ -147,6 +147,17 @@ describe("calculateBlockNumbering", () => {
     });
   });
 
+  it("l'échauffement n'a pas de numéro : les exercices vont de 1 à N (27/09/2026)", () => {
+    const withWarmup = [
+      ...muscuABlocks.map((block) => ({ ...block, position: block.position + 1 })),
+      { ...(muscuABlocks.find((block) => block.id === "b-squat") as SessionBlock), id: "b-echauffement", position: 0, role: "warmup" as const },
+    ];
+
+    const numbering = calculateBlockNumbering(withWarmup);
+    expect(numbering["b-echauffement"]).toBeUndefined();
+    expect(numbering).toMatchObject({ "b-squat": "1", "b-leg-press": "2", "g-dos": "3", "c-lat": "3a", "b-crunch": "4" });
+  });
+
   it("recalcule après déplacement d'un groupe", () => {
     const moved = muscuABlocks.map((block) => {
       if (block.id === "g-dos") return { ...block, position: 0.5 };

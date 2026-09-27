@@ -447,6 +447,17 @@
   background: var(--color-purple-soft);
 }
 
+/* Échauffement sans numéro (27/09/2026). */
+.preview__role {
+  width: fit-content;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .preview__body {
   display: flex;
   min-width: 0;

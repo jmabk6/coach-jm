@@ -69,6 +69,7 @@ export function ExerciseBlockCard({
           <span className="block-card__number">{number}</span>
           <ExerciseThumb exercise={exercise} />
           <span className="block-card__body">
+            {block.role === "warmup" && <span className="block-card__role">Échauffement</span>}
             <span className="block-card__name">
               {exercise?.name ?? "Exercice introuvable"}
             </span>
@@ -94,6 +95,7 @@ export function ExerciseBlockCard({
         <span className="block-card__number">{number}</span>
         <ExerciseThumb exercise={exercise} />
         <span className="block-card__body">
+          {block.role === "warmup" && <span className="block-card__role">Échauffement</span>}
           <span className="block-card__name">
             {exercise?.name ?? "Exercice introuvable"}
           </span>

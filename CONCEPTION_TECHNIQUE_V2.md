@@ -1062,6 +1062,7 @@ Ce sont les objectifs dont au moins un exercice lié a été réellement effectu
 - **Écrit** : actions existantes ; « Séance libre ».
 - **Carte** : lettre, icône de catégorie, nom, sous-titre, description, nombre de blocs, durée. **Pas de photo** (D4).
 - **États** : routine vide → « Contenu à définir ».
+- **Éditeur de séance et aperçu** (27/09/2026) : l'échauffement n'est pas numéroté, il porte la pastille « Échauffement » ; les exercices vont de 1 à N, comme dans la frise de la séance en cours (`calculateBlockNumbering`).
 
 ### M9 — Séance en cours (`/seance-en-cours`, plein écran)
 

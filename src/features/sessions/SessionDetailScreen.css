@@ -125,6 +125,19 @@
   text-align: center;
 }
 
+/* Pastille « Échauffement » : pas de numéro (27/09/2026), comme la frise
+   de la séance en cours. */
+.block-card__role {
+  justify-self: start;
+  width: fit-content;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .block-card__number--child {
   font-size: 0.8rem;
   padding: 2px 0;

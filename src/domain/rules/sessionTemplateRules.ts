@@ -38,6 +38,12 @@ export function calculateBlockNumbering(
       continue;
     }
 
+    /* Comme la frise de la séance en cours (décision du 25/09/2026) :
+       l'échauffement n'a pas de numéro, les exercices vont de 1 à N. */
+    if (block.kind === "exercise" && block.role === "warmup") {
+      continue;
+    }
+
     visibleNumber += 1;
     numbering[block.id] = String(visibleNumber);
 
