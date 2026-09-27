@@ -140,17 +140,19 @@ export function TodayScreen() {
         />
       ))}
 
+      {/* Accueil compact (27/09/2026) : séance du jour → pesée → routine du
+          soir → objectifs → prochaines séances. */}
+      {/* Pesée du jour (lot I.1), sur une ligne. */}
+      <WeightCard today={data.today} />
+      {/* Mensurations du matin, le lundi d'une semaine de tests (lot I.3). */}
+      <MeasurementsCard today={data.today} />
+
       {evenings.map((entry) => (
         <EveningCard key={entry.session.id} session={entry.session} data={data} />
       ))}
 
-      {/* Mes 7 objectifs (lot J.2). */}
+      {/* Mes 7 objectifs (lot J.2), en lignes compactes. */}
       <GoalCards today={data.today} />
-
-      {/* Pesée du jour (lot I.1). */}
-      <WeightCard today={data.today} />
-      {/* Mensurations du matin, le lundi d'une semaine de tests (lot I.3). */}
-      <MeasurementsCard today={data.today} />
 
       <NextSessions data={data} />
 

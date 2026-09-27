@@ -12,7 +12,8 @@ import { GoalCards } from "./GoalCards";
 
 /**
  * Lot J.2 — « Mes 7 objectifs » sur l'Accueil : valeur de test ou moyenne
- * de pesées, « À mesurer » et la date du test, « Test à replanifier ».
+ * de pesées, « À mesurer » et la date du test, « À replanifier ». Lignes
+ * compactes depuis le 27/09/2026 : icône, nom, valeur, statut.
  * Invariant : une séance d'entraînement n'est jamais un résultat de test.
  */
 
@@ -59,15 +60,15 @@ afterEach(async () => {
 });
 
 describe("Accueil — Mes 7 objectifs", () => {
-  it("7 cartes, « À mesurer » et la date du prochain test, lien vers l'objectif", async () => {
+  it("7 lignes, « À mesurer · test … », lien vers l'objectif", async () => {
     renderCards();
     expect(await screen.findByText("Mes 7 objectifs")).toBeDefined();
     expect(document.querySelectorAll(".goal-card-home")).toHaveLength(7);
-    expect(within(card("traction")).getByText("À mesurer")).toBeDefined();
-    expect(within(card("traction")).getByText("Test dim. 27 sept.")).toBeDefined();
-    expect(within(card("cardio")).getByText("Test mer. 30 sept.")).toBeDefined();
+    expect(within(card("traction")).getByText("À mesurer · test dim. 27 sept.")).toBeDefined();
+    expect(within(card("cardio")).getByText("À mesurer · test mer. 30 sept.")).toBeDefined();
     expect(within(card("legs")).getByText("Indicateur à choisir après 2 tests")).toBeDefined();
-    expect(within(card("weight")).getByText("Pesée du jour")).toBeDefined();
+    expect(within(card("weight")).getByText("À mesurer")).toBeDefined();
+    expect(document.querySelectorAll(".goal-card-home__status")).toHaveLength(0);
     expect(card("traction").getAttribute("href")).toBe("/objectifs/traction");
   });
 
@@ -75,7 +76,7 @@ describe("Accueil — Mes 7 objectifs", () => {
     await db.workouts.bulkPut([tractionWorkout("w1", "2026-09-15"), tractionWorkout("w2", "2026-09-20")]);
     renderCards();
     await screen.findByText("Mes 7 objectifs");
-    expect(within(card("traction")).getByText("À mesurer")).toBeDefined();
+    expect(within(card("traction")).getByText(/^À mesurer/)).toBeDefined();
     expect(card("traction").textContent).not.toMatch(/49/);
   });
 
@@ -87,7 +88,8 @@ describe("Accueil — Mes 7 objectifs", () => {
     await db.testResults.put(result);
     renderCards();
     await screen.findByText("Mes 7 objectifs");
-    expect(within(card("traction")).getByText("Palier atteint")).toBeDefined();
+    expect(within(card("traction")).getByText("0 kg")).toBeDefined();
+    expect(within(card("traction")).getByText("Palier atteint").className).toContain("goal-card-home__status--reached");
   });
 
   it("test manqué : « Test à replanifier » ; pesées de la semaine : moyenne provisoire", async () => {
@@ -102,7 +104,7 @@ describe("Accueil — Mes 7 objectifs", () => {
     ] as never);
     renderCards();
     await screen.findByText("Mes 7 objectifs");
-    expect(within(card("cardio")).getByText("Test à replanifier")).toBeDefined();
+    expect(within(card("cardio")).getByText("À replanifier").className).toContain("goal-card-home__status--warning");
     expect(within(card("weight")).getByText("79,5 kg · moyenne provisoire")).toBeDefined();
   });
 });

@@ -117,38 +117,36 @@ describe("sauvegarde", () => {
 });
 
 describe("carte « Pesée du jour »", () => {
-  it("pas de pesée : champ ouvert ; enregistrer ; la valeur s'affiche, modifiable, sans doublon", async () => {
-    const { container } = render(<WeightCard today="2026-09-24" />);
-    const value = async () => {
-      await waitFor(() => expect(container.querySelector(".weight-card__value")).not.toBeNull());
-      return container.querySelector(".weight-card__value")?.textContent;
-    };
+  /* Accueil compact (27/09/2026) : une ligne ; le formulaire complet s'ouvre au toucher. */
+  const doneLine = () => screen.findByRole("button", { name: /^Pesée/ });
+
+  it("pas de pesée : une ligne, champ et Enregistrer ; ensuite « Pesée ✓ », toucher = modifier, sans doublon", async () => {
+    render(<WeightCard today="2026-09-24" />);
 
     fireEvent.change(await screen.findByLabelText("Poids en kg"), { target: { value: "81,4" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
-    expect(await value()).toBe("81,4 kg");
+    expect((await doneLine()).textContent).toContain("81,4 kg");
     expect(screen.queryByLabelText("Poids en kg")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Modifier" }));
+    fireEvent.click(await doneLine());
     const input = screen.getByLabelText("Poids en kg") as HTMLInputElement;
     expect(input.value).toBe("81,4");
     expect(screen.getByText(/81,4 kg déjà noté, la nouvelle valeur le remplacera/)).toBeTruthy();
     fireEvent.change(input, { target: { value: "80,9" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
 
-    await waitFor(() => expect(container.querySelector(".weight-card__value")?.textContent).toBe("80,9 kg"));
+    await waitFor(async () => expect((await doneLine()).textContent).toContain("80,9 kg"));
     expect(await db.weightEntries.count()).toBe(1);
 
-    /* Pesée oubliée : « Autre jour » ouvre le champ vide sur la veille. */
-    fireEvent.click(screen.getByRole("button", { name: "Autre jour" }));
-    expect((screen.getByLabelText("Jour de la pesée") as HTMLInputElement).value).toBe("2026-09-23");
-    expect((screen.getByLabelText("Poids en kg") as HTMLInputElement).value).toBe("");
+    /* Pesée oubliée, pesée du jour déjà faite : le champ Jour du formulaire complet. */
+    fireEvent.click(await doneLine());
+    fireEvent.change(screen.getByLabelText("Jour de la pesée"), { target: { value: "2026-09-23" } });
     fireEvent.change(screen.getByLabelText("Poids en kg"), { target: { value: "81,7" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
     await waitFor(async () => expect((await db.weightEntries.orderBy("date").toArray()).map((entry) => [entry.date, entry.kg])).toEqual([["2026-09-23", 81.7], ["2026-09-24", 80.9]]));
   });
 
-  it("valeur hors bornes : message, rien d'écrit ; jour passé choisi dans le champ Jour", async () => {
+  it("valeur hors bornes : message, rien d'écrit ; « autre jour » ouvre le formulaire sur la veille", async () => {
     render(<WeightCard today="2026-09-24" />);
 
     fireEvent.change(await screen.findByLabelText("Poids en kg"), { target: { value: "25" } });
@@ -156,13 +154,17 @@ describe("carte « Pesée du jour »", () => {
     expect((await screen.findByRole("alert")).textContent).toBe("Le poids doit être compris entre 30 et 250 kg.");
     expect(await db.weightEntries.count()).toBe(0);
 
-    expect((screen.getByLabelText("Jour de la pesée") as HTMLInputElement).max).toBe("2026-09-24");
-    fireEvent.change(screen.getByLabelText("Jour de la pesée"), { target: { value: "2026-09-23" } });
+    fireEvent.click(screen.getByRole("button", { name: "autre jour" }));
+    const day = screen.getByLabelText("Jour de la pesée") as HTMLInputElement;
+    expect(day.value).toBe("2026-09-23");
+    expect(day.max).toBe("2026-09-24");
+    expect((screen.getByLabelText("Poids en kg") as HTMLInputElement).value).toBe("");
     fireEvent.change(screen.getByLabelText("Poids en kg"), { target: { value: "81,7" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
     await waitFor(async () => expect((await db.weightEntries.toArray()).map((entry) => entry.date)).toEqual(["2026-09-23"]));
-    /* Aucune pesée aujourd'hui : le champ reste ouvert. */
-    expect(screen.getByLabelText("Poids en kg")).toBeTruthy();
+    /* Aucune pesée aujourd'hui : la ligne de saisie revient. */
+    expect(await screen.findByLabelText("Poids en kg")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "autre jour" })).toBeTruthy();
   });
 
   it("pesées récentes : correction, puis suppression après confirmation", async () => {
@@ -170,6 +172,7 @@ describe("carte « Pesée du jour »", () => {
     await recordWeight("2026-09-23", "81,8", NOW);
     render(<WeightCard today="2026-09-24" />);
 
+    fireEvent.click(await screen.findByRole("button", { name: "autre jour" }));
     fireEvent.click(await screen.findByRole("button", { name: "Pesées récentes" }));
     const rows = screen.getAllByRole("listitem");
     expect(rows.map((row) => row.textContent)).toEqual([expect.stringContaining("81,8 kg"), expect.stringContaining("82,0 kg")]);

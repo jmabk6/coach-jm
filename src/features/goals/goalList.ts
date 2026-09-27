@@ -3,7 +3,7 @@ import { getSetting } from "../../db/repositories/settingsRepository";
 import { getAllTestProtocols, getAllTestResults, getTestProtocolVersion } from "../../db/repositories/testRepository";
 import { getWeightEntries } from "../../db/repositories/weightRepository";
 import type { Goal, TestCycleSettings, TestProtocol, TestProtocolVersion } from "../../domain";
-import { goalBadge, goalProtocolId, goalRowText, type GoalBadge, type GoalRowText } from "../../domain/rules/goalListRules";
+import { goalBadge, goalProtocolId, goalRowText, goalShortStatus, type GoalBadge, type GoalRowText, type GoalShortStatusTone } from "../../domain/rules/goalListRules";
 import { formatTestNumber } from "../../domain/rules/testResultRules";
 import { goalProgressFrom } from "./goalProgress";
 import { getAllGoals } from "../../db/repositories/goalRepository";
@@ -18,6 +18,8 @@ export interface GoalListRow {
   number: number;
   text: GoalRowText;
   badge?: GoalBadge;
+  /** Statut en un mot (lignes compactes de l'Accueil). */
+  status?: { label: string; tone: GoalShortStatusTone };
 }
 
 export interface GoalList {
@@ -79,7 +81,8 @@ export async function loadGoalList(today: string): Promise<GoalList> {
         weighedToday,
         today,
       });
-      return { goal, number: index + 1, text, ...(badge ? { badge } : {}) };
+      const status = goalShortStatus(evaluation);
+      return { goal, number: index + 1, text, ...(badge ? { badge } : {}), ...(status ? { status } : {}) };
     });
 
   return { rows, ...(cycle ? { cycle } : {}) };

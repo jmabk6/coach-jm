@@ -1006,7 +1006,10 @@ Ce sont les objectifs dont au moins un exercice lié a été réellement effectu
   - Jambes sans mesure : « Indicateur à choisir après 2 tests » ;
   - Poids : « Moyenne provisoire » ou « Pesée demain » ;
   - segment intermédiaire atteint : « Palier atteint ».
-- **Carte « Pesée du jour »** (lot I) : le poids, puis masse grasse et masse musculaire, facultatives (26/09/2026, § 5.4 bis). La composition s'affiche sous le poids et dans les pesées récentes.
+- **Accueil compact** (27/09/2026, même contenu, moins de hauteur) :
+  - **Ordre** : semaine de tests, séance du jour, **pesée du jour**, routine du soir, mes 7 objectifs, prochaines séances. Le haut (semaine de tests, carte de la séance, routine) ne change pas.
+  - **Pesée** : une seule ligne « Pesée du jour [champ] kg [Enregistrer] », pour aujourd'hui ; liens discrets « autre jour » et « + composition ». Une fois faite : « Pesée ✓ 88,4 kg » (et la composition). Toucher la ligne ouvre le formulaire complet : poids, masse grasse et masse musculaire facultatives (26/09/2026, § 5.4 bis), jour, moyennes de la semaine, pesées récentes (correction, suppression) ; « Fermer » revient à la ligne.
+  - **Mes 7 objectifs** : les 7 en **lignes compactes** — icône, nom, valeur ou « À mesurer · test dim. 27 sept. », statut en un mot (« En avance », « Dans les temps », « En retard », « Palier atteint », « Atteint », « À replanifier ») ; toucher ouvre l'objectif. Plus de cartes.
 
 ### M2 — Planning Semaine (`/planning`)
 

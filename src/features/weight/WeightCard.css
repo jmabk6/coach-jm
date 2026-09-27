@@ -240,3 +240,110 @@
 .weight-card__input > span {
   min-width: 1.4em;
 }
+
+/* Accueil compact (27/09/2026) : une seule ligne. */
+.weight-card--compact {
+  gap: 4px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.weight-card__quick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.weight-card__quick-label {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.weight-card__quick .weight-card__input input {
+  width: 68px;
+  min-height: 40px;
+  padding: 0 6px;
+  font-size: 1rem;
+}
+
+.weight-card__quick .weight-card__input input::placeholder {
+  color: var(--color-text-soft);
+  font-weight: 400;
+  opacity: 0.55;
+}
+
+.weight-card__quick-submit {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.weight-card__quick-submit:disabled {
+  opacity: 0.6;
+}
+
+.weight-card__quick-links {
+  display: flex;
+  gap: 14px;
+}
+
+.weight-card__quick-links button {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-soft);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.weight-card__done {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.weight-card__done-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.weight-card__done-label svg {
+  color: var(--color-success-strong);
+}
+
+.weight-card__done-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+}
+
+.weight-card__done-values strong {
+  font-size: 1.05rem;
+}
+
+.weight-card__done-chevron {
+  color: var(--color-text-soft);
+}

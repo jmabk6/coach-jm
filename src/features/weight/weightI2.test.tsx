@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../../db/database";
 import type { WeightEntry } from "../../domain";
@@ -105,8 +105,11 @@ describe("affichage sur la carte", () => {
     }
     const { container } = render(<WeightCard today="2026-09-30" />);
 
+    /* Accueil compact : « Pesée ✓ 81,3 kg » ; toucher ouvre moyennes et pesées récentes. */
+    const done = await screen.findByRole("button", { name: /^Pesée/ });
+    expect(done.textContent).toContain("81,3 kg");
+    fireEvent.click(done);
     await screen.findByText("Pesées récentes");
-    expect(container.querySelector(".weight-card__value")?.textContent).toBe("81,3 kg");
     const averages = container.querySelector(".weight-card__averages")!;
     expect(averages.textContent).toContain("Semaine dernière 20 → 26 sept.81,8 kg · 3 pesées");
     expect(averages.textContent).toContain("Cette semaine provisoire81,4 kg · 2 pesées");
@@ -116,6 +119,7 @@ describe("affichage sur la carte", () => {
     await recordWeight("2026-09-22", "82", new Date("2026-09-30T08:00:00.000Z"));
     render(<WeightCard today="2026-09-30" />);
 
+    fireEvent.click(await screen.findByRole("button", { name: "autre jour" }));
     expect(await screen.findByText("Pas assez de pesées (1 sur 3 minimum)")).toBeTruthy();
     expect(screen.getByText("Aucune pesée")).toBeTruthy();
   });

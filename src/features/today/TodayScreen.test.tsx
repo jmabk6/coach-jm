@@ -59,6 +59,18 @@ describe("Accueil — bloc Aujourd'hui", () => {
     expect(screen.getByText("Semaine de tests")).toBeDefined();
     /* Une journée prévue : pas de carte Repos, pas de « Choisir une séance ». */
     expect(screen.queryByText("Jour de repos")).toBeNull();
+
+    /* Accueil compact (27/09/2026) : séance du jour → pesée → routine du soir → objectifs → prochaines séances. */
+    const order = (await screen.findByText("Mes 7 objectifs")) && [
+      screen.getByText("Traction force / dos"),
+      screen.getByText("Pesée du jour"),
+      within(evening()).getByText("Routine A"),
+      screen.getByText("Mes 7 objectifs"),
+      screen.getByText("Prochaines séances"),
+    ];
+    for (let index = 1; index < order.length; index += 1) {
+      expect(order[index - 1]!.compareDocumentPosition(order[index]!) & Node.DOCUMENT_POSITION_FOLLOWING, `position ${index}`).toBeTruthy();
+    }
   });
 
   it("lundi 28/09 : ce soir, la Souplesse et le Tronc à la place de la routine", async () => {

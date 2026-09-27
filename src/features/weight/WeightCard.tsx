@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Scale } from "lucide-react";
+import { Check, ChevronRight, Scale } from "lucide-react";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { getWeightEntries } from "../../db/repositories/weightRepository";
 import type { WeightEntry } from "../../domain";
@@ -120,7 +120,6 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
   if (!entries) return null;
 
   const todayEntry = entries.find((entry) => entry.date === today);
-  const formOpen = editing || todayEntry === undefined;
   const existingForDate = entries.find((entry) => entry.date === date);
 
   async function submit() {
@@ -141,6 +140,76 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
 
   const recent = [...entries].sort((a, b) => b.date.localeCompare(a.date)).slice(0, RECENT_COUNT);
 
+  function openFull(nextDate: string, nextForm: Required<WeightForm>) {
+    setEditing(true);
+    setError(undefined);
+    setDate(nextDate);
+    setForm(nextForm);
+  }
+
+  /* Accueil compact (27/09/2026) : une seule ligne ; le formulaire complet
+     (composition, autre jour, moyennes, pesées récentes) s'ouvre au toucher. */
+  if (!editing) {
+    return (
+      <section className="today-card weight-card weight-card--compact" aria-label="Pesée du jour">
+        {todayEntry ? (
+          <button type="button" className="weight-card__done" onClick={() => openFull(today, formOf(todayEntry))}>
+            <span className="weight-card__done-label">
+              Pesée <Check size={16} strokeWidth={3} aria-label="faite" />
+            </span>
+            <span className="weight-card__done-values">
+              <strong>{formatWeightKg(todayEntry.kg)}</strong>
+              {compositionLine(todayEntry) && <span className="weight-card__composition">{compositionLine(todayEntry)}</span>}
+            </span>
+            <ChevronRight size={16} className="weight-card__done-chevron" aria-hidden="true" />
+          </button>
+        ) : (
+          <>
+            <form
+              className="weight-card__quick"
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!busy) void submit();
+              }}
+            >
+              <span className="weight-card__quick-label">Pesée du jour</span>
+              <span className="weight-card__input">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder="00,0"
+                  aria-label="Poids en kg"
+                  value={form.kg}
+                  onChange={(event) => setForm({ ...form, kg: event.target.value })}
+                />
+                <span>kg</span>
+              </span>
+              <button type="submit" className="weight-card__quick-submit" disabled={busy}>
+                Enregistrer
+              </button>
+            </form>
+            {error && (
+              <p className="weight-card__error" role="alert">
+                {error}
+              </p>
+            )}
+            <span className="weight-card__quick-links">
+              {/* Pesée oubliée : le formulaire complet s'ouvre sur la veille. */}
+              <button type="button" onClick={() => openFull(formatLocalDate(addDays(parseISO(today), -1)), EMPTY_FORM)}>
+                autre jour
+              </button>
+              <button type="button" onClick={() => openFull(today, form)}>
+                + composition
+              </button>
+            </span>
+          </>
+        )}
+      </section>
+    );
+  }
+
   return (
     <section className="today-card weight-card" aria-labelledby="weight-card-title">
       <div className="weight-card__head">
@@ -150,98 +219,60 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
         <h2 id="weight-card-title" className="today-card__title">Pesée du jour</h2>
       </div>
 
-      {todayEntry && !editing && (
-        <div className="weight-card__today">
-          <span className="weight-card__today-values">
-            <strong className="weight-card__value">{formatWeightKg(todayEntry.kg)}</strong>
-            {compositionLine(todayEntry) && <span className="weight-card__composition">{compositionLine(todayEntry)}</span>}
-          </span>
-          <span className="weight-card__today-actions">
-            <button
-              type="button"
-              className="today__link weight-card__link"
-              onClick={() => {
-                setEditing(true);
-                setDate(today);
-                setForm(formOf(todayEntry));
-              }}
-            >
-              Modifier
-            </button>
-            {/* Pesée oubliée : le champ s'ouvre vide, sur la veille. */}
-            <button
-              type="button"
-              className="today__link weight-card__link"
-              onClick={() => {
-                setEditing(true);
-                setDate(formatLocalDate(addDays(parseISO(today), -1)));
-                setForm(EMPTY_FORM);
-              }}
-            >
-              Autre jour
-            </button>
-          </span>
-        </div>
-      )}
-
-      {formOpen && (
-        <form
-          className="weight-card__form"
-          /* Nos règles répondent, en français, sur tous les navigateurs. */
-          noValidate
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!busy) void submit();
-          }}
-        >
-          <label className="weight-card__field">
-            <span>Poids</span>
-            <span className="weight-card__input">
-              <input
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                placeholder="ex. 81,4"
-                aria-label="Poids en kg"
-                value={form.kg}
-                onChange={(event) => setForm({ ...form, kg: event.target.value })}
-              />
-              <span>kg</span>
-            </span>
-          </label>
-          <CompositionFields form={form} onChange={setForm} />
-          <label className="weight-card__field">
-            <span>Jour</span>
+      <form
+        className="weight-card__form"
+        /* Nos règles répondent, en français, sur tous les navigateurs. */
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!busy) void submit();
+        }}
+      >
+        <label className="weight-card__field">
+          <span>Poids</span>
+          <span className="weight-card__input">
             <input
-              type="date"
-              aria-label="Jour de la pesée"
-              max={today}
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="ex. 81,4"
+              aria-label="Poids en kg"
+              value={form.kg}
+              onChange={(event) => setForm({ ...form, kg: event.target.value })}
             />
-          </label>
-          {existingForDate && (
-            <p className="weight-card__hint">
-              {formatDay(date, today)} : {formatWeightKg(existingForDate.kg)} déjà noté, la nouvelle valeur le remplacera.
-            </p>
-          )}
-          {error && (
-            <p className="weight-card__error" role="alert">
-              {error}
-            </p>
-          )}
-          <div className="weight-card__actions">
-            {todayEntry && (
-              <button type="button" className="weight-card__cancel" onClick={() => { setEditing(false); setError(undefined); }}>
-                Annuler
-              </button>
-            )}
-            <button type="submit" className="weight-card__submit" disabled={busy}>
-              Enregistrer
-            </button>
-          </div>
-        </form>
-      )}
+            <span>kg</span>
+          </span>
+        </label>
+        <CompositionFields form={form} onChange={setForm} />
+        <label className="weight-card__field">
+          <span>Jour</span>
+          <input
+            type="date"
+            aria-label="Jour de la pesée"
+            max={today}
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+          />
+        </label>
+        {existingForDate && (
+          <p className="weight-card__hint">
+            {formatDay(date, today)} : {formatWeightKg(existingForDate.kg)} déjà noté, la nouvelle valeur le remplacera.
+          </p>
+        )}
+        {error && (
+          <p className="weight-card__error" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="weight-card__actions">
+          <button type="button" className="weight-card__cancel" onClick={() => { setEditing(false); setError(undefined); setForm(EMPTY_FORM); setDate(today); }}>
+            Fermer
+          </button>
+          <button type="submit" className="weight-card__submit" disabled={busy}>
+            Enregistrer
+          </button>
+        </div>
+      </form>
 
       {entries.length > 0 && <WeightAverages entries={entries} today={today} />}
 

@@ -216,6 +216,19 @@ export function goalStatusCard(evaluation: SegmentEvaluation, nextTest: string |
   }
 }
 
+export type GoalShortStatusTone = "ahead" | "on_track" | "behind" | "reached";
+
+/**
+ * Statut en un mot, pour les lignes compactes de l'Accueil (27/09/2026) :
+ * « En avance », « Dans les temps », « En retard », « Atteint », « Palier
+ * atteint » ; rien tant qu'il n'y a ni résultat ni trajectoire.
+ */
+export function goalShortStatus(evaluation: SegmentEvaluation): { label: string; tone: GoalShortStatusTone } | undefined {
+  if (evaluation.kind === "tracking") return { label: STATUS_LABELS[evaluation.status], tone: evaluation.status };
+  if (evaluation.kind === "reached") return { label: evaluation.role === "final" ? "Atteint" : "Palier atteint", tone: "reached" };
+  return undefined;
+}
+
 /** Échéance : la date et les mois restants, ou « À définir ». */
 export function goalDueCard(dueDate: string | undefined, today: string): GoalCardText {
   if (!dueDate) return { value: "À définir", caption: "Pas d'échéance" };

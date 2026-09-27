@@ -30,7 +30,10 @@ describe("carte « Pesée du jour » — composition", () => {
   it("poids seul : enregistré sans composition ; avec : affichée sous le poids, préremplie à la modification", async () => {
     const { container } = render(<WeightCard today="2026-09-24" />);
 
+    /* Ligne compacte : le poids, puis « + composition » ouvre les deux champs sans perdre la saisie. */
     fireEvent.change(await screen.findByLabelText("Poids en kg"), { target: { value: "81,4" } });
+    fireEvent.click(screen.getByRole("button", { name: "+ composition" }));
+    expect((screen.getByLabelText("Poids en kg") as HTMLInputElement).value).toBe("81,4");
     fireEvent.change(screen.getByLabelText("Masse grasse en %"), { target: { value: "18,4" } });
     fireEvent.change(screen.getByLabelText("Masse musculaire en kg"), { target: { value: "62,1" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
@@ -38,7 +41,7 @@ describe("carte « Pesée du jour » — composition", () => {
     await waitFor(() => expect(container.querySelector(".weight-card__composition")?.textContent).toBe("MG 18,4 % · MM 62,1 kg"));
     expect(await db.weightEntries.toArray()).toEqual([expect.objectContaining({ kg: 81.4, fatPct: 18.4, muscleKg: 62.1 })]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Modifier" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Pesée/ }));
     expect((screen.getByLabelText("Masse grasse en %") as HTMLInputElement).value).toBe("18,4");
     expect((screen.getByLabelText("Masse musculaire en kg") as HTMLInputElement).value).toBe("62,1");
 
@@ -52,6 +55,7 @@ describe("carte « Pesée du jour » — composition", () => {
   it("hors bornes : message, rien d'écrit", async () => {
     render(<WeightCard today="2026-09-24" />);
     fireEvent.change(await screen.findByLabelText("Poids en kg"), { target: { value: "81" } });
+    fireEvent.click(screen.getByRole("button", { name: "+ composition" }));
     fireEvent.change(screen.getByLabelText("Masse musculaire en kg"), { target: { value: "130" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
     expect((await screen.findByRole("alert")).textContent).toBe("Masse musculaire : entre 20 et 120 kg.");
@@ -63,6 +67,7 @@ describe("carte « Pesée du jour » — composition", () => {
     await recordWeight("2026-09-22", "82", NOW);
     render(<WeightCard today="2026-09-24" />);
 
+    fireEvent.click(await screen.findByRole("button", { name: "autre jour" }));
     fireEvent.click(await screen.findByRole("button", { name: "Pesées récentes" }));
     const rows = screen.getAllByRole("listitem");
     expect(rows[0]?.textContent).toContain("MG 18,6 %");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PlannedSession, TestScheduleEntry } from "../models";
-import { formatTestDay, goalDueCard, goalStatusCard, nextTestDate } from "./goalListRules";
+import { formatTestDay, goalDueCard, goalShortStatus, goalStatusCard, nextTestDate } from "./goalListRules";
 
 /** Lot H.3 — date du prochain test d'un objectif (M4). */
 
@@ -48,6 +48,18 @@ describe("cartes Statut et Échéance (M5)", () => {
     expect(goalStatusCard({ kind: "tracking", start: point, latest: point, expected: 30, status: "ahead", weeks: -2, percent: 40, bar: 40 }, undefined).value).toBe(
       "En avance de 2 sem.",
     );
+  });
+
+  it("statut en un mot (lignes de l'Accueil, 27/09/2026) : rien sans trajectoire ; atteint ; avance, temps, retard", () => {
+    expect(goalShortStatus({ kind: "no_measure" })).toBeUndefined();
+    expect(goalShortStatus({ kind: "no_result" })).toBeUndefined();
+    expect(goalShortStatus({ kind: "untracked", start: point, latest: point })).toBeUndefined();
+    expect(goalShortStatus({ kind: "reached", role: "intermediate", start: point, latest: point })).toEqual({ label: "Palier atteint", tone: "reached" });
+    expect(goalShortStatus({ kind: "reached", role: "final", start: point, latest: point })).toEqual({ label: "Atteint", tone: "reached" });
+    const tracking = { kind: "tracking" as const, start: point, latest: point, expected: 30, weeks: 1, percent: 40, bar: 40 };
+    expect(goalShortStatus({ ...tracking, status: "ahead" })).toEqual({ label: "En avance", tone: "ahead" });
+    expect(goalShortStatus({ ...tracking, status: "on_track" })).toEqual({ label: "Dans les temps", tone: "on_track" });
+    expect(goalShortStatus({ ...tracking, status: "behind" })).toEqual({ label: "En retard", tone: "behind" });
   });
 
   it("échéance : date, mois restants, passée, à définir", () => {
