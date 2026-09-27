@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { exerciseCatalog } from "./exerciseCatalog";
 
 describe("exerciseCatalog", () => {
-  it("contient les 60 exercices officiels : les 48 d'origine, les 7 du programme V1 (lot D) et les 5 des routines du soir (lot K.0)", () => {
-    expect(exerciseCatalog).toHaveLength(60);
+  it("contient les 61 exercices officiels : les 48 d'origine, les 7 du programme V1 (lot D), les 5 des routines du soir (lot K.0) et le leg curl couché (27/09/2026)", () => {
+    expect(exerciseCatalog).toHaveLength(61);
     const routines = ["bird-dog", "crunch-inverse", "hollow-body-genoux", "etirement-epaule-main-dos", "papillon-assis"];
     expect(exerciseCatalog.filter((exercise) => routines.includes(exercise.id))).toHaveLength(5);
     const programV1 = ["traction-negative", "suspension-omoplates", "montee-banc", "chaise-60", "marche-laterale-elastique", "mollets-debout", "sprint-velo"];
@@ -29,7 +29,7 @@ describe("exerciseCatalog", () => {
     }, {});
 
     expect(counts).toEqual({
-      Musculation: 39,
+      Musculation: 40,
       Cardio: 6,
       Mobilité: 12,
       "Test mobilité": 3,
