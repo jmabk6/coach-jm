@@ -1079,6 +1079,7 @@ Ce sont les objectifs dont au moins un exercice lié a été réellement effectu
   - frise 0 (test) … n ;
   - brique test : consignes, tableau d'essais (traction), relevés minute par minute (cardio), sprints (jambes), mesures signées (souplesse), résultat calculé en direct ;
   - brique exercice : charge conseillée, tableau des séries (« Assistance (kg) » ou « Charge (kg) »), RPE facultatif, durée par répétition (traction négative) ;
+  - exercice cadré (27/09/2026) : en tête, en évidence, **ce qu'il faut tenir pour valider** — « Pour valider : 3 × 12 · RPE ≤ 8 · à 40 kg » (jour réduit : « ne valide pas le palier ») ; les répétitions proposées sont le **haut de la fourchette**, jamais celles de la dernière fois (la charge, elle, reste celle de la dernière fois ou de l'objectif accepté) ;
   - « Terminer » avec confirmation.
 - **États** : test sans essai → « Résultat : — » ; plage dans une consigne → « pente 6-8 % ».
 

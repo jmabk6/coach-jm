@@ -455,6 +455,11 @@ export interface ProposedSeriesValues {
  * précédente du même exercice dans cette séance, sinon celles de la
  * dernière fois, sinon la cible prévue. Une proposition, jamais une
  * validation : RPE et note ne sont jamais proposés.
+ *
+ * Exercice cadré en répétitions (27/09/2026) : les répétitions proposées
+ * sont toujours le **haut de la fourchette**, ce qu'il faut tenir pour
+ * valider — jamais les répétitions de la dernière fois ; la charge reste
+ * celle de la série précédente ou de la dernière fois.
  */
 export function proposeSeriesValues(
   block: PerformedExerciseBlock,
@@ -479,9 +484,14 @@ export function proposeSeriesValues(
     return {};
   }
 
+  const frameReps =
+    block.frameVersionId !== undefined && block.snapshotInstructions.shape === "reps" && source.reps !== undefined
+      ? block.snapshotInstructions.reps.max
+      : undefined;
+
   return {
     ...(source.load !== undefined ? { load: structuredClone(source.load) } : {}),
-    ...(source.reps !== undefined ? { reps: source.reps } : {}),
+    ...(source.reps !== undefined ? { reps: frameReps ?? source.reps } : {}),
     ...(source.durationSec !== undefined ? { durationSec: source.durationSec } : {}),
     ...(source.sideValues !== undefined
       ? { sideValues: structuredClone(source.sideValues) }

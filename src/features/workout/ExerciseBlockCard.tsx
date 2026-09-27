@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronUp, EllipsisVertical, Plus } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, EllipsisVertical, Plus, Target } from "lucide-react";
 import { advisedLoadOf, formatAdvisedLoad } from "./advisedLoad";
 import type {
   CardioStepSettings,
@@ -14,7 +14,7 @@ import type {
 } from "../../domain";
 import { formatRange, formatStepPrescription } from "../../domain/rules/blockInstructionRules";
 import { getLoadKg } from "../../domain/rules/workoutRules";
-import { formatFrameVersionSummary } from "../../domain/rules/strengthRules";
+import { formatFrameVersionSummary, formatStrengthValue } from "../../domain/rules/strengthRules";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import { effectivePowerUnit } from "../../domain/rules/powerRules";
 import type {
@@ -223,6 +223,7 @@ export function ExerciseBlockCard({
       {expanded && !skipped && block.series && (
         <div className="wblock__content">
           {restCard}
+          {frameVersion && <FrameGoal block={block} frameVersion={frameVersion} lastTime={lastTime} />}
           <ReferenceBlock block={block} exercise={exercise} lastTime={lastTime} frameVersion={frameVersion} />
 
           <ol className={`wseries${tabular ? " wseries--table" : ""}`}>
@@ -393,6 +394,42 @@ export function ExerciseBlockCard({
 
 function performedOrSkipped(block: PerformedExerciseBlock): boolean {
   return block.status === "performed" || block.status === "skipped";
+}
+
+/**
+ * Ce qu'il faut tenir pour valider le palier (27/09/2026), en évidence en
+ * tête de l'exercice : « Pour valider : 3 × 12 · RPE ≤ 8 · à 40 kg ». Un
+ * jour à prescription réduite (N5) ne valide jamais : il le dit.
+ */
+function FrameGoal({
+  block,
+  frameVersion,
+  lastTime,
+}: {
+  block: PerformedExerciseBlock;
+  frameVersion: StrengthFrameVersion;
+  lastTime: LastPerformance | undefined;
+}) {
+  if (block.reducedPrescription) {
+    return (
+      <p className="wblock__goal wblock__goal--reduced">
+        <Target size={16} strokeWidth={2.2} aria-hidden="true" />
+        <span>Séance réduite : ne valide pas le palier, ne compte pas en stagnation.</span>
+      </p>
+    );
+  }
+  const suggestion = suggestFrameLoad(frameVersion, lastTime?.allSeries);
+  const load = suggestion.toWork ? ` · à ${formatStrengthValue(suggestion.toWork.value, suggestion.toWork.unit)}` : "";
+
+  return (
+    <p className="wblock__goal">
+      <Target size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>
+        <strong>Pour valider :</strong> {suggestion.goal}
+        {load}
+      </span>
+    </p>
+  );
 }
 
 function ReferenceBlock({
