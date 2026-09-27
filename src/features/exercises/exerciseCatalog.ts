@@ -68,7 +68,7 @@ export const exerciseCatalog = [
     updatedAt: createdAt,
   },
   /* Ajouté le 27/09/2026 : fait à la place du leg curl assis (Muscu A du 27/09),
-     puis au programme V2. Médias à générer (media-src/PROMPTS_NOUVEAUX_EXERCICES.md). */
+     puis au programme V2. */
   {
     id: "leg-curl-couche",
     name: "Leg curl couché",
@@ -80,6 +80,7 @@ export const exerciseCatalog = [
     location: "Salle",
     mode: "series",
     measurementType: "load_reps",
+    media: officialExerciseMedia("leg-curl-couche"),
     technique: "Allonge-toi sur le ventre, le rouleau juste au-dessus des talons et les genoux alignés avec l'axe de la machine. Ramène les talons vers les fesses sans décoller les hanches, puis redescends lentement.",
     description: "Exercice d'isolation des ischio-jambiers en position allongée sur le ventre.",
     advice: "Garde le bassin plaqué contre le banc : si les hanches se soulèvent, la charge est trop lourde.",

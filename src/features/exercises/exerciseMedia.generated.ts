@@ -239,6 +239,15 @@ export const exerciseMedia = {
       "media/exercises/jambes/leg-curl-assis-frame3.67aae6db.webp",
     ],
   },
+  "leg-curl-couche": {
+    thumbnail: "media/exercises/jambes/leg-curl-couche-thumb.2550fd98.webp",
+    photo: "media/exercises/jambes/leg-curl-couche.8b74ce8f.webp",
+    frames: [
+      "media/exercises/jambes/leg-curl-couche-frame1.62a317cd.webp",
+      "media/exercises/jambes/leg-curl-couche-frame2.34baed12.webp",
+      "media/exercises/jambes/leg-curl-couche-frame3.5f57f438.webp",
+    ],
+  },
   "marche-laterale-elastique": {
     thumbnail: "media/exercises/jambes/marche-laterale-elastique-thumb.eb636aa1.webp",
     photo: "media/exercises/jambes/marche-laterale-elastique.178fb705.webp",
