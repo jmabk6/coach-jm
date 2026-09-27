@@ -95,7 +95,8 @@ const muscuA: TemplateContent = {
     exercise("v2-muscu-a-chest-press", 4, "chest-press", reps(2, 8, 12, BIG)),
     exercise("v2-muscu-a-elevations", 5, "elevations-laterales-halteres", reps(3, 12, 15, ISOLATION)),
     exercise("v2-muscu-a-curl", 6, CURL_BICEPS_ID, reps(3, 8, 12, ISOLATION)),
-    exercise("v2-muscu-a-leg-curl", 7, "leg-curl-assis", reps(2, 10, 12, ISOLATION)),
+    /* Leg curl couché à la place du leg curl assis (décision du 27/09/2026). */
+    exercise("v2-muscu-a-leg-curl", 7, "leg-curl-couche", reps(2, 10, 12, ISOLATION)),
   ],
 };
 
@@ -341,7 +342,8 @@ export const PROGRAM_V2_FRAMES: FrameSpecV2[] = [
   { exerciseId: "developpe-incline-halteres", workSets: 3, repRange: { min: 8, max: 12 }, restSec: BIG, target: 8 },
   { exerciseId: "elevations-laterales-halteres", workSets: 3, repRange: { min: 12, max: 15 }, restSec: ISOLATION, target: 5 },
   { exerciseId: "tirage-vertical", workSets: 2, repRange: { min: 8, max: 12 }, restSec: BIG, target: 40 },
-  { exerciseId: "leg-curl-assis", workSets: 2, repRange: { min: 10, max: 12 }, restSec: ISOLATION, target: 32.5 },
+  /* 27/09/2026 : le leg curl couché remplace le leg curl assis ; cadre créé sans cible (à étalonner). */
+  { exerciseId: "leg-curl-couche", workSets: 2, repRange: { min: 10, max: 12 }, restSec: ISOLATION, increment: 2.5 },
   { exerciseId: "developpe-epaules-machine", workSets: 3, repRange: { min: 8, max: 10 }, restSec: BIG },
   { exerciseId: "extension-triceps-poulie", workSets: 3, repRange: { min: 10, max: 15 }, restSec: ISOLATION, target: 10 },
   { exerciseId: "presse-cuisses", workSets: 3, repRange: { min: 10, max: 12 }, restSec: BIG, target: 120 },
@@ -370,6 +372,6 @@ export const GOAL_LINKS_V2: Record<string, string[]> = {
     "extension-triceps-poulie",
     "extension-triceps-dessus-tete",
   ],
-  legs: ["presse-cuisses", "leg-curl-assis", "montee-banc", "chaise-60", "marche-laterale-elastique", "mollets-debout", "sprint-velo"],
+  legs: ["presse-cuisses", "leg-curl-couche", "montee-banc", "chaise-60", "marche-laterale-elastique", "mollets-debout", "sprint-velo"],
   cardio: ["tapis"],
 };

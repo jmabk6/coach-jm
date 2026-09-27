@@ -117,6 +117,11 @@ describe("seed 19 — le programme V2", () => {
     }
     const legs = (await db.goals.where("key").equals("legs").first()) as Goal;
     expect(legs.secondaryIndicators.some((indicator) => indicator.kind === "exercise" && indicator.exerciseId === "squat")).toBe(false);
+    /* 27/09/2026 : le leg curl couché remplace le leg curl assis, cadre créé sans cible. */
+    expect(legs.secondaryIndicators).toContainEqual({ kind: "exercise", exerciseId: "leg-curl-couche", metric: "chargeMax" });
+    expect(legs.secondaryIndicators.some((indicator) => indicator.kind === "exercise" && indicator.exerciseId === "leg-curl-assis")).toBe(false);
+    expect((await activeVersion("leg-curl-couche")).active).toMatchObject({ number: 1, workSets: 2, repRange: { min: 10, max: 12 } });
+    expect((await activeVersion("leg-curl-couche")).active.currentTarget).toBeUndefined();
 
     const snapshot = async () => JSON.stringify([await db.sessionTemplates.toArray(), await db.strengthFrameVersions.toArray(), await db.goals.toArray(), await db.weeklyPrograms.toArray()]);
     const before = await snapshot();

@@ -194,9 +194,12 @@ export async function seedProgramV2(now: string = new Date().toISOString()): Pro
       for (const [key, ids] of Object.entries(GOAL_LINKS_V2)) {
         const goal = (await db.goals.where("key").equals(key).first()) as Goal | undefined;
         if (!goal) continue;
+        /* Jambes : plus de squat ; le leg curl couché remplace le leg curl assis (27/09/2026). */
         const secondaryIndicators =
           key === "legs"
-            ? goal.secondaryIndicators.filter((indicator) => !(indicator.kind === "exercise" && indicator.exerciseId === "squat"))
+            ? goal.secondaryIndicators
+                .filter((indicator) => !(indicator.kind === "exercise" && indicator.exerciseId === "squat"))
+                .map((indicator) => (indicator.kind === "exercise" && indicator.exerciseId === "leg-curl-assis" ? { ...indicator, exerciseId: "leg-curl-couche" } : indicator))
             : goal.secondaryIndicators;
         await db.goals.put({ ...goal, linkedExercises: ids.map((exerciseId) => ({ exerciseId })), secondaryIndicators, updatedAt: now });
       }

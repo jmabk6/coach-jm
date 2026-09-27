@@ -65,7 +65,7 @@ describe("modèles V2", () => {
       "chest-press 2x8-12",
       "elevations-laterales-halteres 3x12-15",
       "import-curl-biceps-ez 3x8-12",
-      "leg-curl-assis 2x10-12",
+      "leg-curl-couche 2x10-12",
     ]);
     expect(describe("v2-muscu-b")).toEqual([
       "tapis",
@@ -157,7 +157,8 @@ describe("cadres et objectifs", () => {
       "developpe-incline-halteres": 8,
       "elevations-laterales-halteres": 5,
       "tirage-vertical": 40,
-      "leg-curl-assis": 32.5,
+      /* 27/09/2026 : leg curl couché, sans cible (à étalonner). */
+      "leg-curl-couche": undefined,
       "developpe-epaules-machine": undefined,
       "extension-triceps-poulie": 10,
       "presse-cuisses": 120,
@@ -167,5 +168,7 @@ describe("cadres et objectifs", () => {
   it("objectifs : exercices liés existants ; plus de squat pour Jambes", () => {
     for (const ids of Object.values(GOAL_LINKS_V2)) for (const id of ids) expect(byId.has(id), id).toBe(true);
     expect(GOAL_LINKS_V2.legs).not.toContain("squat");
+    expect(GOAL_LINKS_V2.legs).toContain("leg-curl-couche");
+    expect(GOAL_LINKS_V2.legs).not.toContain("leg-curl-assis");
   });
 });
