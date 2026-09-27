@@ -1,5 +1,6 @@
 import "fake-indexeddb/auto";
 
+import { addLegCurlCouche20260927, LEG_CURL_WORKOUT_ID } from "../history/seedLegCurlCouche20260927";
 import { readFile } from "node:fs/promises";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
@@ -169,8 +170,10 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     const seeded = await readStores(db);
 
     /* Lots C et D : réglages, place des tests, modèles V1 et routines ajoutés ; rien d'existant n'est réécrit. */
+    /* Les réglages du lot C, plus ceux que le fichier portait déjà (le profil, saisi le 27/09). */
     const settingsKeys = Object.keys(await settingsByKey()).sort();
-    expect(settingsKeys).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
+    const fileKeys = ((file.stores.settings ?? []) as Array<{ key: string }>).map((record) => record.key);
+    expect(settingsKeys).toEqual([...new Set(["install", "preferences", "testCycle", "testSchedule", ...fileKeys])].sort());
     const untouched = ["weightEntries", "strengthMilestones"];
     /* Seed 17 : dans la semaine du 27/09, une séance de journée sans test reçoit le test de son jour ; rien d'autre ne change. */
     const DAY_TESTS: Record<string, string> = { "2026-09-27": "protocol-traction", "2026-09-30": "protocol-cardio", "2026-10-01": "protocol-jambes" };
@@ -200,7 +203,10 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     const expectedWorkouts = [
       ...fileWorkouts.map((workout) => {
         const updatedAt = seededWorkouts.find((candidate) => candidate.id === workout.id)?.updatedAt ?? "";
-        return workout.id === FIX_WORKOUT_ID ? fixesOf20260924(workout, updatedAt) : workout;
+        if (workout.id === FIX_WORKOUT_ID) return fixesOf20260924(workout, updatedAt);
+        /* Seed 21 : la Muscu A du 27/09, si elle est dans l'état constaté, reçoit le leg curl couché et sa durée. */
+        if (workout.id === LEG_CURL_WORKOUT_ID) return addLegCurlCouche20260927(workout, updatedAt) ?? workout;
+        return workout;
       }),
       ...(added ? [added] : []),
     ].sort(byId);

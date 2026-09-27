@@ -1,5 +1,6 @@
 import "fake-indexeddb/auto";
 
+import { addLegCurlCouche20260927, LEG_CURL_WORKOUT_ID } from "../history/seedLegCurlCouche20260927";
 import { readFile } from "node:fs/promises";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
@@ -225,7 +226,10 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
         (workout) =>
           workout.id === FIX_WORKOUT_ID
             ? fixesOf20260924(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "")
-            : workout,
+            : /* Seed 21 : la Muscu A du 27/09, dans l'état constaté, reçoit le leg curl couché et sa durée. */
+              workout.id === LEG_CURL_WORKOUT_ID
+              ? (addLegCurlCouche20260927(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "") ?? workout)
+              : workout,
       ),
       ...(added ? [buildWorkout20260925(added.createdAt)] : []),
     ];

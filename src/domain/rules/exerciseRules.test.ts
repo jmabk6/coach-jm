@@ -58,10 +58,10 @@ describe("règles de classification (v1.5, § 2.1)", () => {
 describe("catalogue officiel — classification validée le 20/09/2026", () => {
   const catalog = exerciseCatalog as readonly Exercise[];
 
-  it("les 39 exercices de musculation (30 + 6 du lot D + 3 du lot K.0) ont un groupe cohérent avec leur zone ; les 21 autres n'ont ni groupe ni famille", () => {
+  it("les 40 exercices de musculation (30 + 6 du lot D + 3 du lot K.0 + le leg curl couché du 27/09) ont un groupe cohérent avec leur zone ; les 21 autres n'ont ni groupe ni famille", () => {
     const strength = catalog.filter((e) => e.category === "Musculation");
     const others = catalog.filter((e) => e.category !== "Musculation");
-    expect(strength).toHaveLength(39);
+    expect(strength).toHaveLength(40);
     expect(others).toHaveLength(21);
     /* Lot D : mollets debout n'a pas de groupe — la table n'en prévoit aucun pour les mollets. */
     const withoutGroup = ["mollets-debout"];
@@ -82,7 +82,7 @@ describe("catalogue officiel — classification validée le 20/09/2026", () => {
     const f = (id: string) => byId.get(id)?.movementFamily;
 
     expect([g("squat"), g("presse-cuisses")]).toEqual(["Quadriceps", "Quadriceps"]);
-    expect([g("leg-curl-assis"), g("souleve-terre-roumain")]).toEqual(["Ischio-jambiers", "Ischio-jambiers"]);
+    expect([g("leg-curl-assis"), g("souleve-terre-roumain"), g("leg-curl-couche")]).toEqual(["Ischio-jambiers", "Ischio-jambiers", "Ischio-jambiers"]);
     expect(g("hip-thrust")).toBe("Fessiers");
     /* Lot D. */
     expect([g("montee-banc"), g("chaise-60"), g("marche-laterale-elastique")]).toEqual(["Quadriceps", "Quadriceps", "Fessiers"]);
