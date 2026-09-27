@@ -337,6 +337,7 @@ L'ancien écran Progression reste accessible pendant le chantier (Plus > « Stat
   5. passe l'instance planifiée à `done`.
 
   Ensuite, la séance est **non modifiable** : la règle v1.5 § 11.1 est inchangée.
+- **Annuler cette séance** (demande du 27/09/2026) : dans le menu ⋯, seulement si **rien n'est noté** (aucune série, aucun palier, aucune mesure, aucun essai de test ; un exercice sauté ne compte pas). Après confirmation, `cancelWorkout` supprime la séance dans la même transaction que `deleteWorkout` ; l'instance planifiée redevient `upcoming`, tests compris. Dès qu'une donnée est notée, l'action disparaît : il faut terminer la séance, puis la supprimer depuis le récapitulatif.
 - **App fermée entre les deux** : au lancement, une séance `in_progress` avec `endedAt` ouvre le **récapitulatif en attente**.
 - **Séance en attente** : elle n'entre dans aucune statistique, aucun record ni aucun objectif.
 - **Récapitulatif (M10.1)** : objectifs travaillés (§ 5.7), records (§ 5.6), tonnage hors assistance, ressenti (5 niveaux), notes, prochaine séance.

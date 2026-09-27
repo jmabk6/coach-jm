@@ -57,6 +57,7 @@ import { ExerciseBlockCard } from "./ExerciseBlockCard";
 import { TestBlockCard } from "../tests/TestBlockCard";
 import { GroupBlockCard } from "./GroupBlockCard";
 import { RestBand } from "./RestBand";
+import { cancelWorkout, isUntouchedWorkout } from "./deleteWorkout";
 import { endWorkout } from "./finishWorkout";
 import { findLastComparableStep } from "./lastPerformance";
 import { RestBar } from "./RestBar";
@@ -102,6 +103,7 @@ export function WorkoutScreen() {
     groupChildId?: Id;
   }>();
   const [finishing, setFinishing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [discarding, setDiscarding] = useState<PerformedExerciseBlock | PerformedGroupBlock>();
   const [finishError, setFinishError] = useState<string>();
 
@@ -417,6 +419,18 @@ export function WorkoutScreen() {
     } catch (cause) {
       setFinishing(false);
       setFinishError(cause instanceof Error ? cause.message : "Clôture impossible");
+    }
+  }
+
+  /* « Annuler cette séance » (27/09/2026) : démarrée par erreur, rien de noté. */
+  async function cancel() {
+    try {
+      setFinishError(undefined);
+      await cancelWorkout(workout!.id);
+      navigate(paths.home(), { replace: true });
+    } catch (cause) {
+      setCancelling(false);
+      setFinishError(cause instanceof Error ? cause.message : "Annulation impossible");
     }
   }
 
@@ -822,6 +836,19 @@ export function WorkoutScreen() {
                 setFinishing(true);
               },
             },
+            ...(isUntouchedWorkout(workout)
+              ? [
+                  {
+                    label: "Annuler cette séance",
+                    hint: "Démarrée par erreur : rien n'est noté, elle redevient « À venir »",
+                    tone: "danger" as const,
+                    onSelect: () => {
+                      setMenuOpen(false);
+                      setCancelling(true);
+                    },
+                  },
+                ]
+              : []),
           ]}
           dismissLabel="Fermer"
           onDismiss={() => setMenuOpen(false)}
@@ -849,6 +876,26 @@ export function WorkoutScreen() {
             },
           ]}
           onDismiss={() => setAdding(false)}
+        />
+      )}
+
+      {cancelling && (
+        <BottomSheet
+          title={`Annuler ${name} ?`}
+          message={
+            workout.plannedSessionId
+              ? "Rien n'est noté dans cette séance. Elle disparaît et la séance prévue redevient « À venir », tests compris."
+              : "Rien n'est noté dans cette séance. Elle disparaît, sans trace dans l'historique."
+          }
+          actions={[
+            {
+              label: "Annuler la séance",
+              tone: "danger",
+              onSelect: () => void cancel(),
+            },
+          ]}
+          dismissLabel="Continuer la séance"
+          onDismiss={() => setCancelling(false)}
         />
       )}
 

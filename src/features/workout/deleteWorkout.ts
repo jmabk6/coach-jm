@@ -11,6 +11,7 @@ import {
 import type { Id, PlannedSession, StrengthFrameVersion, WorkoutSession } from "../../domain";
 import { frameVersionIdsOf } from "../../domain/rules/strengthRules";
 import { removeWorkoutTestResults } from "../tests/settleTestBlocks";
+import { hasCompletedEntries } from "./engine/workoutBlocks";
 
 export interface DeleteWorkoutResult {
   deletedId: Id;
@@ -44,68 +45,114 @@ export async function deleteWorkout(
   workoutId: Id,
   now: string = new Date().toISOString(),
 ): Promise<DeleteWorkoutResult> {
-  return db.transaction(
-    "rw",
-    [db.workouts, db.plannedSessions, db.strengthMilestones, db.strengthFrameVersions, db.testResults, db.testProtocolVersions],
-    async () => {
-      const workout = await getWorkout(workoutId);
+  return db.transaction("rw", REMOVAL_TABLES, async () => {
+    const workout = await getWorkout(workoutId);
 
-      if (!workout) {
-        throw new Error("Séance réalisée introuvable");
-      }
+    if (!workout) {
+      throw new Error("Séance réalisée introuvable");
+    }
 
-      /* N6 : une séance terminée mais pas encore enregistrée se supprime
-         aussi ; une séance vraiment en cours, non : on la termine d'abord. */
-      if (workout.status !== "completed" && workout.endedAt === undefined) {
-        throw new Error("Une séance en cours ne se supprime pas : terminez-la ou arrêtez-la");
-      }
+    /* N6 : une séance terminée mais pas encore enregistrée se supprime
+       aussi ; une séance vraiment en cours, non : on la termine d'abord
+       — ou on l'annule si rien n'y est noté (`cancelWorkout`). */
+    if (workout.status !== "completed" && workout.endedAt === undefined) {
+      throw new Error("Une séance en cours ne se supprime pas : terminez-la ou arrêtez-la");
+    }
 
-      await deleteWorkoutRecord(workoutId);
+    return removeWorkout(workout, now);
+  });
+}
 
-      /* Tests (SCHEMA § 8.1) : les résultats de la séance partent avec elle ;
-         la version qu'ils figeaient se défige s'il ne lui en reste aucun. */
-      await removeWorkoutTestResults(workoutId, now);
-
-      const removed = await db.strengthMilestones.where("workoutId").equals(workoutId).toArray();
-      await db.strengthMilestones.where("workoutId").equals(workoutId).delete();
-
-      const unfrozenVersionIds = await releaseFrameVersions(
-        workout,
-        new Set(removed.map((milestone) => milestone.id)),
-        now,
-      );
-
-      const base = { deletedId: workoutId, removedMilestones: removed.length, unfrozenVersionIds };
-
-      if (!workout.plannedSessionId) {
-        return base;
-      }
-
-      const plannedSession = await getPlannedSession(workout.plannedSessionId);
-
-      if (!plannedSession) {
-        return base;
-      }
-
-      /* D'autres réalisations rattachées à la même instance ? La plus
-         récente devient sa référence ; sinon l'instance redevient À venir. */
-      const remaining = (await getWorkoutsByPlannedSession(plannedSession.id))
-        .filter((item) => item.status === "completed")
-        .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-
-      const next: PlannedSession = remaining[0]
-        ? { ...plannedSession, status: "done", workoutId: remaining[0].id, updatedAt: now }
-        : (() => {
-            const reset: PlannedSession = { ...plannedSession, status: "upcoming", updatedAt: now };
-            delete reset.workoutId;
-            return reset;
-          })();
-
-      await savePlannedSession(next);
-
-      return { ...base, plannedSession: next };
-    },
+/**
+ * Rien n'est noté dans la séance : aucune série, aucun palier cardio,
+ * aucune mesure, aucun test saisi, aucun exercice terminé. Sauter un
+ * exercice ne compte pas : ce n'est pas une donnée.
+ */
+export function isUntouchedWorkout(workout: WorkoutSession): boolean {
+  return workout.blocks.every(
+    (block) => block.kind === "note" || block.status === "skipped" || (block.status !== "performed" && !hasCompletedEntries(block)),
   );
+}
+
+/**
+ * « Annuler cette séance » (demande du 27/09/2026) : une séance démarrée
+ * par erreur, où rien n'est noté, disparaît sans passer par Terminer puis
+ * Supprimer. L'instance planifiée redevient « À venir », tests compris ;
+ * rien d'autre n'est touché. Dès qu'une donnée est notée, refus : il faut
+ * terminer la séance (puis la supprimer si on le souhaite).
+ */
+export async function cancelWorkout(
+  workoutId: Id,
+  now: string = new Date().toISOString(),
+): Promise<DeleteWorkoutResult> {
+  return db.transaction("rw", REMOVAL_TABLES, async () => {
+    const workout = await getWorkout(workoutId);
+
+    if (!workout) {
+      throw new Error("Séance introuvable");
+    }
+
+    if (workout.status === "completed") {
+      throw new Error("Une séance enregistrée ne s'annule pas : supprimez-la depuis son récapitulatif");
+    }
+
+    if (!isUntouchedWorkout(workout)) {
+      throw new Error("Des données sont déjà notées : terminez la séance, puis supprimez-la si besoin");
+    }
+
+    return removeWorkout(workout, now);
+  });
+}
+
+const REMOVAL_TABLES = [db.workouts, db.plannedSessions, db.strengthMilestones, db.strengthFrameVersions, db.testResults, db.testProtocolVersions];
+
+/** Le retrait lui-même, dans la transaction de l'appelant. */
+async function removeWorkout(workout: WorkoutSession, now: string): Promise<DeleteWorkoutResult> {
+  const workoutId = workout.id;
+  await deleteWorkoutRecord(workoutId);
+
+  /* Tests (SCHEMA § 8.1) : les résultats de la séance partent avec elle ;
+     la version qu'ils figeaient se défige s'il ne lui en reste aucun. */
+  await removeWorkoutTestResults(workoutId, now);
+
+  const removed = await db.strengthMilestones.where("workoutId").equals(workoutId).toArray();
+  await db.strengthMilestones.where("workoutId").equals(workoutId).delete();
+
+  const unfrozenVersionIds = await releaseFrameVersions(
+    workout,
+    new Set(removed.map((milestone) => milestone.id)),
+    now,
+  );
+
+  const base = { deletedId: workoutId, removedMilestones: removed.length, unfrozenVersionIds };
+
+  if (!workout.plannedSessionId) {
+    return base;
+  }
+
+  const plannedSession = await getPlannedSession(workout.plannedSessionId);
+
+  if (!plannedSession) {
+    return base;
+  }
+
+  /* D'autres réalisations rattachées à la même instance ? La plus
+     récente devient sa référence ; sinon l'instance redevient À venir. */
+  const remaining = (await getWorkoutsByPlannedSession(plannedSession.id))
+    .filter((item) => item.status === "completed")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+
+  const next: PlannedSession = remaining[0]
+    ? { ...plannedSession, status: "done", workoutId: remaining[0].id, updatedAt: now }
+    : (() => {
+        const reset: PlannedSession = { ...plannedSession, status: "upcoming", updatedAt: now };
+        delete reset.workoutId;
+        return reset;
+      })();
+
+  await savePlannedSession(next);
+
+  return { ...base, plannedSession: next };
 }
 
 /**
