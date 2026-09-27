@@ -66,6 +66,8 @@ export interface InstallMarkers {
   testsWeek20260927?: string;
   /** Ancien modèle « Muscu A » du 17/09, jamais utilisé, supprimé (seed 18). */
   removeOldMuscuA?: string;
+  /** Muscu A du 27/09/2026 : le leg curl couché fait à la place du leg curl assis, ajouté (seed 21). */
+  legCurlCouche20260927?: string;
 }
 
 export type SettingsRecord =

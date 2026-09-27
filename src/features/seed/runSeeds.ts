@@ -4,6 +4,7 @@ import { seedProgramV1, seedRoutines, seedRoutinesContent } from "../program/see
 import { seedCardioASingleBlock } from "../program/seedCardioASingleBlock";
 import { seedFixWorkout20260924, seedRemoveSkipped20260924 } from "../workout/seedFixWorkout20260924";
 import { seedWorkout20260925 } from "../history/seedWorkout20260925";
+import { seedLegCurlCouche20260927 } from "../history/seedLegCurlCouche20260927";
 import { seedProgramFrames } from "../strength/seedProgramFrames";
 import { seedRpeScale } from "../strength/seedRpeScale";
 import { seedFrameTargets20260925 } from "../strength/seedFrameTargets20260925";
@@ -62,6 +63,8 @@ export const SEEDS: SeedStep[] = [
   { name: "testsWeek20260927", dependsOn: ["testProtocols", "programV1"], run: () => seedTestsWeek20260927() },
   /* Seed 18 : l'ancien modèle « Muscu A » du 17/09, jamais utilisé, supprimé. */
   { name: "removeOldMuscuA", run: () => seedRemoveOldMuscuA() },
+  /* Seed 21 (27/09/2026) : le leg curl couché et la durée de la Muscu A du 27/09. */
+  { name: "legCurlCouche20260927", dependsOn: ["exerciseCatalog"], run: () => seedLegCurlCouche20260927() },
 ];
 
 export interface SeedReport {
