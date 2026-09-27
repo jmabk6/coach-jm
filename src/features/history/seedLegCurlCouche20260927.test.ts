@@ -34,7 +34,7 @@ function observed(): WorkoutSession {
     blocks: [
       block("workout-block-v1-muscu-a-rowing", 4, "rowing-poulie-basse", 40, ["2026-09-27T12:10:00.000Z"]),
       block("workout-block-v1-muscu-a-chest-press", 5, "chest-press", 40, ["2026-09-27T12:23:21.098Z", "2026-09-27T12:25:30.491Z", "2026-09-27T12:27:48.387Z"]),
-      block("workout-block-v1-muscu-a-elevations", 6, "elevations-laterales-halteres", 5, ["2026-09-27T12:40:45.914Z"]),
+      block("workout-block-v1-muscu-a-elevations", 6, "elevations-laterales-halteres", 5, ["2026-09-27T12:40:45.914Z", "2026-09-27T12:43:11.082Z", "2026-09-27T12:45:41.955Z"]),
     ],
   } as WorkoutSession;
 }
@@ -75,21 +75,30 @@ describe("seed 21 — leg curl couché du 27/09", () => {
       expect(set.completedAt! > "2026-09-27T12:27:48.387Z" && set.completedAt! < "2026-09-27T12:40:45.914Z").toBe(true);
     }
     /* Les autres blocs : identiques, hormis la position décalée après le leg curl. */
-    const unchanged = (workout: WorkoutSession) => workout.blocks.filter((block) => block.id !== LEG_CURL_BLOCK_ID).map((block) => ({ ...block, position: 0 }));
+    const unchanged = (workout: WorkoutSession) =>
+      workout.blocks
+        .filter((block) => block.id !== LEG_CURL_BLOCK_ID)
+        .map((block) => ({ ...block, position: 0, ...(block.kind === "exercise" ? { series: block.series?.map((set) => ({ ...set, restComparable: undefined })) } : {}) }));
     expect(unchanged(fixed)).toEqual(unchanged(before));
-    expect(fixed.activeDurationSec).toBe(before.activeDurationSec);
+
+    /* Arrêtée après les élévations : 13:24:12 → 14:45:42 (Paris), le « repos » de 2 h 48 hors moyenne. */
+    expect(before.activeDurationSec).toBe(14999);
+    expect(fixed.activeDurationSec).toBe(4890);
+    const elevations = byPosition[3]!.series!;
+    expect(elevations.map((set) => set.restComparable)).toEqual([undefined, undefined, false]);
 
     /* « Dernière fois » du leg curl couché : le 27/09, 20 kg × 10. */
     const last = findLastPerformances([fixed]).get("leg-curl-couche")!;
     expect(last).toMatchObject({ date: "2026-09-27", series: { load: { kind: "total", kg: 20 }, reps: 10, rpe: 9 } });
   });
 
-  it("état différent (leg curl déjà présent, heures autres) : rien ; le marqueur est posé une fois, second passage sans écriture", async () => {
+  it("état différent (leg curl déjà présent, heures autres, durée déjà corrigée) : rien ; le marqueur est posé une fois, second passage sans écriture", async () => {
     const already = addLegCurlCouche20260927(observed(), NOW)!;
     expect(addLegCurlCouche20260927(already, NOW)).toBeUndefined();
     const moved = observed();
     (moved.blocks[1] as PerformedExerciseBlock).series!.at(-1)!.completedAt = "2026-09-27T12:30:00.000Z";
     expect(addLegCurlCouche20260927(moved, NOW)).toBeUndefined();
+    expect(addLegCurlCouche20260927({ ...observed(), activeDurationSec: 4890 }, NOW)).toBeUndefined();
 
     await db.workouts.put(observed());
     await seedLegCurlCouche20260927(NOW);
@@ -131,7 +140,9 @@ describe("seed 21 — leg curl couché du 27/09", () => {
       expect([...fixed!.blocks].sort((a, b) => a.position - b.position).map((block) => (block.kind === "exercise" ? block.exerciseId : block.kind))).toEqual([
         "tapis", "test", "traction-assistee", "squat", "rowing-poulie-basse", "chest-press", "leg-curl-couche", "elevations-laterales-halteres",
       ]);
-      expect(fixed!.activeDurationSec).toBe(target.activeDurationSec);
+      expect(fixed!.activeDurationSec).toBe(4890);
+      const elevations = fixed!.blocks.find((block) => block.id === "workout-block-v1-muscu-a-elevations") as PerformedExerciseBlock;
+      expect(elevations.series!.map((set) => set.restComparable)).toEqual([true, true, false]);
     } else {
       expect(fixed).toEqual(target);
     }
