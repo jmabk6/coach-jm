@@ -1017,6 +1017,12 @@ Ce sont les objectifs dont au moins un exercice lié a été réellement effectu
 - **Écrit** : déplacer (avec conflit), sauter, restaurer, retirer, dupliquer, replanifier un test ; `startWorkout`.
 - **États** : semaine vide → 7 lignes « Repos » ; semaine de tests → bandeau et mention des tests ; test à replanifier → badge ambre.
 - **Routine du soir compacte** (27/09/2026) : plus de carte dédiée. Une ligne sous les séances du jour, « Soir : Routine A · 14 min », et ses tests en orange s'il y en a (« Test souplesse · Test tronc »). Le statut n'apparaît qu'une fois la routine faite, sautée ou manquée. Toucher ouvre la routine (aperçu) ; le menu ⋯ est inchangé (déplacer, sauter…).
+- **Glisser-déposer** (27/09/2026) : même bibliothèque (@dnd-kit), même poignée ⋮⋮ à droite et même geste que l'éditeur de séance. Une séance ou une routine se glisse vers un autre jour de la semaine affichée (`planDrop`) :
+  - jour libre au même créneau : déplacement direct ;
+  - jour occupé au même créneau : la feuille Déplacer s'ouvre, jour déjà choisi, avec Échanger / Faire les deux / Remplacer ;
+  - séance faite ou en cours : pas de poignée ; séance libre : pas de poignée ;
+  - le créneau ne change jamais : une routine reste le soir.
+  Le menu ⋯ → Déplacer reste pour les autres semaines. Retour visuel uniquement (ombre de la carte, jour cible en pointillé), pas de vibration.
 
 ### M3 — Planning Mois (`/planning?view=mois`)
 

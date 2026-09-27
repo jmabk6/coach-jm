@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { DndContext, PointerSensor, pointerWithin, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { DraggableSession, DroppableDay, type DragData } from "./PlanningDnd";
+import { planDrop } from "./planningDrop";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   BarChart3,
@@ -71,7 +74,8 @@ type ProgramView = "week" | "month";
 type Flow =
   | { kind: "menu"; session: PlannedSession }
   | { kind: "free-menu"; workout: WorkoutSession }
-  | { kind: "move"; session: PlannedSession }
+  /* `date` : jour déjà choisi (glisser-déposer sur un jour occupé). */
+  | { kind: "move"; session: PlannedSession; date?: string }
   | { kind: "replace"; session: PlannedSession }
   | { kind: "duplicate"; session: PlannedSession }
   | { kind: "add-date"; initialDate: string }
@@ -232,6 +236,18 @@ export function ProgramScreen() {
     setFlow({ kind: "free-menu", workout });
   const addOn = (date: string) => setFlow({ kind: "add-template", date });
 
+  /* Glisser-déposer (27/09/2026) : jour libre au même créneau → déplacement
+     direct ; jour occupé → la feuille Déplacer, jour déjà choisi, avec
+     Échanger / Faire les deux / Remplacer. */
+  const dropOn = (session: PlannedSession, date: string) => {
+    if (state.status !== "success") return;
+    setActionError(undefined);
+    const sameDay = state.entries.flatMap((entry) => (entry.kind === "planned" && entry.date === date ? [entry.session] : []));
+    const plan = planDrop(session, date, sameDay);
+    if (plan.kind === "conflict") setFlow({ kind: "move", session, date });
+    if (plan.kind === "move") void run(() => moveWithChoice(session.id, date));
+  };
+
   return (
     <section className="program-screen">
       <header className="program-screen__header">
@@ -295,6 +311,7 @@ export function ProgramScreen() {
           onOpenMenu={openMenu}
           onOpenFreeMenu={openFreeMenu}
           onAddOn={addOn}
+          onDrop={dropOn}
           onAdd={() =>
             setFlow({
               kind: "add-date",
@@ -379,6 +396,7 @@ interface WeekViewProps {
   onOpenMenu: (session: PlannedSession) => void;
   onOpenFreeMenu: (workout: WorkoutSession) => void;
   onAddOn: (date: string) => void;
+  onDrop: (session: PlannedSession, date: string) => void;
   onAdd: () => void;
 }
 
@@ -486,9 +504,18 @@ function WeekView({
   onOpenMenu,
   onOpenFreeMenu,
   onAddOn,
+  onDrop,
   onAdd,
 }: WeekViewProps) {
   const dates = listWeekDates(weekStart);
+  /* Même capteur que l'éditeur de séance : le geste part de la poignée. */
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  function handleDragEnd(event: DragEndEvent) {
+    const session = (event.active.data.current as DragData | undefined)?.session;
+    const date = event.over ? String(event.over.id) : undefined;
+    if (session && date) onDrop(session, date);
+  }
   const isCurrentWeek = getWeekStartDate(today) === weekStart;
   const futureWeek = isFutureWeek(weekStart, today);
 
@@ -552,6 +579,7 @@ function WeekView({
         </p>
       )}
 
+      <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
       <ol className="program-week">
         {dates.map((date) => {
           const entries = data.entries.filter((entry) => entry.date === date);
@@ -561,8 +589,9 @@ function WeekView({
           const label = formatDayLabel(date);
 
           return (
-            <li
+            <DroppableDay
               key={date}
+              date={date}
               className={`program-day ${
                 date === today ? "program-day--today" : ""
               }`}
@@ -586,26 +615,31 @@ function WeekView({
                     </button>
                   </div>
                 ) : (
-                  daytime.map((entry) => (
-                    <EntryRow
-                      key={entryKey(entry)}
-                      entry={entry}
-                      data={data}
-                      onOpenMenu={onOpenMenu}
-                      onOpenFreeMenu={onOpenFreeMenu}
-                    />
-                  ))
+                  daytime.map((entry) =>
+                    entry.kind === "planned" ? (
+                      <DraggableSession key={entryKey(entry)} session={entry.session} label={data.templateById.get(entry.session.sessionTemplateId)?.name ?? "la séance"}>
+                        <EntryRow entry={entry} data={data} onOpenMenu={onOpenMenu} onOpenFreeMenu={onOpenFreeMenu} />
+                      </DraggableSession>
+                    ) : (
+                      <EntryRow key={entryKey(entry)} entry={entry} data={data} onOpenMenu={onOpenMenu} onOpenFreeMenu={onOpenFreeMenu} />
+                    ),
+                  )
                 )}
 
-                {/* Routine du soir : une ligne compacte (27/09/2026). */}
-                {evening.map((entry) => (
-                  <EveningEntryRow key={entryKey(entry)} entry={entry} data={data} onOpenMenu={onOpenMenu} />
-                ))}
+                {/* Routine du soir : une ligne compacte (27/09/2026) ; glissée, elle reste le soir. */}
+                {evening.map((entry) =>
+                  entry.kind === "planned" ? (
+                    <DraggableSession key={entryKey(entry)} session={entry.session} label={data.templateById.get(entry.session.sessionTemplateId)?.name ?? "la routine"}>
+                      <EveningEntryRow entry={entry} data={data} onOpenMenu={onOpenMenu} />
+                    </DraggableSession>
+                  ) : null,
+                )}
               </div>
-            </li>
+            </DroppableDay>
           );
         })}
       </ol>
+      </DndContext>
 
       {data.testCycle && !isTestWeek(weekStart, data.testCycle) && (
         <NextTestWeekBanner
@@ -1052,6 +1086,7 @@ function ProgramFlow({
           session={flow.session}
           templateById={data.templateById}
           today={today()}
+          {...(flow.date ? { initialDate: flow.date } : {})}
           onConfirm={(date, choice) => onMove(flow.session, date, choice)}
           onSkip={flow.session.status === "upcoming" ? () => onSkip(flow.session) : undefined}
           onDismiss={onDismiss}

@@ -34,6 +34,8 @@ interface MoveSheetProps {
   session: PlannedSession;
   templateById: Map<Id, SessionTemplate>;
   today: string;
+  /** Jour déjà choisi (glisser-déposer sur un jour occupé, 27/09/2026). */
+  initialDate?: string;
   onConfirm: (date: string, choice: MoveChoice | undefined) => void;
   /** Sauter (D26) : proposé dans la feuille pour une séance à venir. */
   onSkip?: (() => void) | undefined;
@@ -47,13 +49,16 @@ interface MoveSheetProps {
  * ou Remplacer — seul « Faire les deux » face à une séance faite ou en
  * cours. Le bouton du bas reprend le choix fait.
  */
-export function MoveSheet({ session, templateById, today, onConfirm, onSkip, onDismiss }: MoveSheetProps) {
+export function MoveSheet({ session, templateById, today, initialDate, onConfirm, onSkip, onDismiss }: MoveSheetProps) {
   const first = today;
   const last = shift(today, MOVE_HORIZON_DAYS - 1);
-  const [date, setDate] = useState<string>();
+  const [date, setDate] = useState<string | undefined>(initialDate);
   const [choice, setChoice] = useState<MoveChoice>();
   const [sessions, setSessions] = useState<PlannedSession[]>();
-  const [otherDate, setOtherDate] = useState<string>();
+  /* Un jour déjà choisi hors des deux semaines proposées se charge comme une « autre date ». */
+  const [otherDate, setOtherDate] = useState<string | undefined>(
+    initialDate && (initialDate < today || initialDate > shift(today, MOVE_HORIZON_DAYS - 1)) ? initialDate : undefined,
+  );
 
   const loadFrom = otherDate && otherDate < first ? otherDate : first;
   const loadTo = otherDate && otherDate > last ? otherDate : last;
