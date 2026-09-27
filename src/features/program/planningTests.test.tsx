@@ -61,6 +61,14 @@ describe("semaine de tests du 25/10", () => {
     expect(within(row("Cardio C — Endurance longue")).queryByText(/Test /)).toBeNull();
   });
 
+  it("lundi de tests passé : la routine du soir, compacte, porte ses tests en orange, à replanifier", async () => {
+    renderWeek("2026-10-30");
+    await screen.findByText("Semaine de tests");
+    const monday = screen.getByText("26 oct.").closest(".program-day") as HTMLElement;
+    const evening = monday.querySelector(".program-evening") as HTMLElement;
+    expect(evening.querySelector(".program-evening__tests")?.textContent).toBe("Test souplesse (à replanifier) · Test tronc (à replanifier)");
+  });
+
   it("Replanifier : le test part sur une séance à venir, le badge disparaît", async () => {
     renderWeek("2026-10-30");
     fireEvent.click(await screen.findByRole("button", { name: "Actions pour Muscu C — Jambes padel" }));

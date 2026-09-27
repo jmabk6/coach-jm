@@ -1,4 +1,5 @@
-import { EllipsisVertical } from "lucide-react";
+import { EllipsisVertical, Moon } from "lucide-react";
+import { Link } from "react-router-dom";
 import type {
   Exercise,
   Id,
@@ -18,6 +19,7 @@ import {
   inferFreeWorkoutCategory,
 } from "./freeWorkouts";
 import { SessionName } from "../sessions/SessionName";
+import { splitSessionName } from "../sessions/splitSessionName";
 
 /** Un test attaché à l'instance (lot G.7) : son nom, et s'il est en retard (D26). */
 export interface RowTest {
@@ -93,6 +95,56 @@ export function PlannedSessionRow({
         onClick={() => onOpenMenu(session)}
       >
         <EllipsisVertical size={20} strokeWidth={2} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+interface EveningRowProps {
+  session: PlannedSession;
+  template: SessionTemplate | undefined;
+  durationLabel: string;
+  tests?: RowTest[] | undefined;
+  onOpenMenu: (session: PlannedSession) => void;
+}
+
+/**
+ * Routine du soir, compacte (27/09/2026) : une ligne sous les séances du
+ * jour, « Soir : Routine A · 14 min », ses tests en orange. Toucher ouvre
+ * la routine ; le menu ⋯ est inchangé (déplacer, sauter…).
+ */
+export function EveningRow({ session, template, durationLabel, tests = [], onOpenMenu }: EveningRowProps) {
+  const name = template ? splitSessionName(template.name).main : "Séance supprimée";
+  const minutes = durationLabel.replace(/^(Estimé|Moyenne)\s+/, "");
+  const displayedStatus = getDisplayedPlannedSessionStatus(session, formatLocalDate(new Date()));
+
+  return (
+    <div className="program-evening">
+      <Link to={`/aujourdhui/apercu/${session.id}`} className="program-evening__main">
+        <Moon size={15} strokeWidth={2.2} aria-hidden="true" className="program-evening__icon" />
+        <span className="program-evening__body">
+          <span className="program-evening__line">
+            Soir : <strong>{name}</strong>
+            {minutes && ` · ${minutes}`}
+            {/* Rien à signaler tant qu'elle est à venir, aujourd'hui compris : le jour est déjà marqué. */}
+            {displayedStatus !== "upcoming" && displayedStatus !== "today" && (
+              <span className={`program-badge program-badge--${displayedStatus}`}>{displayedPlannedSessionStatusLabels[displayedStatus]}</span>
+            )}
+          </span>
+          {tests.length > 0 && (
+            <span className="program-evening__tests">
+              {tests.map((test) => `Test ${test.name.toLocaleLowerCase("fr-FR")}${test.toReschedule ? " (à replanifier)" : ""}`).join(" · ")}
+            </span>
+          )}
+        </span>
+      </Link>
+      <button
+        type="button"
+        className="program-row__menu program-evening__menu"
+        aria-label={`Actions pour ${template?.name ?? "la routine"}`}
+        onClick={() => onOpenMenu(session)}
+      >
+        <EllipsisVertical size={18} strokeWidth={2} aria-hidden="true" />
       </button>
     </div>
   );

@@ -72,10 +72,14 @@ describe("Planning Semaine", () => {
 
     expect(within(day("Mer")).getByText("Repos")).toBeTruthy();
 
+    /* Routine du soir compacte (27/09/2026) : une ligne, toucher = la routine, menu ⋯ inchangé. */
     const friday = day("Ven");
     expect(within(friday).getByText("Repos")).toBeTruthy();
-    expect(within(friday).getByText("Soir")).toBeTruthy();
-    expect(within(friday).getByText("Avant du tronc et hanches")).toBeTruthy();
-    expect(within(day("Sam")).queryByText("Soir")).toBeNull();
+    const evening = friday.querySelector(".program-evening") as HTMLElement;
+    expect(evening.textContent).toMatch(/^Soir : Routine A · \d+ min$/);
+    expect(evening.querySelector("a")?.getAttribute("href")).toMatch(/^\/aujourdhui\/apercu\//);
+    expect(within(evening).getByRole("button", { name: /^Actions pour Routine A/ })).toBeTruthy();
+    expect(friday.querySelector(".program-row .program-row__name")).toBeNull();
+    expect(day("Sam").querySelector(".program-evening")).toBeNull();
   });
 });

@@ -1016,12 +1016,13 @@ Ce sont les objectifs dont au moins un exercice lié a été réellement effectu
 - **Lu** : instances du dimanche au samedi, séances libres confirmées, modèles, tests planifiés, cycle.
 - **Écrit** : déplacer (avec conflit), sauter, restaurer, retirer, dupliquer, replanifier un test ; `startWorkout`.
 - **États** : semaine vide → 7 lignes « Repos » ; semaine de tests → bandeau et mention des tests ; test à replanifier → badge ambre.
+- **Routine du soir compacte** (27/09/2026) : plus de carte dédiée. Une ligne sous les séances du jour, « Soir : Routine A · 14 min », et ses tests en orange s'il y en a (« Test souplesse · Test tronc »). Le statut n'apparaît qu'une fois la routine faite, sautée ou manquée. Toucher ouvre la routine (aperçu) ; le menu ⋯ est inchangé (déplacer, sauter…).
 
 ### M3 — Planning Mois (`/planning?view=mois`)
 
 - **Lu** : passé = séances confirmées ; futur = instances ; résumé (§ 5.8) ; semaines de tests à venir.
 - **Écrit** : rien.
-- **Fiche d'un jour** : blocs avec leur durée estimée, statut, « Voir le détail ».
+- **Fiche d'un jour** : blocs avec leur durée estimée, statut, « Voir le détail ». La routine du soir y prend la même ligne compacte qu'en Semaine (27/09/2026).
 - **États** : mois vide → résumé à 0.
 
 ### M4 — Objectifs (`/objectifs`)

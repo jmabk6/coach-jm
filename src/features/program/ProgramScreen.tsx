@@ -52,7 +52,7 @@ import {
 } from "../../domain/rules/todayRules";
 import { startWorkout } from "../workout/startWorkout";
 import { useProgramData, type ProgramData, type ProgramEntry } from "./useProgramData";
-import { FreeWorkoutRow, PlannedSessionRow } from "./PlannedSessionRow";
+import { EveningRow, FreeWorkoutRow, PlannedSessionRow } from "./PlannedSessionRow";
 import {
   DateSheet,
   FreeWorkoutMenu,
@@ -418,6 +418,20 @@ function EntryRow({
   );
 }
 
+/** Routine du soir (créneau Soir), sur une ligne. */
+function EveningEntryRow({ entry, data, onOpenMenu }: { entry: ProgramEntry; data: ProgramData; onOpenMenu: (session: PlannedSession) => void }) {
+  if (entry.kind !== "planned") return null;
+  return (
+    <EveningRow
+      session={entry.session}
+      template={data.templateById.get(entry.session.sessionTemplateId)}
+      durationLabel={data.durationLabel(entry.session.sessionTemplateId)}
+      tests={rowTestsOf(entry.session, data)}
+      onOpenMenu={onOpenMenu}
+    />
+  );
+}
+
 function entryKey(entry: ProgramEntry): string {
   return entry.kind === "free" ? `free-${entry.workout.id}` : entry.session.id;
 }
@@ -583,20 +597,10 @@ function WeekView({
                   ))
                 )}
 
-                {evening.length > 0 && (
-                  <>
-                    <span className="program-day__slot">Soir</span>
-                    {evening.map((entry) => (
-                      <EntryRow
-                        key={entryKey(entry)}
-                        entry={entry}
-                        data={data}
-                        onOpenMenu={onOpenMenu}
-                        onOpenFreeMenu={onOpenFreeMenu}
-                      />
-                    ))}
-                  </>
-                )}
+                {/* Routine du soir : une ligne compacte (27/09/2026). */}
+                {evening.map((entry) => (
+                  <EveningEntryRow key={entryKey(entry)} entry={entry} data={data} onOpenMenu={onOpenMenu} />
+                ))}
               </div>
             </li>
           );
@@ -824,7 +828,7 @@ function MonthView({
       <section className="program-selected" aria-live="polite">
         <h2>{capitalize(formatFullDate(selectedDate))}</h2>
 
-        {selectedEntries.map((entry) => (
+        {selectedEntries.filter((entry) => !isEvening(entry)).map((entry) => (
           <div key={entryKey(entry)} className="program-selected__entry">
             <EntryRow
               entry={entry}
@@ -836,9 +840,14 @@ function MonthView({
           </div>
         ))}
 
-        {selectedEntries.length === 0 && (
+        {selectedEntries.filter((entry) => !isEvening(entry)).length === 0 && (
           <p className="program-selected__empty">Repos</p>
         )}
+
+        {/* Fiche d'un jour : même ligne compacte pour la routine du soir (27/09/2026). */}
+        {selectedEntries.filter(isEvening).map((entry) => (
+          <EveningEntryRow key={entryKey(entry)} entry={entry} data={data} onOpenMenu={onOpenMenu} />
+        ))}
 
         <button
           type="button"
