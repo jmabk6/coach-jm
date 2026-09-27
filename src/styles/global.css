@@ -2,10 +2,17 @@
   box-sizing: border-box;
 }
 
+/*
+ * La page ne défile jamais (27/09/2026) : seule la zone de contenu défile
+ * (`.app-content`). Dans la PWA iOS, quand c'est le document qui défile,
+ * un élément `fixed` (la barre d'onglets) peut être entraîné et « monter »
+ * pendant le défilement ; sans défilement du document, il reste en place.
+ */
 html,
 body,
 #root {
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 html {

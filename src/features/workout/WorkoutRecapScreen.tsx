@@ -289,7 +289,8 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
       },
       { replace: false },
     );
-    window.scrollTo?.(0, 0);
+    /* Le contenu défile dans `.app-content`, pas le document (27/09/2026). */
+    document.querySelector(".app-content")?.scrollTo?.(0, 0);
   }
 
   /* Durée corrigée entre Terminer et Enregistrer (décision du 24/09/2026). */
