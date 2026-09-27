@@ -504,6 +504,8 @@
   grid-template-columns: 40px minmax(0, 1fr) auto 18px;
   align-items: center;
   gap: 10px;
+  /* Même espace que sous les autres cartes (Accueil compact, 27/09/2026). */
+  margin: 0 0 14px;
   padding: 12px 14px;
   border-radius: var(--radius-md);
   background: var(--color-purple-soft);
