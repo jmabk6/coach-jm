@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../../db/database";
 import type { InstallMarkers } from "../../domain";
 import { resumeSeedsForTests, runSeeds, SEEDS_BEFORE_PROGRAM_V2 } from "../seed/runSeeds";
-import { FRAME_TARGETS_20260925, seedFrameTargets20260925 } from "./seedFrameTargets20260925";
+import { FRAME_TARGETS_20260925, FRAME_TARGETS_20261003, seedFrameTargets20260925, seedTractionTarget20261003 } from "./seedFrameTargets20260925";
 import { programFrameIds } from "./seedProgramFrames";
 
 /**
@@ -37,7 +37,7 @@ describe("seed 15 — premières cibles recalées d'après le 25/09", () => {
   it("chaque cadre passe en V2 avec la nouvelle cible ; la V1 est archivée, paramètres identiques ; les autres cadres ne bougent pas", async () => {
     await runSeeds(SEEDS_BEFORE_PROGRAM_V2); // installation complète, seed 15 compris
     const others = (await db.strengthFrameVersions.toArray()).filter(
-      (version) => !FRAME_TARGETS_20260925.some((spec) => version.frameId === programFrameIds(spec.exerciseId).frameId),
+      (version) => ![...FRAME_TARGETS_20260925, ...FRAME_TARGETS_20261003].some((spec) => version.frameId === programFrameIds(spec.exerciseId).frameId),
     );
     expect(others.every((version) => version.number === 1 && version.status === "active")).toBe(true);
 
@@ -82,5 +82,48 @@ describe("seed 15 — premières cibles recalées d'après le 25/09", () => {
     expect((await frameState("developpe-incline-halteres")).versions).toHaveLength(2);
     const install = (await db.settings.get("install"))?.value as InstallMarkers;
     expect(install.frameTargets20260925).toBe(NOW);
+  });
+});
+
+describe("seed 22 — traction assistée recalée à 42 kg d'aide (03/10/2026)", () => {
+  beforeEach(async () => {
+    await db.delete();
+    await db.open();
+    resumeSeedsForTests();
+  });
+
+  afterEach(async () => {
+    db.close();
+    await db.delete();
+  });
+
+  it("V1 à 52 kg → V2 à 42 kg, paramètres identiques (3 × 6-8, RPE ≤ 8) ; V1 archivée ; second passage sans écriture", async () => {
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
+    const { frame, versions } = await frameState("traction-assistee");
+    expect(versions.map((version) => [version.number, version.status])).toEqual([
+      [1, "archived"],
+      [2, "active"],
+    ]);
+    const [v1, v2] = versions as [(typeof versions)[number], (typeof versions)[number]];
+    expect(frame.activeVersionId).toBe(v2.id);
+    expect(v1.archiveReason).toBe("erreur_calibration");
+    expect(v2.currentTarget).toMatchObject({ value: 42, unit: "kg" });
+    expect(v2).toMatchObject({ progressionType: "assistance_decroissante", workSets: 3, repRange: { min: 6, max: 8 }, rpeTarget: 8, restSec: v1.restSec });
+
+    const before = await db.strengthFrameVersions.toArray();
+    await seedTractionTarget20261003(NOW);
+    expect(await db.strengthFrameVersions.toArray()).toEqual(before);
+  });
+
+  it("cible déjà changée par l'utilisateur : rien ; le marqueur est posé", async () => {
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "tractionTarget20261003"));
+    const { versionId } = programFrameIds("traction-assistee");
+    const touched = (await db.strengthFrameVersions.get(versionId))!;
+    await db.strengthFrameVersions.put({ ...touched, currentTarget: { value: 40, unit: "kg", acceptedAt: NOW } });
+
+    await seedTractionTarget20261003(NOW);
+
+    expect((await frameState("traction-assistee")).versions).toHaveLength(1);
+    expect(((await db.settings.get("install"))?.value as InstallMarkers).tractionTarget20261003).toBe(NOW);
   });
 });

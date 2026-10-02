@@ -69,6 +69,8 @@ export interface InstallMarkers {
   removeOldMuscuA?: string;
   /** Muscu A du 27/09/2026 : le leg curl couché fait à la place du leg curl assis, ajouté (seed 21). */
   legCurlCouche20260927?: string;
+  /** Traction assistée : cible 52 → 42 kg d'aide, d'après la séance du 02/10 (seed 22). */
+  tractionTarget20261003?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

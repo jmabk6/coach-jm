@@ -22,6 +22,17 @@ export const FRAME_TARGETS_20260925: ReadonlyArray<{ exerciseId: string; seededT
 ];
 
 /**
+ * Seed 22 (décision du 03/10/2026) : la traction assistée de Muscu A,
+ * faite le 02/10 à 42 kg d'aide (8 / 8 / 6, RPE 8 / 9 / 10), garde 52 kg
+ * comme première cible. Même recalage : nouvelle version, cible 42 kg,
+ * paramètres identiques (3 × 6-8, RPE ≤ 8). Seulement si le cadre est
+ * encore en V1 avec la cible de 52 kg semée.
+ */
+export const FRAME_TARGETS_20261003: ReadonlyArray<{ exerciseId: string; seededTarget: number | undefined; target: number }> = [
+  { exerciseId: "traction-assistee", seededTarget: 52, target: 42 },
+];
+
+/**
  * La V1 archivée (motif « erreur de calibration », sans objectif) et la V2
  * aux mêmes paramètres, avec la nouvelle cible. Pure : les tests sur
  * sauvegarde réelle en tirent l'état attendu.
@@ -57,28 +68,40 @@ export function recalibrate(
   return { frame: { ...frame, activeVersionId: next.id, updatedAt: now }, archived, next };
 }
 
+/** Recale les cadres d'une liste encore dans leur état semé (V1 active, cible d'origine). */
+async function recalibrateSeeded(specs: typeof FRAME_TARGETS_20260925, now: string): Promise<void> {
+  for (const spec of specs) {
+    const { frameId, versionId } = programFrameIds(spec.exerciseId);
+    const frame = await db.strengthFrames.get(frameId);
+    const current = await db.strengthFrameVersions.get(versionId);
+
+    if (!frame || !current || frame.activeVersionId !== versionId || current.status !== "active") continue;
+    if (current.currentTarget?.value !== spec.seededTarget) continue;
+    if (current.currentTarget?.fromMilestoneId !== undefined) continue;
+
+    const { frame: moved, archived, next } = recalibrate(frame, current, spec.target, now);
+
+    await db.strengthFrameVersions.put(archived);
+    await db.strengthFrameVersions.add(next);
+    await db.strengthFrames.put(moved);
+  }
+}
+
 export async function seedFrameTargets20260925(now: string = new Date().toISOString()): Promise<void> {
   await db.transaction("rw", db.strengthFrames, db.strengthFrameVersions, db.settings, async () => {
     const install = (await db.settings.get("install"))?.value as InstallMarkers | undefined;
     if (install?.frameTargets20260925 !== undefined) return;
-
-    for (const spec of FRAME_TARGETS_20260925) {
-      const { frameId, versionId } = programFrameIds(spec.exerciseId);
-      const frame = await db.strengthFrames.get(frameId);
-      const current = await db.strengthFrameVersions.get(versionId);
-
-      if (!frame || !current || frame.activeVersionId !== versionId || current.status !== "active") continue;
-      if (current.currentTarget?.value !== spec.seededTarget) continue;
-      if (current.currentTarget?.fromMilestoneId !== undefined) continue;
-
-      const { frame: moved, archived, next } = recalibrate(frame, current, spec.target, now);
-
-      await db.strengthFrameVersions.put(archived);
-      await db.strengthFrameVersions.add(next);
-      await db.strengthFrames.put(moved);
-    }
-
+    await recalibrateSeeded(FRAME_TARGETS_20260925, now);
     await db.settings.put({ key: "install", value: { ...install, frameTargets20260925: now } });
+  });
+}
+
+export async function seedTractionTarget20261003(now: string = new Date().toISOString()): Promise<void> {
+  await db.transaction("rw", db.strengthFrames, db.strengthFrameVersions, db.settings, async () => {
+    const install = (await db.settings.get("install"))?.value as InstallMarkers | undefined;
+    if (install?.tractionTarget20261003 !== undefined) return;
+    await recalibrateSeeded(FRAME_TARGETS_20261003, now);
+    await db.settings.put({ key: "install", value: { ...install, tractionTarget20261003: now } });
   });
 }
 
@@ -95,7 +118,8 @@ export function expectedAfterFrameTargets(
 ): Map<string, StrengthFrame | StrengthFrameVersion> {
   const expected = new Map<string, StrengthFrame | StrengthFrameVersion>();
 
-  for (const spec of FRAME_TARGETS_20260925) {
+  /* Seeds 15 et 22 : mêmes recalages, V1 → V2. */
+  for (const spec of [...FRAME_TARGETS_20260925, ...FRAME_TARGETS_20261003]) {
     const { frameId, versionId } = programFrameIds(spec.exerciseId);
     const frame = frames.find((item) => item.id === frameId);
     const current = versions.find((item) => item.id === versionId);

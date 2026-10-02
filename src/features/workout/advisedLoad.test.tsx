@@ -73,7 +73,7 @@ describe("écran de séance — exercices à venir", () => {
     await db.delete();
   });
 
-  it("Muscu A : squat « 35 kg (barre + 7,5 kg de chaque côté) », traction « 52 kg d'assistance » (maquette M9)", async () => {
+  it("Muscu A : squat « 35 kg (barre + 7,5 kg de chaque côté) », traction « 42 kg d'assistance » (maquette M9 ; seed 22 du 03/10)", async () => {
     const template = (await db.sessionTemplates.get("v1-muscu-a"))!;
     await startFreeWorkout("2026-09-27", "2026-09-27T08:00:00.000Z", template);
     render(
@@ -84,6 +84,6 @@ describe("écran de séance — exercices à venir", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByText("Charge conseillée : 35 kg (barre + 7,5 kg de chaque côté)", {}, { timeout: 4000 })).toBeDefined();
-    expect(screen.getByText("Charge conseillée : 52 kg d'assistance")).toBeDefined();
+    expect(screen.getByText("Charge conseillée : 42 kg d'assistance")).toBeDefined();
   }, 20000);
 });

@@ -1217,6 +1217,7 @@ Ce sont les objectifs dont au moins un exercice lié a été réellement effectu
 | Relecture 4 | Presse à cuisses : première cible 130 kg | § 2.5, lot D |
 | Relecture 5 | N2 à N12 validées telles que proposées | § 8.2 |
 | Leg curl couché (27/09) | Exercice ajouté au catalogue ; la Muscu A du 27/09 reçoit, par correction ciblée unique (seed 21, même méthode que le 24/09), les 3 × 10 à 20 kg (RPE 8, 8, 9) faits à la place du leg curl assis retiré, et sa durée active ramenée à 1 h 21 min 30 s (arrêtée après les élévations, fin saisie à 17:34 ; le dernier « repos » de 2 h 48 hors moyenne) ; en V2, Muscu A : leg curl couché 2×10-12, cadre sans cible ; Jambes : exercice lié et indicateur secondaire suivent | § 2.6, § 2.5 bis |
+| Traction 42 kg (03/10) | Première cible de la traction assistée recalée de 52 à 42 kg d'aide (seed 22, même méthode que le seed 15) d'après la Muscu A du 02/10 (42 kg : 8 / 8 / 6, RPE 8 / 9 / 10) ; nouvelle version, paramètres identiques (3 × 6-8, RPE ≤ 8) ; seulement si le cadre est encore à 52 kg | § 2.5.1 |
 | Composition corporelle (26/09) | Masse grasse et masse musculaire facultatives avec la pesée ; indicateurs secondaires de l'objectif Poids, moyenne du mois dès 4 relevés ; hors statut ; sans migration | § 2.4, § 3.8, § 5.4 bis, M1, M5 |
 
 **Corrections faites à la révision 1** (vérification demandée par la correction B)

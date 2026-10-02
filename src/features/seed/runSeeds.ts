@@ -7,7 +7,7 @@ import { seedWorkout20260925 } from "../history/seedWorkout20260925";
 import { seedLegCurlCouche20260927 } from "../history/seedLegCurlCouche20260927";
 import { seedProgramFrames } from "../strength/seedProgramFrames";
 import { seedRpeScale } from "../strength/seedRpeScale";
-import { seedFrameTargets20260925 } from "../strength/seedFrameTargets20260925";
+import { seedFrameTargets20260925, seedTractionTarget20261003 } from "../strength/seedFrameTargets20260925";
 import { seedChair90 } from "../exercises/seedChair90";
 import { seedTestsWeek20260927 } from "../program/seedTestsWeek20260927";
 import { seedRemoveOldMuscuA } from "../sessions/seedRemoveOldMuscuA";
@@ -70,6 +70,8 @@ export const SEEDS: SeedStep[] = [
   { name: "programV2", dependsOn: ["exerciseCatalog", "programV1", "frames", "goals", "testProtocols"], run: () => seedProgramV2() },
   /* Seed 20 : les modèles V1 archivés, pas avant le 04/10. */
   { name: "archiveProgramV1", dependsOn: ["programV2"], run: () => seedArchiveProgramV1() },
+  /* Seed 22 (03/10/2026) : la traction assistée recalée à 42 kg d'aide. */
+  { name: "tractionTarget20261003", dependsOn: ["frames"], run: () => seedTractionTarget20261003() },
 ];
 
 /**
