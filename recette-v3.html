@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Recette v3</title>
+    <style>
+      body { margin: 0; padding: 16px; background: #f7f8fa; color: #1b1f24; font: 16px/1.4 -apple-system, system-ui, sans-serif; }
+      h1 { margin: 0 0 4px; font-size: 1.5rem; }
+      .note { margin: 0 0 16px; color: #5b6470; font-size: 0.9rem; }
+      .actions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+      button { min-height: 48px; border: 0; border-radius: 12px; font: inherit; font-weight: 600; }
+      #lancer { background: #2f6fed; color: #fff; }
+      #effacer { background: #fff; color: #c2413b; border: 1px solid #c2413b; }
+      button:disabled { opacity: 0.5; }
+      ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+      .cas { padding: 12px; border-radius: 12px; background: #fff; border-left: 6px solid #9aa3ad; }
+      .cas--ok { border-left-color: #1f8a3b; }
+      .cas--echec { border-left-color: #c2413b; background: #fdeaea; }
+      .detail { margin-top: 4px; font-size: 0.9rem; color: #3a414a; overflow-wrap: anywhere; }
+      .bilan { margin: 16px 0; padding: 12px; border-radius: 12px; background: #fff; font-weight: 600; }
+      .bilan--ok { background: #e6f6ea; color: #1f8a3b; }
+      .bilan--echec { background: #fdeaea; color: #c2413b; }
+      #contexte { margin-top: 16px; color: #5b6470; font-size: 0.75rem; overflow-wrap: anywhere; }
+    </style>
+  </head>
+  <body>
+    <main id="recette" hidden>
+      <h1>Recette Dexie v3</h1>
+      <p class="note">Données fictives, bases « coach-jm-recette-* » : vos vraies données ne sont jamais ouvertes.</p>
+      <div class="actions">
+        <button id="lancer" type="button">Lancer les tests</button>
+        <button id="effacer" type="button">Effacer les bases de recette</button>
+      </div>
+      <p id="bilan" class="bilan">Prêt.</p>
+      <ul id="resultats"></ul>
+      <p id="contexte"></p>
+    </main>
+    <script type="module" src="/src/recette/recetteV3.ts"></script>
+  </body>
+</html>
