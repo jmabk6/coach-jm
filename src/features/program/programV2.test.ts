@@ -114,12 +114,11 @@ describe("modèles V2", () => {
 });
 
 describe("tests et prescriptions réduites en V2", () => {
-  it("traction : étape 0 après l'échauffement, la traction assistée de A à 2 séries, en prescription réduite", () => {
+  it("traction (pari V6, 05/10) : le test remplace la traction de A, aucune série de travail après", () => {
     const frame = { id: "frame-traction-v1", workSets: 3 } as StrengthFrameVersion;
     const blocks = createWorkoutSnapshot(template("v2-muscu-a"), new Map([["traction-assistee", frame.id]]), new Map([[frame.id, frame]]), [schedule("traction")]);
-    expect(order(blocks).slice(0, 3)).toEqual(["v2-muscu-a-echauffement", "test:traction", "v2-muscu-a-traction"]);
-    expect((blocks[2] as PerformedExerciseBlock).series).toHaveLength(2);
-    expect((blocks[2] as PerformedExerciseBlock).reducedPrescription).toBe(true);
+    expect(order(blocks).slice(0, 3)).toEqual(["v2-muscu-a-echauffement", "test:traction", "v2-muscu-a-rowing"]);
+    expect(order(blocks)).not.toContain("v2-muscu-a-traction");
   });
 
   it("N5 : chest press 2 séries en A et traction légère 2 séries en B ne valident ni ne stagnent", () => {

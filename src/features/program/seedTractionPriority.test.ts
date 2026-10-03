@@ -86,7 +86,8 @@ describe("seed 24 — priorité traction", () => {
 
 describe("seed 25 — test traction par paliers de 7 kg", () => {
   it("version 2 active, paliers de 7 kg, mêmes mesures ; la version 1 (figée par son résultat) est archivée, jamais réécrite", async () => {
-    await runSeeds();
+    /* Sans le seed 27 (test V3 du 05/10), qui remplace ensuite la version 2. */
+    await runSeeds(SEEDS.filter((seed) => seed.name !== "tractionTestV320261005"));
     const protocol = (await db.testProtocols.get("protocol-traction"))!;
     const v1 = (await db.testProtocolVersions.get("protocol-traction-v1"))!;
     const v2 = (await db.testProtocolVersions.get(protocol.activeVersionId))!;

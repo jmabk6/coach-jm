@@ -4,7 +4,7 @@ import { getWeekStartDate } from "../../domain/rules/programRules";
 import { betSessions, type BetSession } from "./tractionBet";
 import {
   effectiveLoad, V6_REFERENCE, V6_START_DATE, V6_STEP_KG, v6Color, v6EarlyFreeTry, v6ForceSession, v6LightSession, v6State, v6WeekOf,
-  v6WeightGuard, type V6Color, type V6ForceSession, type V6State, type V6Week,
+  v6WeightGuard, type V6Color, type V6ForceSession, type V6State, type V6TestResultLike, type V6Week,
 } from "./tractionV6";
 
 /**
@@ -15,12 +15,6 @@ import {
  */
 
 type Weights = ReadonlyArray<Pick<WeightEntry, "date" | "kg">>;
-
-interface TestResultLike {
-  protocolId: string;
-  date: string;
-  measures: ReadonlyArray<{ key: string; value: number }>;
-}
 
 export type V6RowState = "past" | "now" | "upcoming";
 
@@ -83,8 +77,8 @@ export function v6ShortStatus(state: V6State, date: string): { label: string; to
   return { label: `${crans} cran${crans > 1 ? "s" : ""} derrière`, tone: crans === 1 ? "warning" : "behind" };
 }
 
-export function v6Progress(workouts: readonly WorkoutSession[], weights: Weights, today: string, results: readonly TestResultLike[] = []): V6Progress {
-  const state = v6State(workouts, today);
+export function v6Progress(workouts: readonly WorkoutSession[], weights: Weights, today: string, results: readonly V6TestResultLike[] = []): V6Progress {
+  const state = v6State(workouts, today, results);
   const week = v6WeekOf(today);
   const sessions = betSessions(workouts).filter((session) => session.date >= V6_START_DATE && session.date <= today);
   const weight = [...weights].filter((entry) => entry.date <= today).sort((a, b) => a.date.localeCompare(b.date)).at(-1);
@@ -98,12 +92,12 @@ export function v6Progress(workouts: readonly WorkoutSession[], weights: Weights
     if (rowState === "upcoming") return { week: item, state: rowState };
 
     const until = rowState === "now" ? today : saturday;
-    const atEnd = v6State(workouts, until);
+    const atEnd = v6State(workouts, until, results);
     const row: V6Row = { week: item, state: rowState, aKg: atEnd.aKg, color: v6Color(atEnd, until) };
 
     const session = sessions.find((candidate) => candidate.date >= item.date && candidate.date <= saturday);
     if (session) {
-      const sessionAKg = v6State(workouts, dayBefore(session.date)).aKg;
+      const sessionAKg = v6State(workouts, dayBefore(session.date), results).aKg;
       row.session = session;
       row.sessionAKg = sessionAKg;
       const events = atEnd.events.filter((event) => event.workoutId === session.workoutId);

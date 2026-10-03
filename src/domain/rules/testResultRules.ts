@@ -39,12 +39,13 @@ const round = (value: number, step: number) => Math.round(value / step) * step;
 const roundTo = (value: number, step: number) => Number(round(value, step).toFixed(Math.max(0, -Math.floor(Math.log10(step)))));
 
 /**
- * Un test à essais dégressifs est fini au premier échec, ou sur une
- * réussite au réglage le plus bas de la machine.
+ * Un test à essais dégressifs est fini au premier échec, sur une réussite
+ * au réglage le plus bas de la machine, ou sur une réussite à 0 kg d'aide
+ * (on ne peut pas descendre plus bas : pari V6, 05/10/2026).
  */
 export function isTrialsTestFinished(trials: ReadonlyArray<TestTrial>): boolean {
   const last = [...trials].sort((a, b) => a.order - b.order).at(-1);
-  return last !== undefined && (last.outcome === "failure" || last.atLowestSetting === true);
+  return last !== undefined && (last.outcome === "failure" || last.atLowestSetting === true || last.value === 0);
 }
 
 /** Dernier essai réussi dans l'ordre des essais (§ 5.3, traction). */
@@ -58,6 +59,15 @@ function derive(key: string, values: Record<string, number>, trials: TestTrial[]
       return lastSuccessfulTrial(trials)?.value;
     case "essais_nb":
       return trials.length > 0 ? trials.length : undefined;
+    /* Test traction V3 (pari V6) : le premier essai se fait au palier A réel. */
+    case "palier_a_depart_kg":
+      return trials[0]?.value;
+    /* Charge effective indicative = poids du jour − meilleure assistance réussie. */
+    case "charge_effective_kg": {
+      const best = lastSuccessfulTrial(trials)?.value;
+      const weight = values.poids_jour_kg;
+      return best === undefined || weight === undefined ? undefined : roundTo(weight - best, 0.1);
+    }
     case "fc_moy_16_20": {
       const readings = [16, 17, 18, 19, 20].map((minute) => values[`fc_${minute}`]);
       if (readings.some((reading) => reading === undefined)) return undefined;
@@ -131,7 +141,7 @@ export function computeTestResult(
       /* « Jusqu'au premier échec » : sans échec, le test n'est pas allé au
          bout — sauf réussite au réglage le plus bas de la machine. */
       complete = false;
-      messages.push("Le test va jusqu'au premier échec, ou jusqu'à une réussite au réglage le plus bas");
+      messages.push("Le test va jusqu'au premier échec, ou jusqu'à une réussite au réglage le plus bas ou à 0 kg");
     } else if (trials.length === 0) {
       complete = false;
       messages.push("Aucun essai");

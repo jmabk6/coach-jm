@@ -53,7 +53,7 @@ export async function loadGoalList(today: string): Promise<GoalList> {
   ]);
   /* Pari traction V6 : le statut de la traction vient de l'écart de paliers, jamais d'un écart en semaines. */
   const tractionState = goals.some((goal) => goal.key === "traction")
-    ? v6State(await db.workouts.where("status").equals("completed").toArray(), today)
+    ? v6State(await db.workouts.where("status").equals("completed").toArray(), today, results)
     : undefined;
 
   const protocolById = new Map<string, TestProtocol>(protocols.map((protocol) => [protocol.id, protocol]));

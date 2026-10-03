@@ -42,7 +42,7 @@ describe("traction (essais dégressifs)", () => {
     const result = computeTestResult(traction, { trials: [trial(1, 40, "success")] });
     expect(result.status).toBe("incomplete");
     expect(valueOf(result, "assistance_min_kg")).toBe(40);
-    expect(result.messages).toContain("Le test va jusqu'au premier échec, ou jusqu'à une réussite au réglage le plus bas");
+    expect(result.messages).toContain("Le test va jusqu'au premier échec, ou jusqu'à une réussite au réglage le plus bas ou à 0 kg");
   });
 
   it("réussi au réglage le plus bas de la machine : complet, même sans échec", () => {

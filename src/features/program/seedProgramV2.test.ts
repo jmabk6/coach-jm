@@ -61,7 +61,8 @@ describe("seed 19 — le programme V2", () => {
 
     const sunday = (await dayOn("2026-10-25"))!;
     expect(sunday.sessionTemplateId).toBe("v2-muscu-a");
-    expect(sunday.tests).toEqual([{ protocolId: "protocol-traction", placement: "after_warmup", adjustments: [{ blockId: "v2-muscu-a-traction", sets: 2 }] }]);
+    /* Pari V6 (05/10) : le test remplace la traction de Muscu A. */
+    expect(sunday.tests).toEqual([{ protocolId: "protocol-traction", placement: "replace_block", targetBlockId: "v2-muscu-a-traction" }]);
     expect((await dayOn("2026-10-28"))?.tests).toEqual([
       { protocolId: "protocol-cardio", placement: "replace_block", targetBlockId: "v2-cardio-a-tapis", targetStepIds: CARDIO_A_V2_MAIN_STEP_IDS },
     ]);

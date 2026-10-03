@@ -79,12 +79,8 @@ describe("bandeau du pari traction V6", () => {
     expect(a.sets.map((set) => set.assistKg)).toEqual([0, 7, 7]);
   });
 
-  it("jour de test : 2 séries au palier A, le test ne valide pas ; autre exercice ou séance : rien", () => {
-    const test = betBannerFor(on("2026-10-25", "v2-muscu-a"), block(true), start)!;
-    expect(test.title).toBe("Jour de test — palier A 35 kg d'aide");
-    expect(test.sets).toEqual([{ assistKg: 35, reps: 5 }, { assistKg: 35, reps: 5 }]);
-    expect(test.note).toBe("Le test mesure ; il ne valide jamais le palier A.");
-
+  it("ancien jour de test (prescription réduite) : pas de bandeau ; autre exercice ou séance : rien", () => {
+    expect(betBannerFor(on("2026-10-25", "v2-muscu-a"), block(true), start)).toBeUndefined();
     expect(betBannerFor(on("2026-10-04", "v2-muscu-a"), { ...block(), exerciseId: "rowing-poulie-basse" }, start)).toBeUndefined();
     expect(betBannerFor(on("2026-10-04", "v2-cardio-a"), block(), start)).toBeUndefined();
   });

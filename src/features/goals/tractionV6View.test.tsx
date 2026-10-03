@@ -63,7 +63,7 @@ describe("vue V6 : référence face au réel", () => {
   });
 
   it("semaine test : référence = palier de force précédent (S4 → 35, S8 → 28) ; le test s'affiche, ne valide pas", () => {
-    const results = [{ protocolId: "protocol-traction", date: "2026-10-25", measures: [{ key: "assistance_min_kg", value: 28 }] }];
+    const results = [{ id: "r1", protocolId: "protocol-traction", date: "2026-10-25", measures: [{ key: "assistance_min_kg", value: 28 }] }];
     const progress = v6Progress([muscuA("2026-10-25", five(35), { reduced: true })], [], "2026-10-26", results);
     expect(progress.week).toMatchObject({ number: 4, kind: "test", refKg: 35 });
     expect(progress.rows[3]).toMatchObject({ testKg: 28, aKg: 35, color: "vert" });

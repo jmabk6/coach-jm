@@ -4,8 +4,12 @@ import type {
   Id,
   RpeScaleVersion,
   SessionTemplate,
+  TestResult,
+  WeightEntry,
   WorkoutSession,
 } from "../../domain";
+import { getAllTestResults } from "../../db/repositories/testRepository";
+import { getWeightEntries } from "../../db/repositories/weightRepository";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getActiveRpeScaleVersion, getRpeScaleVersion } from "../../db/repositories/rpeScaleRepository";
 import { getSessionTemplate } from "../../db/repositories/sessionTemplateRepository";
@@ -39,6 +43,9 @@ export interface WorkoutSessionData {
    * versions par identifiant pour lire celle qu'une brique porte.
    */
   frames: ActiveFrameVersions;
+  /** Pari traction V6 : les tests (victoire à 0 kg) et le poids du jour du test. */
+  testResults: TestResult[];
+  weights: WeightEntry[];
 }
 
 export type WorkoutSessionState =
@@ -67,10 +74,12 @@ export function useWorkoutSession(): {
     let cancelled = false;
 
     async function load() {
-      const [workout, exercises, completed] = await Promise.all([
+      const [workout, exercises, completed, testResults, weights] = await Promise.all([
         getInProgressWorkout(),
         getAllExercises(),
         getCompletedWorkouts(),
+        getAllTestResults(),
+        getWeightEntries(),
       ]);
 
       if (cancelled) return;
@@ -97,6 +106,8 @@ export function useWorkoutSession(): {
         completedWorkouts: completed,
         rpeScale,
         frames,
+        testResults,
+        weights,
       });
     }
 

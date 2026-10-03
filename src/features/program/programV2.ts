@@ -296,8 +296,9 @@ export const PROGRAM_V2_TEST_SCHEDULE: TestScheduleEntry[] = [
     weekday: "sunday",
     slot: "day",
     templateId: "v2-muscu-a",
-    placement: "after_warmup",
-    adjustments: [{ blockId: "v2-muscu-a-traction", sets: 2 }],
+    /* Pari V6 (05/10/2026) : le test remplace la traction de Muscu A, aucune série de travail après. */
+    placement: "replace_block",
+    targetBlockId: "v2-muscu-a-traction",
   },
   { protocolKey: "mensurations", weekday: "monday", slot: "morning" },
   { protocolKey: "souplesse", weekday: "monday", slot: "evening", placement: "replace_all" },

@@ -39,6 +39,13 @@ interface TestBlockCardProps {
   onFinish?: (() => void) | undefined;
   onSkip?: (() => void) | undefined;
   onUnskip?: (() => void) | undefined;
+  /** Test traction V3 (pari V6) : le premier essai au palier A réel, le poids du jour. */
+  trialStart?: TrialStart | undefined;
+}
+
+export interface TrialStart {
+  startKg: number;
+  weightKg?: number;
 }
 
 /** Le résultat enregistré d'une brique confirmée (D27). */
@@ -76,6 +83,7 @@ export function TestBlockCard({
   onFinish,
   onSkip,
   onUnskip,
+  trialStart,
 }: TestBlockCardProps) {
   const { protocol, version, reload } = useTestProtocolVersion(rawBlock.protocolId, rawBlock.protocolVersionId);
   /* Séance enregistrée : la saisie et les mesures viennent du résultat,
@@ -146,7 +154,7 @@ export function TestBlockCard({
           </details>
 
           {version.kind === "trials_descending" ? (
-            <TrialsPanel block={block} version={version} canEdit={canEdit} apply={apply} />
+            <TrialsPanel block={block} version={version} canEdit={canEdit} apply={apply} start={trialStart} />
           ) : (
             <MeasuresPanel
               block={block}
@@ -256,15 +264,21 @@ function TrialsPanel({
   version,
   canEdit,
   apply,
+  start,
 }: {
   block: PerformedTestBlock;
   version: TestProtocolVersion;
   canEdit: boolean;
   apply: (action: WorkoutAction) => unknown;
+  start?: TrialStart | undefined;
 }) {
   const trials = [...(block.draft?.trials ?? [])].sort((a, b) => a.order - b.order);
   const last = trials.at(-1);
-  const firstKg = Number(version.settings?.firstTrialKg ?? 40);
+  /* Test traction V3 : départ au palier A réel du moteur V6. */
+  const fromPalierA = version.settings?.start === "palier_a";
+  const firstKg = fromPalierA && start ? start.startKg : Number(version.settings?.firstTrialKg ?? 40);
+  const entered = version.measures.filter((spec) => spec.input === "entered" && !spec.side);
+  const weightSpec = version.measures.find((spec) => spec.key === "poids_jour_kg");
   const stepKg = Number(version.settings?.stepMinKg ?? 2);
   const restSec = Number(version.settings?.restSec ?? 180);
   const proposal = last ? Math.max(0, last.value - (last.outcome === "success" ? stepKg : 0)) : firstKg;
@@ -285,11 +299,21 @@ function TrialsPanel({
 
   function add(outcome: "success" | "failure") {
     if (kg === undefined) return;
-    void apply((current, at) => addTestTrial(current, block.id, { value: kg, outcome, restSec, atLowestSetting: lowest }, at));
+    /* Premier essai : le poids du jour (dernière pesée du jour), s'il n'est pas déjà saisi. */
+    const weightKg = trials.length === 0 && weightSpec && start?.weightKg !== undefined && block.draft?.values?.poids_jour_kg === undefined ? start.weightKg : undefined;
+    void apply((current, at) => {
+      const next = addTestTrial(current, block.id, { value: kg, outcome, restSec, atLowestSetting: lowest }, at);
+      return weightKg !== undefined && weightSpec ? setTestValue(next, block.id, weightSpec, weightKg, at) : next;
+    });
   }
 
   return (
     <div className="test-card__panel">
+      {fromPalierA && (
+        <p className="test-card__start">
+          {start ? `Départ au palier A réel : ${formatDecimal(start.startKg)} kg.` : "Départ au palier A réel."} Le test ne change jamais le palier A.
+        </p>
+      )}
       {trials.length > 0 && (
         <table className="test-card__trials">
           <thead>
@@ -345,10 +369,12 @@ function TrialsPanel({
             step={0.5}
             decimal
           />
-          <label className="test-card__lowest-check">
-            <input type="checkbox" checked={lowest} onChange={(event) => setLowest(event.target.checked)} />
-            <span>Réglage le plus bas de la machine</span>
-          </label>
+          {!fromPalierA && (
+            <label className="test-card__lowest-check">
+              <input type="checkbox" checked={lowest} onChange={(event) => setLowest(event.target.checked)} />
+              <span>Réglage le plus bas de la machine</span>
+            </label>
+          )}
           <div className="test-card__outcomes">
             <button type="button" className="test-card__success" disabled={kg === undefined} onClick={() => add("success")}>
               Réussi
@@ -363,8 +389,17 @@ function TrialsPanel({
         <p className="test-card__done">
           {last?.outcome === "failure"
             ? "Premier échec atteint : le test est fini."
-            : "Réussi au réglage le plus bas de la machine : le test est fini."}
+            : last?.value === 0
+              ? "Traction stricte réussie à 0 kg : objectif gagné !"
+              : "Réussi au réglage le plus bas de la machine : le test est fini."}
         </p>
+      )}
+      {entered.length > 0 && (
+        <div className="test-card__fields">
+          {entered.map((spec) => (
+            <ValueField key={spec.key} block={block} spec={spec} version={version} canEdit={canEdit} apply={apply} />
+          ))}
+        </div>
       )}
     </div>
   );

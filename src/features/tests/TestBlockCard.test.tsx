@@ -100,7 +100,7 @@ describe("traction : essais dégressifs", () => {
   it("un seul essai réussi, puis un seul échec : résultat incomplet avec la raison", async () => {
     render(<Harness keyName="traction" />);
     fireEvent.click(await screen.findByRole("button", { name: "Réussi" }));
-    await within(result()).findByText("Le test va jusqu'au premier échec, ou jusqu'à une réussite au réglage le plus bas");
+    await within(result()).findByText("Le test va jusqu'au premier échec, ou jusqu'à une réussite au réglage le plus bas ou à 0 kg");
     expect(within(result()).getByRole("heading").textContent).toBe("Résultat incomplet");
     expect(within(result()).getByText("Nombre d'essais").nextSibling?.textContent).toBe("1 essai");
 

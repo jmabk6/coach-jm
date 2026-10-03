@@ -44,8 +44,8 @@ beforeEach(async () => {
   await db.delete();
   await db.open();
   resumeSeedsForTests();
-  /* Le protocole traction en version 1 : sans le seed 25 (version 2 par paliers de 7 kg). */
-  await runSeeds(SEEDS.filter((seed) => seed.name !== "tractionTest7kg20261003"));
+  /* Le protocole traction en version 1 : sans les seeds 25 (paliers de 7 kg) et 27 (test V3 du pari V6). */
+  await runSeeds(SEEDS.filter((seed) => !["tractionTest7kg20261003", "tractionTestV320261005"].includes(seed.name)));
   await generateProgramWeek("2026-10-25", "2026-09-24T10:00:00.000Z");
 });
 

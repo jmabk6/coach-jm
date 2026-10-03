@@ -82,6 +82,9 @@ import "./WorkoutBlocks.css";
 import { paths } from "../../app/paths";
 import { SessionName } from "../sessions/SessionName";
 
+/** Le test traction : il part du palier A réel du pari V6. */
+const TRACTION_PROTOCOL_ID = "protocol-traction";
+
 /**
  * Séance en cours (§11, mockups 15–16) : liste déroulante de toutes les
  * briques, la brique courante dépliée, les autres repliées sur leur
@@ -267,16 +270,24 @@ export function WorkoutScreen() {
     );
   }
 
-  const { template, exerciseById, lastByExercise, completedWorkouts, rpeScale, frames } = state;
+  const { template, exerciseById, lastByExercise, completedWorkouts, rpeScale, frames, testResults, weights } = state;
   const name = template?.name ?? "Séance libre";
   const blocks = [...workout.blocks].sort((a, b) => a.position - b.position);
   const numbering = calculatePerformedNumbering(blocks);
   const progress = calculateExecutionProgress(blocks);
   const counts = countBlockStatuses(blocks);
-  /* Pari traction V6 (04/10/2026) : le palier A réel, d'après les autres séances faites jusqu'au jour de celle-ci. */
-  const bet = blocks.some((block) => block.kind === "exercise" && block.exerciseId === BET_EXERCISE_ID)
-    ? v6State(completedWorkouts.filter((item) => item.id !== workout.id), workout.date)
+  /* Pari traction V6 (04/10/2026) : le palier A réel, d'après les autres séances et tests faits jusqu'au jour de
+     celle-ci ; aussi pour le test traction, qui part de ce palier (05/10/2026). */
+  const bet = blocks.some(
+    (block) => (block.kind === "exercise" && block.exerciseId === BET_EXERCISE_ID) || (block.kind === "test" && block.protocolId === TRACTION_PROTOCOL_ID),
+  )
+    ? v6State(
+        completedWorkouts.filter((item) => item.id !== workout.id),
+        workout.date,
+        testResults.filter((result) => result.workoutId !== workout.id),
+      )
     : undefined;
+  const dayWeightKg = weights.filter((entry) => entry.date === workout.date).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).at(-1)?.kg;
   const hasAdded = blocks.some((block) => block.kind !== "note" && block.addedDuringWorkout);
   const currentNumber =
     workout.currentBlockId !== undefined ? numbering[workout.currentBlockId] : undefined;
@@ -559,6 +570,11 @@ export function WorkoutScreen() {
                   onFinish={() => void run((current, at) => finishBlock(current, block.id, at))}
                   onSkip={() => void run((current, at) => skipBlock(current, block.id, at))}
                   onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}
+                  trialStart={
+                    block.protocolId === TRACTION_PROTOCOL_ID && bet
+                      ? { startKg: bet.aKg, ...(dayWeightKg !== undefined ? { weightKg: dayWeightKg } : {}) }
+                      : undefined
+                  }
                 />
               );
             }

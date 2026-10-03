@@ -125,6 +125,15 @@ export function v6WeekOf(date: string): V6Week {
 
 export type V6Phase = "travail" | "essai_libre" | "gagne";
 
+/** Un résultat de test, tel que le moteur le lit. */
+export interface V6TestResultLike {
+  id: string;
+  protocolId: string;
+  date: string;
+  workoutId?: string;
+  measures: ReadonlyArray<{ key: string; value: number }>;
+}
+
 export type V6EventKind = "validation" | "repli" | "regression" | "victoire" | "essai_echoue";
 
 export interface V6Event {
@@ -176,9 +185,19 @@ export function isRepli(sets: readonly BetSet[], aKg: number): boolean {
  * - sinon, repli (§ 5) : noté, A inchangé, exclu des régressions ;
  * - sinon, régression (§ 17) : moins de reps totales au palier A que la
  *   précédente séance valide à ce même palier.
+ *
+ * Les tests (`results`) ne changent jamais A et n'entrent pas dans les
+ * régressions ; seule exception (§ 21) : une traction stricte réussie à
+ * 0 kg pendant un test = objectif gagné, à la date du test.
  */
-export function v6State(workouts: readonly WorkoutSession[], until: string): V6State {
-  const sessions = betSessions(workouts).filter((session) => session.date >= V6_START_DATE && session.date <= until);
+export function v6State(workouts: readonly WorkoutSession[], until: string, results: readonly V6TestResultLike[] = []): V6State {
+  const testWin = results
+    .filter((result) => result.protocolId === "protocol-traction" && result.date >= V6_START_DATE && result.date <= until)
+    .filter((result) => result.measures.some((measure) => measure.key === "assistance_min_kg" && measure.value === 0))
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  const sessions = betSessions(workouts).filter(
+    (session) => session.date >= V6_START_DATE && session.date <= until && (testWin === undefined || session.date <= testWin.date),
+  );
   const events: V6Event[] = [];
   let aKg = V6_START_KG;
   let phase: V6Phase = "travail";
@@ -233,6 +252,11 @@ export function v6State(workouts: readonly WorkoutSession[], until: string): V6S
       consecutiveRegressions = 0;
     }
     lastTotalAt.set(aKg, total);
+  }
+
+  if (testWin && phase !== "gagne") {
+    events.push({ kind: "victoire", date: testWin.date, workoutId: testWin.workoutId ?? testWin.id, aKg, detail: "test à 0 kg" });
+    phase = "gagne";
   }
 
   const last = sessions.at(-1);

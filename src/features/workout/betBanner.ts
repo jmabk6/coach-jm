@@ -11,8 +11,8 @@ import type { BetBanner } from "./ExerciseBlockCard";
  * - Muscu A : le palier A réel (moteur V6), le statut par rapport à la
  *   référence, la consigne, la règle de repli, ce qui valide. Un repli
  *   saisi en série 1 bascule aussitôt les séries 2 et 3 un cran plus haut ;
- * - jour de test (2 séries) : les 2 séries au palier A — le test ne valide
- *   jamais A ;
+ * - jour de test : rien — le test traction V3 remplace la traction de
+ *   Muscu A (05/10/2026) ;
  * - Muscu B : un cran au-dessus de A, 3 × 8-10 (2 × 8 en semaine test).
  * Ailleurs : rien.
  */
@@ -66,16 +66,8 @@ export function betBannerFor(workout: WorkoutSession, block: PerformedExerciseBl
     return { title: "Objectif gagné : 1 traction stricte", status, lines: [{ label: "Dernière séance", value: lastLine(state) }], sets: [] };
   }
 
-  if (block.reducedPrescription) {
-    const sets = [0, 1].map(() => ({ assistKg: a, reps: V6_VALIDATION_REPS }));
-    return {
-      title: `Jour de test — palier A ${a} kg d'aide`,
-      status,
-      lines: [{ label: "Après le test", value: `2 séries à ${a} kg, jusqu'à ${V6_VALIDATION_REPS} reps propres` }],
-      note: "Le test mesure ; il ne valide jamais le palier A.",
-      sets,
-    };
-  }
+  /* Ancien jour de test (2 séries réduites) : depuis le test V3 (05/10/2026), le test remplace la traction. */
+  if (block.reducedPrescription) return undefined;
 
   const force = v6ForceSession(state);
 

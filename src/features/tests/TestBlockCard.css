@@ -319,3 +319,13 @@
   color: var(--color-text-soft);
   font-weight: 400;
 }
+
+/* Test traction V3 (pari V6) : le départ au palier A réel. */
+.test-card__start {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: 600;
+}
