@@ -537,18 +537,62 @@
   font-weight: 700;
 }
 
-.bet__status--on_track,
-.bet__status--reached {
-  background: var(--color-success-soft, var(--color-surface-soft));
+.bet__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bet__status--vert,
+.bet__status--gagne {
+  background: var(--color-success-soft);
   color: var(--color-success-strong);
 }
 
-.bet__status--watch {
+.bet__status--orange {
+  background: var(--color-warning-soft);
   color: var(--color-warning);
 }
 
-.bet__status--late {
+.bet__status--rouge {
+  background: var(--color-danger-soft);
   color: var(--color-danger);
+}
+
+/* Pastille 🟢 / 🟠 / 🔴 (§ 15). */
+.bet__dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.bet__dot--vert,
+.bet__dot--gagne {
+  background: var(--color-success-strong);
+}
+
+.bet__dot--orange {
+  background: var(--color-warning);
+}
+
+.bet__dot--rouge {
+  background: var(--color-danger);
+}
+
+.bet__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .bet__facts {
@@ -576,45 +620,12 @@
   overflow-wrap: anywhere;
 }
 
-.bet__facts small,
-.bet__weight small {
+.bet__facts small {
   color: var(--color-text-soft);
   font-size: 0.78rem;
   font-weight: 400;
 }
 
-.bet__trajectory {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 12px;
-  padding: 0;
-  list-style: none;
-}
-
-.bet__point {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--color-surface-soft);
-  color: var(--color-text-soft);
-  font-size: 0.78rem;
-}
-
-.bet__point--reached {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-  font-weight: 600;
-}
-
-.bet__point--late {
-  color: var(--color-danger);
-  font-weight: 600;
-}
-
-.bet__weight,
 .bet__test {
   display: grid;
   gap: 2px;
@@ -671,8 +682,7 @@
   border-radius: 8px;
 }
 
-.bet__row--upcoming,
-.bet__row--ahead {
+.bet__row--upcoming {
   color: var(--color-text-soft);
 }
 
@@ -717,21 +727,18 @@
   white-space: nowrap;
 }
 
-.bet__chip--test {
-  margin-right: 6px;
-  background: var(--color-warning-soft);
-  color: var(--color-warning);
+.bet__chip--vert,
+.bet__chip--orange,
+.bet__chip--rouge,
+.bet__chip--gagne {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.bet__chip--done,
-.bet__chip--ahead {
-  color: var(--color-success-strong);
-}
-
-.bet__chip--late {
-  color: var(--color-danger);
-}
-
-.bet__chip--current {
-  color: var(--color-accent);
+.bet__row-date small {
+  display: block;
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+  font-weight: 400;
 }

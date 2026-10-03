@@ -54,6 +54,11 @@ export interface V6Week {
   refKg: number;
   /** Colonne « Dimanche A / Test ». */
   a: string;
+  /**
+   * Reps de référence du dimanche de force (plancher « réf ≥ », ou la
+   * cible 5/5/5) ; absentes en semaine test et en essai libre.
+   */
+  refReps?: readonly number[];
   /** Colonne « Mardi B ». */
   b: string;
   /** Colonne « Jeudi C ». */
@@ -64,34 +69,48 @@ const w = (number: number, date: string, weightKg: number, kind: V6WeekKind, ref
   number, date, weightKg, kind, refKg, a, b, c,
 });
 
-export const V6_REFERENCE: readonly V6Week[] = [
+const RAW_REFERENCE: readonly V6Week[] = [
   w(1, "2026-10-04", 92, "force", 35, "35 — jusqu'à 5/5/5 ; réf ≥3/3/3", "42 — 3×8", "Normal + scap/grip"),
   w(2, "2026-10-11", 91, "force", 35, "35 — réf ≥4/3/3", "42 — 3×8–9", "Normal"),
   w(3, "2026-10-18", 90, "force", 35, "35 — cible 5/5/5", "42 — 3×9–10", "Normal"),
-  w(4, "2026-10-25", 89, "test", 35, "TEST #1 / allégée", "B réel — 2×8", "−50 %"),
+  w(4, "2026-10-25", 89, "test", 35, "TEST #1 / allégée", "A + 7 — 2×8", "−50 %"),
   w(5, "2026-11-01", 88, "force", 28, "28 — réf ≥3/3/3", "35 — 3×8", "+ négatives 2×2"),
   w(6, "2026-11-08", 87, "force", 28, "28 — réf ≥4/3/3", "35 — 3×8–9", "+ négatives"),
   w(7, "2026-11-15", 86, "force", 28, "28 — cible 5/5/5", "35 — 3×9–10", "+ négatives"),
-  w(8, "2026-11-22", 85, "test", 28, "TEST #2 / allégée", "B réel — 2×8", "−50 %"),
+  w(8, "2026-11-22", 85, "test", 28, "TEST #2 / allégée", "A + 7 — 2×8", "−50 %"),
   w(9, "2026-11-29", 84, "force", 21, "21 — réf ≥3/3/3", "28 — 3×8", "+ négatives"),
   w(10, "2026-12-06", 83, "force", 21, "21 — réf ≥4/3/3", "28 — 3×8–9", "+ négatives"),
   w(11, "2026-12-13", 82, "force", 21, "21 — réf ≥4/4/4", "28 — 3×9–10", "+ négatives"),
-  w(12, "2026-12-20", 81, "test", 21, "TEST #3 / allégée", "B réel — 2×8", "−50 %"),
+  w(12, "2026-12-20", 81, "test", 21, "TEST #3 / allégée", "A + 7 — 2×8", "−50 %"),
   w(13, "2026-12-27", 80, "force", 21, "21 — cible 5/5/5", "28 — 3×10", "+ négatives"),
   w(14, "2027-01-03", 79, "force", 14, "14 — réf ≥3/3/3", "21 — 3×8", "+ négatives"),
   w(15, "2027-01-10", 78, "force", 14, "14 — réf ≥4/3/3", "21 — 3×8–9", "+ négatives"),
-  w(16, "2027-01-17", 77, "test", 14, "TEST #4 / allégée", "B réel — 2×8", "−50 %"),
+  w(16, "2027-01-17", 77, "test", 14, "TEST #4 / allégée", "A + 7 — 2×8", "−50 %"),
   w(17, "2027-01-24", 76, "force", 14, "14 — réf ≥4/4/4", "21 — 3×9", "+ négatives"),
   w(18, "2027-01-31", 75, "force", 14, "14 — cible 5/5/5", "21 — 3×10", "+ négatives"),
   w(19, "2027-02-07", 75, "force", 7, "7 — réf ≥2–3/2–3/2", "14 — 3×8", "+ négatives"),
-  w(20, "2027-02-14", 75, "test", 7, "TEST #5 / allégée", "B réel — 2×8", "−50 %"),
+  w(20, "2027-02-14", 75, "test", 7, "TEST #5 / allégée", "A + 7 — 2×8", "−50 %"),
   w(21, "2027-02-21", 75, "force", 7, "7 — réf ≥3/3/3", "14 — 3×8–9", "+ négatives"),
   w(22, "2027-02-28", 75, "force", 7, "7 — réf ≥4/3/3", "14 — 3×9", "+ négatives"),
   w(23, "2027-03-07", 75, "force", 7, "7 — cible 5/5/5", "14 — 3×9–10", "léger"),
-  w(24, "2027-03-14", 75, "test", 7, "TEST #6 / allégée — peut aller à 0", "B réel — 2×8", "−50 %"),
+  w(24, "2027-03-14", 75, "test", 7, "TEST #6 / allégée — peut aller à 0", "A + 7 — 2×8", "−50 %"),
   w(25, "2027-03-21", 75, "essai", 7, "ESSAI LIBRE 0 + back-off 7 si nécessaire", "réduit", "récupération"),
   w(26, "2027-03-28", 75, "essai", 7, "ESSAI LIBRE 0", "très léger", "repos"),
 ];
+
+/** Les reps de référence (§ 12), lues dans la colonne A ; S19 « ≥ 2–3 / 2–3 / 2 » : le plancher 2 / 2 / 2. */
+const REF_REPS: Readonly<Record<number, readonly number[]>> = {
+  1: [3, 3, 3], 2: [4, 3, 3], 3: [5, 5, 5],
+  5: [3, 3, 3], 6: [4, 3, 3], 7: [5, 5, 5],
+  9: [3, 3, 3], 10: [4, 3, 3], 11: [4, 4, 4], 13: [5, 5, 5],
+  14: [3, 3, 3], 15: [4, 3, 3], 17: [4, 4, 4], 18: [5, 5, 5],
+  19: [2, 2, 2], 21: [3, 3, 3], 22: [4, 3, 3], 23: [5, 5, 5],
+};
+
+export const V6_REFERENCE: readonly V6Week[] = RAW_REFERENCE.map((week) => {
+  const refReps = REF_REPS[week.number];
+  return refReps ? { ...week, refReps } : week;
+});
 
 /** La semaine de référence de `date` (dimanche → samedi) ; avant S1 : S1 ; après S26 : S26. */
 export function v6WeekOf(date: string): V6Week {

@@ -1,8 +1,9 @@
 import type { PerformedExerciseBlock, WorkoutSession } from "../../domain";
 import { BET_EXERCISE_ID, BET_FORCE_TEMPLATES, formatBetSets, type BetSet } from "../goals/tractionBet";
 import {
-  isRepli, V6_LIGHT_TEMPLATE_ID, V6_MAX_RPE, V6_STEP_KG, V6_VALIDATION_REPS, v6Color, v6ForceSession, v6LightSession, v6WeekOf, type V6Color, type V6State,
+  isRepli, V6_LIGHT_TEMPLATE_ID, V6_MAX_RPE, V6_STEP_KG, V6_VALIDATION_REPS, v6Color, v6ForceSession, v6LightSession, type V6Color, type V6State,
 } from "../goals/tractionV6";
+import { v6StatusLabel } from "../goals/tractionV6View";
 import type { BetBanner } from "./ExerciseBlockCard";
 
 /**
@@ -19,18 +20,7 @@ import type { BetBanner } from "./ExerciseBlockCard";
 const TONES: Record<V6Color, string> = { vert: "on_track", orange: "watch", rouge: "late", gagne: "reached" };
 
 function statusOf(state: V6State, date: string): { label: string; tone: string } {
-  const color = v6Color(state, date);
-  const ref = v6WeekOf(date).refKg;
-  const crans = (state.aKg - ref) / V6_STEP_KG;
-  const label =
-    color === "gagne"
-      ? "Objectif gagné"
-      : crans < 0
-        ? "En avance sur la référence"
-        : crans === 0
-          ? "Conforme à la référence"
-          : `${crans} cran${crans > 1 ? "s" : ""} plus assisté que la référence (${ref} kg)`;
-  return { label, tone: TONES[color] };
+  return { label: v6StatusLabel(state, date), tone: TONES[v6Color(state, date)] };
 }
 
 function lastLine(state: V6State): string {

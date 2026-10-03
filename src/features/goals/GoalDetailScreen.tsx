@@ -13,6 +13,7 @@ import { todayLocalDate } from "../today/useTodayData";
 import { activateNextSegment, editGoalSegment, LEGS_MEASURES } from "./goalActions";
 import { BodyCompositionSection } from "./BodyCompositionSection";
 import { TractionBetSection } from "./TractionBetSection";
+import { v6ShortStatus } from "./tractionV6View";
 import { GoalCurveChart } from "./GoalCurveChart";
 import { GoalAdviceTab, GoalExercisesTab } from "./GoalTabs";
 import { loadGoalDetail, type GoalDetail } from "./goalDetail";
@@ -74,7 +75,13 @@ export function GoalDetailScreen() {
   /* Poids : pas de test, une moyenne dès 3 pesées dans une semaine (§ 5.4). */
   const weight = segment.measure?.source === "weight_weekly_average";
   const statusCard =
-    weight && evaluation.kind === "no_result"
+    detail.bet && evaluation.kind === "tracking"
+    ? /* Pari traction V6 : l'écart de paliers, jamais un écart en semaines. */
+      {
+        value: v6ShortStatus(detail.bet.state, today).label,
+        caption: `Palier A ${detail.bet.state.aKg} kg · référence S${detail.bet.week.number} ${detail.bet.week.refKg} kg`,
+      }
+    : weight && evaluation.kind === "no_result"
       ? { value: "—", caption: "Première moyenne après 3 pesées dans une semaine" }
       : goalStatusCard(evaluation, nextTest);
 

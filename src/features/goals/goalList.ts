@@ -6,6 +6,8 @@ import type { Goal, TestCycleSettings, TestProtocol, TestProtocolVersion } from 
 import { goalBadge, goalProtocolId, goalRowText, goalShortStatus, type GoalBadge, type GoalRowText, type GoalShortStatusTone } from "../../domain/rules/goalListRules";
 import { formatTestNumber } from "../../domain/rules/testResultRules";
 import { goalProgressFrom } from "./goalProgress";
+import { v6State } from "./tractionV6";
+import { v6ShortStatus } from "./tractionV6View";
 import { getAllGoals } from "../../db/repositories/goalRepository";
 
 /**
@@ -19,7 +21,7 @@ export interface GoalListRow {
   text: GoalRowText;
   badge?: GoalBadge;
   /** Statut en un mot (lignes compactes de l'Accueil). */
-  status?: { label: string; tone: GoalShortStatusTone };
+  status?: { label: string; tone: GoalShortStatusTone | "warning" };
 }
 
 export interface GoalList {
@@ -49,6 +51,10 @@ export async function loadGoalList(today: string): Promise<GoalList> {
     getSetting("testCycle"),
     getSetting("testSchedule"),
   ]);
+  /* Pari traction V6 : le statut de la traction vient de l'écart de paliers, jamais d'un écart en semaines. */
+  const tractionState = goals.some((goal) => goal.key === "traction")
+    ? v6State(await db.workouts.where("status").equals("completed").toArray(), today)
+    : undefined;
 
   const protocolById = new Map<string, TestProtocol>(protocols.map((protocol) => [protocol.id, protocol]));
   const versions = await Promise.all(protocols.map((protocol) => getTestProtocolVersion(protocol.activeVersionId)));
@@ -81,7 +87,7 @@ export async function loadGoalList(today: string): Promise<GoalList> {
         weighedToday,
         today,
       });
-      const status = goalShortStatus(evaluation);
+      const status = goal.key === "traction" && tractionState && evaluation.kind === "tracking" ? v6ShortStatus(tractionState, today) : goalShortStatus(evaluation);
       return { goal, number: index + 1, text, ...(badge ? { badge } : {}), ...(status ? { status } : {}) };
     });
 

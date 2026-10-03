@@ -1,37 +1,56 @@
-import { Check, Target } from "lucide-react";
+import { AlertTriangle, Target } from "lucide-react";
 import { formatFr } from "../../domain/rules/dateFr";
-import { getWeekStartDate } from "../../domain/rules/programRules";
-import { BET_PLAN, formatBetSets, testHint, type BetProgress, type BetRow, type BetSet } from "./tractionBet";
+import { formatBetSets, type BetSet } from "./tractionBet";
+import type { V6Color } from "./tractionV6";
+import type { V6Progress, V6Row } from "./tractionV6View";
 
 /**
- * Objectif Traction : le pari du 31/03/2027 (03/10/2026). En tête : ce qui
- * était prévu cette semaine, ce qui a été fait, ce qu'il faut faire à la
- * prochaine Muscu A, l'écart en semaines. Puis la vue mensuelle (tirée du
- * rétroplanning) et le rétroplanning complet, repliable. Le rétroplanning
- * est figé : il ne se décale jamais ; la séance suit la performance réelle.
+ * Objectif Traction, pari V6 (04/10/2026) : 1 traction stricte au plus
+ * tard le 31/03/2027. En tête : le palier A réel face à la référence de la
+ * semaine, avec un statut vert / orange / rouge selon l'écart de paliers
+ * seulement ; la prochaine Muscu A et la Muscu B ; le poids et la charge
+ * effective indicative ; le garde-fou. Puis la référence V6 S1-S26, fixe,
+ * face au réel, repliable. Jamais d'écart en semaines.
  */
 
 const day = (date: string) => formatFr(date, "dd/MM");
-const reps = (sets: readonly BetSet[]) => sets.map((set) => set.reps).join(" / ");
 const kg = (value: number) => `${String(value).replace(".", ",")} kg`;
+const reps = (values: readonly number[]) => values.join(" / ");
 
-/** « 42 kg · 8 / 8 / 6 », ou le détail par série si l'aide change d'une série à l'autre. */
+/** « 35 kg · 4 / 3 / 3 », ou le détail par série si l'aide change d'une série à l'autre (repli). */
 function formatDone(sets: readonly BetSet[]): string {
   const levels = new Set(sets.map((set) => set.assistKg));
-  return levels.size === 1 ? `${kg(sets[0]!.assistKg)} · ${reps(sets)}` : formatBetSets(sets);
+  return levels.size === 1 ? `${kg(sets[0]!.assistKg)} · ${reps(sets.map((set) => set.reps))}` : formatBetSets(sets);
 }
 
-const STATE_LABELS: Record<BetRow["state"], string> = {
-  done: "Atteint",
-  late: "En retard",
-  current: "Cette semaine",
-  ahead: "Déjà atteint",
-  upcoming: "À venir",
-};
+const COLOR_LABELS: Record<V6Color, string> = { vert: "Vert", orange: "Orange", rouge: "Rouge", gagne: "Gagné" };
 
-export function TractionBetSection({ bet }: { bet: BetProgress }) {
-  const expectedRow = bet.expected >= 0 ? BET_PLAN[bet.expected] : undefined;
-  const thisWeek = bet.rows.find((item) => item.row.date === getWeekStartDate(bet.today));
+function Dot({ color }: { color: V6Color }) {
+  return <span className={`bet__dot bet__dot--${color}`} aria-label={COLOR_LABELS[color]} role="img" />;
+}
+
+function RowReal({ row }: { row: V6Row }) {
+  const parts: string[] = [];
+  if (row.session) {
+    const flags = [row.repli ? "repli" : undefined, row.validatedKg !== undefined ? `${kg(row.validatedKg)} validé` : undefined, row.regression ? "en baisse" : undefined].filter(Boolean);
+    parts.push(`Réel : ${formatDone(row.session.sets)}${row.compare ? ` (réf ≥ ${reps(row.compare.ref)})` : ""}${flags.length > 0 ? ` · ${flags.join(" · ")}` : ""}`);
+  } else if (row.week.kind === "force" && row.state === "past") {
+    parts.push("Pas de Muscu A de force");
+  }
+  if (row.testKg !== undefined) parts.push(`Test : ${kg(row.testKg)} obtenu`);
+  if (row.weightKg !== undefined) parts.push(`Poids : ${kg(row.weightKg)}`);
+  return parts.length > 0 ? <span className="bet__row-done">{parts.join(" — ")}</span> : null;
+}
+
+export function TractionBetSection({ bet }: { bet: V6Progress }) {
+  const { state, week, next, light } = bet;
+  const lastRow = state.last ? bet.rows.find((row) => row.session?.workoutId === state.last!.workoutId) : undefined;
+  const real =
+    state.phase === "gagne"
+      ? "Objectif gagné : 1 traction stricte"
+      : state.phase === "essai_libre"
+        ? "Phase essai libre : 0 kg d'abord, séries à 7 kg"
+        : `${kg(state.aKg)} d'aide`;
 
   return (
     <section className="goal-section bet" aria-labelledby="bet-title">
@@ -39,97 +58,112 @@ export function TractionBetSection({ bet }: { bet: BetProgress }) {
         <h2 id="bet-title">
           <Target size={18} aria-hidden="true" /> 1 traction stricte le 31/03/2027
         </h2>
-        <span className={`bet__status bet__status--${bet.status}`}>{bet.statusLabel}</span>
+        <span className={`bet__status bet__status--${bet.color}`}>
+          <Dot color={bet.color} />
+          {bet.statusLabel}
+        </span>
       </div>
 
       <dl className="bet__facts">
         <div>
-          <dt>Prévu à cette date</dt>
+          <dt>Palier A réel</dt>
           <dd>
-            {expectedRow ? formatBetSets(expectedRow.sets) : "rien encore : le rétroplanning commence le 04/10"}
-            {expectedRow && <small>Rétroplanning, semaine du {day(expectedRow.date)}</small>}
-          </dd>
-        </div>
-        <div>
-          <dt>Réalisé</dt>
-          <dd>
-            {bet.last ? formatDone(bet.last.sets) : "—"}
-            {bet.last && (
-              <small>
-                Muscu A du {day(bet.last.date)}
-                {bet.last.sets.some((set) => set.rpe !== undefined) ? ` · RPE ${bet.last.sets.map((set) => set.rpe ?? "—").join(" / ")}` : ""}
-              </small>
-            )}
-          </dd>
-        </div>
-        <div>
-          <dt>Prochaine Muscu A</dt>
-          <dd>
-            {bet.prescription.minimum}
-            <small>D'après votre dernier résultat ; validation : {bet.prescription.validation}</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Écart</dt>
-          <dd>
-            {bet.gapLabel}
+            {real}
             <small>
-              {bet.weeksLeft} semaine{bet.weeksLeft > 1 ? "s" : ""} jusqu'au 31/03 · {bet.levelsLeft} palier{bet.levelsLeft > 1 ? "s" : ""} restant{bet.levelsLeft > 1 ? "s" : ""}
+              Référence S{week.number} ({day(week.date)}) : {kg(week.refKg)}
+              {week.kind === "test" ? " · semaine test" : week.kind === "essai" ? " · essais libres" : ""}
             </small>
           </dd>
         </div>
         <div>
-          <dt>Prévision</dt>
-          <dd>{bet.forecast ? `0 kg vers le ${formatFr(bet.forecast, "d MMMM yyyy")}` : "après deux nouveaux paliers validés"}</dd>
+          <dt>Dernière Muscu A</dt>
+          <dd>
+            {state.last ? formatDone(state.last.sets) : "—"}
+            {state.last && (
+              <small>
+                {day(state.last.date)}
+                {state.last.sets.some((set) => set.rpe !== undefined) ? ` · RPE ${state.last.sets.map((set) => set.rpe ?? "—").join(" / ")}` : ""}
+                {lastRow?.compare ? ` · réf ≥ ${reps(lastRow.compare.ref)}` : ""}
+                {lastRow?.repli ? " · repli : exclue des régressions" : ""}
+              </small>
+            )}
+          </dd>
+        </div>
+        {state.phase !== "gagne" && (
+          <div>
+            <dt>Prochaine Muscu A</dt>
+            <dd>
+              {next.lines[0]}
+              {next.lines[2] && <small>{next.lines[2]}</small>}
+            </dd>
+          </div>
+        )}
+        {state.phase !== "gagne" && (
+          <div>
+            <dt>Muscu B</dt>
+            <dd>{light.label}</dd>
+          </div>
+        )}
+        <div>
+          <dt>Poids</dt>
+          <dd>
+            {bet.weight ? `${kg(bet.weight.kg)} le ${formatFr(bet.weight.date, "d MMM")}` : "pas encore de pesée"} · référence {kg(week.weightKg)}
+            {bet.effectiveKg !== undefined && (
+              <small>Charge effective indicative ≈ {kg(bet.effectiveKg)} (poids − assistance) : une tendance, pas une mesure.</small>
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>Date limite</dt>
+          <dd>
+            31/03/2027
+            <small>Dernière chance le 28/03, repos le 30/03, essai final le 31/03.</small>
+          </dd>
         </div>
       </dl>
 
-      <ol className="bet__trajectory" aria-label="Repères du rétroplanning">
-        {bet.trajectory.map((point) => (
-          <li key={point.date} className={point.reached ? "bet__point bet__point--reached" : point.due ? "bet__point bet__point--late" : "bet__point"}>
-            {point.reached && <Check size={13} strokeWidth={3} aria-hidden="true" />}
-            {point.label} · {day(point.date)}
-          </li>
-        ))}
-      </ol>
+      {bet.guard && (
+        <p className="bet__alert" role="status">
+          <AlertTriangle size={16} aria-hidden="true" /> {bet.guard}
+        </p>
+      )}
+      {bet.earlyTry && <p className="bet__test">{bet.earlyTry}</p>}
 
       <details className="bet__plan" open={false}>
-        <summary>Rétroplanning jusqu'au 31/03</summary>
+        <summary>Référence V6 face au réel (S1–S26)</summary>
         <p className="bet__plan-lead">
-          Figé : les dates ne bougent jamais. Si une étape est ratée, la séance suivante la refait, et l'écart s'affiche.
+          Référence fixe : elle ne se décale jamais. Le réel s'affiche en dessous ; la couleur ne dépend que du palier A, les reps ne la changent pas.
         </p>
         <ol className="bet__rows">
-          {bet.rows.map((item) => (
+          {bet.rows.map((row) => (
             <li
-              key={item.row.date}
-              className={`bet__row bet__row--${item.state}${item.row.test ? " bet__row--test" : ""}${item === thisWeek ? " bet__row--now" : ""}`}
+              key={row.week.date}
+              className={`bet__row bet__row--${row.state}${row.week.kind === "test" ? " bet__row--test" : ""}`}
             >
-              <span className="bet__row-date">{day(item.row.date)}</span>
+              <span className="bet__row-date">
+                S{row.week.number}
+                <small>{day(row.week.date)}</small>
+              </span>
               <span className="bet__row-body">
                 <span className="bet__row-plan">
-                  {item.row.test && <span className="bet__chip bet__chip--test">TEST</span>}
-                  {item.row.strict ? `Essai de traction stricte, puis ${formatBetSets(item.row.sets.slice(1))}` : formatBetSets(item.row.sets)}
+                  {row.week.kind === "force" ? `A ${row.week.a}` : row.week.a}
                 </span>
-                {item.row.test && (
-                  <span className="bet__row-test">
-                    Test : {item.row.test.note}
-                    {item.testResultKg !== undefined ? ` · obtenu : ${kg(item.testResultKg)}` : ""}
-                  </span>
-                )}
-                {item.done && <span className="bet__row-done">Réalisé : {formatDone(item.done.sets)}</span>}
-                {item.row.milestone && <span className="bet__row-milestone">{item.row.milestone}</span>}
+                <span className="bet__row-test">
+                  B {row.week.b} · C {row.week.c} · {kg(row.week.weightKg)}
+                </span>
+                <RowReal row={row} />
               </span>
-              <span className={`bet__chip bet__chip--${item.state}`}>{STATE_LABELS[item.state]}</span>
+              {row.color && row.aKg !== undefined ? (
+                <span className={`bet__chip bet__chip--${row.color}`}>
+                  <Dot color={row.color} /> {row.color === "gagne" ? "Gagné" : `A ${kg(row.aKg)}`}
+                </span>
+              ) : (
+                <span className="bet__chip">À venir</span>
+              )}
             </li>
           ))}
         </ol>
       </details>
-
-      <p className="bet__weight">
-        Poids : {bet.weight.last ? `${kg(bet.weight.last.kg)} le ${formatFr(bet.weight.last.date, "d MMM")}` : "pas encore de pesée"} · cible du moment {kg(bet.weight.target)}
-        <small>Deux courbes liées, pas une équation : perdre du poids aide, sans dire à lui seul quelle aide vous pouvez enlever.</small>
-      </p>
-      <p className="bet__test">{testHint(bet.prescription)}</p>
     </section>
   );
 }
