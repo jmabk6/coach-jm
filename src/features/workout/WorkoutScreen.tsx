@@ -60,7 +60,8 @@ import { RestBand } from "./RestBand";
 import { cancelWorkout, isUntouchedWorkout } from "./deleteWorkout";
 import { endWorkout } from "./finishWorkout";
 import { betBannerFor } from "./betBanner";
-import { BET_EXERCISE_ID, betProgress } from "../goals/tractionBet";
+import { BET_EXERCISE_ID } from "../goals/tractionBet";
+import { v6State } from "../goals/tractionV6";
 import { findLastComparableStep } from "./lastPerformance";
 import { RestBar } from "./RestBar";
 import { RestCard } from "./RestCard";
@@ -272,9 +273,9 @@ export function WorkoutScreen() {
   const numbering = calculatePerformedNumbering(blocks);
   const progress = calculateExecutionProgress(blocks);
   const counts = countBlockStatuses(blocks);
-  /* Pari traction (03/10/2026) : d'après les séances faites, jusqu'au jour de cette séance. */
+  /* Pari traction V6 (04/10/2026) : le palier A réel, d'après les autres séances faites jusqu'au jour de celle-ci. */
   const bet = blocks.some((block) => block.kind === "exercise" && block.exerciseId === BET_EXERCISE_ID)
-    ? betProgress(completedWorkouts, [], workout.date)
+    ? v6State(completedWorkouts.filter((item) => item.id !== workout.id), workout.date)
     : undefined;
   const hasAdded = blocks.some((block) => block.kind !== "note" && block.addedDuringWorkout);
   const currentNumber =
@@ -305,8 +306,17 @@ export function WorkoutScreen() {
       nextUp={describeNextUp(
         workout,
         exerciseById,
-        (block) => proposeSeriesValues(block, lastByExercise.get(block.exerciseId)?.series),
         (block) => {
+          const values = proposeSeriesValues(block, lastByExercise.get(block.exerciseId)?.series);
+          /* Traction du pari : la série prévue par le moteur V6 (repli compris). */
+          const pending = [...(block.series ?? [])].sort((a, b) => a.position - b.position).findIndex((series) => series.status !== "completed");
+          const planned = bet && pending >= 0 ? betBannerFor(workout, block, bet)?.sets[pending] : undefined;
+          return planned ? { ...values, load: { kind: "total" as const, kg: planned.assistKg }, reps: planned.reps } : values;
+        },
+        (block) => {
+          /* Traction du pari : la charge du moteur V6. */
+          const planned = bet ? betBannerFor(workout, block, bet)?.sets[0] : undefined;
+          if (planned) return formatAdvisedLoad({ value: planned.assistKg, unit: "kg", assistance: true });
           const advised = advisedLoadOf(
             exerciseById.get(block.exerciseId),
             block.frameVersionId ? frames.versionById.get(block.frameVersionId) : undefined,

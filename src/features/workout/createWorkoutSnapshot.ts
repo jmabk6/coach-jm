@@ -50,7 +50,8 @@ function createExerciseBlock(
   const performedBlockId = `workout-block-${block.id}`;
   const frameVersionId = frameVersionByExercise.get(block.exerciseId);
   const reduced =
-    frameVersionId !== undefined && isReducedPrescription(block.instructions, versionById.get(frameVersionId));
+    frameVersionId !== undefined &&
+    (block.outsideFrame === true || isReducedPrescription(block.instructions, versionById.get(frameVersionId)));
 
   const base: PerformedExerciseBlock = {
     id: performedBlockId,
@@ -191,6 +192,12 @@ function createGroupBlock(
  * Un test attaché à l'instance démarrée (lot G.3) et la version de son
  * protocole, capturée au démarrage comme une version de cadre.
  */
+/** Moins de séries sur une brique du modèle. */
+export interface SetsAdjustment {
+  blockId: Id;
+  sets: number;
+}
+
 export interface SnapshotTest {
   test: PlannedTest;
   protocolVersionId: Id;
@@ -200,9 +207,10 @@ export interface SnapshotTest {
  * Ajustements du jour de test (§ 2.3) : moins de séries sur une brique
  * (traction assistée : 2 au lieu de 3). La brique devient une
  * prescription réduite : ni validation de palier, ni stagnation.
+ * `extra` : les allègements hors test (Muscu B en semaine test, V6).
  */
-function applyAdjustments(blocks: SessionBlock[], tests: ReadonlyArray<SnapshotTest>): SessionBlock[] {
-  const sets = new Map<Id, number>();
+function applyAdjustments(blocks: SessionBlock[], tests: ReadonlyArray<SnapshotTest>, extra: ReadonlyArray<SetsAdjustment>): SessionBlock[] {
+  const sets = new Map<Id, number>(extra.map((adjustment) => [adjustment.blockId, adjustment.sets]));
   for (const { test } of tests) {
     for (const adjustment of test.adjustments ?? []) sets.set(adjustment.blockId, adjustment.sets);
   }
@@ -331,8 +339,9 @@ export function createWorkoutSnapshot(
   frameVersionByExercise: FrameVersionByExercise = NO_FRAMES,
   versionById: FrameVersionById = NO_VERSIONS,
   tests: ReadonlyArray<SnapshotTest> = [],
+  adjustments: ReadonlyArray<SetsAdjustment> = [],
 ): PerformedBlock[] {
-  const blocks = applyAdjustments(template.blocks, tests)
+  const blocks = applyAdjustments(template.blocks, tests, adjustments)
     .slice()
     .sort((a, b) => a.position - b.position)
     .map((block): PerformedBlock => {

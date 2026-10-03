@@ -60,7 +60,7 @@ describe("modèles V2", () => {
       );
     expect(describe("v2-muscu-a")).toEqual([
       "tapis",
-      "traction-assistee 3x6-8",
+      "traction-assistee 3x1-5",
       "rowing-poulie-basse 3x8-12",
       "tirage-vertical 2x8-12",
       "chest-press 2x8-12",
@@ -71,7 +71,7 @@ describe("modèles V2", () => {
     /* Pari traction (03/10/2026) : la traction légère en premier. */
     expect(describe("v2-muscu-b")).toEqual([
       "tapis",
-      "traction-assistee 2x8-10",
+      "traction-assistee 3x8-10",
       "chest-press 3x8-12",
       "developpe-incline-halteres 3x8-12",
       "developpe-epaules-machine 3x8-10",
@@ -93,12 +93,12 @@ describe("modèles V2", () => {
     ]);
   });
 
-  it("durées estimées : Muscu A dans la cible 65-75 min, Muscu B (79) et C (76, suspension ajoutée le 03/10) au-dessus, signalé ; Cardio A 45, B 38, C 57", () => {
+  it("durées estimées : Muscu A dans la cible 65-75 min, Muscu B (82, traction 3 × 8-10 le 04/10) et C (76, suspension ajoutée le 03/10) au-dessus, signalé ; Cardio A 45, B 38, C 57", () => {
     expect(minutes("v2-muscu-a")).toBeGreaterThanOrEqual(65);
     expect(minutes("v2-muscu-a")).toBeLessThanOrEqual(75);
     expect(minutes("v2-muscu-c")).toBe(76);
     /* Cinq gros mouvements à 2 min de repos : l'estimation dépasse la cible (rapport du 26/09/2026). */
-    expect(minutes("v2-muscu-b")).toBe(79);
+    expect(minutes("v2-muscu-b")).toBe(82);
     expect([minutes("v2-cardio-a"), minutes("v2-cardio-b"), minutes("v2-cardio-c")]).toEqual([45, 38, 57]);
   });
 

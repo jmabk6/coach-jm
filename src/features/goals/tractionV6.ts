@@ -266,16 +266,33 @@ export function v6ForceSession(state: V6State): V6ForceSession {
   };
 }
 
-/** Mardi B : un cran plus assisté que A ; 3 × 8-10 (semaine test : 2 × 8), RPE 6-8, jamais à l'échec. */
+/**
+ * Mardi B : un cran plus assisté que A ; 3 × 8-10 (semaine test : 2 × 8),
+ * RPE 6-8, jamais à l'échec. Préremplissage au bas de la plage : 8.
+ */
 export function v6LightSession(state: V6State, date: string): { assistKg: number; sets: BetSet[]; label: string } {
   const test = v6WeekOf(date).kind === "test";
   const count = test ? 2 : 3;
-  const reps = test ? 8 : 10;
   return {
     assistKg: state.bKg,
-    sets: Array.from({ length: count }, () => ({ assistKg: state.bKg, reps })),
+    sets: Array.from({ length: count }, () => ({ assistKg: state.bKg, reps: 8 })),
     label: test ? `${state.bKg} kg — 2 × 8, RPE 6-8 (semaine test)` : `${state.bKg} kg — 3 × 8-10, RPE 6-8, jamais à l'échec`,
   };
+}
+
+/** Les briques traction du programme V2. */
+export const V6_FORCE_BLOCK_ID = "v2-muscu-a-traction";
+export const V6_LIGHT_BLOCK_ID = "v2-muscu-b-traction";
+export const V6_LIGHT_TEMPLATE_ID = "v2-muscu-b";
+
+/**
+ * Allègement au démarrage d'une séance (§ 9) : en semaine test, la
+ * traction de Muscu B passe à 2 séries. Le reste de l'allègement (Muscu C,
+ * Cardio C) viendra avec le programme.
+ */
+export function v6SnapshotAdjustments(templateId: string, date: string): Array<{ blockId: string; sets: number }> {
+  if (templateId !== V6_LIGHT_TEMPLATE_ID || date < V6_START_DATE) return [];
+  return v6WeekOf(date).kind === "test" ? [{ blockId: V6_LIGHT_BLOCK_ID, sets: 2 }] : [];
 }
 
 /* -------------------------------------------------------------------------- */

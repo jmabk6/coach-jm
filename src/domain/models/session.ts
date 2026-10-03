@@ -78,6 +78,13 @@ export interface ExerciseBlock extends BaseBlock {
   instructions: ExerciseInstructions;
 
   notes?: string;
+
+  /**
+   * Hors palier (pari traction V6, 04/10/2026) : la brique ne valide
+   * jamais le cadre et n'entre pas en stagnation, quel que soit son nombre
+   * de séries — la traction légère de Muscu B, un cran plus assistée que A.
+   */
+  outsideFrame?: true;
 }
 
 export interface GroupBlock extends BaseBlock {

@@ -154,10 +154,13 @@ export function ExerciseBlockCard({
   /* Tableau des séries (M9, lot M.3) : charge et répétitions en colonnes. */
   const tabular = seriesFieldLayout(exercise) === "load_reps";
   const assistance = loadSemanticsOf(exercise) === "assistance";
-  /* Lot M.2 : un exercice à venir annonce sa charge conseillée, chiffrée. */
+  /* Lot M.2 : un exercice à venir annonce sa charge conseillée, chiffrée ;
+     la traction du pari, celle du moteur V6. */
   const advised =
     !expanded && !performedOrSkipped(block) && !hasCompletedEntries(block) && block.series
-      ? advisedLoadOf(exercise, frameVersion, lastTime?.allSeries)
+      ? bet?.sets[0]
+        ? { value: bet.sets[0].assistKg, unit: "kg" as const, assistance: true }
+        : advisedLoadOf(exercise, frameVersion, lastTime?.allSeries)
       : undefined;
 
   return (

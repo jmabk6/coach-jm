@@ -16,6 +16,7 @@ import type {
 import { assertRoutineStartable } from "../../domain/rules/sessionTemplateRules";
 import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { createWorkoutSnapshot, type SnapshotTest } from "./createWorkoutSnapshot";
+import { v6SnapshotAdjustments } from "../goals/tractionV6";
 
 export async function startWorkout(
   plannedSessionId: Id,
@@ -98,7 +99,8 @@ export async function startWorkout(
     startedAt: now,
     lastActionAt: now,
     activeDurationSec: 0,
-    blocks: createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById, tests),
+    /* Pari traction V6 : Muscu B allégée en semaine test. */
+    blocks: createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById, tests, v6SnapshotAdjustments(template.id, plannedSession.date)),
     createdAt: now,
     updatedAt: now,
   };

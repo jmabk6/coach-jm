@@ -77,6 +77,8 @@ export interface InstallMarkers {
   tractionPriority20261003?: string;
   /** Test traction, version 2 par paliers de 7 kg (seed 25). */
   tractionTest7kg20261003?: string;
+  /** Seed 26 : pari traction V6 (Muscu A 3 × jusqu'à 5, Muscu B 3 × 8-10 hors palier, cadre 3 × 1-5). */
+  tractionV620261004?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

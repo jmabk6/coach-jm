@@ -13,6 +13,7 @@ import { seedTestsWeek20260927 } from "../program/seedTestsWeek20260927";
 import { seedRemoveOldMuscuA } from "../sessions/seedRemoveOldMuscuA";
 import { seedArchiveProgramV1, seedProgramV2 } from "../program/seedProgramV2";
 import { seedTractionPriority20261003 } from "../program/seedTractionPriority";
+import { seedTractionV620261004 } from "../program/seedTractionV6";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
 import { seedGoals } from "../goals/seedGoals";
 import { seedTestProtocols } from "../tests/seedTestProtocols";
@@ -80,13 +81,15 @@ export const SEEDS: SeedStep[] = [
   { name: "tractionPriority20261003", dependsOn: ["programV2"], run: () => seedTractionPriority20261003() },
   /* Seed 25 (03/10/2026) : le test traction par paliers de 7 kg (version 2). */
   { name: "tractionTest7kg20261003", dependsOn: ["testProtocols"], run: () => seedTractionTest7kg20261003() },
+  /* Seed 26 (04/10/2026) : pari traction V6 — Muscu A, Muscu B et le cadre de la traction. */
+  { name: "tractionV620261004", dependsOn: ["programV2", "tractionIncrement20261003"], run: () => seedTractionV620261004() },
 ];
 
 /**
  * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
  * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
  */
-export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003"].includes(seed.name));
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004"].includes(seed.name));
 
 export interface SeedReport {
   ran: string[];

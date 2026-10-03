@@ -162,5 +162,8 @@ describe("prescriptions, charge effective, essai anticipé", () => {
     expect(at7.aKg).toBe(7);
     expect(v6EarlyFreeTry(at7, [{ date: "2027-02-06", kg: 75 }])).toContain("Essai traction libre recommandé");
     expect(v6EarlyFreeTry(at7, [{ date: "2027-02-06", kg: 60 }])).toBeUndefined();
+    /* 5 reps dans UNE série : 4 + 4 + 4 cumulées ne déclenchent rien. */
+    const cumulated = v6State([...workouts, muscuA("2027-02-07", [set(7, 4), set(7, 4), set(7, 4)])], "2027-02-08");
+    expect(v6EarlyFreeTry(cumulated, [{ date: "2027-02-06", kg: 75 }])).toBeUndefined();
   });
 });

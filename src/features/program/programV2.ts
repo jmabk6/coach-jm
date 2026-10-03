@@ -36,7 +36,7 @@ function exercise(
   position: number,
   exerciseId: string,
   instructions: ExerciseInstructions,
-  extra: Partial<Pick<ExerciseBlock, "notes" | "role">> = {},
+  extra: Partial<Pick<ExerciseBlock, "notes" | "role" | "outsideFrame">> = {},
 ): ExerciseBlock {
   return { id, kind: "exercise", position, exerciseId, instructions, ...extra };
 }
@@ -45,7 +45,7 @@ function reps(sets: number, min: number, max: number, restBetweenSetsSec: number
   return { shape: "reps", sets, reps: { min, max }, restBetweenSetsSec };
 }
 
-/** Repos : gros mouvements 2 min (traction 2 min 30), isolations 90 s. */
+/** Repos : gros mouvements 2 min (traction de Muscu A 3 min), isolations 90 s. */
 const BIG = 120;
 const ISOLATION = 90;
 
@@ -79,7 +79,7 @@ function warmup(prefix: string): ExerciseBlock {
 export const CURL_BICEPS_ID = "import-curl-biceps-ez";
 
 /** Muscu B, traction légère (03/10/2026). */
-export const TRACTION_LIGHT_NOTE = "Traction légère, en premier : 2 × 10 un palier d'aide au-dessus de la Muscu A, RPE 6-7. Du geste, pas un effort maximal.";
+export const TRACTION_LIGHT_NOTE = "Traction légère, en premier : un cran d'aide au-dessus de la Muscu A (A + 7 kg), 3 × 8-10, RPE 6-8, jamais à l'échec. Semaine test : 2 × 8.";
 /** Muscu C, suspension (03/10/2026). */
 export const SUSPENSION_NOTE = "Facile et technique : omoplates basses et serrées, bras tendus. Pas un test de durée maximale : s'arrêter bien avant la fatigue du grip, pour arriver frais à la Muscu A.";
 
@@ -94,7 +94,8 @@ const muscuA: TemplateContent = {
   description: "Environ 70 min.",
   blocks: [
     warmup("v2-muscu-a"),
-    exercise("v2-muscu-a-traction", 1, "traction-assistee", reps(3, 6, 8, 150)),
+    /* Pari traction V6 (04/10/2026) : 3 séries jusqu'à 5 reps propres, 3 min de repos. */
+    exercise("v2-muscu-a-traction", 1, "traction-assistee", reps(3, 1, 5, 180)),
     exercise("v2-muscu-a-rowing", 2, "rowing-poulie-basse", reps(3, 8, 12, BIG)),
     exercise("v2-muscu-a-tirage-vertical", 3, "tirage-vertical", reps(2, 8, 12, BIG)),
     /* N5 : 2 séries contre 3 au cadre (suit B) — prescription réduite, ni palier ni stagnation. */
@@ -116,9 +117,9 @@ const muscuB: TemplateContent = {
   description: "Environ 70 min.",
   blocks: [
     warmup("v2-muscu-b"),
-    /* Pari traction (03/10/2026) : la traction légère en premier, faite à frais.
-       N5 : 2 séries contre 3 au cadre (suit A) — prescription réduite, ni palier ni stagnation. */
-    exercise("v2-muscu-b-traction", 1, "traction-assistee", reps(2, 8, 10, BIG), { notes: TRACTION_LIGHT_NOTE }),
+    /* Pari traction V6 (04/10/2026) : la traction légère en premier, faite à frais ; 3 × 8-10,
+       2 × 8 en semaine test. Hors palier : ni validation du cadre, ni stagnation. */
+    exercise("v2-muscu-b-traction", 1, "traction-assistee", reps(3, 8, 10, BIG), { notes: TRACTION_LIGHT_NOTE, outsideFrame: true }),
     exercise("v2-muscu-b-chest-press", 2, "chest-press", reps(3, 8, 12, BIG)),
     exercise("v2-muscu-b-developpe-incline", 3, "developpe-incline-halteres", reps(3, 8, 12, BIG)),
     exercise("v2-muscu-b-developpe-epaules", 4, "developpe-epaules-machine", reps(3, 8, 10, BIG)),
