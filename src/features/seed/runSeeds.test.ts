@@ -61,19 +61,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
     expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
     const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
-    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso, testsWeek20260927: iso, removeOldMuscuA: iso, legCurlCouche20260927: iso, programV2: iso, tractionTarget20261003: iso, ...(formatLocalDate(new Date()) >= "2026-10-04" ? { archiveProgramV1: iso } : {}) });
+    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso, testsWeek20260927: iso, removeOldMuscuA: iso, legCurlCouche20260927: iso, programV2: iso, tractionTarget20261003: iso, tractionIncrement20261003: iso, tractionPriority20261003: iso, tractionTest7kg20261003: iso, ...(formatLocalDate(new Date()) >= "2026-10-04" ? { archiveProgramV1: iso } : {}) });
     expect(await db.goals.count()).toBe(7);
     expect(await db.testProtocols.count()).toBe(7);
     expect(await db.exercises.count()).toBeGreaterThan(0);
@@ -232,6 +232,7 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
       (file.stores.strengthFrames ?? []) as StrengthFrame[],
       (file.stores.strengthFrameVersions ?? []) as StrengthFrameVersion[],
       (frameId) => seededVersions.find((version) => version.id === `${frameId}-v2`),
+      (frameId) => seededVersions.find((version) => version.id === `${frameId}-v3`),
     );
     for (const store of ["strengthFrames", "strengthFrameVersions"]) {
       const seededById = new Map((seeded.stores[store] as Array<{ id: string }>).map((item) => [item.id, item]));

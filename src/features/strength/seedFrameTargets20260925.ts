@@ -115,6 +115,8 @@ export function expectedAfterFrameTargets(
   frames: ReadonlyArray<StrengthFrame>,
   versions: ReadonlyArray<StrengthFrameVersion>,
   seededV2: (frameId: string) => StrengthFrameVersion | undefined,
+  /** Seed 23 (traction : RPE 9, cran de 7 kg) : une V3 trouvée en base devient la version active attendue. */
+  seededV3: (frameId: string) => StrengthFrameVersion | undefined = () => undefined,
 ): Map<string, StrengthFrame | StrengthFrameVersion> {
   const expected = new Map<string, StrengthFrame | StrengthFrameVersion>();
 
@@ -127,9 +129,54 @@ export function expectedAfterFrameTargets(
     if (!frame || !current || !v2 || versions.some((item) => item.id === v2.id)) continue;
 
     const result = recalibrate(frame, current, spec.target, v2.createdAt);
-    expected.set(frame.id, result.frame);
+    const v3 = seededV3(frameId);
+    expected.set(frame.id, v3 ? { ...result.frame, activeVersionId: v3.id, updatedAt: v3.createdAt } : result.frame);
     expected.set(current.id, result.archived);
   }
 
   return expected;
+}
+
+/**
+ * Seed 23 (03/10/2026), pari traction :
+ * - la machine ne règle l'aide que par paliers de 7 kg : cran de 7 kg ;
+ * - un palier se valide à RPE 9 au plus (et non plus 8), comme la règle
+ *   du pari.
+ * Changer le RPE cible crée une **nouvelle version** du cadre (motif
+ * « changement de programme »), cible et autres paramètres conservés.
+ * Si le RPE est déjà à 9, seul le cran est saisi, en place (N4).
+ */
+export async function seedTractionIncrement20261003(now: string = new Date().toISOString()): Promise<void> {
+  await db.transaction("rw", db.strengthFrames, db.strengthFrameVersions, db.settings, async () => {
+    const install = (await db.settings.get("install"))?.value as InstallMarkers | undefined;
+    if (install?.tractionIncrement20261003 !== undefined) return;
+
+    const frame = await db.strengthFrames.where("exerciseId").equals("traction-assistee").first();
+    const active = frame ? await db.strengthFrameVersions.get(frame.activeVersionId) : undefined;
+    if (frame && active && active.status === "active") {
+      const increment = active.increment ?? { unit: "kg" as const, value: 7 };
+      if (active.rpeTarget !== 9) {
+        const archived: StrengthFrameVersion = { ...active, status: "archived", archivedAt: now, archiveReason: "changement_programme", updatedAt: now };
+        delete archived.currentTarget;
+        const next: StrengthFrameVersion = {
+          ...active,
+          id: `${frame.id}-v${active.number + 1}`,
+          number: active.number + 1,
+          rpeTarget: 9,
+          increment,
+          createdAt: now,
+          updatedAt: now,
+        };
+        delete next.firstOfficialWorkoutId;
+        delete next.frozenAt;
+        await db.strengthFrameVersions.put(archived);
+        await db.strengthFrameVersions.add(next);
+        await db.strengthFrames.put({ ...frame, activeVersionId: next.id, updatedAt: now });
+      } else if (active.increment === undefined) {
+        await db.strengthFrameVersions.put({ ...active, increment, updatedAt: now });
+      }
+    }
+
+    await db.settings.put({ key: "install", value: { ...install, tractionIncrement20261003: now } });
+  });
 }

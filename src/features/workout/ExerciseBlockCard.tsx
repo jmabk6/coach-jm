@@ -29,6 +29,7 @@ import {
 } from "./engine/workoutBlocks";
 import type { LastComparableStep, LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
+import type { BetSet } from "../goals/tractionBet";
 import { formatDecimal } from "./workoutRecap";
 import { SimpleMeasurementForm } from "./SimpleMeasurementForm";
 import { StepForm } from "./StepForm";
@@ -78,6 +79,11 @@ interface ExerciseBlockCardProps {
   frameVersion?: StrengthFrameVersion | undefined;
   /** Encarts de progression du cadre (lot M.1) : hausse proposée, stagnation à examiner. */
   insets?: ReactNode;
+  /**
+   * Pari traction (03/10/2026) : ce que cette séance doit faire, d'après la
+   * dernière Muscu A. Remplace « Pour valider » et préremplit chaque série.
+   */
+  bet?: BetBanner | undefined;
   onToggle: () => void;
   onOpenMenu: () => void;
   onUnskip: () => void;
@@ -115,6 +121,7 @@ export function ExerciseBlockCard({
   rpeTable,
   frameVersion,
   insets,
+  bet,
   onToggle,
   onOpenMenu,
   onUnskip,
@@ -223,8 +230,9 @@ export function ExerciseBlockCard({
       {expanded && !skipped && block.series && (
         <div className="wblock__content">
           {restCard}
-          {frameVersion && <FrameGoal block={block} frameVersion={frameVersion} lastTime={lastTime} />}
-          <ReferenceBlock block={block} exercise={exercise} lastTime={lastTime} frameVersion={frameVersion} />
+          {bet ? <BetGoal bet={bet} /> : frameVersion && <FrameGoal block={block} frameVersion={frameVersion} lastTime={lastTime} />}
+          {/* Avec le bandeau du pari, la ligne « Conseillé » du cadre ferait doublon. */}
+          <ReferenceBlock block={block} exercise={exercise} lastTime={lastTime} frameVersion={frameVersion} hideSuggestion={bet !== undefined} />
 
           <ol className={`wseries${tabular ? " wseries--table" : ""}`}>
             {tabular && (
@@ -252,6 +260,7 @@ export function ExerciseBlockCard({
                   lastTime={lastTime}
                   rpeTable={rpeTable}
                   barWeightKg={frameVersion?.barWeightKg}
+                  plannedSet={bet?.sets[index]}
                   editing={editingId === series.id}
                   busy={busy}
                   onEdit={() => setEditingId(series.id)}
@@ -401,6 +410,37 @@ function performedOrSkipped(block: PerformedExerciseBlock): boolean {
  * tête de l'exercice : « Pour valider : 3 × 12 · RPE ≤ 8 · à 40 kg ». Un
  * jour à prescription réduite (N5) ne valide jamais : il le dit.
  */
+/** Le bandeau du pari traction : des lignes « libellé : valeur », un statut. */
+export interface BetBanner {
+  title: string;
+  status?: { label: string; tone: string };
+  lines: Array<{ label: string; value: string }>;
+  note?: string;
+  /** Séries prévues, dans l'ordre : préremplissage. */
+  sets: BetSet[];
+}
+
+function BetGoal({ bet }: { bet: BetBanner }) {
+  return (
+    <div className="wblock__bet">
+      <p className="wblock__bet-head">
+        <Target size={16} strokeWidth={2.2} aria-hidden="true" />
+        <strong>{bet.title}</strong>
+        {bet.status && <span className={`wblock__bet-status wblock__bet-status--${bet.status.tone}`}>{bet.status.label}</span>}
+      </p>
+      <dl>
+        {bet.lines.map((line) => (
+          <div key={line.label}>
+            <dt>{line.label}</dt>
+            <dd>{line.value}</dd>
+          </div>
+        ))}
+      </dl>
+      {bet.note && <p className="wblock__bet-note">{bet.note}</p>}
+    </div>
+  );
+}
+
 function FrameGoal({
   block,
   frameVersion,
@@ -437,18 +477,20 @@ function ReferenceBlock({
   exercise,
   lastTime,
   frameVersion,
+  hideSuggestion = false,
 }: {
   block: PerformedExerciseBlock;
   exercise: Exercise | undefined;
   lastTime: LastPerformance | undefined;
   frameVersion: StrengthFrameVersion | undefined;
+  hideSuggestion?: boolean;
 }) {
   const planned = formatPlannedLine(block);
   const instructions = block.snapshotInstructions;
   /* Exercice cadré (v1.6, § 4.2 bis, lot 4C) : le conseil vient du cadre
      — charge à travailler et objectif pour valider ; sinon l'heuristique
      existante sur la dernière fois. */
-  const frameSuggestion = frameVersion ? suggestFrameLoad(frameVersion, lastTime?.allSeries) : undefined;
+  const frameSuggestion = frameVersion && !hideSuggestion ? suggestFrameLoad(frameVersion, lastTime?.allSeries) : undefined;
   const suggestion =
     !frameVersion && instructions.shape === "reps"
       ? suggestLoad(lastTime, instructions.reps, instructions.targetRpe)
@@ -503,6 +545,8 @@ interface SeriesRowProps {
   lastTime: LastPerformance | undefined;
   rpeTable: RpeScaleVersion["table"] | undefined;
   barWeightKg: number | undefined;
+  /** Pari traction : l'aide et les répétitions prévues pour cette série. */
+  plannedSet?: BetSet | undefined;
   editing: boolean;
   busy: boolean;
   onEdit: () => void;
@@ -541,6 +585,7 @@ function SeriesRow({
   lastTime,
   rpeTable,
   barWeightKg,
+  plannedSet,
   editing,
   busy,
   onEdit,
@@ -619,7 +664,10 @@ function SeriesRow({
   }
 
   if (series.status === "active") {
-    const proposed = proposeSeriesValues(block, lastTime?.series);
+    /* Pari traction : la série prévue (aide, répétitions) l'emporte. */
+    const proposed = plannedSet
+      ? { ...proposeSeriesValues(block, lastTime?.series), load: { kind: "total" as const, kg: plannedSet.assistKg }, reps: plannedSet.reps }
+      : proposeSeriesValues(block, lastTime?.series);
 
     return (
       <li className="wseries__row wseries__row--active">
@@ -665,7 +713,13 @@ function SeriesRow({
       <span className="wseries__bullet">{index + 1}</span>
       <span className="wseries__body">
         {tabular ? (
-          <SeriesCells load="—" reps={targetReps(block)} rpe="—" label={label} />
+          /* Pari traction : la série à venir affiche ce qui est prévu pour elle. */
+          <SeriesCells
+            load={plannedSet ? formatDecimal(plannedSet.assistKg) : "—"}
+            reps={plannedSet ? String(plannedSet.reps) : targetReps(block)}
+            rpe="—"
+            label={label}
+          />
         ) : (
           <>
             <span className="wseries__title">{label}</span>

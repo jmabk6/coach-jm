@@ -39,13 +39,14 @@ function schedule(key: string): SnapshotTest {
 }
 
 describe("modèles V2", () => {
-  it("chaque exercice existe au catalogue ; squat, traction négative et suspension sortent du programme", () => {
+  it("chaque exercice existe au catalogue ; squat et traction négative sortent du programme ; la suspension revient en Muscu C (03/10)", () => {
     const ids = PROGRAM_V2_TEMPLATES.flatMap((item) => listTemplateExercises(item.blocks as SessionTemplate["blocks"], byId).map((exercise) => exercise.id));
     const referenced = PROGRAM_V2_TEMPLATES.flatMap((item) =>
       item.blocks.flatMap((block) => (block.kind === "exercise" ? [block.exerciseId] : block.kind === "group" ? block.children.map((child) => child.exerciseId) : [])),
     );
     expect(new Set(ids)).toEqual(new Set(referenced));
-    for (const gone of ["squat", "traction-negative", "suspension-omoplates"]) expect(referenced).not.toContain(gone);
+    for (const gone of ["squat", "traction-negative"]) expect(referenced).not.toContain(gone);
+    expect(referenced).toContain("suspension-omoplates");
   });
 
   it("ordre et prescriptions de Muscu A, B, C (échauffement tapis en tête)", () => {
@@ -67,18 +68,21 @@ describe("modèles V2", () => {
       "import-curl-biceps-ez 3x8-12",
       "leg-curl-couche 2x10-12",
     ]);
+    /* Pari traction (03/10/2026) : la traction légère en premier. */
     expect(describe("v2-muscu-b")).toEqual([
       "tapis",
+      "traction-assistee 2x8-10",
       "chest-press 3x8-12",
       "developpe-incline-halteres 3x8-12",
-      "traction-assistee 2x8-10",
       "developpe-epaules-machine 3x8-10",
       "elevations-laterales-halteres 3x12-15",
       "extension-triceps-poulie 3x10-15",
       "presse-cuisses 3x10-12",
     ]);
+    /* Pari traction (03/10/2026) : suspension + omoplates en premier, facile et technique. */
     expect(describe("v2-muscu-c")).toEqual([
       "tapis",
+      "suspension-omoplates",
       "sprint-velo",
       "montee-banc 3x8-8",
       "groupe Rester bas x3",
@@ -89,11 +93,10 @@ describe("modèles V2", () => {
     ]);
   });
 
-  it("durées estimées : Muscu A et C dans la cible 65-75 min, Muscu B au-dessus (79, signalé) ; Cardio A 45, B 38, C 57", () => {
-    for (const id of ["v2-muscu-a", "v2-muscu-c"]) {
-      expect(minutes(id), id).toBeGreaterThanOrEqual(65);
-      expect(minutes(id), id).toBeLessThanOrEqual(75);
-    }
+  it("durées estimées : Muscu A dans la cible 65-75 min, Muscu B (79) et C (76, suspension ajoutée le 03/10) au-dessus, signalé ; Cardio A 45, B 38, C 57", () => {
+    expect(minutes("v2-muscu-a")).toBeGreaterThanOrEqual(65);
+    expect(minutes("v2-muscu-a")).toBeLessThanOrEqual(75);
+    expect(minutes("v2-muscu-c")).toBe(76);
     /* Cinq gros mouvements à 2 min de repos : l'estimation dépasse la cible (rapport du 26/09/2026). */
     expect(minutes("v2-muscu-b")).toBe(79);
     expect([minutes("v2-cardio-a"), minutes("v2-cardio-b"), minutes("v2-cardio-c")]).toEqual([45, 38, 57]);
@@ -143,7 +146,7 @@ describe("tests et prescriptions réduites en V2", () => {
 
   it("jambes : le test remplace les sprints de Muscu C", () => {
     const blocks = createWorkoutSnapshot(template("v2-muscu-c"), undefined, undefined, [schedule("jambes")]);
-    expect(order(blocks).slice(0, 3)).toEqual(["v2-muscu-c-echauffement", "test:jambes", "v2-muscu-c-montee-banc"]);
+    expect(order(blocks).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-suspension", "test:jambes", "v2-muscu-c-montee-banc"]);
   });
 });
 

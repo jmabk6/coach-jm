@@ -55,7 +55,7 @@ async function versionOf(exerciseId: string): Promise<StrengthFrameVersion | und
 describe("seed 7 sur une base neuve", () => {
   it("un cadre par exercice à charge du programme, avec ses premières cibles", async () => {
     /* Le seed 7 seul (et ceux dont il dépend) : le seed 15 recale ensuite trois cibles, testé à part. */
-    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "frameTargets20260925" && seed.name !== "tractionTarget20261003"));
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => !["frameTargets20260925", "tractionTarget20261003", "tractionIncrement20261003"].includes(seed.name)));
     const install = (await db.settings.get("install"))?.value as { frames?: string };
     expect(install.frames).toEqual(expect.any(String));
 
@@ -94,7 +94,7 @@ describe("seed 7 sur une base neuve", () => {
     }
 
     const spies = spyWrites();
-    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "frameTargets20260925" && seed.name !== "tractionTarget20261003"));
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => !["frameTargets20260925", "tractionTarget20261003", "tractionIncrement20261003"].includes(seed.name)));
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
   });
 
@@ -163,7 +163,7 @@ describe("incrément facultatif (D18) et N4", () => {
 
   it("version figée : saisir le cran de la machine la met à jour en place, sans nouvelle version", async () => {
     /* La traction en V1 : sans le recalage du seed 22. */
-    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "tractionTarget20261003"));
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "tractionTarget20261003" && seed.name !== "tractionIncrement20261003"));
     const { frameId, versionId } = programFrameIds("traction-assistee");
     await db.strengthFrameVersions.update(versionId, { firstOfficialWorkoutId: "w1", frozenAt: T });
     const frame = (await db.strengthFrames.get(frameId))!;
@@ -200,8 +200,11 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
     const fileVersions = (file.stores.strengthFrameVersions ?? []) as StrengthFrameVersion[];
     /* Seed 15 : trois cadres de Muscu B encore en V1 semée passent en V2. */
     const seededVersions = await db.strengthFrameVersions.toArray();
-    const recalibrated = expectedAfterFrameTargets(fileFrames, fileVersions, (frameId) =>
-      seededVersions.find((version) => version.id === `${frameId}-v2`),
+    const recalibrated = expectedAfterFrameTargets(
+      fileFrames,
+      fileVersions,
+      (frameId) => seededVersions.find((version) => version.id === `${frameId}-v2`),
+      (frameId) => seededVersions.find((version) => version.id === `${frameId}-v3`),
     );
     for (const frame of fileFrames) {
       expect(canonicalStringify(await db.strengthFrames.get(frame.id)), frame.id).toBe(canonicalStringify(recalibrated.get(frame.id) ?? frame));

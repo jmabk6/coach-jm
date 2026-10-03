@@ -78,6 +78,12 @@ function warmup(prefix: string): ExerciseBlock {
 /** Curl biceps du programme : le curl à la barre EZ, celui des séances de septembre. */
 export const CURL_BICEPS_ID = "import-curl-biceps-ez";
 
+/** Muscu B, traction légère (03/10/2026). */
+export const TRACTION_LIGHT_NOTE = "Traction légère, en premier : 2 × 10 un palier d'aide au-dessus de la Muscu A, RPE 6-7. Du geste, pas un effort maximal.";
+/** Muscu C, suspension (03/10/2026). */
+export const SUSPENSION_NOTE = "Facile et technique : omoplates basses et serrées, bras tendus. Pas un test de durée maximale : s'arrêter bien avant la fatigue du grip, pour arriver frais à la Muscu A.";
+
+
 const muscuA: TemplateContent = {
   id: "v2-muscu-a",
   name: "Muscu A — Dos / traction / biceps",
@@ -110,12 +116,11 @@ const muscuB: TemplateContent = {
   description: "Environ 70 min.",
   blocks: [
     warmup("v2-muscu-b"),
-    exercise("v2-muscu-b-chest-press", 1, "chest-press", reps(3, 8, 12, BIG)),
-    exercise("v2-muscu-b-developpe-incline", 2, "developpe-incline-halteres", reps(3, 8, 12, BIG)),
-    /* N5 : 2 séries contre 3 au cadre (suit A) — prescription réduite, ni palier ni stagnation. */
-    exercise("v2-muscu-b-traction", 3, "traction-assistee", reps(2, 8, 10, BIG), {
-      notes: "Traction légère : plus d'assistance qu'en A, à ajuster après le test.",
-    }),
+    /* Pari traction (03/10/2026) : la traction légère en premier, faite à frais.
+       N5 : 2 séries contre 3 au cadre (suit A) — prescription réduite, ni palier ni stagnation. */
+    exercise("v2-muscu-b-traction", 1, "traction-assistee", reps(2, 8, 10, BIG), { notes: TRACTION_LIGHT_NOTE }),
+    exercise("v2-muscu-b-chest-press", 2, "chest-press", reps(3, 8, 12, BIG)),
+    exercise("v2-muscu-b-developpe-incline", 3, "developpe-incline-halteres", reps(3, 8, 12, BIG)),
     exercise("v2-muscu-b-developpe-epaules", 4, "developpe-epaules-machine", reps(3, 8, 10, BIG)),
     exercise("v2-muscu-b-elevations", 5, "elevations-laterales-halteres", reps(3, 12, 15, ISOLATION)),
     exercise("v2-muscu-b-extension-triceps", 6, "extension-triceps-poulie", reps(3, 10, 15, ISOLATION)),
@@ -126,7 +131,7 @@ const muscuB: TemplateContent = {
 const resterBas: GroupBlock = {
   id: "v2-muscu-c-rester-bas",
   kind: "group",
-  position: 3,
+  position: 4,
   name: "Rester bas",
   rounds: 3,
   restBetweenRoundsSec: 90,
@@ -149,13 +154,15 @@ const muscuC: TemplateContent = {
   description: "Environ 70 min.",
   blocks: [
     warmup("v2-muscu-c"),
-    exercise("v2-muscu-c-sprints", 1, "sprint-velo", { shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 }, { notes: "Même vélo, même résistance à chaque séance." }),
-    exercise("v2-muscu-c-montee-banc", 2, "montee-banc", reps(3, 8, 8, 60), { notes: "8 par jambe." }),
+    /* Pari traction (03/10/2026) : suspension et omoplates, facile et technique. */
+    exercise("v2-muscu-c-suspension", 1, "suspension-omoplates", { shape: "duration", sets: 3, durationSec: { min: 20, max: 30 }, restBetweenSetsSec: 60 }, { notes: SUSPENSION_NOTE }),
+    exercise("v2-muscu-c-sprints", 2, "sprint-velo", { shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 }, { notes: "Même vélo, même résistance à chaque séance." }),
+    exercise("v2-muscu-c-montee-banc", 3, "montee-banc", reps(3, 8, 8, 60), { notes: "8 par jambe." }),
     resterBas,
-    exercise("v2-muscu-c-pullover", 4, "pullover-poulie", reps(3, 10, 15, ISOLATION)),
-    exercise("v2-muscu-c-face-pull", 5, "face-pull", reps(3, 12, 15, ISOLATION), { notes: FACE_PULL_NOTE }),
-    exercise("v2-muscu-c-curl-marteau", 6, "curl-marteau-halteres", reps(3, 10, 15, ISOLATION)),
-    exercise("v2-muscu-c-triceps-tete", 7, "extension-triceps-dessus-tete", reps(2, 10, 15, ISOLATION)),
+    exercise("v2-muscu-c-pullover", 5, "pullover-poulie", reps(3, 10, 15, ISOLATION)),
+    exercise("v2-muscu-c-face-pull", 6, "face-pull", reps(3, 12, 15, ISOLATION), { notes: FACE_PULL_NOTE }),
+    exercise("v2-muscu-c-curl-marteau", 7, "curl-marteau-halteres", reps(3, 10, 15, ISOLATION)),
+    exercise("v2-muscu-c-triceps-tete", 8, "extension-triceps-dessus-tete", reps(2, 10, 15, ISOLATION)),
   ],
 };
 

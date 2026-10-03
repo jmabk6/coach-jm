@@ -507,3 +507,121 @@
   font-size: 0.7rem;
   font-style: italic;
 }
+
+/* Pari traction du 31/03/2027 (03/10/2026). */
+.bet {
+  border: 2px solid var(--color-accent-soft);
+}
+
+.bet__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bet__head h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.bet__status {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-surface-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.bet__status--on_track,
+.bet__status--reached {
+  background: var(--color-success-soft, var(--color-surface-soft));
+  color: var(--color-success-strong);
+}
+
+.bet__status--watch {
+  color: var(--color-warning);
+}
+
+.bet__status--late {
+  color: var(--color-danger);
+}
+
+.bet__facts {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.bet__facts div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.bet__facts dt {
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+}
+
+.bet__facts dd {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.bet__facts small,
+.bet__weight small {
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.bet__trajectory {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.bet__point {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--color-surface-soft);
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+}
+
+.bet__point--reached {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.bet__point--late {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.bet__weight,
+.bet__test {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+}
+
+.bet__test {
+  color: var(--color-text-soft);
+}

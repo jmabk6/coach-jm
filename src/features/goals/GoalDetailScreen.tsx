@@ -12,6 +12,7 @@ import { formatTestNumber } from "../../domain/rules/testResultRules";
 import { todayLocalDate } from "../today/useTodayData";
 import { activateNextSegment, editGoalSegment, LEGS_MEASURES } from "./goalActions";
 import { BodyCompositionSection } from "./BodyCompositionSection";
+import { TractionBetSection } from "./TractionBetSection";
 import { GoalCurveChart } from "./GoalCurveChart";
 import { GoalAdviceTab, GoalExercisesTab } from "./GoalTabs";
 import { loadGoalDetail, type GoalDetail } from "./goalDetail";
@@ -140,6 +141,8 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
 
   return (
     <>
+      {detail.bet && <TractionBetSection bet={detail.bet} />}
+
       {weight ? (
         <section className="goal-section goal-test">
           <h2>Pesée</h2>

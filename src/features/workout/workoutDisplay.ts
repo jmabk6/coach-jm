@@ -41,8 +41,10 @@ export function calculatePerformedNumbering(
        pas numéroté, la brique test est l'étape 0, les exercices vont de 1
        à N, jour de test ou non. */
     if (block.kind === "exercise" && block.role === "warmup") continue;
+    /* Le test est l'étape 0 quand il ouvre la séance ; placé plus loin (Muscu C
+       après la suspension, 03/10/2026), il n'a pas de numéro : « 1, 0, 2 » ne se lit pas. */
     if (block.kind === "test") {
-      numbering[block.id] = 0;
+      if (visible === 0) numbering[block.id] = 0;
       continue;
     }
 

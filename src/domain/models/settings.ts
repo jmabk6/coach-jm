@@ -71,6 +71,12 @@ export interface InstallMarkers {
   legCurlCouche20260927?: string;
   /** Traction assistée : cible 52 → 42 kg d'aide, d'après la séance du 02/10 (seed 22). */
   tractionTarget20261003?: string;
+  /** Traction assistée : cran de 7 kg, celui de la machine (seed 23). */
+  tractionIncrement20261003?: string;
+  /** Muscu B : traction légère en premier ; Muscu C : suspension + omoplates (seed 24). */
+  tractionPriority20261003?: string;
+  /** Test traction, version 2 par paliers de 7 kg (seed 25). */
+  tractionTest7kg20261003?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

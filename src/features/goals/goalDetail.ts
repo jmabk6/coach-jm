@@ -6,6 +6,7 @@ import { getAllTestProtocols, getAllTestResults, getTestProtocolVersion } from "
 import { getWeightEntries } from "../../db/repositories/weightRepository";
 import type { Exercise, Goal, GoalKey, GoalSecondaryIndicator, TestProtocol, TestProtocolVersion, TestResult, WorkoutSession } from "../../domain";
 import { compositionSummary, type CompositionSummary } from "../../domain/rules/bodyCompositionRules";
+import { betProgress, type BetProgress } from "./tractionBet";
 import { goalProtocolId, nextTestDate } from "../../domain/rules/goalListRules";
 import { measureValue } from "../../domain/rules/goalRules";
 import { formatTestNumber } from "../../domain/rules/testResultRules";
@@ -58,6 +59,8 @@ export interface GoalDetail {
    * (26/09/2026). Affichage seul : aucun calcul de statut n'en dépend.
    */
   composition?: CompositionSummary[];
+  /** Objectif Traction : le pari du 31/03/2027 (03/10/2026). */
+  bet?: BetProgress;
   linkedSessions: LinkedSession[];
 }
 
@@ -247,6 +250,7 @@ export async function loadGoalDetail(key: GoalKey, today: string): Promise<GoalD
     formatValue,
     ...(nextTest ? { nextTest } : {}),
     secondary,
+    ...(goal.key === "traction" ? { bet: betProgress(workouts, weights, today) } : {}),
     ...(goal.key === "weight" ? { composition: [compositionSummary(weights, "fatPct", today), compositionSummary(weights, "muscleKg", today)] } : {}),
     linkedSessions: linkedSessionsOf(goal, workouts, exerciseById),
   };

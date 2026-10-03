@@ -59,6 +59,8 @@ import { GroupBlockCard } from "./GroupBlockCard";
 import { RestBand } from "./RestBand";
 import { cancelWorkout, isUntouchedWorkout } from "./deleteWorkout";
 import { endWorkout } from "./finishWorkout";
+import { betBannerFor } from "./betBanner";
+import { BET_EXERCISE_ID, betProgress } from "../goals/tractionBet";
 import { findLastComparableStep } from "./lastPerformance";
 import { RestBar } from "./RestBar";
 import { RestCard } from "./RestCard";
@@ -270,6 +272,10 @@ export function WorkoutScreen() {
   const numbering = calculatePerformedNumbering(blocks);
   const progress = calculateExecutionProgress(blocks);
   const counts = countBlockStatuses(blocks);
+  /* Pari traction (03/10/2026) : d'après les séances faites, jusqu'au jour de cette séance. */
+  const bet = blocks.some((block) => block.kind === "exercise" && block.exerciseId === BET_EXERCISE_ID)
+    ? betProgress(completedWorkouts, [], workout.date)
+    : undefined;
   const hasAdded = blocks.some((block) => block.kind !== "note" && block.addedDuringWorkout);
   const currentNumber =
     workout.currentBlockId !== undefined ? numbering[workout.currentBlockId] : undefined;
@@ -597,6 +603,7 @@ export function WorkoutScreen() {
                 rpeTable={rpeScale?.table}
                 frameVersion={block.frameVersionId ? frames.versionById.get(block.frameVersionId) : undefined}
                 insets={insetsFor(block.frameVersionId)}
+                bet={bet ? betBannerFor(workout, block, bet) : undefined}
                 onToggle={() => toggleBlock(block)}
                 onOpenMenu={() => setBlockMenu(block)}
                 onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}

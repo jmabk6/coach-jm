@@ -7,7 +7,7 @@ import type { PerformedTestBlock, TestResult, WorkoutSession } from "../../domai
 import { listTestsToReschedule } from "../../domain/rules/testPlanRules";
 import { readStores } from "../backup/exportBackup";
 import { generateProgramWeek } from "../program/generateProgramWeek";
-import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { resumeSeedsForTests, runSeeds, SEEDS } from "../seed/runSeeds";
 import { deleteWorkout } from "../workout/deleteWorkout";
 import { endAndConfirm } from "../workout/endAndConfirmForTests";
 import { applyWorkoutAction } from "../workout/engine/persistWorkout";
@@ -44,7 +44,8 @@ beforeEach(async () => {
   await db.delete();
   await db.open();
   resumeSeedsForTests();
-  await runSeeds();
+  /* Le protocole traction en version 1 : sans le seed 25 (version 2 par paliers de 7 kg). */
+  await runSeeds(SEEDS.filter((seed) => seed.name !== "tractionTest7kg20261003"));
   await generateProgramWeek("2026-10-25", "2026-09-24T10:00:00.000Z");
 });
 

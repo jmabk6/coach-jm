@@ -224,7 +224,7 @@ describe("démarrage d'une séance de la semaine de tests", () => {
     await db.delete();
     await db.open();
     resumeSeedsForTests();
-    await runSeeds(SEEDS_BEFORE_PROGRAM_V2);
+    await runSeeds(SEEDS_BEFORE_PROGRAM_V2.filter((seed) => seed.name !== "tractionTest7kg20261003"));
     await generateProgramWeek("2026-10-25", "2026-09-24T10:00:00.000Z");
   });
 
