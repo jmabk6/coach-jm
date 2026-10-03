@@ -1,6 +1,6 @@
 import { addDays, differenceInCalendarDays, parseISO } from "date-fns";
 import type { PerformedExerciseBlock, PerformedSeries, WeightEntry, WorkoutSession } from "../../domain";
-import { formatLocalDate } from "../../domain/rules/programRules";
+import { formatLocalDate, getWeekStartDate } from "../../domain/rules/programRules";
 import { isWorkSeries } from "../../domain/rules/strengthRules";
 
 /**
@@ -38,19 +38,6 @@ const INTRO_REPS = 6;
 /** Point de départ réel : 42 kg, 8 / 8 / 6 le 02/10/2026. */
 export const BET_START = { date: "2026-10-02", position: 22 / 24 };
 
-/**
- * Trajectoire de référence : la position attendue (paliers validés) à
- * chaque date — oct. 42, nov. 35, déc. 28, janv. 21, févr. 14, mars 7 → 0.
- */
-export const BET_TRAJECTORY: ReadonlyArray<{ date: string; position: number; label: string }> = [
-  { date: "2026-10-31", position: 1, label: "oct. 42 kg" },
-  { date: "2026-11-30", position: 2, label: "nov. 35 kg" },
-  { date: "2026-12-31", position: 3, label: "déc. 28 kg" },
-  { date: "2027-01-31", position: 4, label: "janv. 21 kg" },
-  { date: "2027-02-28", position: 5, label: "févr. 14 kg" },
-  { date: "2027-03-21", position: 6, label: "mars 7 kg" },
-  { date: "2027-03-31", position: 7, label: "31/03 : 0 kg" },
-];
 
 /** Objectifs de poids (seconde courbe, sans équation avec l'aide). */
 export const BET_WEIGHT: ReadonlyArray<{ date: string; kg: number }> = [
@@ -245,23 +232,90 @@ export function prescribe(last: readonly BetSet[] | undefined): BetPrescription 
 }
 
 /* -------------------------------------------------------------------------- */
-/* Pari : où j'en suis, où je devrais en être, vais-je y arriver              */
+/* Rétroplanning : la trajectoire de référence, figée (validée le 03/10/2026)  */
 /* -------------------------------------------------------------------------- */
 
-/** La position attendue à une date, sur la trajectoire (interpolée). */
-export function expectedPosition(date: string): number {
-  const points = [BET_START, ...BET_TRAJECTORY];
-  if (date <= points[0]!.date) return points[0]!.position;
-  for (let index = 1; index < points.length; index++) {
-    const before = points[index - 1]!;
-    const after = points[index]!;
-    if (date <= after.date) {
-      const span = differenceInCalendarDays(parseISO(after.date), parseISO(before.date));
-      const done = differenceInCalendarDays(parseISO(date), parseISO(before.date));
-      return before.position + ((after.position - before.position) * done) / span;
-    }
-  }
-  return BET_LEVELS.length;
+export interface BetPlanRow {
+  /** Dimanche de la Muscu A prévue. */
+  date: string;
+  /** Muscu A prévue, série par série. */
+  sets: BetSet[];
+  /** Semaine de test : le test en début de Muscu A, puis ces 2 séries. */
+  test?: { targetKg: number; note: string };
+  /** Repère de la vue mensuelle : « 42 kg validé »… */
+  milestone?: string;
+  /** Dernière ligne : l'essai réel de traction stricte, validation finale. */
+  strict?: true;
+}
+
+const p = (assistKg: number, reps: number): BetSet => ({ assistKg, reps });
+const three = (assistKg: number, reps: number) => [p(assistKg, reps), p(assistKg, reps), p(assistKg, reps)];
+
+/**
+ * Le rétroplanning **figé** jusqu'au 31/03/2027 : 26 dimanches, 42 → 35 →
+ * 28 → 21 → 14 → 7 kg, puis l'essai de traction stricte. Il ne se décale
+ * jamais : il sert à mesurer l'avance ou le retard ; la séance, elle, suit
+ * la performance réelle (`prescribe`).
+ */
+export const BET_PLAN: readonly BetPlanRow[] = [
+  { date: "2026-10-04", sets: [p(42, 8), p(42, 8), p(42, 7)] },
+  { date: "2026-10-11", sets: three(42, 8), milestone: "42 kg validé" },
+  { date: "2026-10-18", sets: [p(35, 6), p(42, 8), p(42, 8)] },
+  { date: "2026-10-25", sets: [p(35, 6), p(35, 6)], test: { targetKg: 21, note: "réussir 21 kg" } },
+  { date: "2026-11-01", sets: three(35, 6) },
+  { date: "2026-11-08", sets: three(35, 7) },
+  { date: "2026-11-15", sets: three(35, 8), milestone: "35 kg validé" },
+  { date: "2026-11-22", sets: [p(28, 6), p(35, 8)], test: { targetKg: 21, note: "21 kg facile, essai à 14 kg" } },
+  { date: "2026-11-29", sets: [p(28, 6), p(28, 6), p(35, 8)] },
+  { date: "2026-12-06", sets: three(28, 6) },
+  { date: "2026-12-13", sets: three(28, 7) },
+  { date: "2026-12-20", sets: [p(28, 8), p(28, 8)], test: { targetKg: 14, note: "réussir 14 kg" } },
+  { date: "2026-12-27", sets: three(28, 8), milestone: "28 kg validé" },
+  { date: "2027-01-03", sets: [p(21, 6), p(28, 8), p(28, 8)] },
+  { date: "2027-01-10", sets: [p(21, 6), p(21, 6), p(28, 8)] },
+  { date: "2027-01-17", sets: [p(21, 6), p(21, 6)], test: { targetKg: 7, note: "réussir 7 kg" } },
+  { date: "2027-01-24", sets: three(21, 7) },
+  { date: "2027-01-31", sets: three(21, 8), milestone: "21 kg validé" },
+  { date: "2027-02-07", sets: [p(14, 6), p(21, 8), p(21, 8)] },
+  { date: "2027-02-14", sets: [p(14, 6), p(14, 6)], test: { targetKg: 7, note: "7 kg facile, essai à 0 kg" } },
+  { date: "2027-02-21", sets: three(14, 6) },
+  { date: "2027-02-28", sets: three(14, 7) },
+  { date: "2027-03-07", sets: three(14, 8), milestone: "14 kg validé" },
+  { date: "2027-03-14", sets: [p(7, 6), p(14, 8)], test: { targetKg: 7, note: "réussir 7 kg, essai à 0 kg" } },
+  { date: "2027-03-21", sets: three(7, 6), milestone: "7 kg en travail" },
+  { date: "2027-03-28", sets: [p(0, 1), p(7, 8), p(7, 7), p(7, 7)], milestone: "Traction stricte", strict: true },
+];
+
+/**
+ * Le **rang d'étape** de chaque ligne, avec la même mesure que les séances
+ * (`sessionPosition`) : paliers validés + répétitions au palier le plus
+ * dur — les transitions (35 × 6 + 42 × 8…) comptent donc. Chaque ligne
+ * est strictement au-dessus de la précédente : une semaine de test (2 séries
+ * seulement) ne recule jamais, et n'est pas « atteinte » du seul fait
+ * d'avoir réussi la semaine d'avant.
+ */
+const RANK_STEP = 1e-3;
+export const BET_PLAN_RANKS: readonly number[] = BET_PLAN.reduce<number[]>((ranks, row) => {
+  const previous = ranks.at(-1) ?? BET_START.position;
+  const rank = row.strict ? BET_LEVELS.length : sessionPosition(row.sets);
+  return [...ranks, Math.max(rank, previous + RANK_STEP)];
+}, []);
+
+/** La ligne la plus avancée que la position réelle égale ou dépasse ; -1 avant la première. */
+export function achievedRow(position: number): number {
+  let found = -1;
+  BET_PLAN_RANKS.forEach((rank, index) => {
+    if (rank <= position + 1e-9) found = index;
+  });
+  return found;
+}
+
+/** La ligne de la semaine de `date` (dimanche → samedi) ; -1 avant le 04/10, la dernière après le 28/03. */
+export function rowOfWeek(date: string): number {
+  const sunday = getWeekStartDate(date);
+  if (sunday < BET_PLAN[0]!.date) return -1;
+  const index = BET_PLAN.findIndex((row) => row.date === sunday);
+  return index >= 0 ? index : BET_PLAN.length - 1;
 }
 
 /** « 42 kg : 22 / 24 répétitions », « 42 kg validé », « traction stricte ». */
@@ -275,16 +329,31 @@ export function formatPosition(position: number): string {
 }
 
 export type BetStatus = "on_track" | "watch" | "late" | "reached";
+export type RowState = "done" | "late" | "current" | "ahead" | "upcoming";
+
+export interface BetRow {
+  index: number;
+  row: BetPlanRow;
+  state: RowState;
+  /** Ce qui a été fait cette semaine-là en Muscu A (séance la plus récente de la semaine). */
+  done?: BetSession;
+  /** Semaine de test : l'aide minimale obtenue. */
+  testResultKg?: number;
+}
 
 export interface BetProgress {
   today: string;
   last?: BetSession;
   position: number;
+  /** Ligne du rétroplanning que la performance réelle a atteinte (-1 : avant la première). */
+  achieved: number;
+  /** Ligne qui devrait être atteinte aujourd'hui (-1 : rien d'attendu encore). */
   expected: number;
-  /** En paliers : positif = avance, négatif = retard. */
-  gap: number;
+  /** En semaines : positif = retard, négatif = avance. */
+  delayWeeks: number;
+  /** « Conforme au rétroplanning », « En avance de 1 semaine », « En retard de 2 semaines ». */
+  gapLabel: string;
   status: BetStatus;
-  /** « Conforme à la trajectoire », « Dans les temps », « À surveiller », « En retard », « Pari gagné ». */
   statusLabel: string;
   levelsLeft: number;
   weeksLeft: number;
@@ -293,7 +362,9 @@ export interface BetProgress {
   /** Seulement après deux nouveaux paliers validés : la date où le rythme réel mène à 0 kg. */
   forecast?: string;
   prescription: BetPrescription;
+  /** Vue mensuelle : les repères du rétroplanning, rien d'autre. */
   trajectory: Array<{ date: string; label: string; reached: boolean; due: boolean }>;
+  rows: BetRow[];
   weight: { target: number; last?: { date: string; kg: number } };
 }
 
@@ -312,18 +383,48 @@ function weightTarget(date: string): number {
   return points.at(-1)!.kg;
 }
 
+const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? "s" : ""}`;
+
+interface TestResultLike {
+  protocolId: string;
+  date: string;
+  measures: ReadonlyArray<{ key: string; value: number }>;
+}
+
+/** Les séances de force de la semaine, test compris (2 séries) : pour la colonne « Réalisé ». */
+function forceSessionsOfWeek(workouts: readonly WorkoutSession[], sunday: string): BetSession[] {
+  return workouts
+    .filter((workout) => workout.status === "completed" && BET_FORCE_TEMPLATES.includes(workout.sessionTemplateId ?? "") && getWeekStartDate(workout.date) === sunday)
+    .flatMap((workout) => {
+      const block = tractionBlock(workout);
+      const sets = block ? betSets(block) : [];
+      return sets.length > 0 ? [{ workoutId: workout.id, date: workout.date, sets }] : [];
+    })
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export function betProgress(
   workouts: readonly WorkoutSession[],
   weights: ReadonlyArray<Pick<WeightEntry, "date" | "kg">>,
   today: string,
+  testResults: readonly TestResultLike[] = [],
 ): BetProgress {
   const sessions = betSessions(workouts).filter((session) => session.date <= today);
   const last = sessions.at(-1);
   /* La position ne recule pas sous un palier validé ; elle suit la dernière séance. */
   const validated = Math.max(0, ...sessions.map((session) => Math.floor(sessionPosition(session.sets) + 1e-9)));
   const position = Math.max(validated, last ? sessionPosition(last.sets) : BET_START.position, BET_START.position);
-  const expected = expectedPosition(today);
-  const gap = position - expected;
+
+  /* Avance / retard : des ÉTAPES du rétroplanning, comptées en semaines. La séance de la
+     semaine en cours n'est attendue qu'une fois faite : avant, on compare à la semaine d'avant. */
+  const achieved = achievedRow(position);
+  const week = rowOfWeek(today);
+  const doneThisWeek = last !== undefined && getWeekStartDate(last.date) === getWeekStartDate(today);
+  /* Avant le 04/10, rien n'est encore attendu (-1) : ni avance ni retard. */
+  const expected = Math.max(-1, Math.min(BET_PLAN.length - 1, doneThisWeek ? week : week - 1));
+  const delayWeeks = expected - achieved;
+  const gapLabel =
+    delayWeeks === 0 ? "Conforme au rétroplanning" : delayWeeks > 0 ? `En retard de ${plural(delayWeeks, "semaine")}` : `En avance de ${plural(-delayWeeks, "semaine")}`;
 
   const levelsLeft = Math.max(0, BET_LEVELS.length - Math.floor(position + 1e-9));
   const daysLeft = Math.max(0, differenceInCalendarDays(parseISO(BET_DEADLINE), parseISO(today)));
@@ -339,21 +440,37 @@ export function betProgress(
     if (rate > 0) forecast = formatLocalDate(addDays(parseISO(today), Math.ceil((remaining / rate) * 7)));
   }
 
+  /* Statut : vert à l'heure ou en avance ; orange jusqu'à 3 semaines de retard ; rouge au-delà. */
   let status: BetStatus;
   let statusLabel: string;
   if (remaining <= 0) {
     status = "reached";
     statusLabel = "Pari gagné";
-  } else if (gap >= -0.25 && (!forecast || forecast <= BET_DEADLINE)) {
+  } else if (delayWeeks <= 0 && (!forecast || forecast <= BET_DEADLINE)) {
     status = "on_track";
     statusLabel = newLevels >= 2 ? "Dans les temps" : "Conforme à la trajectoire";
-  } else if (gap >= -1) {
+  } else if (delayWeeks <= 3) {
     status = "watch";
     statusLabel = "À surveiller";
   } else {
     status = "late";
     statusLabel = "En retard";
   }
+
+  const currentSunday = getWeekStartDate(today);
+  const rows: BetRow[] = BET_PLAN.map((row, index) => {
+    const reached = achieved >= index;
+    const state: RowState =
+      row.date < currentSunday ? (reached ? "done" : "late") : row.date === currentSunday ? (reached ? "done" : "current") : reached ? "ahead" : "upcoming";
+    const done = row.date <= currentSunday ? forceSessionsOfWeek(workouts, row.date).filter((session) => session.date <= today).at(-1) : undefined;
+    const testResultKg = row.test
+      ? testResults
+          .filter((result) => result.protocolId === "protocol-traction" && getWeekStartDate(result.date) === row.date && result.date <= today)
+          .map((result) => result.measures.find((measure) => measure.key === "assistance_min_kg")?.value)
+          .find((value) => value !== undefined)
+      : undefined;
+    return { index, row, state, ...(done ? { done } : {}), ...(testResultKg !== undefined ? { testResultKg } : {}) };
+  });
 
   const sortedWeights = [...weights].filter((entry) => entry.date <= today).sort((a, b) => a.date.localeCompare(b.date));
   const lastWeight = sortedWeights.at(-1);
@@ -362,8 +479,10 @@ export function betProgress(
     today,
     ...(last ? { last } : {}),
     position,
+    achieved,
     expected,
-    gap,
+    delayWeeks,
+    gapLabel,
     status,
     statusLabel,
     levelsLeft,
@@ -371,12 +490,10 @@ export function betProgress(
     ...(remaining > 0 && weeksLeft > 0 ? { weeksPerLevelNeeded: Math.round((weeksLeft / remaining) * 10) / 10 } : {}),
     ...(forecast ? { forecast } : {}),
     prescription: prescribe(last?.sets),
-    trajectory: BET_TRAJECTORY.map((point) => ({
-      date: point.date,
-      label: point.label,
-      reached: position >= point.position - 1e-9,
-      due: today > point.date,
-    })),
+    trajectory: BET_PLAN.flatMap((row, index) =>
+      row.milestone ? [{ date: row.date, label: row.milestone, reached: achieved >= index, due: today > row.date }] : [],
+    ),
+    rows,
     weight: { target: weightTarget(today), ...(lastWeight ? { last: { date: lastWeight.date, kg: lastWeight.kg } } : {}) },
   };
 }

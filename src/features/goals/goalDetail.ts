@@ -250,7 +250,7 @@ export async function loadGoalDetail(key: GoalKey, today: string): Promise<GoalD
     formatValue,
     ...(nextTest ? { nextTest } : {}),
     secondary,
-    ...(goal.key === "traction" ? { bet: betProgress(workouts, weights, today) } : {}),
+    ...(goal.key === "traction" ? { bet: betProgress(workouts, weights, today, results) } : {}),
     ...(goal.key === "weight" ? { composition: [compositionSummary(weights, "fatPct", today), compositionSummary(weights, "muscleKg", today)] } : {}),
     linkedSessions: linkedSessionsOf(goal, workouts, exerciseById),
   };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { WorkoutSession } from "../../domain";
-import { betProgress, expectedPosition, formatPosition, prescribe, sessionPosition, testHint, type BetSet } from "./tractionBet";
+import { achievedRow, BET_PLAN, BET_PLAN_RANKS, betProgress, formatPosition, prescribe, sessionPosition, testHint, type BetSet } from "./tractionBet";
 
 /**
  * Pari traction du 31/03/2027 (03/10/2026) : la performance commande la
@@ -82,57 +82,113 @@ describe("prescription : la prochaine Muscu A, d'après la dernière", () => {
   });
 });
 
-describe("le pari : où j'en suis, où je devrais en être, vais-je y arriver", () => {
-  it("04/10 après le 02/10 (8/8/6) : conforme à la trajectoire, 7 paliers, 26 semaines, sans date prévisionnelle", () => {
+describe("rétroplanning figé : des étapes, pas des kilos", () => {
+  it("26 dimanches du 04/10/2026 au 28/03/2027 ; paliers 42 → 7 puis l'essai strict ; 6 semaines TEST ; rang strictement croissant", () => {
+    expect(BET_PLAN).toHaveLength(26);
+    expect(BET_PLAN[0]!.date).toBe("2026-10-04");
+    expect(BET_PLAN.at(-1)).toMatchObject({ date: "2027-03-28", strict: true });
+    for (const row of BET_PLAN) expect(new Date(`${row.date}T12:00:00`).getDay(), row.date).toBe(0);
+    expect(BET_PLAN.filter((row) => row.test).map((row) => row.date)).toEqual(["2026-10-25", "2026-11-22", "2026-12-20", "2027-01-17", "2027-02-14", "2027-03-14"]);
+    expect(BET_PLAN.filter((row) => row.milestone).map((row) => `${row.milestone} ${row.date}`)).toEqual([
+      "42 kg validé 2026-10-11",
+      "35 kg validé 2026-11-15",
+      "28 kg validé 2026-12-27",
+      "21 kg validé 2027-01-31",
+      "14 kg validé 2027-03-07",
+      "7 kg en travail 2027-03-21",
+      "Traction stricte 2027-03-28",
+    ]);
+    for (let index = 1; index < BET_PLAN_RANKS.length; index++) expect(BET_PLAN_RANKS[index]!, BET_PLAN[index]!.date).toBeGreaterThan(BET_PLAN_RANKS[index - 1]!);
+    /* Les transitions sont des étapes à part entière. */
+    expect(BET_PLAN_RANKS.slice(0, 3)).toEqual([23 / 24, 1, 1.25]);
+    expect(BET_PLAN_RANKS[4]).toBeCloseTo(1.75, 5);
+  });
+
+  it("étape réelle = ligne la plus avancée égalée : 35 × 6 + 42 × 8 + 42 × 8 atteint le 18/10, pas la semaine TEST du 25/10", () => {
+    expect(achievedRow(22 / 24)).toBe(-1);
+    expect(achievedRow(sessionPosition([set(42, 8), set(42, 8), set(42, 7)]))).toBe(0);
+    expect(achievedRow(sessionPosition([set(35, 6), set(42, 8), set(42, 8)]))).toBe(2);
+    expect(achievedRow(sessionPosition([set(35, 6), set(35, 6), set(42, 8)]))).toBe(3);
+    expect(achievedRow(sessionPosition([set(35, 7), set(35, 7), set(35, 7)]))).toBe(5);
+  });
+});
+
+describe("le pari : prévu, réalisé, prochaine séance, écart en semaines", () => {
+  it("03/10, la veille du rétroplanning : rien d'attendu, ni avance ni retard", () => {
+    const progress = betProgress([muscuA("2026-10-02", [set(42, 8, 8), set(42, 8, 9), set(42, 6, 10)], { templateId: "v1-muscu-a" })], [], "2026-10-03");
+    expect(progress).toMatchObject({ expected: -1, achieved: -1, delayWeeks: 0, gapLabel: "Conforme au rétroplanning" });
+  });
+
+  it("04/10, avant la séance (dernier résultat 8/8/6 le 02/10) : conforme, 7 paliers, 26 semaines, sans prévision", () => {
     const progress = betProgress([muscuA("2026-10-02", [set(42, 8, 8), set(42, 8, 9), set(42, 6, 10)], { templateId: "v1-muscu-a" })], [], "2026-10-04");
-    expect(progress).toMatchObject({ status: "on_track", statusLabel: "Conforme à la trajectoire", levelsLeft: 7, weeksLeft: 26 });
+    expect(progress).toMatchObject({ delayWeeks: 0, gapLabel: "Conforme au rétroplanning", status: "on_track", statusLabel: "Conforme à la trajectoire", levelsLeft: 7, weeksLeft: 26 });
     expect(progress.forecast).toBeUndefined();
-    expect(progress.weeksPerLevelNeeded).toBeCloseTo(26 / (7 - 22 / 24), 0);
+    expect(progress.prescription.minimum).toBe("8 / 8 / 7 minimum");
+    expect(progress.rows[0]!.state).toBe("current");
     expect(progress.weight).toEqual({ target: 93.1 });
   });
 
-  it("encore 42 kg 8/8/6 le 15/11 : à surveiller ; toujours le 15/12 : en retard ; un peu de retard au 10/11 : à surveiller", () => {
-    const stuck = [muscuA("2026-11-15", [set(42, 8, 9), set(42, 8, 9), set(42, 6, 10)])];
-    expect(betProgress(stuck, [], "2026-11-15").status).toBe("watch");
-    expect(betProgress(stuck, [], "2026-12-15")).toMatchObject({ status: "late", statusLabel: "En retard" });
-    const oneBehind = [muscuA("2026-11-01", [set(42, 8, 9), set(42, 8, 9), set(42, 7, 9)])];
-    expect(betProgress(oneBehind, [], "2026-11-10")).toMatchObject({ status: "watch", statusLabel: "À surveiller" });
+  it("le 11/10 : 8/8/7 au lieu de 8/8/8 → en retard de 1 semaine, la séance suivante redemande 8/8/8, les dates ne bougent pas", () => {
+    const workouts = [muscuA("2026-10-04", [set(42, 8, 8), set(42, 8, 9), set(42, 7, 9)]), muscuA("2026-10-11", [set(42, 8, 8), set(42, 8, 9), set(42, 7, 9)])];
+    const progress = betProgress(workouts, [], "2026-10-11");
+    expect(progress).toMatchObject({ achieved: 0, expected: 1, delayWeeks: 1, gapLabel: "En retard de 1 semaine", status: "watch" });
+    expect(progress.prescription.minimum).toBe("8 / 8 / 8 minimum");
+    expect(progress.rows.slice(0, 3).map((row) => [row.row.date, row.state])).toEqual([
+      ["2026-10-04", "done"],
+      ["2026-10-11", "current"],
+      ["2026-10-18", "upcoming"],
+    ]);
+    expect(progress.rows[1]!.done?.sets.map((item) => item.reps)).toEqual([8, 8, 7]);
+    /* Toujours bloqué le 15/11 : en retard de plusieurs semaines, rouge. */
+    const stuck = betProgress([muscuA("2026-11-15", [set(42, 8, 9), set(42, 8, 9), set(42, 6, 10)])], [], "2026-11-15");
+    expect(stuck).toMatchObject({ status: "late", statusLabel: "En retard" });
+    expect(stuck.delayWeeks).toBeGreaterThan(3);
+    expect(stuck.rows.filter((row) => row.state === "late").length).toBeGreaterThan(3);
   });
 
-  it("deux paliers validés en avance : « Dans les temps » et une date prévisionnelle avant le 31/03", () => {
+  it("plus vite que prévu : la séance s'adapte tout de suite et l'avance s'affiche", () => {
+    const workouts = [muscuA("2026-10-04", [set(42, 8, 8), set(42, 8, 8), set(42, 8, 9)]), muscuA("2026-10-11", [set(35, 6, 8), set(42, 8, 8), set(42, 8, 9)])];
+    const progress = betProgress(workouts, [], "2026-10-11");
+    expect(progress).toMatchObject({ achieved: 2, expected: 1, delayWeeks: -1, gapLabel: "En avance de 1 semaine", status: "on_track" });
+    expect(progress.prescription.minimum).toBe("35 × 6 · 35 × 6 · 42 × 8 minimum");
+    expect(progress.rows[2]!.state).toBe("ahead");
+  });
+
+  it("deux paliers validés tôt : « Dans les temps » et une prévision avant le 31/03 ; deux paliers mais trop lents : à surveiller", () => {
     const fast = [
       muscuA("2026-10-11", [set(42, 8, 8), set(42, 8, 8), set(42, 8, 9)]),
       muscuA("2026-10-25", [set(35, 8, 8), set(35, 8, 8), set(35, 8, 9)]),
     ];
     const progress = betProgress(fast, [], "2026-10-27");
     expect(progress.statusLabel).toBe("Dans les temps");
-    expect(progress.forecast).toBeDefined();
     expect(progress.forecast! <= "2027-03-31").toBe(true);
     expect(progress.trajectory.slice(0, 2).map((point) => point.reached)).toEqual([true, true]);
 
-    /* Deux paliers, mais à un rythme qui mène après le 31/03 : à surveiller, même en avance sur la trajectoire. */
     const slow = [
       muscuA("2026-10-11", [set(42, 8, 8), set(42, 8, 8), set(42, 8, 9)]),
       muscuA("2026-11-08", [set(35, 8, 8), set(35, 8, 8), set(35, 8, 9)]),
     ];
     const slowProgress = betProgress(slow, [], "2026-11-10");
-    expect(slowProgress.gap).toBeGreaterThan(0);
+    expect(slowProgress.delayWeeks).toBeLessThan(0);
     expect(slowProgress.forecast! > "2027-03-31").toBe(true);
     expect(slowProgress.status).toBe("watch");
   });
 
-  it("un palier validé ne se perd pas ; un jour de test (2 séries) et les autres séances ne comptent pas ; le poids est affiché à côté", () => {
+  it("semaine TEST : le résultat du test et les 2 séries apparaissent sur la ligne ; un palier validé ne se perd pas ; le poids reste à côté", () => {
     const workouts = [
       muscuA("2026-10-11", [set(42, 8, 8), set(42, 8, 8), set(42, 8, 9)]),
       muscuA("2026-10-18", [set(35, 4, 10), set(42, 8, 9), set(42, 7, 10)]),
       muscuA("2026-10-25", [set(35, 6), set(35, 6)], { reduced: true }),
       muscuA("2026-10-20", [set(28, 10), set(28, 10)], { templateId: "v2-muscu-b" }),
     ];
-    const progress = betProgress(workouts, [{ date: "2026-10-24", kg: 89.4 }], "2026-10-26");
+    const results = [{ protocolId: "protocol-traction", date: "2026-10-25", measures: [{ key: "assistance_min_kg", value: 21 }] }];
+    const progress = betProgress(workouts, [{ date: "2026-10-24", kg: 89.4 }], "2026-10-26", results);
     expect(progress.last?.date).toBe("2026-10-18");
     expect(progress.position).toBeGreaterThanOrEqual(1);
+    const testRow = progress.rows[3]!;
+    expect(testRow).toMatchObject({ testResultKg: 21, row: { test: { targetKg: 21 } } });
+    expect(testRow.done?.sets.map((item) => item.assistKg)).toEqual([35, 35]);
     expect(progress.weight.last).toEqual({ date: "2026-10-24", kg: 89.4 });
     expect(progress.weight.target).toBeLessThan(89.4);
-    expect(expectedPosition("2027-04-02")).toBe(7);
   });
 });

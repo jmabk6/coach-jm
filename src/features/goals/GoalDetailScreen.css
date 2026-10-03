@@ -625,3 +625,113 @@
 .bet__test {
   color: var(--color-text-soft);
 }
+
+/* Rétroplanning jusqu'au 31/03 (03/10/2026) : figé, repliable. */
+.bet__plan {
+  margin: 0 0 12px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+}
+
+.bet__plan summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.bet__plan-lead {
+  margin: 6px 0 8px;
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+}
+
+.bet__rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bet__row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.85rem;
+}
+
+.bet__row--test {
+  background: var(--color-warning-soft);
+}
+
+.bet__row--now {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+.bet__row--upcoming,
+.bet__row--ahead {
+  color: var(--color-text-soft);
+}
+
+.bet__row-date {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bet__row-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bet__row-plan {
+  font-weight: 600;
+}
+
+.bet__row-test,
+.bet__row-milestone {
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+}
+
+.bet__row-milestone {
+  font-weight: 700;
+}
+
+.bet__row-done {
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.bet__chip {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-surface-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bet__chip--test {
+  margin-right: 6px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.bet__chip--done,
+.bet__chip--ahead {
+  color: var(--color-success-strong);
+}
+
+.bet__chip--late {
+  color: var(--color-danger);
+}
+
+.bet__chip--current {
+  color: var(--color-accent);
+}
