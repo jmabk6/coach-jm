@@ -17,7 +17,7 @@ import { seedTractionV620261004 } from "../program/seedTractionV6";
 import { seedNegativesMuscuC20261005 } from "../program/seedNegativesMuscuC";
 import { seedLegPressMuscuA20261005 } from "../program/seedLegPressMuscuA";
 import { seedCurlHalteresMuscuA20261004 } from "../program/seedCurlHalteresMuscuA";
-import { seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
+import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
 import { seedTractionTestV320261005 } from "../tests/seedTractionTestV3";
@@ -101,6 +101,8 @@ export const SEEDS: SeedStep[] = [
   { name: "fixWorkout20261004", dependsOn: ["exerciseCatalog"], run: () => seedFixWorkout20261004() },
   /* Seed 32 (04/10/2026) : curl haltères à la place du curl barre EZ dans Muscu A. */
   { name: "curlHalteresMuscuA20261004", dependsOn: ["programV2", "exerciseCatalog"], run: () => seedCurlHalteresMuscuA20261004() },
+  /* Seed 33 (04/10/2026) : RPE 8 sur la 3e série de traction de la Muscu A du 04/10. */
+  { name: "fixTractionRpe20261004", dependsOn: ["fixWorkout20261004"], run: () => seedFixTractionRpe20261004() },
 ];
 
 /**

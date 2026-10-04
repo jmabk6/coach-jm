@@ -99,6 +99,8 @@ export interface InstallMarkers {
   fixWorkout20261004?: string;
   /** Seed 32 : le curl haltères remplace le curl barre EZ dans Muscu A. */
   curlHalteresMuscuA20261004?: string;
+  /** Seed 33 : RPE 8 sur la 3e série de traction de la Muscu A du 04/10. */
+  fixTractionRpe20261004?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

@@ -11,7 +11,7 @@ import { v6State } from "../goals/tractionV6";
 import { muscuAWithCurlHalteres } from "../program/seedCurlHalteresMuscuA";
 import { PROGRAM_V2_TEMPLATES } from "../program/programV2";
 import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
-import { CURL_EZ_MILESTONE_ID, FIX_WORKOUT_ID, fixWorkout20261004 } from "./seedFixWorkout20261004";
+import { CURL_EZ_MILESTONE_ID, FIX_WORKOUT_ID, fixTractionRpe20261004, fixWorkout20261004 } from "./seedFixWorkout20261004";
 
 /**
  * Seeds 31 et 32 (04/10/2026) : la Muscu A du 04/10 corrigée (traction
@@ -89,5 +89,34 @@ describe("seed 31 : la Muscu A du 04/10 (sauvegarde réelle)", () => {
     expect(v6State(after, "2026-10-05")).toMatchObject({ aKg: 28, bKg: 35, phase: "travail" });
     /* La correction ne s'applique qu'une fois, et pas sur une séance déjà corrigée. */
     expect(fixWorkout20261004(fixed, NOW)).toBeUndefined();
+  }, 20000);
+});
+
+/* La sauvegarde de l'utilisateur du 04/10 à 18:06 (seeds 31 et 32 déjà passés, pesée 91,6 saisie). */
+const REAL_1806 = "C:/Users/JMA/Downloads/coach-jm-sauvegarde-2026-10-04-1806.json";
+const path1806 = existsSync(REAL_1806) ? REAL_1806 : undefined;
+
+describe("seed 33 : RPE 8 sur la 3e série de traction (sauvegarde réelle de 18:06)", () => {
+  it.skipIf(!path1806)("la 3e série à 35 kg × 5 passe à RPE 8 ; rien d'autre ne bouge ; la pesée du 04/10 (91,6) reste ; palier A toujours 28", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await resetAndRestore(parseBackup(await readFile(path1806!, "utf8")), db);
+    resumeSeedsForTests();
+    const before = await db.workouts.toArray();
+
+    await runSeeds();
+
+    const after = await db.workouts.toArray();
+    for (const workout of before.filter((item) => item.id !== FIX_WORKOUT_ID)) expect(after.find((item) => item.id === workout.id), workout.id).toEqual(workout);
+    const original = before.find((item) => item.id === FIX_WORKOUT_ID)!;
+    const fixed = after.find((item) => item.id === FIX_WORKOUT_ID)!;
+    const traction = fixed.blocks.find((item) => item.id === "workout-block-v2-muscu-a-traction") as PerformedExerciseBlock;
+    expect(traction.series!.map((set) => [set.load, set.reps, set.rpe])).toEqual([
+      [{ kind: "total", kg: 35 }, 5, 8], [{ kind: "total", kg: 35 }, 5, 8], [{ kind: "total", kg: 35 }, 5, 8], [{ kind: "total", kg: 28 }, 3, undefined],
+    ]);
+    for (const item of original.blocks.filter((b) => b.id !== "workout-block-v2-muscu-a-traction")) expect(fixed.blocks.find((b) => b.id === item.id), item.id).toEqual(item);
+    expect((await db.weightEntries.where("date").equals("2026-10-04").toArray()).map((entry) => entry.kg)).toEqual([91.6]);
+    expect(((await db.settings.get("install"))!.value as InstallMarkers).fixTractionRpe20261004).toBeDefined();
+    expect(v6State(after, "2026-10-05")).toMatchObject({ aKg: 28, bKg: 35 });
+    expect(fixTractionRpe20261004(fixed, NOW)).toBeUndefined();
   }, 20000);
 });

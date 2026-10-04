@@ -7,7 +7,7 @@ import { db } from "../../db/database";
 import type { PerformedExerciseBlock, SessionTemplate, StrengthFrame, StrengthFrameVersion, StrengthMilestone, WorkoutSession } from "../../domain";
 import { frameParametersChanged, nextStep, proposeRaise } from "../../domain/rules/strengthRules";
 import { expectedAfterFrameTargets } from "./seedFrameTargets20260925";
-import { expectedCurlEzVersionAfterFix, FIX_WORKOUT_ID as FIX_20261004_ID, fixWorkout20261004 } from "../history/seedFixWorkout20261004";
+import { expectedCurlEzVersionAfterFix, FIX_WORKOUT_ID as FIX_20261004_ID, fixesOf20261004 } from "../history/seedFixWorkout20261004";
 import { canonicalStringify } from "../backup/canonicalJson";
 import { resetAndRestore } from "../backup/resetAndRestore";
 import { parseBackup } from "../backup/restoreBackup";
@@ -240,7 +240,7 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
               ? (addLegCurlCouche20260927(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "") ?? workout)
               : /* Seed 31 : la Muscu A du 04/10, dans l'état constaté, reçoit sa traction à 28 kg et son curl haltères. */
                 workout.id === FIX_20261004_ID
-                ? (fixWorkout20261004(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "") ?? workout)
+                ? fixesOf20261004(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "")
                 : workout,
       ),
       ...(added ? [buildWorkout20260925(added.createdAt)] : []),

@@ -127,3 +127,42 @@ export async function seedFixWorkout20261004(now: string = new Date().toISOStrin
     await db.settings.put({ key: "install", value: { ...install, fixWorkout20261004: now } });
   });
 }
+
+/**
+ * Seed 33 — même séance, deuxième message (sauvegarde du 04/10 à 18:06) :
+ * la 3e série de traction à 35 kg × 5 avait été validée sans RPE ; c'était
+ * **RPE 8**. Seulement si cette série est encore sans RPE.
+ */
+export function fixTractionRpe20261004(workout: WorkoutSession, now: string): WorkoutSession | undefined {
+  const traction = exerciseBlock(workout, TRACTION_BLOCK_ID);
+  const third = traction?.series?.find((set) => set.completedAt === TRACTION_LAST_SET_AT);
+  if (workout.status !== "completed" || !third || third.rpe !== undefined || third.load?.kind !== "total" || third.load.kg !== 35 || third.reps !== 5) return undefined;
+  return {
+    ...workout,
+    blocks: workout.blocks.map((block) =>
+      block.id === TRACTION_BLOCK_ID && block.kind === "exercise"
+        ? { ...block, series: block.series!.map((set) => (set.completedAt === TRACTION_LAST_SET_AT ? { ...set, rpe: 8 } : set)) }
+        : block,
+    ),
+    updatedAt: now,
+  };
+}
+
+/** Pour les tests sur sauvegarde réelle : la séance du 04/10 après les seeds 31 et 33. */
+export function fixesOf20261004(workout: WorkoutSession, updatedAt: string): WorkoutSession {
+  const first = fixWorkout20261004(workout, updatedAt) ?? workout;
+  return fixTractionRpe20261004(first, updatedAt) ?? first;
+}
+
+export async function seedFixTractionRpe20261004(now: string = new Date().toISOString()): Promise<void> {
+  await db.transaction("rw", db.workouts, db.settings, async () => {
+    const install = (await db.settings.get("install"))?.value as InstallMarkers | undefined;
+    if (install?.fixTractionRpe20261004 !== undefined) return;
+
+    const workout = await db.workouts.get(FIX_WORKOUT_ID);
+    const fixed = workout ? fixTractionRpe20261004(workout, now) : undefined;
+    if (fixed) await db.workouts.put(fixed);
+
+    await db.settings.put({ key: "install", value: { ...install, fixTractionRpe20261004: now } });
+  });
+}
