@@ -56,7 +56,7 @@ describe("seed 24 — priorité traction", () => {
       "v2-muscu-b-developpe-epaules", "v2-muscu-b-elevations", "v2-muscu-b-extension-triceps", "v2-muscu-b-presse",
     ]);
     expect(b.blocks.find((block) => block.id === "v2-muscu-b-traction")).toMatchObject({ notes: TRACTION_LIGHT_NOTE });
-    expect(order(c).slice(0, 3)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-suspension", "v2-muscu-c-sprints"]);
+    expect(order(c).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-suspension", "v2-muscu-c-negatives", "v2-muscu-c-sprints"]);
     expect(c.blocks.find((block) => block.id === "v2-muscu-c-suspension")).toMatchObject({
       exerciseId: "suspension-omoplates", notes: SUSPENSION_NOTE, instructions: { shape: "duration", sets: 3, durationSec: { min: 20, max: 30 } },
     });

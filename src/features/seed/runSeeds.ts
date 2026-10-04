@@ -14,6 +14,7 @@ import { seedRemoveOldMuscuA } from "../sessions/seedRemoveOldMuscuA";
 import { seedArchiveProgramV1, seedProgramV2 } from "../program/seedProgramV2";
 import { seedTractionPriority20261003 } from "../program/seedTractionPriority";
 import { seedTractionV620261004 } from "../program/seedTractionV6";
+import { seedNegativesMuscuC20261005 } from "../program/seedNegativesMuscuC";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
 import { seedTractionTestV320261005 } from "../tests/seedTractionTestV3";
 import { seedGoals } from "../goals/seedGoals";
@@ -86,13 +87,15 @@ export const SEEDS: SeedStep[] = [
   { name: "tractionV620261004", dependsOn: ["programV2", "tractionIncrement20261003"], run: () => seedTractionV620261004() },
   /* Seed 27 (05/10/2026) : test traction V3 — départ au palier A réel, remplace la traction de Muscu A. */
   { name: "tractionTestV320261005", dependsOn: ["testProtocols", "programV2", "tractionTest7kg20261003"], run: () => seedTractionTestV320261005() },
+  /* Seed 28 (05/10/2026) : tractions négatives en Muscu C, après la suspension. */
+  { name: "negativesMuscuC20261005", dependsOn: ["programV2", "tractionPriority20261003"], run: () => seedNegativesMuscuC20261005() },
 ];
 
 /**
  * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
  * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
  */
-export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005"].includes(seed.name));
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005"].includes(seed.name));
 
 export interface SeedReport {
   ran: string[];

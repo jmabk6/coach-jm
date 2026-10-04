@@ -29,6 +29,7 @@ export const TRACTION_TEST_V3_INSTRUCTIONS = [
   "Essai réussi = bras tendus au départ, menton au-dessus de la barre, sans élan.",
   "Résultat : la plus petite assistance réussie. Le test ne change jamais le palier A ; une traction stricte réussie à 0 kg = objectif gagné.",
   "Toujours la même machine.",
+  "Après le test : les autres exercices de Muscu A, en travail propre, sans recherche de record ni échec.",
 ];
 
 export const TRACTION_TEST_V3_SETTINGS = { warmupSets: 2, stepMinKg: 7, stepMaxKg: 7, restSec: 180, start: "palier_a" };

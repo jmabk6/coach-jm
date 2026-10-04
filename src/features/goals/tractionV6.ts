@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import type { WeightEntry, WorkoutSession } from "../../domain";
 import { getWeekStartDate } from "../../domain/rules/programRules";
 import { betSessions, type BetSession, type BetSet } from "./tractionBet";
@@ -328,14 +328,63 @@ export const V6_FORCE_BLOCK_ID = "v2-muscu-a-traction";
 export const V6_LIGHT_BLOCK_ID = "v2-muscu-b-traction";
 export const V6_LIGHT_TEMPLATE_ID = "v2-muscu-b";
 
+/** Muscu C : les tractions négatives, à partir du 01/11/2026 (§ 11). */
+export const V6_NEGATIVES_BLOCK_ID = "v2-muscu-c-negatives";
+export const V6_NEGATIVES_START = "2026-11-01";
+/** Cardio C du samedi avant un test : le 2e bloc soutenu de 12 min et la récupération qui le précède sortent. */
+export const V6_CARDIO_C_DELOAD_STEP_IDS = ["v2-cardio-c-entre", "v2-cardio-c-soutenu-2"];
+
+interface AdjustableTemplate {
+  id: string;
+  blocks: ReadonlyArray<{ id: string; kind: string; role?: "warmup"; instructions?: { shape: string; sets?: number }; rounds?: number }>;
+}
+
+export interface V6Adjustment {
+  blockId: string;
+  sets?: number;
+  rounds?: number;
+  removeStepIds?: string[];
+  remove?: true;
+}
+
 /**
- * Allègement au démarrage d'une séance (§ 9) : en semaine test, la
- * traction de Muscu B passe à 2 séries. Le reste de l'allègement (Muscu C,
- * Cardio C) viendra avec le programme.
+ * Allègement au démarrage d'une séance (§ 9 et § 11), décidé par la date :
+ * - Muscu B en semaine test : la traction à 2 séries (2 × 8) ;
+ * - Muscu C en semaine test (−50 %) : 3 séries → 2, 2 → 1 (la moitié,
+ *   arrondie au-dessus), « Rester bas » 3 tours → 2 ; l'échauffement ne
+ *   bouge pas ;
+ * - Muscu C avant le 01/11 : pas de tractions négatives ;
+ * - Cardio C du samedi avant un dimanche de test : sans le 2e bloc
+ *   soutenu de 12 min ni la récupération qui le précède (≈ 42 min).
  */
-export function v6SnapshotAdjustments(templateId: string, date: string): Array<{ blockId: string; sets: number }> {
-  if (templateId !== V6_LIGHT_TEMPLATE_ID || date < V6_START_DATE) return [];
-  return v6WeekOf(date).kind === "test" ? [{ blockId: V6_LIGHT_BLOCK_ID, sets: 2 }] : [];
+export function v6SnapshotAdjustments(template: AdjustableTemplate, date: string): V6Adjustment[] {
+  if (date < V6_START_DATE) return [];
+  const testWeek = v6WeekOf(date).kind === "test" && getWeekStartDate(date) >= V6_START_DATE;
+
+  if (template.id === V6_LIGHT_TEMPLATE_ID) return testWeek ? [{ blockId: V6_LIGHT_BLOCK_ID, sets: 2 }] : [];
+
+  if (template.id === "v2-muscu-c") {
+    const adjustments: V6Adjustment[] = [];
+    for (const block of template.blocks) {
+      if (block.id === V6_NEGATIVES_BLOCK_ID && date < V6_NEGATIVES_START) {
+        adjustments.push({ blockId: block.id, remove: true });
+        continue;
+      }
+      if (!testWeek || block.role === "warmup") continue;
+      if (block.kind === "group" && block.rounds !== undefined && block.rounds > 1) adjustments.push({ blockId: block.id, rounds: Math.ceil(block.rounds / 2) });
+      const sets = block.instructions?.sets;
+      if (block.kind === "exercise" && sets !== undefined && sets > 1) adjustments.push({ blockId: block.id, sets: Math.ceil(sets / 2) });
+    }
+    return adjustments;
+  }
+
+  if (template.id === "v2-cardio-c") {
+    const tomorrow = format(addDays(parseISO(date), 1), "yyyy-MM-dd");
+    const beforeTest = v6WeekOf(tomorrow).kind === "test" && getWeekStartDate(tomorrow) === tomorrow;
+    return beforeTest ? [{ blockId: "v2-cardio-c-tapis", removeStepIds: [...V6_CARDIO_C_DELOAD_STEP_IDS] }] : [];
+  }
+
+  return [];
 }
 
 /* -------------------------------------------------------------------------- */

@@ -99,8 +99,8 @@ export async function startWorkout(
     startedAt: now,
     lastActionAt: now,
     activeDurationSec: 0,
-    /* Pari traction V6 : Muscu B allégée en semaine test. */
-    blocks: createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById, tests, v6SnapshotAdjustments(template.id, plannedSession.date)),
+    /* Pari traction V6 : semaines test allégées (Muscu B, Muscu C, Cardio C de la veille), négatives dès le 01/11. */
+    blocks: createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById, tests, v6SnapshotAdjustments(template, plannedSession.date)),
     createdAt: now,
     updatedAt: now,
   };

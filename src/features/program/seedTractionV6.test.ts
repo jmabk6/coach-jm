@@ -114,15 +114,15 @@ describe("séance créée : Muscu B hors palier, 2 séries en semaine test", () 
     const b = (await db.sessionTemplates.get("v2-muscu-b"))!;
     const a = (await db.sessionTemplates.get("v2-muscu-a"))!;
 
-    const normal = createWorkoutSnapshot(b, ids, versions, [], v6SnapshotAdjustments("v2-muscu-b", "2026-10-06"));
+    const normal = createWorkoutSnapshot(b, ids, versions, [], v6SnapshotAdjustments(b, "2026-10-06"));
     const tractionB = normal.find((block) => block.kind !== "test" && block.sourceBlockId === "v2-muscu-b-traction")!;
     expect(tractionB).toMatchObject({ reducedPrescription: true, frameVersionId: version.id });
     expect(tractionB.kind === "exercise" && tractionB.series).toHaveLength(3);
 
-    expect(v6SnapshotAdjustments("v2-muscu-b", "2026-10-27")).toEqual([{ blockId: "v2-muscu-b-traction", sets: 2 }]);
-    expect(v6SnapshotAdjustments("v2-muscu-a", "2026-10-25")).toEqual([]);
-    expect(v6SnapshotAdjustments("v2-muscu-b", "2026-09-29")).toEqual([]);
-    const light = createWorkoutSnapshot(b, ids, versions, [], v6SnapshotAdjustments("v2-muscu-b", "2026-10-27"));
+    expect(v6SnapshotAdjustments(b, "2026-10-27")).toEqual([{ blockId: "v2-muscu-b-traction", sets: 2 }]);
+    expect(v6SnapshotAdjustments(a, "2026-10-25")).toEqual([]);
+    expect(v6SnapshotAdjustments(b, "2026-09-29")).toEqual([]);
+    const light = createWorkoutSnapshot(b, ids, versions, [], v6SnapshotAdjustments(b, "2026-10-27"));
     const lightB = light.find((block) => block.kind !== "test" && block.sourceBlockId === "v2-muscu-b-traction")!;
     expect(lightB.kind === "exercise" && lightB.series).toHaveLength(2);
 

@@ -81,6 +81,8 @@ export interface InstallMarkers {
   tractionV620261004?: string;
   /** Seed 27 : test traction V3 (départ au palier A réel, remplace la traction de Muscu A). */
   tractionTestV320261005?: string;
+  /** Seed 28 : tractions négatives en Muscu C (présentes dans la séance à partir du 01/11/2026). */
+  negativesMuscuC20261005?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

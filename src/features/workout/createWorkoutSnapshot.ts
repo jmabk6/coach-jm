@@ -189,15 +189,22 @@ function createGroupBlock(
 }
 
 /**
+ * Allègement d'une brique du modèle au démarrage (pari V6, semaines
+ * test) : moins de séries, moins de tours d'un groupe, des paliers
+ * retirés, ou la brique retirée.
+ */
+export interface SnapshotAdjustment {
+  blockId: Id;
+  sets?: number;
+  rounds?: number;
+  removeStepIds?: Id[];
+  remove?: true;
+}
+
+/**
  * Un test attaché à l'instance démarrée (lot G.3) et la version de son
  * protocole, capturée au démarrage comme une version de cadre.
  */
-/** Moins de séries sur une brique du modèle. */
-export interface SetsAdjustment {
-  blockId: Id;
-  sets: number;
-}
-
 export interface SnapshotTest {
   test: PlannedTest;
   protocolVersionId: Id;
@@ -207,22 +214,33 @@ export interface SnapshotTest {
  * Ajustements du jour de test (§ 2.3) : moins de séries sur une brique
  * (traction assistée : 2 au lieu de 3). La brique devient une
  * prescription réduite : ni validation de palier, ni stagnation.
- * `extra` : les allègements hors test (Muscu B en semaine test, V6).
+ * `extra` : les allègements hors test (semaines test du pari V6).
  */
-function applyAdjustments(blocks: SessionBlock[], tests: ReadonlyArray<SnapshotTest>, extra: ReadonlyArray<SetsAdjustment>): SessionBlock[] {
-  const sets = new Map<Id, number>(extra.map((adjustment) => [adjustment.blockId, adjustment.sets]));
+function applyAdjustments(blocks: SessionBlock[], tests: ReadonlyArray<SnapshotTest>, extra: ReadonlyArray<SnapshotAdjustment>): SessionBlock[] {
+  const byBlock = new Map<Id, SnapshotAdjustment>(extra.map((adjustment) => [adjustment.blockId, adjustment]));
   for (const { test } of tests) {
-    for (const adjustment of test.adjustments ?? []) sets.set(adjustment.blockId, adjustment.sets);
+    for (const adjustment of test.adjustments ?? []) byBlock.set(adjustment.blockId, { ...byBlock.get(adjustment.blockId), ...adjustment });
   }
-  if (sets.size === 0) return blocks;
+  if (byBlock.size === 0) return blocks;
 
-  return blocks.map((block) => {
-    const wanted = sets.get(block.id);
-    if (wanted === undefined || block.kind !== "exercise") return block;
-    const instructions = block.instructions;
-    if (instructions.shape !== "reps" && instructions.shape !== "duration") return block;
-    return { ...block, instructions: { ...instructions, sets: wanted } };
-  });
+  return blocks
+    .filter((block) => byBlock.get(block.id)?.remove !== true)
+    .map((block) => {
+      const wanted = byBlock.get(block.id);
+      if (!wanted) return block;
+      if (block.kind === "group") return wanted.rounds !== undefined ? { ...block, rounds: wanted.rounds } : block;
+      if (block.kind !== "exercise") return block;
+      const instructions = block.instructions;
+      if ((instructions.shape === "reps" || instructions.shape === "duration") && wanted.sets !== undefined) {
+        return { ...block, instructions: { ...instructions, sets: wanted.sets } };
+      }
+      if (instructions.shape === "steps" && wanted.removeStepIds) {
+        const removed = new Set(wanted.removeStepIds);
+        const steps = instructions.steps.filter((step) => !removed.has(step.id)).map((step, position) => ({ ...step, position }));
+        return { ...block, instructions: { ...instructions, steps } };
+      }
+      return block;
+    });
 }
 
 function createTestBlock({ test, protocolVersionId }: SnapshotTest, replacedBlockId?: Id): PerformedTestBlock {
@@ -339,7 +357,7 @@ export function createWorkoutSnapshot(
   frameVersionByExercise: FrameVersionByExercise = NO_FRAMES,
   versionById: FrameVersionById = NO_VERSIONS,
   tests: ReadonlyArray<SnapshotTest> = [],
-  adjustments: ReadonlyArray<SetsAdjustment> = [],
+  adjustments: ReadonlyArray<SnapshotAdjustment> = [],
 ): PerformedBlock[] {
   const blocks = applyAdjustments(template.blocks, tests, adjustments)
     .slice()

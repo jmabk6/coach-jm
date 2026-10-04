@@ -80,6 +80,8 @@ export const CURL_BICEPS_ID = "import-curl-biceps-ez";
 
 /** Muscu B, traction légère (03/10/2026). */
 export const TRACTION_LIGHT_NOTE = "Traction légère, en premier : un cran d'aide au-dessus de la Muscu A (A + 7 kg), 3 × 8-10, RPE 6-8, jamais à l'échec. Semaine test : 2 × 8.";
+/** Muscu C, tractions négatives (pari V6, à partir du 01/11/2026). */
+export const NEGATIVES_NOTE = "Juste après la suspension, avant les sprints : descente contrôlée d'environ 5 s, 2 à 3 min de repos, jamais à l'échec. Passer à 2 × 3 seulement si la récupération et les coudes vont bien.";
 /** Muscu C, suspension (03/10/2026). */
 export const SUSPENSION_NOTE = "Facile et technique : omoplates basses et serrées, bras tendus. Pas un test de durée maximale : s'arrêter bien avant la fatigue du grip, pour arriver frais à la Muscu A.";
 
@@ -132,7 +134,7 @@ const muscuB: TemplateContent = {
 const resterBas: GroupBlock = {
   id: "v2-muscu-c-rester-bas",
   kind: "group",
-  position: 4,
+  position: 5,
   name: "Rester bas",
   rounds: 3,
   restBetweenRoundsSec: 90,
@@ -157,13 +159,15 @@ const muscuC: TemplateContent = {
     warmup("v2-muscu-c"),
     /* Pari traction (03/10/2026) : suspension et omoplates, facile et technique. */
     exercise("v2-muscu-c-suspension", 1, "suspension-omoplates", { shape: "duration", sets: 3, durationSec: { min: 20, max: 30 }, restBetweenSetsSec: 60 }, { notes: SUSPENSION_NOTE }),
-    exercise("v2-muscu-c-sprints", 2, "sprint-velo", { shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 }, { notes: "Même vélo, même résistance à chaque séance." }),
-    exercise("v2-muscu-c-montee-banc", 3, "montee-banc", reps(3, 8, 8, 60), { notes: "8 par jambe." }),
+    /* Pari V6 : 2 × 2 négatives, présentes dans la séance à partir du 01/11/2026 seulement. */
+    exercise("v2-muscu-c-negatives", 2, "traction-negative", reps(2, 2, 2, 150), { notes: NEGATIVES_NOTE }),
+    exercise("v2-muscu-c-sprints", 3, "sprint-velo", { shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 }, { notes: "Même vélo, même résistance à chaque séance." }),
+    exercise("v2-muscu-c-montee-banc", 4, "montee-banc", reps(3, 8, 8, 60), { notes: "8 par jambe." }),
     resterBas,
-    exercise("v2-muscu-c-pullover", 5, "pullover-poulie", reps(3, 10, 15, ISOLATION)),
-    exercise("v2-muscu-c-face-pull", 6, "face-pull", reps(3, 12, 15, ISOLATION), { notes: FACE_PULL_NOTE }),
-    exercise("v2-muscu-c-curl-marteau", 7, "curl-marteau-halteres", reps(3, 10, 15, ISOLATION)),
-    exercise("v2-muscu-c-triceps-tete", 8, "extension-triceps-dessus-tete", reps(2, 10, 15, ISOLATION)),
+    exercise("v2-muscu-c-pullover", 6, "pullover-poulie", reps(3, 10, 15, ISOLATION)),
+    exercise("v2-muscu-c-face-pull", 7, "face-pull", reps(3, 12, 15, ISOLATION), { notes: FACE_PULL_NOTE }),
+    exercise("v2-muscu-c-curl-marteau", 8, "curl-marteau-halteres", reps(3, 10, 15, ISOLATION)),
+    exercise("v2-muscu-c-triceps-tete", 9, "extension-triceps-dessus-tete", reps(2, 10, 15, ISOLATION)),
   ],
 };
 
