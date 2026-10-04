@@ -1,7 +1,7 @@
 import type { PerformedExerciseBlock, WorkoutSession } from "../../domain";
 import { BET_EXERCISE_ID, BET_FORCE_TEMPLATES, formatBetSets, type BetSet } from "../goals/tractionBet";
 import {
-  isRepli, V6_LIGHT_TEMPLATE_ID, V6_MAX_RPE, V6_STEP_KG, V6_VALIDATION_REPS, v6Color, v6ForceSession, v6LightSession, type V6Color, type V6State,
+  isRepli, V6_LIGHT_TEMPLATE_ID, V6_MAX_RPE, V6_STEP_KG, V6_VALIDATION_REPS, v6Color, v6ForceSession, v6LightSession, v6VolumeKgAfter, type V6Color, type V6State,
 } from "../goals/tractionV6";
 import { v6StatusLabel } from "../goals/tractionV6View";
 import type { BetBanner } from "./ExerciseBlockCard";
@@ -13,7 +13,8 @@ import type { BetBanner } from "./ExerciseBlockCard";
  *   saisi en série 1 bascule aussitôt les séries 2 et 3 un cran plus haut ;
  * - jour de test : rien — le test traction V3 remplace la traction de
  *   Muscu A (05/10/2026) ;
- * - Muscu B : un cran au-dessus de A, 3 × 8-10 (2 × 8 en semaine test).
+ * - Muscu B : le palier de volume du dernier palier A validé (`state.bKg`),
+ *   3 × 8-10 (2 × 8 en semaine test).
  * Ailleurs : rien.
  */
 
@@ -44,12 +45,17 @@ function doneSets(block: PerformedExerciseBlock): BetSet[] {
     }));
 }
 
-export function betBannerFor(workout: WorkoutSession, block: PerformedExerciseBlock, state: V6State): BetBanner | undefined {
+/**
+ * `statusState` : l'état comparé à la référence (le palier A du début de la
+ * semaine, `v6StatusState`) ; par défaut, `state`.
+ */
+export function betBannerFor(workout: WorkoutSession, block: PerformedExerciseBlock, state: V6State, statusState: V6State = state): BetBanner | undefined {
   if (block.exerciseId !== BET_EXERCISE_ID) return undefined;
 
   if (workout.sessionTemplateId === V6_LIGHT_TEMPLATE_ID) {
     const light = v6LightSession(state, workout.date);
-    const why = state.phase === "essai_libre" ? "phase essai libre" : `A + ${V6_STEP_KG} kg`;
+    const lastValidation = [...state.events].reverse().find((event) => event.kind === "validation");
+    const why = state.phase === "essai_libre" ? "phase essai libre" : lastValidation ? `volume après ${lastValidation.detail} validé` : "volume, avant toute validation";
     return {
       title: `Traction légère — ${light.assistKg} kg d'aide (${why})`,
       /* La consigne du modèle dit déjà le pourquoi. */
@@ -59,7 +65,7 @@ export function betBannerFor(workout: WorkoutSession, block: PerformedExerciseBl
   }
 
   if (!BET_FORCE_TEMPLATES.includes(workout.sessionTemplateId ?? "")) return undefined;
-  const status = statusOf(state, workout.date);
+  const status = statusOf(statusState, workout.date);
   const a = state.aKg;
 
   if (state.phase === "gagne") {
@@ -96,7 +102,7 @@ export function betBannerFor(workout: WorkoutSession, block: PerformedExerciseBl
       { label: "Dernière séance", value: lastLine(state) },
       { label: "Cette séance", value: `3 séries à ${a} kg, jusqu'à ${V6_VALIDATION_REPS} reps propres — RPE ${V6_MAX_RPE} max, repos 3 min` },
       { label: "Repli", value: `série 1 à 2 reps ou moins, ou RPE 10 → séries 2 et 3 à ${fallback} kg ; le palier reste ${a} kg` },
-      { label: "Validation", value: `5 / 5 / 5 à ${a} kg → ${a === V6_STEP_KG ? "phase essai libre" : `A passe à ${a - V6_STEP_KG} kg`}` },
+      { label: "Validation", value: `5 / 5 / 5 à ${a} kg → ${a === V6_STEP_KG ? `phase essai libre, Muscu B à ${v6VolumeKgAfter(a)} kg` : `A passe à ${a - V6_STEP_KG} kg, Muscu B à ${v6VolumeKgAfter(a)} kg`}` },
     ],
     ...(repli ? { note: `Repli déclenché : séries 2 et 3 à ${fallback} kg. Le palier A reste ${a} kg ; séance exclue des régressions.` } : {}),
     sets,

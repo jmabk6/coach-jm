@@ -85,8 +85,8 @@ describe("seed 31 : la Muscu A du 04/10 (sauvegarde réelle)", () => {
     expect(ez.frozenAt).toBeUndefined();
     expect(((await db.settings.get("install"))!.value as InstallMarkers).fixWorkout20261004).toBeDefined();
 
-    /* Pari V6 : 5/5/5 à 35 kg le 04/10 → palier A 28, Muscu B 35. */
-    expect(v6State(after, "2026-10-05")).toMatchObject({ aKg: 28, bKg: 35, phase: "travail" });
+    /* Pari V6 : 5/5/5 à 35 kg le 04/10 → palier A 28 ; Muscu B reste 42 (palier de volume de 35 validé). */
+    expect(v6State(after, "2026-10-05")).toMatchObject({ aKg: 28, bKg: 42, phase: "travail" });
     /* La correction ne s'applique qu'une fois, et pas sur une séance déjà corrigée. */
     expect(fixWorkout20261004(fixed, NOW)).toBeUndefined();
   }, 20000);
@@ -116,7 +116,7 @@ describe("seed 33 : RPE 8 sur la 3e série de traction (sauvegarde réelle de 18
     for (const item of original.blocks.filter((b) => b.id !== "workout-block-v2-muscu-a-traction")) expect(fixed.blocks.find((b) => b.id === item.id), item.id).toEqual(item);
     expect((await db.weightEntries.where("date").equals("2026-10-04").toArray()).map((entry) => entry.kg)).toEqual([91.6]);
     expect(((await db.settings.get("install"))!.value as InstallMarkers).fixTractionRpe20261004).toBeDefined();
-    expect(v6State(after, "2026-10-05")).toMatchObject({ aKg: 28, bKg: 35 });
+    expect(v6State(after, "2026-10-05")).toMatchObject({ aKg: 28, bKg: 42 });
     expect(fixTractionRpe20261004(fixed, NOW)).toBeUndefined();
   }, 20000);
 });

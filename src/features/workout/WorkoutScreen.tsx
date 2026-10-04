@@ -61,7 +61,7 @@ import { cancelWorkout, isUntouchedWorkout } from "./deleteWorkout";
 import { endWorkout } from "./finishWorkout";
 import { betBannerFor } from "./betBanner";
 import { BET_EXERCISE_ID } from "../goals/tractionBet";
-import { v6State } from "../goals/tractionV6";
+import { v6State, v6StatusState } from "../goals/tractionV6";
 import { findLastComparableStep } from "./lastPerformance";
 import { RestBar } from "./RestBar";
 import { RestCard } from "./RestCard";
@@ -282,6 +282,14 @@ export function WorkoutScreen() {
     (block) => (block.kind === "exercise" && block.exerciseId === BET_EXERCISE_ID) || (block.kind === "test" && block.protocolId === TRACTION_PROTOCOL_ID),
   )
     ? v6State(
+        completedWorkouts.filter((item) => item.id !== workout.id),
+        workout.date,
+        testResults.filter((result) => result.workoutId !== workout.id),
+      )
+    : undefined;
+  /* Statut face à la référence : le palier A du début de la semaine (V6, 05/10/2026). */
+  const betStatus = bet
+    ? v6StatusState(
         completedWorkouts.filter((item) => item.id !== workout.id),
         workout.date,
         testResults.filter((result) => result.workoutId !== workout.id),
@@ -631,7 +639,7 @@ export function WorkoutScreen() {
                 frameVersion={block.frameVersionId && !block.outsideFrame ? frames.versionById.get(block.frameVersionId) : undefined}
                 /* Pari V6 : le palier de la traction vient du moteur V6, jamais d'une hausse ou d'une stagnation du cadre. */
                 insets={block.exerciseId === BET_EXERCISE_ID ? undefined : insetsFor(block.frameVersionId)}
-                bet={bet ? betBannerFor(workout, block, bet) : undefined}
+                bet={bet ? betBannerFor(workout, block, bet, betStatus) : undefined}
                 onToggle={() => toggleBlock(block)}
                 onOpenMenu={() => setBlockMenu(block)}
                 onUnskip={() => void run((current, at) => unskipBlock(current, block.id, at))}

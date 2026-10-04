@@ -49,28 +49,33 @@ describe("vue V6 : référence face au réel", () => {
 
   it("reps réelles face à la référence à aide identique, sans effet sur la couleur ; repli marqué ; validation marquée", () => {
     const workouts = [
-      muscuA("2026-10-04", [set(35, 2, 9), set(42, 5), set(42, 5)]),
-      muscuA("2026-10-11", [set(35, 3, 9), set(35, 3, 9), set(35, 2, 9)]),
-      muscuA("2026-10-18", five(35)),
+      muscuA("2026-10-04", five(35)),
+      muscuA("2026-10-11", [set(28, 3, 9), set(28, 3, 9), set(28, 2, 9)]),
+      muscuA("2026-10-18", [set(28, 2, 9), set(35, 5), set(35, 5)]),
+      muscuA("2026-11-01", five(28)),
     ];
-    const progress = v6Progress(workouts, [], "2026-10-20");
-    const [s1, s2, s3] = progress.rows;
-    expect(s1).toMatchObject({ state: "past", repli: true, color: "vert", compare: { real: [2], ref: [3, 3, 3] } });
-    /* 3/3/2 sous la référence ≥ 4/3/3 : la couleur reste verte. */
-    expect(s2).toMatchObject({ color: "vert", compare: { real: [3, 3, 2], ref: [4, 3, 3] } });
-    expect(s3).toMatchObject({ validatedKg: 35, aKg: 28, color: "vert", sessionAKg: 35 });
-    expect(progress).toMatchObject({ state: { aKg: 28 }, statusLabel: "En avance sur la référence" });
+    const progress = v6Progress(workouts, [], "2026-11-03");
+    const [s1, s2, s3, , s5] = progress.rows;
+    /* S1 : 35 validé comme la référence ; le chip montre le palier du début de semaine. */
+    expect(s1).toMatchObject({ state: "past", validatedKg: 35, aKg: 35, color: "vert", compare: { real: [5, 5, 5], ref: [5, 5, 5] } });
+    /* 3/3/2 sous la référence ≥ 3/3/3 : la couleur reste verte. */
+    expect(s2).toMatchObject({ aKg: 28, color: "vert", compare: { real: [3, 3, 2], ref: [3, 3, 3] } });
+    expect(s3).toMatchObject({ repli: true, aKg: 28, color: "vert" });
+    expect(s5).toMatchObject({ state: "now", validatedKg: 28, aKg: 28, color: "vert", sessionAKg: 28 });
+    expect(progress).toMatchObject({ state: { aKg: 21, bKg: 35 }, statusLabel: "Conforme à la référence" });
+    /* S6 : le palier du début de semaine (21) est en avance sur la référence (28). */
+    expect(v6Progress(workouts, [], "2026-11-08")).toMatchObject({ color: "vert", statusLabel: "En avance sur la référence" });
   });
 
-  it("semaine test : référence = palier de force précédent (S4 → 35, S8 → 28) ; le test s'affiche, ne valide pas", () => {
-    const results = [{ id: "r1", protocolId: "protocol-traction", date: "2026-10-25", measures: [{ key: "assistance_min_kg", value: 28 }] }];
-    const progress = v6Progress([muscuA("2026-10-25", five(35), { reduced: true })], [], "2026-10-26", results);
-    expect(progress.week).toMatchObject({ number: 4, kind: "test", refKg: 35 });
-    expect(progress.rows[3]).toMatchObject({ testKg: 28, aKg: 35, color: "vert" });
+  it("semaine test : référence = le palier en cours (S4 → 28, S8 → 21) ; le test s'affiche, ne valide pas", () => {
+    const results = [{ id: "r1", protocolId: "protocol-traction", date: "2026-10-25", measures: [{ key: "assistance_min_kg", value: 21 }] }];
+    const progress = v6Progress([muscuA("2026-10-04", five(35)), muscuA("2026-10-25", five(28), { reduced: true })], [], "2026-10-26", results);
+    expect(progress.week).toMatchObject({ number: 4, kind: "test", refKg: 28 });
+    expect(progress.rows[3]).toMatchObject({ testKg: 21, aKg: 28, color: "vert" });
     expect(progress.rows[3]!.session).toBeUndefined();
-    expect(progress.state.aKg).toBe(35);
-    expect(v6Progress([], [], "2026-11-24").week).toMatchObject({ number: 8, refKg: 28 });
-    expect(v6Progress([], [], "2026-11-24").color).toBe("orange");
+    expect(progress.state).toMatchObject({ aKg: 28, bKg: 42 });
+    expect(v6Progress([], [], "2026-11-24").week).toMatchObject({ number: 8, refKg: 21 });
+    expect(v6Progress([], [], "2026-11-24").color).toBe("rouge");
   });
 
   it("toujours 35 en S5 : orange « 1 cran » ; en S9 : rouge « 2 crans » ; S25-S26 : référence 7", () => {
@@ -110,10 +115,10 @@ describe("écran Objectif Traction", () => {
     const text = container.textContent ?? "";
     expect(text).toContain("1 cran plus assisté que la référence (28 kg)");
     expect(text).toContain("35 kg d'aide");
-    expect(text).toContain("Référence S5 (01/11) : 28 kg");
+    expect(text).toContain("Référence S5 (01/11) : 28 ≥4/4/4");
     expect(text).toContain("Charge effective indicative ≈ 57 kg");
     expect(text).toContain("Référence V6 face au réel (S1–S26)");
-    expect(text).toContain("Réel : 35 kg · 4 / 3 / 3 (réf ≥ 3 / 3 / 3)");
+    expect(text).toContain("Réel : 35 kg · 4 / 3 / 3 (réf ≥ 5 / 5 / 5)");
     expect(text).not.toMatch(/semaines? d'avance|semaines? de retard|En retard de|En avance de/);
     expect(container.querySelector(".bet__status--orange")).not.toBeNull();
     expect(container.querySelectorAll(".bet__row")).toHaveLength(26);

@@ -17,6 +17,7 @@ import { seedTractionV620261004 } from "../program/seedTractionV6";
 import { seedNegativesMuscuC20261005 } from "../program/seedNegativesMuscuC";
 import { seedLegPressMuscuA20261005 } from "../program/seedLegPressMuscuA";
 import { seedCurlHalteresMuscuA20261004 } from "../program/seedCurlHalteresMuscuA";
+import { seedTractionLightNote20261005 } from "../program/seedTractionLightNote";
 import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
@@ -103,13 +104,15 @@ export const SEEDS: SeedStep[] = [
   { name: "curlHalteresMuscuA20261004", dependsOn: ["programV2", "exerciseCatalog"], run: () => seedCurlHalteresMuscuA20261004() },
   /* Seed 33 (04/10/2026) : RPE 8 sur la 3e série de traction de la Muscu A du 04/10. */
   { name: "fixTractionRpe20261004", dependsOn: ["fixWorkout20261004"], run: () => seedFixTractionRpe20261004() },
+  /* Seed 34 (05/10/2026) : la consigne de la traction de Muscu B suit la nouvelle règle B du pari V6. */
+  { name: "tractionLightNote20261005", dependsOn: ["programV2", "tractionV620261004"], run: () => seedTractionLightNote20261005() },
 ];
 
 /**
  * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
  * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
  */
-export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004"].includes(seed.name));
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005"].includes(seed.name));
 
 export interface SeedReport {
   ran: string[];

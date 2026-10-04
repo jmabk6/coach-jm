@@ -18,7 +18,8 @@ import { betSessions, type BetSession, type BetSet } from "./tractionBet";
  * 5. une validation change A immédiatement ; 6. toute séance A peut
  * déclencher un repli ; 7. un repli ne change pas A ; 8. un repli est exclu
  * des régressions ; 9. les reps ne se comparent qu'à aide identique ;
- * 10. B = un cran plus assisté que A ; 11. 7 = 5/5/5 → phase essai libre,
+ * 10. B = le palier de volume du dernier palier A validé (il ne descend
+ * pas avec A : 35 validé → B 42 ; 28 → 35 ; 21 → 28 ; 14 → 21 ; 7 → 14) ; 11. 7 = 5/5/5 → phase essai libre,
  * jamais « A = 0 × 3 séries » ; 12. une réussite à 0 kg termine l'objectif.
  *
  * Rien n'est stocké : tout se recalcule depuis les séances, les tests et
@@ -28,6 +29,17 @@ import { betSessions, type BetSession, type BetSet } from "./tractionBet";
 export const V6_START_DATE = "2026-10-04";
 export const V6_DEADLINE = "2027-03-31";
 export const V6_START_KG = 35;
+/** Muscu B tant qu'aucun palier A n'est validé ; ensuite : `v6VolumeKgAfter`. */
+export const V6_START_B_KG = 42;
+
+/**
+ * Règle B (source unique, 05/10/2026) : l'aide de Muscu B après la
+ * validation du palier A `validatedKg` — un cran au-dessus du palier
+ * validé : 35 → 42, 28 → 35, 21 → 28, 14 → 21, 7 → 14.
+ */
+export function v6VolumeKgAfter(validatedKg: number): number {
+  return validatedKg + V6_STEP_KG;
+}
 /** Les crans de la machine. */
 export const V6_STEP_KG = 7;
 export const V6_VALIDATION_REPS = 5;
@@ -48,8 +60,9 @@ export interface V6Week {
   weightKg: number;
   kind: V6WeekKind;
   /**
-   * Palier de référence de la semaine (§ 16) : celui du dimanche de force ;
-   * en semaine test, celui du dernier dimanche de force ; S25-S26 : 7 kg.
+   * Palier de référence de la semaine (§ 16) : celui que la référence
+   * travaille ce dimanche-là ; en semaine test, le palier en cours ;
+   * S25-S26 : 7 kg (phase essai libre).
    */
   refKg: number;
   /** Colonne « Dimanche A / Test ». */
@@ -69,42 +82,52 @@ const w = (number: number, date: string, weightKg: number, kind: V6WeekKind, ref
   number, date, weightKg, kind, refKg, a, b, c,
 });
 
+/**
+ * Référence recalée le 04/10/2026 sur le premier vrai résultat V6 (35 kg
+ * validé en 5/5/5 dès S1) : recalage manuel exceptionnel, la référence
+ * reste ensuite figée. Le palier de référence d'une semaine est celui que
+ * la référence travaille ce dimanche-là (S1 : 35, validé ; une semaine
+ * test : le palier en cours) ; la colonne C reprend le programme C.
+ * Colonne B : la règle B (`v6VolumeKgAfter`) appliquée aux validations
+ * prévues (35 en S1, 28 en S6, 21 en S11, 14 en S17, 7 en S23) — dès le
+ * mardi de la semaine de validation ; une semaine test ne change que le
+ * volume (2 × 8). Corrigé le 05/10 : S6, S11, S12, S17, S23.
+ */
 const RAW_REFERENCE: readonly V6Week[] = [
-  w(1, "2026-10-04", 92, "force", 35, "35 — jusqu'à 5/5/5 ; réf ≥3/3/3", "42 — 3×8", "Normal + scap/grip"),
-  w(2, "2026-10-11", 91, "force", 35, "35 — réf ≥4/3/3", "42 — 3×8–9", "Normal"),
-  w(3, "2026-10-18", 90, "force", 35, "35 — cible 5/5/5", "42 — 3×9–10", "Normal"),
-  w(4, "2026-10-25", 89, "test", 35, "TEST #1 / allégée", "A + 7 — 2×8", "−50 %"),
-  w(5, "2026-11-01", 88, "force", 28, "28 — réf ≥3/3/3", "35 — 3×8", "+ négatives 2×2"),
-  w(6, "2026-11-08", 87, "force", 28, "28 — réf ≥4/3/3", "35 — 3×8–9", "+ négatives"),
-  w(7, "2026-11-15", 86, "force", 28, "28 — cible 5/5/5", "35 — 3×9–10", "+ négatives"),
-  w(8, "2026-11-22", 85, "test", 28, "TEST #2 / allégée", "A + 7 — 2×8", "−50 %"),
-  w(9, "2026-11-29", 84, "force", 21, "21 — réf ≥3/3/3", "28 — 3×8", "+ négatives"),
-  w(10, "2026-12-06", 83, "force", 21, "21 — réf ≥4/3/3", "28 — 3×8–9", "+ négatives"),
-  w(11, "2026-12-13", 82, "force", 21, "21 — réf ≥4/4/4", "28 — 3×9–10", "+ négatives"),
-  w(12, "2026-12-20", 81, "test", 21, "TEST #3 / allégée", "A + 7 — 2×8", "−50 %"),
-  w(13, "2026-12-27", 80, "force", 21, "21 — cible 5/5/5", "28 — 3×10", "+ négatives"),
-  w(14, "2027-01-03", 79, "force", 14, "14 — réf ≥3/3/3", "21 — 3×8", "+ négatives"),
-  w(15, "2027-01-10", 78, "force", 14, "14 — réf ≥4/3/3", "21 — 3×8–9", "+ négatives"),
-  w(16, "2027-01-17", 77, "test", 14, "TEST #4 / allégée", "A + 7 — 2×8", "−50 %"),
-  w(17, "2027-01-24", 76, "force", 14, "14 — réf ≥4/4/4", "21 — 3×9", "+ négatives"),
-  w(18, "2027-01-31", 75, "force", 14, "14 — cible 5/5/5", "21 — 3×10", "+ négatives"),
-  w(19, "2027-02-07", 75, "force", 7, "7 — réf ≥2–3/2–3/2", "14 — 3×8", "+ négatives"),
-  w(20, "2027-02-14", 75, "test", 7, "TEST #5 / allégée", "A + 7 — 2×8", "−50 %"),
-  w(21, "2027-02-21", 75, "force", 7, "7 — réf ≥3/3/3", "14 — 3×8–9", "+ négatives"),
-  w(22, "2027-02-28", 75, "force", 7, "7 — réf ≥4/3/3", "14 — 3×9", "+ négatives"),
-  w(23, "2027-03-07", 75, "force", 7, "7 — cible 5/5/5", "14 — 3×9–10", "léger"),
-  w(24, "2027-03-14", 75, "test", 7, "TEST #6 / allégée — peut aller à 0", "A + 7 — 2×8", "−50 %"),
-  w(25, "2027-03-21", 75, "essai", 7, "ESSAI LIBRE 0 + back-off 7 si nécessaire", "réduit", "récupération"),
-  w(26, "2027-03-28", 75, "essai", 7, "ESSAI LIBRE 0", "très léger", "repos"),
+  w(1, "2026-10-04", 92, "force", 35, "35 validé 5/5/5+", "42 — 3×8–10", "Normal + scap/grip"),
+  w(2, "2026-10-11", 91, "force", 28, "28 ≥3/3/3", "42 — 3×8–10", "Normal"),
+  w(3, "2026-10-18", 90, "force", 28, "28 ≥4/3/3", "42 — 3×8–10", "Normal"),
+  w(4, "2026-10-25", 89, "test", 28, "TEST #1", "42 — 2×8", "−50 %"),
+  w(5, "2026-11-01", 88, "force", 28, "28 ≥4/4/4", "42 — 3×8–10", "+ négatives 2×2"),
+  w(6, "2026-11-08", 87, "force", 28, "28 objectif 5/5/5", "35 — 3×8–10", "+ négatives"),
+  w(7, "2026-11-15", 86, "force", 21, "21 ≥3/3/3", "35 — 3×8–10", "+ négatives"),
+  w(8, "2026-11-22", 85, "test", 21, "TEST #2", "35 — 2×8", "−50 %"),
+  w(9, "2026-11-29", 84, "force", 21, "21 ≥4/3/3", "35 — 3×8–10", "+ négatives"),
+  w(10, "2026-12-06", 83, "force", 21, "21 ≥4/4/4", "35 — 3×8–10", "+ négatives"),
+  w(11, "2026-12-13", 82, "force", 21, "21 objectif 5/5/5", "28 — 3×8–10", "+ négatives"),
+  w(12, "2026-12-20", 81, "test", 14, "TEST #3", "28 — 2×8", "−50 %"),
+  w(13, "2026-12-27", 80, "force", 14, "14 ≥3/3/3", "28 — 3×8–10", "+ négatives"),
+  w(14, "2027-01-03", 79, "force", 14, "14 ≥4/3/3", "28 — 3×8–10", "+ négatives"),
+  w(15, "2027-01-10", 78, "force", 14, "14 ≥4/4/4", "28 — 3×8–10", "+ négatives"),
+  w(16, "2027-01-17", 77, "test", 14, "TEST #4", "28 — 2×8", "−50 %"),
+  w(17, "2027-01-24", 76, "force", 14, "14 objectif 5/5/5", "21 — 3×8–10", "+ négatives"),
+  w(18, "2027-01-31", 75, "force", 7, "7 ≥2–3/2–3/2", "21 — 3×8–10", "+ négatives"),
+  w(19, "2027-02-07", 75, "force", 7, "7 ≥3/3/3", "21 — 3×8–10", "+ négatives"),
+  w(20, "2027-02-14", 75, "test", 7, "TEST #5", "21 — 2×8", "−50 %"),
+  w(21, "2027-02-21", 75, "force", 7, "7 ≥4/3/3", "21 — 3×8–10", "+ négatives"),
+  w(22, "2027-02-28", 75, "force", 7, "7 ≥4/4/4", "21 — 3×8–10", "+ négatives"),
+  w(23, "2027-03-07", 75, "force", 7, "7 objectif 5/5/5", "14 — 3×8–10", "léger"),
+  w(24, "2027-03-14", 75, "test", 7, "TEST #6, 0 possible", "14 — 2×8", "−50 %"),
+  w(25, "2027-03-21", 75, "essai", 7, "essai libre 0 kg", "14 léger", "récupération"),
+  w(26, "2027-03-28", 75, "essai", 7, "essai libre 0 kg", "très léger", "repos"),
 ];
 
-/** Les reps de référence (§ 12), lues dans la colonne A ; S19 « ≥ 2–3 / 2–3 / 2 » : le plancher 2 / 2 / 2. */
+/** Les reps de référence, lues dans la colonne A ; S18 « ≥ 2–3 / 2–3 / 2 » : le plancher 2 / 2 / 2. */
 const REF_REPS: Readonly<Record<number, readonly number[]>> = {
-  1: [3, 3, 3], 2: [4, 3, 3], 3: [5, 5, 5],
-  5: [3, 3, 3], 6: [4, 3, 3], 7: [5, 5, 5],
-  9: [3, 3, 3], 10: [4, 3, 3], 11: [4, 4, 4], 13: [5, 5, 5],
-  14: [3, 3, 3], 15: [4, 3, 3], 17: [4, 4, 4], 18: [5, 5, 5],
-  19: [2, 2, 2], 21: [3, 3, 3], 22: [4, 3, 3], 23: [5, 5, 5],
+  1: [5, 5, 5], 2: [3, 3, 3], 3: [4, 3, 3], 5: [4, 4, 4], 6: [5, 5, 5],
+  7: [3, 3, 3], 9: [4, 3, 3], 10: [4, 4, 4], 11: [5, 5, 5],
+  13: [3, 3, 3], 14: [4, 3, 3], 15: [4, 4, 4], 17: [5, 5, 5],
+  18: [2, 2, 2], 19: [3, 3, 3], 21: [4, 3, 3], 22: [4, 4, 4], 23: [5, 5, 5],
 };
 
 export const V6_REFERENCE: readonly V6Week[] = RAW_REFERENCE.map((week) => {
@@ -150,7 +173,12 @@ export interface V6State {
   /** Palier A courant réel (en phase essai libre : 7, le back-off). */
   aKg: number;
   phase: V6Phase;
-  /** B = un cran plus assisté que A ; en phase essai libre : 14 (§ 6, § 20). */
+  /**
+   * Muscu B : le palier de volume associé au dernier palier A validé — le
+   * palier validé + 7 kg ; 42 kg tant que rien n'est validé. B ne descend
+   * pas avec A : 35 validé → A 28, B 42 ; 28 → A 21, B 35 ; … ; 7 → phase
+   * essai libre, B 14. Source unique de l'aide de Muscu B.
+   */
   bKg: number;
   events: V6Event[];
   /** Régressions consécutives au même palier (repli et tests exclus). */
@@ -200,6 +228,7 @@ export function v6State(workouts: readonly WorkoutSession[], until: string, resu
   );
   const events: V6Event[] = [];
   let aKg = V6_START_KG;
+  let bKg = V6_START_B_KG;
   let phase: V6Phase = "travail";
   let consecutiveRegressions = 0;
   /* Reps totales de la dernière séance valide, par palier (§ 17). */
@@ -227,6 +256,7 @@ export function v6State(workouts: readonly WorkoutSession[], until: string, resu
     if (validated !== undefined) {
       events.push({ ...base, kind: "validation", detail: `${validated} kg` });
       consecutiveRegressions = 0;
+      bKg = v6VolumeKgAfter(validated);
       if (validated <= V6_STEP_KG) {
         phase = "essai_libre";
         aKg = V6_STEP_KG;
@@ -263,7 +293,7 @@ export function v6State(workouts: readonly WorkoutSession[], until: string, resu
   return {
     aKg,
     phase,
-    bKg: phase === "essai_libre" ? 2 * V6_STEP_KG : aKg + V6_STEP_KG,
+    bKg,
     events,
     consecutiveRegressions,
     ...(last ? { last } : {}),
@@ -405,6 +435,19 @@ export function v6Color(state: V6State, date: string): V6Color {
   if (crans <= 0) return "vert";
   if (crans === 1) return "orange";
   return "rouge";
+}
+
+/**
+ * L'état à comparer à la référence de la semaine de `date` : le palier A
+ * du **début** de la semaine (avant son dimanche de force). Ainsi S1, où
+ * la référence valide 35 kg, reste « conforme » après la validation de
+ * 35 ; une validation dans la semaine prévue reste conforme, un retard se
+ * voit la semaine suivante. Une victoire compte tout de suite.
+ */
+export function v6StatusState(workouts: readonly WorkoutSession[], date: string, results: readonly V6TestResultLike[] = []): V6State {
+  const now = v6State(workouts, date, results);
+  if (now.phase === "gagne") return now;
+  return v6State(workouts, format(addDays(parseISO(getWeekStartDate(date)), -1), "yyyy-MM-dd"), results);
 }
 
 /** Le poids connu le plus récent à `date`. */

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { WorkoutSession } from "../../domain";
 import type { BetSet } from "./tractionBet";
 import {
-  effectiveLoad, isRepli, V6_REFERENCE, v6Color, v6EarlyFreeTry, v6ForceSession, v6LightSession, v6State, v6WeekOf, v6WeightGuard,
+  effectiveLoad, isRepli, V6_REFERENCE, v6Color, v6EarlyFreeTry, v6ForceSession, v6LightSession, v6State, v6StatusState, v6WeekOf, v6WeightGuard,
 } from "./tractionV6";
 
 /**
@@ -31,12 +31,12 @@ function muscuA(date: string, sets: BetSet[], extra: { templateId?: string; redu
 }
 
 describe("référence V6 : figée", () => {
-  it("26 dimanches du 04/10 au 28/03, 6 semaines test, paliers de référence 35 → 7", () => {
+  it("26 dimanches du 04/10 au 28/03, 6 semaines test, paliers de référence 35 (validé en S1) → 7 (référence recalée le 05/10)", () => {
     expect(V6_REFERENCE).toHaveLength(26);
     for (const week of V6_REFERENCE) expect(new Date(`${week.date}T12:00:00`).getDay(), week.date).toBe(0);
     expect(V6_REFERENCE.filter((week) => week.kind === "test").map((week) => week.number)).toEqual([4, 8, 12, 16, 20, 24]);
     expect(V6_REFERENCE.map((week) => week.refKg)).toEqual([
-      35, 35, 35, 35, 28, 28, 28, 28, 21, 21, 21, 21, 21, 14, 14, 14, 14, 14, 7, 7, 7, 7, 7, 7, 7, 7,
+      35, 28, 28, 28, 28, 28, 21, 21, 21, 21, 21, 14, 14, 14, 14, 14, 14, 7, 7, 7, 7, 7, 7, 7, 7, 7,
     ]);
     expect(V6_REFERENCE.map((week) => week.weightKg).slice(0, 19)).toEqual([92, 91, 90, 89, 88, 87, 86, 85, 84, 83, 82, 81, 80, 79, 78, 77, 76, 75, 75]);
     expect(V6_REFERENCE.slice(-2).map((week) => week.kind)).toEqual(["essai", "essai"]);
@@ -54,10 +54,10 @@ describe("réel : palier A, validation, repli", () => {
     expect(state).toMatchObject({ aKg: 35, bKg: 42, phase: "travail", events: [] });
   });
 
-  it("5/5/5 à 35 → A = 28 immédiatement, B = 35 ; 4/4/3 ne valide pas", () => {
+  it("5/5/5 à 35 → A = 28 immédiatement, B reste 42 (palier de volume de 35 validé) ; 4/4/3 ne valide pas", () => {
     expect(v6State([muscuA("2026-10-04", [set(35, 4), set(35, 4), set(35, 3)])], "2026-10-04").aKg).toBe(35);
     const state = v6State([muscuA("2026-10-04", [set(35, 4)]), muscuA("2026-10-11", [set(35, 5), set(35, 5), set(35, 5, 9)])], "2026-10-12");
-    expect(state).toMatchObject({ aKg: 28, bKg: 35 });
+    expect(state).toMatchObject({ aKg: 28, bKg: 42 });
     expect(state.events.map((event) => [event.kind, event.date, event.detail])).toEqual([["validation", "2026-10-11", "35 kg"]]);
   });
 
@@ -104,15 +104,26 @@ describe("réel : palier A, validation, repli", () => {
 });
 
 describe("statut : couleur par crans, reps à aide identique seulement", () => {
-  it("S1 à 35 : vert ; S5 encore à 35 : orange ; S9 encore à 35 : rouge ; en avance : vert", () => {
+  it("S1 à 35 : vert ; S2 encore à 35 : orange ; S7 encore à 35 : rouge ; en avance : vert", () => {
     const at35 = v6State([], "2026-10-04");
     expect(v6Color(at35, "2026-10-04")).toBe("vert");
-    expect(v6Color(at35, "2026-11-01")).toBe("orange");
-    expect(v6Color(at35, "2026-11-29")).toBe("rouge");
-    /* Semaine test S4 : référence = palier de force de S3 (35). */
-    expect(v6Color(at35, "2026-10-25")).toBe("vert");
-    const ahead = v6State([muscuA("2026-10-04", [set(35, 5), set(35, 5), set(35, 5)])], "2026-10-05");
-    expect(v6Color(ahead, "2026-10-05")).toBe("vert");
+    expect(v6Color(at35, "2026-10-11")).toBe("orange");
+    expect(v6Color(at35, "2026-11-15")).toBe("rouge");
+    /* Semaine test S4 : référence = le palier en cours (28). */
+    expect(v6Color(v6State([muscuA("2026-10-04", [set(35, 5), set(35, 5), set(35, 5)])], "2026-10-24"), "2026-10-25")).toBe("vert");
+    expect(v6Color(at35, "2026-10-25")).toBe("orange");
+    const ahead = v6State([muscuA("2026-10-04", [set(35, 5), set(35, 5), set(35, 5)]), muscuA("2026-10-11", [set(28, 5), set(28, 5), set(28, 5)])], "2026-10-12");
+    expect(v6Color(ahead, "2026-10-12")).toBe("vert");
+  });
+
+  it("statut au début de la semaine : 35 validé le 04/10 → S1 conforme toute la semaine, pas « en avance »", () => {
+    const workouts = [muscuA("2026-10-04", [set(35, 5), set(35, 5), set(35, 5)])];
+    for (const date of ["2026-10-04", "2026-10-07", "2026-10-10"]) {
+      const state = v6StatusState(workouts, date);
+      expect(state.aKg, date).toBe(35);
+      expect(v6Color(state, date), date).toBe("vert");
+    }
+    expect(v6StatusState(workouts, "2026-10-11").aKg).toBe(28);
   });
 });
 

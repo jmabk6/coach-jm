@@ -78,8 +78,8 @@ export function GoalDetailScreen() {
     detail.bet && evaluation.kind === "tracking"
     ? /* Pari traction V6 : l'écart de paliers, jamais un écart en semaines. */
       {
-        value: v6ShortStatus(detail.bet.state, today).label,
-        caption: `Palier A ${detail.bet.state.aKg} kg · référence S${detail.bet.week.number} ${detail.bet.week.refKg} kg`,
+        value: v6ShortStatus(detail.bet.statusState, today).label,
+        caption: `Palier A ${detail.bet.state.aKg} kg · référence S${detail.bet.week.number} : ${detail.bet.week.a}`,
       }
     : weight && evaluation.kind === "no_result"
       ? { value: "—", caption: "Première moyenne après 3 pesées dans une semaine" }

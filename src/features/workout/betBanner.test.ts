@@ -34,7 +34,7 @@ describe("bandeau du pari traction V6", () => {
       { label: "Dernière séance", value: "—" },
       { label: "Cette séance", value: "3 séries à 35 kg, jusqu'à 5 reps propres — RPE 9 max, repos 3 min" },
       { label: "Repli", value: "série 1 à 2 reps ou moins, ou RPE 10 → séries 2 et 3 à 42 kg ; le palier reste 35 kg" },
-      { label: "Validation", value: "5 / 5 / 5 à 35 kg → A passe à 28 kg" },
+      { label: "Validation", value: "5 / 5 / 5 à 35 kg → A passe à 28 kg, Muscu B à 42 kg" },
     ]);
     expect(banner.note).toBeUndefined();
     expect(banner.sets).toEqual([{ assistKg: 35, reps: 5 }, { assistKg: 35, reps: 5 }, { assistKg: 35, reps: 5 }]);
@@ -50,19 +50,28 @@ describe("bandeau du pari traction V6", () => {
     expect(betBannerFor(on("2026-10-04", "v2-muscu-a"), block(false, [[35, 3, 9]]), start)!.sets.map((set) => set.assistKg)).toEqual([35, 35, 35]);
   });
 
-  it("statut : toujours 35 kg en S5 → orange, en S9 → rouge ; validé tôt → en avance", () => {
-    expect(betBannerFor(on("2026-11-01", "v2-muscu-a"), block(), start)!.status).toEqual({ label: "1 cran plus assisté que la référence (28 kg)", tone: "watch" });
-    expect(betBannerFor(on("2026-11-29", "v2-muscu-a"), block(), start)!.status).toEqual({ label: "2 crans plus assisté que la référence (21 kg)", tone: "late" });
-    const fast = v6State([done("2026-10-04", [[35, 5, 9], [35, 5, 9], [35, 5, 9]])], "2026-10-11");
-    const banner = betBannerFor(on("2026-10-11", "v2-muscu-a"), block(), fast)!;
+  it("statut : toujours 35 kg en S2 → orange, en S7 → rouge ; 35 validé en S1 → conforme en S2, 28 validé tôt → en avance", () => {
+    expect(betBannerFor(on("2026-10-11", "v2-muscu-a"), block(), start)!.status).toEqual({ label: "1 cran plus assisté que la référence (28 kg)", tone: "watch" });
+    expect(betBannerFor(on("2026-11-15", "v2-muscu-a"), block(), start)!.status).toEqual({ label: "2 crans plus assisté que la référence (21 kg)", tone: "late" });
+    const after35 = v6State([done("2026-10-04", [[35, 5, 9], [35, 5, 9], [35, 5, 9]])], "2026-10-11");
+    const banner = betBannerFor(on("2026-10-11", "v2-muscu-a"), block(), after35)!;
     expect(banner.title).toBe("Palier A — 28 kg d'aide");
-    expect(banner.status).toEqual({ label: "En avance sur la référence", tone: "on_track" });
+    expect(banner.status).toEqual({ label: "Conforme à la référence", tone: "on_track" });
     expect(banner.lines[0]).toEqual({ label: "Dernière séance", value: "5 / 5 / 5 — RPE 9 / 9 / 9" });
+    expect(banner.lines[3]).toEqual({ label: "Validation", value: "5 / 5 / 5 à 28 kg → A passe à 21 kg, Muscu B à 35 kg" });
+    const fast = v6State([done("2026-10-04", [[35, 5, 9], [35, 5, 9], [35, 5, 9]]), done("2026-10-11", [[28, 5, 9], [28, 5, 9], [28, 5, 9]])], "2026-10-18");
+    expect(betBannerFor(on("2026-10-18", "v2-muscu-a"), block(), fast)!.status).toEqual({ label: "En avance sur la référence", tone: "on_track" });
+    /* Le statut passé en 4e paramètre (palier du début de semaine) l'emporte sur l'état courant. */
+    expect(betBannerFor(on("2026-10-06", "v2-muscu-a"), block(), after35, start)!.status).toEqual({ label: "Conforme à la référence", tone: "on_track" });
   });
 
-  it("Muscu B : A + 7 kg, 3 × 8-10 préremplies à 8 ; semaine test : 2 × 8 ; phase essai libre : 14 kg", () => {
+  it("Muscu B : le palier de volume du dernier A validé (42 avant toute validation et après 35, 35 après 28), 3 × 8-10 préremplies à 8 ; semaine test : 2 × 8 ; phase essai libre : 14 kg", () => {
     const light = betBannerFor(on("2026-10-06", "v2-muscu-b"), block(), start)!;
-    expect(light.title).toBe("Traction légère — 42 kg d'aide (A + 7 kg)");
+    expect(light.title).toBe("Traction légère — 42 kg d'aide (volume, avant toute validation)");
+    const after35 = v6State([done("2026-10-04", [[35, 5, 9], [35, 5, 9], [35, 5, 9]])], "2026-10-05");
+    expect(betBannerFor(on("2026-10-06", "v2-muscu-b"), block(), after35)!.title).toBe("Traction légère — 42 kg d'aide (volume après 35 kg validé)");
+    const after28 = v6State([done("2026-10-04", [[35, 5, 9], [35, 5, 9], [35, 5, 9]]), done("2026-10-11", [[28, 5, 9], [28, 5, 9], [28, 5, 9]])], "2026-10-12");
+    expect(betBannerFor(on("2026-10-13", "v2-muscu-b"), block(), after28)!.sets.map((item) => item.assistKg)).toEqual([35, 35, 35]);
     expect(light.lines).toEqual([{ label: "Cette séance", value: "42 kg — 3 × 8-10, RPE 6-8, jamais à l'échec" }]);
     expect(light.sets).toEqual([{ assistKg: 42, reps: 8 }, { assistKg: 42, reps: 8 }, { assistKg: 42, reps: 8 }]);
     const test = betBannerFor(on("2026-10-27", "v2-muscu-b"), block(), start)!;

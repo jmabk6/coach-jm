@@ -82,7 +82,9 @@ export const CURL_HALTERES_NOTE = "Haltères, bras alternés.";
 /** Muscu A, leg press (05/10/2026). */
 export const LEG_PRESS_A_NOTE = "Environ 2 reps en réserve (RPE 8), jamais à l'échec. Charge : la dernière utilisée. Dimanche de test traction : travail propre, sans recherche de record.";
 /** Muscu B, traction légère (03/10/2026). */
-export const TRACTION_LIGHT_NOTE = "Traction légère, en premier : un cran d'aide au-dessus de la Muscu A (A + 7 kg), 3 × 8-10, RPE 6-8, jamais à l'échec. Semaine test : 2 × 8.";
+export const TRACTION_LIGHT_NOTE = "Traction légère, en premier : l'aide de volume du dernier palier A validé (elle ne descend qu'après la validation du palier A suivant), 3 × 8-10, RPE 6-8, jamais à l'échec. Semaine test : 2 × 8.";
+/** La consigne d'avant le 05/10/2026 (« A + 7 kg »), remplacée par le seed 34. */
+export const TRACTION_LIGHT_NOTE_A_PLUS_7 = "Traction légère, en premier : un cran d'aide au-dessus de la Muscu A (A + 7 kg), 3 × 8-10, RPE 6-8, jamais à l'échec. Semaine test : 2 × 8.";
 /** Muscu C, tractions négatives (pari V6, à partir du 01/11/2026). */
 export const NEGATIVES_NOTE = "Juste après la suspension, avant les sprints : descente contrôlée d'environ 5 s, 2 à 3 min de repos, jamais à l'échec. Passer à 2 × 3 seulement si la récupération et les coudes vont bien.";
 /** Muscu C, suspension (03/10/2026). */

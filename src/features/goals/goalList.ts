@@ -6,7 +6,7 @@ import type { Goal, TestCycleSettings, TestProtocol, TestProtocolVersion } from 
 import { goalBadge, goalProtocolId, goalRowText, goalShortStatus, type GoalBadge, type GoalRowText, type GoalShortStatusTone } from "../../domain/rules/goalListRules";
 import { formatTestNumber } from "../../domain/rules/testResultRules";
 import { goalProgressFrom } from "./goalProgress";
-import { v6State } from "./tractionV6";
+import { v6StatusState } from "./tractionV6";
 import { v6ShortStatus } from "./tractionV6View";
 import { getAllGoals } from "../../db/repositories/goalRepository";
 
@@ -53,7 +53,7 @@ export async function loadGoalList(today: string): Promise<GoalList> {
   ]);
   /* Pari traction V6 : le statut de la traction vient de l'écart de paliers, jamais d'un écart en semaines. */
   const tractionState = goals.some((goal) => goal.key === "traction")
-    ? v6State(await db.workouts.where("status").equals("completed").toArray(), today, results)
+    ? v6StatusState(await db.workouts.where("status").equals("completed").toArray(), today, results)
     : undefined;
 
   const protocolById = new Map<string, TestProtocol>(protocols.map((protocol) => [protocol.id, protocol]));

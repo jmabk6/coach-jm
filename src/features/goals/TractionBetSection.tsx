@@ -70,7 +70,7 @@ export function TractionBetSection({ bet }: { bet: V6Progress }) {
           <dd>
             {real}
             <small>
-              Référence S{week.number} ({day(week.date)}) : {kg(week.refKg)}
+              Référence S{week.number} ({day(week.date)}) : {week.a}
               {week.kind === "test" ? " · semaine test" : week.kind === "essai" ? " · essais libres" : ""}
             </small>
           </dd>
@@ -117,7 +117,7 @@ export function TractionBetSection({ bet }: { bet: V6Progress }) {
           <dt>Date limite</dt>
           <dd>
             31/03/2027
-            <small>Dernière chance le 28/03, repos le 30/03, essai final le 31/03.</small>
+            <small>Dernière chance le 28/03 ; si l'échec est étroit : récupération le 29/03, repos complet le 30/03, ultime essai libre le 31/03.</small>
           </dd>
         </div>
       </dl>

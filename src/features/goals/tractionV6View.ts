@@ -3,7 +3,7 @@ import type { WeightEntry, WorkoutSession } from "../../domain";
 import { getWeekStartDate } from "../../domain/rules/programRules";
 import { betSessions, type BetSession } from "./tractionBet";
 import {
-  effectiveLoad, V6_REFERENCE, V6_START_DATE, V6_STEP_KG, v6Color, v6EarlyFreeTry, v6ForceSession, v6LightSession, v6State, v6WeekOf,
+  effectiveLoad, V6_REFERENCE, V6_START_DATE, V6_STEP_KG, v6Color, v6EarlyFreeTry, v6ForceSession, v6LightSession, v6State, v6StatusState, v6WeekOf,
   v6WeightGuard, type V6Color, type V6ForceSession, type V6State, type V6TestResultLike, type V6Week,
 } from "./tractionV6";
 
@@ -21,7 +21,7 @@ export type V6RowState = "past" | "now" | "upcoming";
 export interface V6Row {
   week: V6Week;
   state: V6RowState;
-  /** Passé et semaine en cours : palier A réel en fin de semaine (ou aujourd'hui) et sa couleur. */
+  /** Passé et semaine en cours : palier A réel du début de la semaine et sa couleur face à la référence. */
   aKg?: number;
   color?: V6Color;
   /** Le dimanche de force de la semaine (le jour de test n'en est pas un). */
@@ -40,6 +40,8 @@ export interface V6Row {
 export interface V6Progress {
   today: string;
   state: V6State;
+  /** Le palier A du début de la semaine, comparé à la référence (`v6StatusState`). */
+  statusState: V6State;
   week: V6Week;
   color: V6Color;
   statusLabel: string;
@@ -79,6 +81,7 @@ export function v6ShortStatus(state: V6State, date: string): { label: string; to
 
 export function v6Progress(workouts: readonly WorkoutSession[], weights: Weights, today: string, results: readonly V6TestResultLike[] = []): V6Progress {
   const state = v6State(workouts, today, results);
+  const statusState = v6StatusState(workouts, today, results);
   const week = v6WeekOf(today);
   const sessions = betSessions(workouts).filter((session) => session.date >= V6_START_DATE && session.date <= today);
   const weight = [...weights].filter((entry) => entry.date <= today).sort((a, b) => a.date.localeCompare(b.date)).at(-1);
@@ -93,7 +96,8 @@ export function v6Progress(workouts: readonly WorkoutSession[], weights: Weights
 
     const until = rowState === "now" ? today : saturday;
     const atEnd = v6State(workouts, until, results);
-    const row: V6Row = { week: item, state: rowState, aKg: atEnd.aKg, color: v6Color(atEnd, until) };
+    const atStart = v6StatusState(workouts, until, results);
+    const row: V6Row = { week: item, state: rowState, aKg: atStart.aKg, color: v6Color(atStart, until) };
 
     const session = sessions.find((candidate) => candidate.date >= item.date && candidate.date <= saturday);
     if (session) {
@@ -125,8 +129,9 @@ export function v6Progress(workouts: readonly WorkoutSession[], weights: Weights
     today,
     state,
     week,
-    color: v6Color(state, today),
-    statusLabel: v6StatusLabel(state, today),
+    statusState,
+    color: v6Color(statusState, today),
+    statusLabel: v6StatusLabel(statusState, today),
     next: v6ForceSession(state),
     light: v6LightSession(state, today),
     ...(weight ? { weight: { date: weight.date, kg: weight.kg } } : {}),

@@ -101,6 +101,8 @@ export interface InstallMarkers {
   curlHalteresMuscuA20261004?: string;
   /** Seed 33 : RPE 8 sur la 3e série de traction de la Muscu A du 04/10. */
   fixTractionRpe20261004?: string;
+  /** Seed 34 : consigne de la traction de Muscu B sans « A + 7 kg » (palier de volume du dernier A validé). */
+  tractionLightNote20261005?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */
