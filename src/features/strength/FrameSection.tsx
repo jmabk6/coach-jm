@@ -35,6 +35,7 @@ import {
   type StartingTarget,
 } from "./frameActions";
 import { FrameForm, type FrameFormMode } from "./FrameForm";
+import { BET_EXERCISE_ID } from "../goals/tractionBet";
 import { RaiseInset, StagnationInset } from "./FrameInsets";
 import { readDismissedRaises, rememberDismissedRaise } from "./frameDismissal";
 import { currentLoadOf, lastSessionOutcome, latestMilestone, proposeStartingLoad } from "./frameReadings";
@@ -227,9 +228,11 @@ export function FrameSection({ exercise, completedWorkouts }: FrameSectionProps)
   const archived = current.status === "archived";
   const frozen = isVersionFrozen(current);
   /* Suggestions (spec § 7, v1.6 § 4.6) : dérivées, jamais stockées. */
-  const raise = proposeRaise(current, milestones, completedWorkouts);
+  /* Pari traction V6 : le palier de la traction vient du moteur V6 ; ni hausse ni stagnation du cadre en parallèle. */
+  const bet = exercise.id === BET_EXERCISE_ID;
+  const raise = bet ? undefined : proposeRaise(current, milestones, completedWorkouts);
   const raiseVisible = raise && !dismissed.includes(raise.milestone.id);
-  const stagnation = detectStagnation(current, completedWorkouts, milestones);
+  const stagnation = bet ? undefined : detectStagnation(current, completedWorkouts, milestones);
   const summary = [
     formatFrameVersionSummary(current),
     `repos ${formatSeconds(current.restSec)}`,

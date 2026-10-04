@@ -113,4 +113,52 @@ describe("écran de séance", () => {
     await waitFor(async () => expect((await db.strengthFrameVersions.get(rowing))?.currentTarget).toMatchObject({ value: 42.5, fromMilestoneId: "m-rowing" }), { timeout: 4000 });
     await waitFor(() => expect(screen.queryByRole("complementary", { name: "Hausse proposée" })).toBeNull(), { timeout: 4000 });
   }, 20000);
+
+  it("pari V6 : traction en stagnation au sens du cadre (3 séances à 35 kg sans progrès) → aucun encart, le moteur V6 décide", async () => {
+    /* La version active du cadre (celle que la séance capture). */
+    const traction = (await db.strengthFrames.where("exerciseId").equals("traction-assistee").first())!.activeVersionId;
+    await db.workouts.bulkPut([
+      done("a", "2026-09-10", traction, "traction-assistee", 35, 4),
+      done("b", "2026-09-13", traction, "traction-assistee", 35, 4),
+      done("c", "2026-09-17", traction, "traction-assistee", 35, 3),
+    ]);
+    await openMuscuA();
+    fireEvent.click(screen.getAllByRole("button", { name: /Traction assistée/ })[0]!);
+    await screen.findByText(/Palier A — 35 kg d'aide/, {}, { timeout: 4000 });
+    expect(screen.queryByRole("complementary", { name: /Stagnation/ })).toBeNull();
+    expect(screen.queryByRole("complementary", { name: "Hausse proposée" })).toBeNull();
+  }, 20000);
+});
+
+describe("pari V6 : la traction légère de Muscu B", () => {
+  beforeEach(async () => {
+    await db.delete();
+    await db.open();
+    resumeSeedsForTests();
+    await runSeeds();
+  });
+
+  afterEach(async () => {
+    cleanup();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    db.close();
+    await db.delete();
+  });
+
+  it("hors palier : ni le cadre de la Muscu A, ni conseil de charge en parallèle du bandeau V6", async () => {
+    const template = (await db.sessionTemplates.get("v2-muscu-b"))!;
+    await startFreeWorkout("2026-10-06", "2026-10-06T08:00:00.000Z", template);
+    render(
+      <MemoryRouter initialEntries={["/seance-en-cours"]}>
+        <Routes>
+          <Route path="/seance-en-cours" element={<WorkoutScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click((await screen.findAllByRole("button", { name: /Traction assistée/ }, { timeout: 4000 }))[0]!);
+    const banner = await screen.findByText(/Traction légère — 42 kg d'aide/, {}, { timeout: 4000 });
+    const card = banner.closest("li")!;
+    expect(within(card).queryByText("Cadre")).toBeNull();
+    expect(within(card).queryByText("Conseillé")).toBeNull();
+  }, 20000);
 });

@@ -628,7 +628,8 @@ export function WorkoutScreen() {
                 }
                 rpeTable={rpeScale?.table}
                 frameVersion={block.frameVersionId ? frames.versionById.get(block.frameVersionId) : undefined}
-                insets={insetsFor(block.frameVersionId)}
+                /* Pari V6 : le palier de la traction vient du moteur V6, jamais d'une hausse ou d'une stagnation du cadre. */
+                insets={block.exerciseId === BET_EXERCISE_ID ? undefined : insetsFor(block.frameVersionId)}
                 bet={bet ? betBannerFor(workout, block, bet) : undefined}
                 onToggle={() => toggleBlock(block)}
                 onOpenMenu={() => setBlockMenu(block)}

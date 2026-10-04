@@ -235,7 +235,14 @@ export function ExerciseBlockCard({
           {restCard}
           {bet ? <BetGoal bet={bet} /> : frameVersion && <FrameGoal block={block} frameVersion={frameVersion} lastTime={lastTime} />}
           {/* Avec le bandeau du pari, la ligne « Conseillé » du cadre ferait doublon. */}
-          <ReferenceBlock block={block} exercise={exercise} lastTime={lastTime} frameVersion={frameVersion} hideSuggestion={bet !== undefined} />
+          {/* Traction légère de Muscu B (pari V6) : hors palier, le cadre de la Muscu A ne s'y affiche pas. */}
+          <ReferenceBlock
+            block={block}
+            exercise={exercise}
+            lastTime={lastTime}
+            frameVersion={bet && block.reducedPrescription ? undefined : frameVersion}
+            hideSuggestion={bet !== undefined}
+          />
 
           <ol className={`wseries${tabular ? " wseries--table" : ""}`}>
             {tabular && (
@@ -494,8 +501,9 @@ function ReferenceBlock({
      — charge à travailler et objectif pour valider ; sinon l'heuristique
      existante sur la dernière fois. */
   const frameSuggestion = frameVersion && !hideSuggestion ? suggestFrameLoad(frameVersion, lastTime?.allSeries) : undefined;
+  /* Pari traction V6 (`hideSuggestion`) : ni conseil du cadre, ni heuristique — le bandeau V6 décide. */
   const suggestion =
-    !frameVersion && instructions.shape === "reps"
+    !frameVersion && !hideSuggestion && instructions.shape === "reps"
       ? suggestLoad(lastTime, instructions.reps, instructions.targetRpe)
       : undefined;
 
