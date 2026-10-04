@@ -44,7 +44,7 @@ describe("Muscu C : négatives à partir du 01/11, juste après la suspension", 
 });
 
 describe("semaine test : Muscu C −50 %", () => {
-  it("jeudi 29/10 (S4) : 3 → 2, 2 → 1, Rester bas 2 tours, suspension gardée, échauffement intact ; le test jambes remplace les sprints", () => {
+  it("jeudi 29/10 (S4) : 3 → 2, 2 → 1, Rester bas 2 tours, suspension gardée, échauffement intact (test jambes forcé ici : il remplacerait les sprints)", () => {
     const blocks = snapshot("v2-muscu-c", "2026-10-29", [jambes]);
     expect(ids(blocks)).toEqual([
       "v2-muscu-c-echauffement", "v2-muscu-c-suspension", "test:jambes", "v2-muscu-c-montee-banc", "v2-muscu-c-rester-bas",
@@ -62,9 +62,10 @@ describe("semaine test : Muscu C −50 %", () => {
     expect(group.rounds).toHaveLength(2);
   });
 
-  it("jeudi 26/11 (S8) : les négatives aussi, 2 → 1 ; sans test jambes, les sprints 6 → 3", () => {
+  it("jeudi 26/11 (S8) : négatives 1 × 2 (une vraie mini-série de deux descentes) ; sans test jambes (suspendu), les sprints 6 → 3", () => {
     const blocks = snapshot("v2-muscu-c", "2026-11-26");
     expect(sets(blocks, "v2-muscu-c-negatives")).toBe(1);
+    expect(exerciseBlock(blocks, "v2-muscu-c-negatives").snapshotInstructions).toMatchObject({ sets: 1, reps: { min: 2, max: 2 }, restBetweenSetsSec: 150 });
     expect(sets(blocks, "v2-muscu-c-sprints")).toBe(3);
   });
 });

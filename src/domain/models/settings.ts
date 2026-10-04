@@ -38,6 +38,14 @@ export interface TestScheduleEntry {
   targetStepId?: Id;
   targetStepIds?: Id[];
   adjustments?: PlannedTest["adjustments"];
+  /**
+   * Non planifié de `suspendedFrom` à `suspendedUntil` inclus (pari
+   * traction V6 : le test jambes, du 04/10/2026 au 31/03/2027). Le
+   * protocole et ses résultats restent ; le test revient seul à la semaine
+   * de tests suivante.
+   */
+  suspendedFrom?: string;
+  suspendedUntil?: string;
 }
 
 /** Dates ISO d'installation : un seed dont le marqueur est posé ne se rejoue plus. */
@@ -83,6 +91,8 @@ export interface InstallMarkers {
   tractionTestV320261005?: string;
   /** Seed 28 : tractions négatives en Muscu C (présentes dans la séance à partir du 01/11/2026). */
   negativesMuscuC20261005?: string;
+  /** Seed 29 : le test jambes non planifié pendant le pari V6 (jusqu'au 31/03/2027). */
+  jambesSuspended20261005?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

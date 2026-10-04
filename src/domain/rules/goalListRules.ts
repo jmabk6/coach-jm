@@ -3,7 +3,7 @@ import type { Goal, GoalSegment, Id, PlannedSession, TestCycleSettings, TestResu
 import type { SegmentEvaluation } from "./goalRules";
 import { formatLocalDate, getWeekStartDate, weekdays } from "./programRules";
 import { isTestWeek, nextTestWeekStart } from "./testCycleRules";
-import { listTestsToReschedule } from "./testPlanRules";
+import { isSuspended, listTestsToReschedule } from "./testPlanRules";
 import { formatFr } from "./dateFr";
 
 /**
@@ -69,16 +69,24 @@ export function nextTestDate({
   const entry = schedule.find((item) => item.protocolKey === protocolKey);
   if (!entry) return undefined;
   const dayOf = (weekStart: string) => formatLocalDate(addDays(parseISO(weekStart), weekdays.indexOf(entry.weekday)));
+  /* Calendrier suspendu (pari V6) : la première semaine de tests après la suspension. */
+  const afterSuspension = (date: string): string => {
+    let weekStart = getWeekStartDate(date);
+    for (let guard = 0; guard < 60 && isSuspended(entry, dayOf(weekStart)); guard += 1) {
+      weekStart = nextTestWeekStart(formatLocalDate(addDays(parseISO(weekStart), 7)), cycle);
+    }
+    return dayOf(weekStart);
+  };
 
   const currentWeek = getWeekStartDate(today);
   if (isTestWeek(currentWeek, cycle)) {
     const date = dayOf(currentWeek);
     const weekEnd = formatLocalDate(addDays(parseISO(currentWeek), 6));
     const done = results.some((result) => result.protocolId === protocolId && result.date >= currentWeek && result.date <= weekEnd);
-    if (date >= today && !done) return date;
-    return dayOf(nextTestWeekStart(formatLocalDate(addDays(parseISO(currentWeek), 7)), cycle));
+    if (date >= today && !done && !isSuspended(entry, date)) return date;
+    return afterSuspension(dayOf(nextTestWeekStart(formatLocalDate(addDays(parseISO(currentWeek), 7)), cycle)));
   }
-  return dayOf(nextTestWeekStart(today, cycle));
+  return afterSuspension(dayOf(nextTestWeekStart(today, cycle)));
 }
 
 /**

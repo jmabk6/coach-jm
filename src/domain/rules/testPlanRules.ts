@@ -34,6 +34,11 @@ export interface TestPlan {
   protocolIdByKey: ReadonlyMap<string, Id>;
 }
 
+/** Entrée du calendrier suspendue à cette date (pari V6 : le test jambes). */
+export function isSuspended(entry: Pick<TestScheduleEntry, "suspendedFrom" | "suspendedUntil">, date: string): boolean {
+  return entry.suspendedUntil !== undefined && date <= entry.suspendedUntil && (entry.suspendedFrom === undefined || date >= entry.suspendedFrom);
+}
+
 export function eveningSessionId(date: string): string {
   return `weekly-${date}-evening`;
 }
@@ -76,6 +81,7 @@ export function attachTestPlan({
     if (!protocolId || entry.slot === "morning") continue;
 
     const date = dateOf(entry.weekday);
+    if (isSuspended(entry, date)) continue;
 
     if (entry.slot === "day") {
       const target = sessions.find(

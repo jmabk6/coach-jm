@@ -293,6 +293,10 @@ export const PROGRAM_V2_DAYS: WeeklyProgram["days"] = [
   { weekday: "saturday", sessionTemplateId: "v2-cardio-c" },
 ];
 
+/** Pari traction V6 : le test jambes n'est pas planifié du 04/10/2026 au 31/03/2027 (décision du 05/10/2026). */
+export const JAMBES_SUSPENDED_FROM = "2026-10-04";
+export const JAMBES_SUSPENDED_UNTIL = "2027-03-31";
+
 /** Place des tests en V2 : mêmes jours ; les modèles et briques visés changent. */
 export const PROGRAM_V2_TEST_SCHEDULE: TestScheduleEntry[] = [
   {
@@ -324,6 +328,9 @@ export const PROGRAM_V2_TEST_SCHEDULE: TestScheduleEntry[] = [
     templateId: "v2-muscu-c",
     placement: "replace_block",
     targetBlockId: "v2-muscu-c-sprints",
+    /* Pari V6 : pas de test jambes (6 sprints et chaise maximaux) dans les semaines de test allégées. */
+    suspendedFrom: JAMBES_SUSPENDED_FROM,
+    suspendedUntil: JAMBES_SUSPENDED_UNTIL,
   },
 ];
 
