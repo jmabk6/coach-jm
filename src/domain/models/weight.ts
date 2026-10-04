@@ -19,6 +19,15 @@ export interface WeightEntry {
   fatPct?: number;
   muscleKg?: number;
 
+  /**
+   * Pesée synchronisée depuis la mesure corporelle de référence du jour
+   * (`bodyMeasurements`, première mesure du jour, 05/10/2026) : son poids
+   * est celui de la mesure et ne se corrige pas à la main. Absent : pesée
+   * saisie à la main. `fatPct` et `muscleKg` ci-dessus restent les relevés
+   * de la Withings (avant le 05/10/2026), jamais ceux de la RENPHO.
+   */
+  bodyMeasurementId?: Id;
+
   createdAt: string;
   updatedAt: string;
 }

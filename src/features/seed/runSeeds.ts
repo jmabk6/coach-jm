@@ -18,6 +18,7 @@ import { seedNegativesMuscuC20261005 } from "../program/seedNegativesMuscuC";
 import { seedLegPressMuscuA20261005 } from "../program/seedLegPressMuscuA";
 import { seedCurlHalteresMuscuA20261004 } from "../program/seedCurlHalteresMuscuA";
 import { seedTractionLightNote20261005 } from "../program/seedTractionLightNote";
+import { seedLegacyComposition20261005 } from "../body/seedLegacyComposition";
 import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
@@ -106,6 +107,8 @@ export const SEEDS: SeedStep[] = [
   { name: "fixTractionRpe20261004", dependsOn: ["fixWorkout20261004"], run: () => seedFixTractionRpe20261004() },
   /* Seed 34 (05/10/2026) : la consigne de la traction de Muscu B suit la nouvelle règle B du pari V6. */
   { name: "tractionLightNote20261005", dependsOn: ["programV2", "tractionV620261004"], run: () => seedTractionLightNote20261005() },
+  /* Seed 35 (05/10/2026) : la composition Withings des pesées passe dans les mesures corporelles (option C). */
+  { name: "legacyComposition20261005", run: () => seedLegacyComposition20261005() },
 ];
 
 /**

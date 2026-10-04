@@ -1,6 +1,7 @@
 import type { Id } from "./exercise";
 import type { Weekday } from "./program";
 import type { PlannedTest } from "./testProtocol";
+import type { NutritionTargets } from "./nutrition";
 
 /**
  * Réglages de l'application (conception V2 § 3.9) : un enregistrement par
@@ -103,6 +104,8 @@ export interface InstallMarkers {
   fixTractionRpe20261004?: string;
   /** Seed 34 : consigne de la traction de Muscu B sans « A + 7 kg » (palier de volume du dernier A validé). */
   tractionLightNote20261005?: string;
+  /** Seed 35 : compositions Withings des pesées déplacées vers les mesures corporelles (module Corps, option C). */
+  legacyComposition20261005?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */
@@ -114,7 +117,9 @@ export type SettingsRecord =
   | { key: "preferences"; value: PreferenceSettings }
   | { key: "testCycle"; value: TestCycleSettings }
   | { key: "testSchedule"; value: TestScheduleEntry[] }
-  | { key: "install"; value: InstallMarkers };
+  | { key: "install"; value: InstallMarkers }
+  /** Repères nutritionnels configurables (module Alimentation) ; aucun seuil codé en dur. */
+  | { key: "nutritionTargets"; value: NutritionTargets };
 
 export type SettingsKey = SettingsRecord["key"];
 

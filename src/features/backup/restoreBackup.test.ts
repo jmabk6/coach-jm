@@ -203,7 +203,8 @@ describe("fichier réel (COACH_JM_BACKUP)", () => {
     opened.push(target);
     const migrated = await restoreBackup(envelope, target);
     expect(migrated.hash).toBe(envelope.integrity.hash);
-    expect(target.verno).toBe(envelope.database.version >= 3 ? 3 : 2);
+    /* Un fichier v3 se restaure dans la base de l'application (v4 depuis le module Corps + Alimentation). */
+    expect(target.verno).toBe(envelope.database.version >= 3 ? 4 : 2);
     for (const [name, count] of Object.entries(envelope.counts)) expect(migrated.counts[name], name).toBe(count);
 
     console.info("[sauvegarde réelle]", envelope.exportedAt, envelope.database, envelope.counts, script.notes);

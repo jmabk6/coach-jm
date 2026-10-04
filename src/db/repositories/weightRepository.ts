@@ -2,6 +2,13 @@
 import type { Id, WeightEntry } from "../../domain";
 
 /**
+ * Pesée liée à la mesure corporelle de référence du jour (`bodyMeasurementId`,
+ * 05/10/2026) : son poids vient de la mesure ; elle ne se saisit, ne se
+ * corrige ni ne se supprime à la main.
+ */
+export const LINKED_WEIGHT_MESSAGE = "Le poids de ce jour vient de la mesure corporelle de référence : modifiez la mesure.";
+
+/**
  * Historique complet des pesées,
  * de la plus ancienne à la plus récente.
  */
@@ -56,6 +63,8 @@ export async function saveWeightEntry(
       .equals(entry.date)
       .first();
 
+    if (existing?.bodyMeasurementId !== undefined) throw new Error(LINKED_WEIGHT_MESSAGE);
+
     if (existing && existing.id !== entry.id) {
       /* La composition suit la nouvelle saisie : une grandeur absente est effacée. */
       await db.weightEntries.put(merged(existing, {
@@ -96,6 +105,8 @@ export async function updateWeightEntry(
       throw new Error("Pesée introuvable");
     }
 
+    if (entry.bodyMeasurementId !== undefined) throw new Error(LINKED_WEIGHT_MESSAGE);
+
     if (changes.date && changes.date !== entry.date) {
       const existingForDate = await db.weightEntries
         .where("date")
@@ -128,6 +139,8 @@ export async function deleteWeightEntry(
   if (!entry) {
     throw new Error("Pesée introuvable");
   }
+
+  if (entry.bodyMeasurementId !== undefined) throw new Error(LINKED_WEIGHT_MESSAGE);
 
   await db.weightEntries.delete(id);
 }

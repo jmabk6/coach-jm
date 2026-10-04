@@ -17,7 +17,7 @@ import {
   STORE_NAMES,
   VERSION_1_STORES,
   VERSION_2_STORES,
-  VERSION_3_STORES,
+  VERSION_4_STORES,
   guardV3Migration,
 } from "./database";
 
@@ -117,28 +117,26 @@ async function populateRealistic(database: CoachJmDatabaseV2): Promise<void> {
 }
 
 describe("migration v2 → v3", () => {
-  it("T-1 — première ouverture : version 3, quinze stores, tous vides", async () => {
+  it("T-1 — première ouverture : version 4 (par la v3), vingt stores (quinze v3 + cinq v4), tous vides", async () => {
     const name = track(uniqueTestName("coach-jm-v3"));
     const database = await openV3(name);
 
     expect(database.verno).toBe(DATABASE_VERSION);
-    expect(DATABASE_VERSION).toBe(3);
+    expect(DATABASE_VERSION).toBe(4);
     expect(database.tables.map((table) => table.name).sort()).toEqual([...STORE_NAMES].sort());
-    expect(STORE_NAMES).toHaveLength(15);
+    expect(STORE_NAMES).toHaveLength(20);
     for (const table of database.tables) expect(await table.count(), table.name).toBe(0);
     database.close();
   });
 
-  it("T-2 — base v2 vide : le schéma obtenu est exactement VERSION_3_STORES", async () => {
+  it("T-2 — base v2 vide : le schéma obtenu est exactement VERSION_4_STORES (les stores v3, plus ceux de la v4)", async () => {
     const name = await createV2(async () => undefined);
     const migrated = await openV3(name);
     const schema = describeSchema(migrated);
     migrated.close();
 
     const reference = new Dexie(track(uniqueTestName("coach-jm-v3-ref")));
-    reference.version(1).stores(
-      Object.fromEntries(Object.entries(VERSION_3_STORES).filter(([, value]) => value !== null)) as Record<string, string>,
-    );
+    reference.version(1).stores(VERSION_4_STORES as unknown as Record<string, string>);
     await reference.open();
     expect(schema).toEqual(describeSchema(reference));
     reference.close();
@@ -238,7 +236,7 @@ describe("migration v2 → v3", () => {
     reopened.close();
   });
 
-  it("T-6 — base v1 : passage v1 → v2 → v3 dans la même ouverture, contenus identiques", async () => {
+  it("T-6 — base v1 : passage v1 → v2 → v3 → v4 dans la même ouverture, contenus identiques", async () => {
     const name = track(uniqueTestName("coach-jm-v1"));
     const legacy = new Dexie(name);
     legacy.version(1).stores(VERSION_1_STORES);
@@ -250,7 +248,7 @@ describe("migration v2 → v3", () => {
     legacy.close();
 
     const migrated = await openV3(name);
-    expect(migrated.verno).toBe(3);
+    expect(migrated.verno).toBe(4);
     expect(await dump(migrated, v1Stores)).toEqual(before);
     expect(migrated.tables.map((table) => table.name).sort()).toEqual([...STORE_NAMES].sort());
     migrated.close();

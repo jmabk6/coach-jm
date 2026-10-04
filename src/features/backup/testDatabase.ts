@@ -12,7 +12,7 @@ import type {
   WeightEntry,
   WorkoutSession,
 } from "../../domain";
-import { CoachJmDatabase, VERSION_1_STORES, VERSION_2_STORES, type CoachJmDatabaseOptions } from "../../db/database";
+import { CoachJmDatabase, guardV3Migration, VERSION_1_STORES, VERSION_2_STORES, VERSION_3_STORES, type CoachJmDatabaseOptions } from "../../db/database";
 
 /**
  * Objectif sous la forme des schémas v1 et v2 (cible unique). Aucun code
@@ -80,6 +80,19 @@ export class CoachJmDatabaseV2 extends Dexie {
 }
 
 let counter = 0;
+
+/**
+ * La base telle que l'application l'a créée du lot C au 05/10/2026 :
+ * versions 1 à 3, quinze stores (avant le module Corps + Alimentation).
+ */
+export class CoachJmDatabaseV3 extends Dexie {
+  constructor(name: string) {
+    super(name);
+    this.version(1).stores(VERSION_1_STORES);
+    this.version(2).stores(VERSION_2_STORES);
+    this.version(3).stores(VERSION_3_STORES).upgrade(guardV3Migration);
+  }
+}
 
 export function uniqueTestName(prefix: string): string {
   counter += 1;

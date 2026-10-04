@@ -56,36 +56,36 @@ afterEach(async () => {
   vi.restoreAllMocks();
 });
 
-describe("schéma de l'application (lot C : version 3)", () => {
+describe("schéma de l'application (version 4 : Corps + Alimentation, après le lot C)", () => {
   afterEach(async () => {
     db.close();
     await db.delete();
   });
 
-  it("la base déclarée par l'application est la version 3 avec ses quinze stores, et la sauvegarde les couvre tous", async () => {
+  it("la base déclarée par l'application est la version 4 avec ses vingt stores, et la sauvegarde les couvre tous", async () => {
     await db.delete();
     await db.open();
 
     expect(db.verno).toBe(DATABASE_VERSION);
-    expect(DATABASE_VERSION).toBe(3);
+    expect(DATABASE_VERSION).toBe(4);
     expect(db.tables.map((table) => table.name).sort()).toEqual([...STORE_NAMES].sort());
-    expect(db.tables).toHaveLength(15);
+    expect(db.tables).toHaveLength(20);
 
     const envelope = await readBackup(db, context);
-    expect(envelope.database.version).toBe(3);
+    expect(envelope.database.version).toBe(4);
     expect(Object.keys(envelope.stores).sort()).toEqual([...STORE_NAMES].sort());
-    expect(Object.keys(envelope.counts)).toHaveLength(15);
+    expect(Object.keys(envelope.counts)).toHaveLength(20);
     for (const name of STORE_NAMES) expect(envelope.counts[name], name).toBe(0);
   });
 
-  it("la base de test v3 reflète exactement le schéma de production ; les bases de test v2 et v1 sont celles des sauvegardes existantes", async () => {
+  it("la base de test de l'application (v4) reflète exactement le schéma de production ; les bases de test v2 et v1 sont celles des sauvegardes existantes", async () => {
     await db.delete();
     await db.open();
     const v3 = createTestDatabase("coach-jm-test", 3);
     opened.push(v3);
     await v3.open();
     expect(describeSchema(v3)).toEqual(describeSchema(db));
-    expect(v3.verno).toBe(3);
+    expect(v3.verno).toBe(4);
 
     const v2 = createTestDatabase("coach-jm-test", 2);
     opened.push(v2);

@@ -225,6 +225,11 @@ export const STORE_LABELS: Record<string, string> = {
   testProtocols: "Protocoles de tests",
   testProtocolVersions: "Versions de protocole de test",
   testResults: "Résultats de tests",
+  bodyMeasurements: "Mesures corporelles",
+  foods: "Aliments",
+  mealTemplates: "Repas favoris",
+  foodLogEntries: "Journal alimentaire",
+  nutritionDays: "Journées alimentaires",
   settings: "Réglages",
 };
 

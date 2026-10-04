@@ -50,7 +50,7 @@ describe("T-11 — format 2 : export → restauration → export", () => {
     const first = await readBackup(source, context);
 
     expect(first.formatVersion).toBe(2);
-    expect(first.database.version).toBe(3);
+    expect(first.database.version).toBe(4);
     expect(first.app).toEqual({ buildTime: "build", version: "0.0.0" });
     expect(Object.keys(first.integrity.storeHashes ?? {}).sort()).toEqual(Object.keys(first.stores).sort());
     expect(first.integrity.storeHashes).toEqual(await storeHashesOf(first.stores));

@@ -1,8 +1,13 @@
 import Dexie, { type Table, type Transaction } from "dexie";
 
 import type {
+  BodyMeasurement,
   Exercise,
+  Food,
+  FoodLogEntry,
   Goal,
+  MealTemplate,
+  NutritionDay,
   PlannedSession,
   RpeScaleVersion,
   SessionTemplate,
@@ -22,7 +27,7 @@ import type {
  * Version courante du schéma. Les tests de migration s'y réfèrent pour ne
  * pas figer un nombre en dur.
  */
-export const DATABASE_VERSION = 3;
+export const DATABASE_VERSION = 4;
 
 /**
  * Index de la version 1, conservés tels quels : Dexie a besoin de
@@ -127,16 +132,42 @@ export const VERSION_3_STORES = {
   mobilityObservations: null,
 } as const;
 
-type Version3Schema = typeof VERSION_3_STORES;
+/**
+ * Version 4 (module Corps + Alimentation, phase 1, 05/10/2026) : les
+ * quinze stores v3 inchangés, plus cinq stores nouveaux. Aucune donnée
+ * existante n'est lue ni transformée : pas de fonction d'upgrade.
+ */
+export const VERSION_4_STORES = {
+  exercises: VERSION_3_STORES.exercises,
+  sessionTemplates: VERSION_3_STORES.sessionTemplates,
+  weeklyPrograms: VERSION_3_STORES.weeklyPrograms,
+  plannedSessions: VERSION_3_STORES.plannedSessions,
+  workouts: VERSION_3_STORES.workouts,
+  weightEntries: VERSION_3_STORES.weightEntries,
+  strengthFrames: VERSION_3_STORES.strengthFrames,
+  strengthFrameVersions: VERSION_3_STORES.strengthFrameVersions,
+  strengthMilestones: VERSION_3_STORES.strengthMilestones,
+  rpeScaleVersions: VERSION_3_STORES.rpeScaleVersions,
+  goals: VERSION_3_STORES.goals,
+  testProtocols: VERSION_3_STORES.testProtocols,
+  testProtocolVersions: VERSION_3_STORES.testProtocolVersions,
+  testResults: VERSION_3_STORES.testResults,
+  settings: VERSION_3_STORES.settings,
+  /* Nouveaux en v4. */
+  bodyMeasurements: "id, date, takenAt, device, updatedAt",
+  foods: "id, name, status, updatedAt",
+  mealTemplates: "id, name, position, status, updatedAt",
+  foodLogEntries: "id, date, slot, [date+slot], foodId, mealTemplateId, updatedAt",
+  nutritionDays: "date, updatedAt",
+} as const;
 
-export type StoreName = {
-  [K in keyof Version3Schema]: Version3Schema[K] extends null ? never : K;
-}[keyof Version3Schema];
+/** Les stores apparus en v4 (vides à la migration). */
+export const NEW_IN_V4 = ["bodyMeasurements", "foods", "mealTemplates", "foodLogEntries", "nutritionDays"] as const;
 
-/** Les quinze stores de la version 3, dans l'ordre de déclaration. */
-export const STORE_NAMES = Object.entries(VERSION_3_STORES)
-  .filter(([, schema]) => schema !== null)
-  .map(([name]) => name) as StoreName[];
+export type StoreName = keyof typeof VERSION_4_STORES;
+
+/** Les vingt stores de la version 4 (quinze v3 + cinq nouveaux), dans l'ordre de déclaration. */
+export const STORE_NAMES = Object.keys(VERSION_4_STORES) as StoreName[];
 
 /** Stores supprimés par la version 3 : ils doivent être vides pour migrer. */
 export const REMOVED_IN_V3 = Object.entries(VERSION_3_STORES)
@@ -210,6 +241,12 @@ export class CoachJmDatabase extends Dexie {
   testResults!: Table<TestResult, string>;
   settings!: Table<SettingsRecord, string>;
 
+  bodyMeasurements!: Table<BodyMeasurement, string>;
+  foods!: Table<Food, string>;
+  mealTemplates!: Table<MealTemplate, string>;
+  foodLogEntries!: Table<FoodLogEntry, string>;
+  nutritionDays!: Table<NutritionDay, string>;
+
   /**
    * Le nom ne sert qu'aux tests, qui ouvrent des bases indépendantes ;
    * l'application n'utilise que `coach-jm`.
@@ -225,9 +262,11 @@ export class CoachJmDatabase extends Dexie {
      */
     this.version(1).stores(VERSION_1_STORES);
     this.version(2).stores(VERSION_2_STORES);
-    this.version(DATABASE_VERSION)
+    this.version(3)
       .stores(VERSION_3_STORES)
       .upgrade(options.upgradeGuard ?? guardV3Migration);
+    /* v4 : uniquement des stores nouveaux, sans upgrade (rien à transformer). */
+    this.version(DATABASE_VERSION).stores(VERSION_4_STORES);
   }
 }
 

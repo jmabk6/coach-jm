@@ -6,6 +6,7 @@ import { getAllTestProtocols, getAllTestResults, getTestProtocolVersion } from "
 import { getWeightEntries } from "../../db/repositories/weightRepository";
 import type { Exercise, Goal, GoalKey, GoalSecondaryIndicator, TestProtocol, TestProtocolVersion, TestResult, WorkoutSession } from "../../domain";
 import { compositionSummary, type CompositionSummary } from "../../domain/rules/bodyCompositionRules";
+import { withingsCompositionReadings } from "../body/seedLegacyComposition";
 import { v6Progress, type V6Progress } from "./tractionV6View";
 import { goalProtocolId, nextTestDate } from "../../domain/rules/goalListRules";
 import { measureValue } from "../../domain/rules/goalRules";
@@ -207,7 +208,7 @@ export async function loadGoalDetail(key: GoalKey, today: string): Promise<GoalD
   const goal = await getGoalByKey(key);
   if (!goal) return undefined;
 
-  const [results, weights, protocols, exercises, workouts, sessions, cycle, schedule] = await Promise.all([
+  const [results, weights, protocols, exercises, workouts, sessions, cycle, schedule, bodyMeasurements] = await Promise.all([
     getAllTestResults(),
     getWeightEntries(),
     getAllTestProtocols(),
@@ -216,6 +217,7 @@ export async function loadGoalDetail(key: GoalKey, today: string): Promise<GoalD
     db.plannedSessions.toArray(),
     getSetting("testCycle"),
     getSetting("testSchedule"),
+    db.bodyMeasurements.toArray(),
   ]);
 
   const progress = goalProgressFrom(goal, results, weights, today);
@@ -251,7 +253,10 @@ export async function loadGoalDetail(key: GoalKey, today: string): Promise<GoalD
     ...(nextTest ? { nextTest } : {}),
     secondary,
     ...(goal.key === "traction" ? { bet: v6Progress(workouts, weights, today, results) } : {}),
-    ...(goal.key === "weight" ? { composition: [compositionSummary(weights, "fatPct", today), compositionSummary(weights, "muscleKg", today)] } : {}),
+    /* Composition de l'objectif Poids : les relevés Withings seuls (mesures « withings » et compositions des pesées), jamais mêlés à la RENPHO. */
+    ...(goal.key === "weight"
+      ? { composition: [compositionSummary(withingsCompositionReadings(weights, bodyMeasurements), "fatPct", today), compositionSummary(withingsCompositionReadings(weights, bodyMeasurements), "muscleKg", today)] }
+      : {}),
     linkedSessions: linkedSessionsOf(goal, workouts, exerciseById),
   };
 }
