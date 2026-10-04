@@ -15,6 +15,7 @@ import { seedArchiveProgramV1, seedProgramV2 } from "../program/seedProgramV2";
 import { seedTractionPriority20261003 } from "../program/seedTractionPriority";
 import { seedTractionV620261004 } from "../program/seedTractionV6";
 import { seedNegativesMuscuC20261005 } from "../program/seedNegativesMuscuC";
+import { seedLegPressMuscuA20261005 } from "../program/seedLegPressMuscuA";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
 import { seedTractionTestV320261005 } from "../tests/seedTractionTestV3";
@@ -92,13 +93,15 @@ export const SEEDS: SeedStep[] = [
   { name: "negativesMuscuC20261005", dependsOn: ["programV2", "tractionPriority20261003"], run: () => seedNegativesMuscuC20261005() },
   /* Seed 29 (05/10/2026) : le test jambes non planifié pendant le pari V6. */
   { name: "jambesSuspended20261005", dependsOn: ["testProtocols", "programV2"], run: () => seedJambesSuspended20261005() },
+  /* Seed 30 (05/10/2026) : la leg press en Muscu A, entre le curl EZ et le leg curl. */
+  { name: "legPressMuscuA20261005", dependsOn: ["programV2", "legCurlCouche20260927"], run: () => seedLegPressMuscuA20261005() },
 ];
 
 /**
  * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
  * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
  */
-export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005"].includes(seed.name));
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005"].includes(seed.name));
 
 export interface SeedReport {
   ran: string[];

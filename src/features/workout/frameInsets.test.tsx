@@ -161,4 +161,25 @@ describe("pari V6 : la traction légère de Muscu B", () => {
     expect(within(card).queryByText("Cadre")).toBeNull();
     expect(within(card).queryByText("Conseillé")).toBeNull();
   }, 20000);
+
+  it("leg press de Muscu A (hors palier) : la dernière charge réelle (130 kg), jamais l'objectif du cadre (120 kg)", async () => {
+    const frame = (await db.strengthFrames.where("exerciseId").equals("presse-cuisses").first())!;
+    const active = (await db.strengthFrameVersions.get(frame.activeVersionId))!;
+    await db.strengthFrameVersions.put({ ...active, currentTarget: { value: 120, unit: "kg", acceptedAt: T } });
+    await db.workouts.put(done("w-presse", "2026-10-02", active.id, "presse-cuisses", 130, 10));
+    const template = (await db.sessionTemplates.get("v2-muscu-a"))!;
+    await startFreeWorkout("2026-10-11", "2026-10-11T08:00:00.000Z", template);
+    render(
+      <MemoryRouter initialEntries={["/seance-en-cours"]}>
+        <Routes>
+          <Route path="/seance-en-cours" element={<WorkoutScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const advice = await screen.findByText(/Charge conseillée : 130 kg/, {}, { timeout: 4000 });
+    const card = advice.closest("li")!;
+    expect(within(card).getByText(/Presse à cuisses/)).toBeDefined();
+    expect(within(card).getByText("Charge conseillée : 130 kg")).toBeDefined();
+    expect(within(card).queryByText(/120 kg/)).toBeNull();
+  }, 20000);
 });

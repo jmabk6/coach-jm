@@ -67,6 +67,7 @@ describe("modèles V2", () => {
       "chest-press 2x8-12",
       "elevations-laterales-halteres 3x12-15",
       "import-curl-biceps-ez 3x8-12",
+      "presse-cuisses 2x10-12",
       "leg-curl-couche 2x10-12",
     ]);
     /* Pari traction (03/10/2026) : la traction légère en premier. */
@@ -95,9 +96,8 @@ describe("modèles V2", () => {
     ]);
   });
 
-  it("durées estimées : Muscu A dans la cible 65-75 min, Muscu B (82, traction 3 × 8-10 le 04/10) et C (84 : suspension le 03/10, négatives du pari V6) au-dessus, signalé ; Cardio A 45, B 38, C 57", () => {
-    expect(minutes("v2-muscu-a")).toBeGreaterThanOrEqual(65);
-    expect(minutes("v2-muscu-a")).toBeLessThanOrEqual(75);
+  it("durées estimées : Muscu A (81, leg press ajoutée le 05/10), Muscu B (82, traction 3 × 8-10 le 04/10) et C (84 : suspension le 03/10, négatives du pari V6) au-dessus, signalé ; Cardio A 45, B 38, C 57", () => {
+    expect(minutes("v2-muscu-a")).toBe(81);
     expect(minutes("v2-muscu-c")).toBe(84);
     /* Cinq gros mouvements à 2 min de repos : l'estimation dépasse la cible (rapport du 26/09/2026). */
     expect(minutes("v2-muscu-b")).toBe(82);

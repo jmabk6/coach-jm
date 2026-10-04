@@ -65,6 +65,7 @@ function createExerciseBlock(
     /* Échauffement (D14) : recopié du modèle, il reste une vraie brique. */
     ...(block.role === "warmup" ? { role: "warmup" as const } : {}),
     ...(reduced ? { reducedPrescription: true } : {}),
+    ...(block.outsideFrame ? { outsideFrame: true as const } : {}),
     status: "not_performed",
     snapshotInstructions: structuredClone(block.instructions),
   };

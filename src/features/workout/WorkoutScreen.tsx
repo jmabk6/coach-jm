@@ -330,7 +330,8 @@ export function WorkoutScreen() {
           if (planned) return formatAdvisedLoad({ value: planned.assistKg, unit: "kg", assistance: true });
           const advised = advisedLoadOf(
             exerciseById.get(block.exerciseId),
-            block.frameVersionId ? frames.versionById.get(block.frameVersionId) : undefined,
+            /* Hors palier : la charge de la dernière séance, jamais l'objectif du cadre. */
+            block.frameVersionId && !block.outsideFrame ? frames.versionById.get(block.frameVersionId) : undefined,
             lastByExercise.get(block.exerciseId)?.allSeries,
           );
           return advised ? formatAdvisedLoad(advised) : undefined;
@@ -627,7 +628,7 @@ export function WorkoutScreen() {
                     : undefined
                 }
                 rpeTable={rpeScale?.table}
-                frameVersion={block.frameVersionId ? frames.versionById.get(block.frameVersionId) : undefined}
+                frameVersion={block.frameVersionId && !block.outsideFrame ? frames.versionById.get(block.frameVersionId) : undefined}
                 /* Pari V6 : le palier de la traction vient du moteur V6, jamais d'une hausse ou d'une stagnation du cadre. */
                 insets={block.exerciseId === BET_EXERCISE_ID ? undefined : insetsFor(block.frameVersionId)}
                 bet={bet ? betBannerFor(workout, block, bet) : undefined}

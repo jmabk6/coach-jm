@@ -93,6 +93,8 @@ export interface InstallMarkers {
   negativesMuscuC20261005?: string;
   /** Seed 29 : le test jambes non planifié pendant le pari V6 (jusqu'au 31/03/2027). */
   jambesSuspended20261005?: string;
+  /** Seed 30 : la leg press en Muscu A, entre le curl EZ et le leg curl. */
+  legPressMuscuA20261005?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

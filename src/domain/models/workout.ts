@@ -203,6 +203,13 @@ export interface PerformedExerciseBlock extends PerformedBaseBlock {
    */
   reducedPrescription?: true;
 
+  /**
+   * Hors palier (recopié du modèle) : la brique ne suit pas le cadre —
+   * ni objectif ni conseil du cadre ; la charge vient de la dernière
+   * séance (traction légère de Muscu B, leg press de Muscu A).
+   */
+  outsideFrame?: true;
+
   /** FC étendue (tapis, vélo), facultative en entraînement. */
   heartRate?: {
     samples?: Array<{ atSec: number; bpm: number }>;

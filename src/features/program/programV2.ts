@@ -78,6 +78,8 @@ function warmup(prefix: string): ExerciseBlock {
 /** Curl biceps du programme : le curl à la barre EZ, celui des séances de septembre. */
 export const CURL_BICEPS_ID = "import-curl-biceps-ez";
 
+/** Muscu A, leg press (05/10/2026). */
+export const LEG_PRESS_A_NOTE = "Environ 2 reps en réserve (RPE 8), jamais à l'échec. Charge : la dernière utilisée. Dimanche de test traction : travail propre, sans recherche de record.";
 /** Muscu B, traction légère (03/10/2026). */
 export const TRACTION_LIGHT_NOTE = "Traction légère, en premier : un cran d'aide au-dessus de la Muscu A (A + 7 kg), 3 × 8-10, RPE 6-8, jamais à l'échec. Semaine test : 2 × 8.";
 /** Muscu C, tractions négatives (pari V6, à partir du 01/11/2026). */
@@ -104,8 +106,17 @@ const muscuA: TemplateContent = {
     exercise("v2-muscu-a-chest-press", 4, "chest-press", reps(2, 8, 12, BIG)),
     exercise("v2-muscu-a-elevations", 5, "elevations-laterales-halteres", reps(3, 12, 15, ISOLATION)),
     exercise("v2-muscu-a-curl", 6, CURL_BICEPS_ID, reps(3, 8, 12, ISOLATION)),
+    /* Leg press (05/10/2026) : 2 × 10-12, environ 2 reps en réserve. Hors palier (le cadre est celui de
+       Muscu B) : la charge reprend la dernière séance, ni objectif ni conseil du cadre. */
+    exercise(
+      "v2-muscu-a-presse",
+      7,
+      "presse-cuisses",
+      { shape: "reps", sets: 2, reps: { min: 10, max: 12 }, targetRpe: { min: 8, max: 8 }, restBetweenSetsSec: BIG },
+      { notes: LEG_PRESS_A_NOTE, outsideFrame: true },
+    ),
     /* Leg curl couché à la place du leg curl assis (décision du 27/09/2026). */
-    exercise("v2-muscu-a-leg-curl", 7, "leg-curl-couche", reps(2, 10, 12, ISOLATION)),
+    exercise("v2-muscu-a-leg-curl", 8, "leg-curl-couche", reps(2, 10, 12, ISOLATION)),
   ],
 };
 
