@@ -66,7 +66,7 @@ describe("modèles V2", () => {
       "tirage-vertical 2x8-12",
       "chest-press 2x8-12",
       "elevations-laterales-halteres 3x12-15",
-      "import-curl-biceps-ez 3x8-12",
+      "curl-halteres 3x8-12",
       "presse-cuisses 2x10-12",
       "leg-curl-couche 2x10-12",
     ]);

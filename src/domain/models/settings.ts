@@ -95,6 +95,10 @@ export interface InstallMarkers {
   jambesSuspended20261005?: string;
   /** Seed 30 : la leg press en Muscu A, entre le curl EZ et le leg curl. */
   legPressMuscuA20261005?: string;
+  /** Seed 31 : correction de la Muscu A du 04/10 (traction 28 kg × 3 oubliée, curl haltères au lieu du curl EZ). */
+  fixWorkout20261004?: string;
+  /** Seed 32 : le curl haltères remplace le curl barre EZ dans Muscu A. */
+  curlHalteresMuscuA20261004?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

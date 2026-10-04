@@ -1,6 +1,7 @@
 import "fake-indexeddb/auto";
 
 import { addLegCurlCouche20260927, LEG_CURL_WORKOUT_ID } from "../history/seedLegCurlCouche20260927";
+import { CURL_EZ_MILESTONE_ID, expectedCurlEzVersionAfterFix, FIX_WORKOUT_ID as FIX_20261004_ID, fixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { readFile } from "node:fs/promises";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
@@ -61,19 +62,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "fixWorkout20261004", "curlHalteresMuscuA20261004"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "fixWorkout20261004", "curlHalteresMuscuA20261004"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
     expect(Object.keys(settings).sort()).toEqual(["install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
     const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
-    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso, testsWeek20260927: iso, removeOldMuscuA: iso, legCurlCouche20260927: iso, programV2: iso, tractionTarget20261003: iso, tractionIncrement20261003: iso, tractionPriority20261003: iso, tractionTest7kg20261003: iso, tractionV620261004: iso, tractionTestV320261005: iso, negativesMuscuC20261005: iso, jambesSuspended20261005: iso, legPressMuscuA20261005: iso, ...(formatLocalDate(new Date()) >= "2026-10-04" ? { archiveProgramV1: iso } : {}) });
+    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso, testsWeek20260927: iso, removeOldMuscuA: iso, legCurlCouche20260927: iso, programV2: iso, tractionTarget20261003: iso, tractionIncrement20261003: iso, tractionPriority20261003: iso, tractionTest7kg20261003: iso, tractionV620261004: iso, tractionTestV320261005: iso, negativesMuscuC20261005: iso, jambesSuspended20261005: iso, legPressMuscuA20261005: iso, fixWorkout20261004: iso, curlHalteresMuscuA20261004: iso, ...(formatLocalDate(new Date()) >= "2026-10-04" ? { archiveProgramV1: iso } : {}) });
     expect(await db.goals.count()).toBe(7);
     expect(await db.testProtocols.count()).toBe(7);
     expect(await db.exercises.count()).toBeGreaterThan(0);
@@ -208,6 +209,8 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
         if (workout.id === FIX_WORKOUT_ID) return fixesOf20260924(workout, updatedAt);
         /* Seed 21 : la Muscu A du 27/09, si elle est dans l'état constaté, reçoit le leg curl couché et sa durée. */
         if (workout.id === LEG_CURL_WORKOUT_ID) return addLegCurlCouche20260927(workout, updatedAt) ?? workout;
+        /* Seed 31 : la Muscu A du 04/10, si elle est dans l'état constaté, reçoit sa traction à 28 kg et son curl haltères. */
+        if (workout.id === FIX_20261004_ID) return fixWorkout20261004(workout, updatedAt) ?? workout;
         return workout;
       }),
       ...(added ? [added] : []),
@@ -237,7 +240,13 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     for (const store of ["strengthFrames", "strengthFrameVersions"]) {
       const seededById = new Map((seeded.stores[store] as Array<{ id: string }>).map((item) => [item.id, item]));
       for (const item of (file.stores[store] ?? []) as Array<{ id: string }>) {
-        expect(canonicalStringify(seededById.get(item.id)), `${store} ${item.id}`).toBe(canonicalStringify(recalibrated.get(item.id) ?? item));
+        const base = (recalibrated.get(item.id) ?? item) as StrengthFrameVersion;
+        /* Seed 31 : le cadre du curl EZ, figé par la seule Muscu A du 04/10 corrigée en curl haltères, se défige. */
+        const expected =
+          store === "strengthFrameVersions"
+            ? expectedCurlEzVersionAfterFix(base, fileWorkouts, (seededById.get(item.id) as { updatedAt?: string } | undefined)?.updatedAt ?? "")
+            : base;
+        expect(canonicalStringify(seededById.get(item.id)), `${store} ${item.id}`).toBe(canonicalStringify(expected));
       }
     }
     const fileTemplates = (file.stores.sessionTemplates ?? []) as Array<{ id: string }>;
@@ -264,7 +273,12 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
     expect(seededTemplates.filter((item) => !fileTemplates.some((t) => t.id === item.id)).every((item) => item.id.startsWith("v1-"))).toBe(true);
     if ((file.stores.weeklyPrograms ?? []).length > 0) untouched.push("weeklyPrograms");
     if ((file.stores.rpeScaleVersions ?? []).length > 0) untouched.push("rpeScaleVersions");
-    for (const name of untouched) expect(canonicalStringify(seeded.stores[name]), name).toBe(canonicalStringify(file.stores[name] ?? []));
+    for (const name of untouched) {
+      /* Seed 31 : le jalon du curl EZ de la Muscu A du 04/10 (corrigée en curl haltères) disparaît. */
+      const fixed = name === "strengthMilestones" && fileWorkouts.some((workout) => workout.id === FIX_20261004_ID && fixWorkout20261004(workout, "") !== undefined);
+      const expected = ((file.stores[name] ?? []) as Array<{ id: string }>).filter((item) => !(fixed && item.id === CURL_EZ_MILESTONE_ID));
+      expect(canonicalStringify(seeded.stores[name]), name).toBe(canonicalStringify(expected));
+    }
     /* Le catalogue ne fait que compléter des champs absents : mêmes exercices. */
     expect((seeded.stores.exercises as Array<{ id: string }>).map((e) => e.id).sort()).toEqual(
       expect.arrayContaining((file.stores.exercises as Array<{ id: string }>).map((e) => e.id).sort()),

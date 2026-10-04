@@ -75,8 +75,9 @@ function warmup(prefix: string): ExerciseBlock {
 /* Musculation                                                                */
 /* -------------------------------------------------------------------------- */
 
-/** Curl biceps du programme : le curl à la barre EZ, celui des séances de septembre. */
-export const CURL_BICEPS_ID = "import-curl-biceps-ez";
+/** Curl biceps de Muscu A : le curl haltères, bras alternés (décision du 04/10/2026 ; avant : le curl à la barre EZ). */
+export const CURL_BICEPS_ID = "curl-halteres";
+export const CURL_HALTERES_NOTE = "Haltères, bras alternés.";
 
 /** Muscu A, leg press (05/10/2026). */
 export const LEG_PRESS_A_NOTE = "Environ 2 reps en réserve (RPE 8), jamais à l'échec. Charge : la dernière utilisée. Dimanche de test traction : travail propre, sans recherche de record.";
@@ -105,7 +106,7 @@ const muscuA: TemplateContent = {
     /* N5 : 2 séries contre 3 au cadre (suit B) — prescription réduite, ni palier ni stagnation. */
     exercise("v2-muscu-a-chest-press", 4, "chest-press", reps(2, 8, 12, BIG)),
     exercise("v2-muscu-a-elevations", 5, "elevations-laterales-halteres", reps(3, 12, 15, ISOLATION)),
-    exercise("v2-muscu-a-curl", 6, CURL_BICEPS_ID, reps(3, 8, 12, ISOLATION)),
+    exercise("v2-muscu-a-curl", 6, CURL_BICEPS_ID, reps(3, 8, 12, ISOLATION), { notes: CURL_HALTERES_NOTE }),
     /* Leg press (05/10/2026) : 2 × 10-12, environ 2 reps en réserve. Hors palier (le cadre est celui de
        Muscu B) : la charge reprend la dernière séance, ni objectif ni conseil du cadre. */
     exercise(

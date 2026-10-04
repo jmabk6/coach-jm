@@ -7,6 +7,7 @@ import { db } from "../../db/database";
 import type { PerformedExerciseBlock, SessionTemplate, StrengthFrame, StrengthFrameVersion, StrengthMilestone, WorkoutSession } from "../../domain";
 import { frameParametersChanged, nextStep, proposeRaise } from "../../domain/rules/strengthRules";
 import { expectedAfterFrameTargets } from "./seedFrameTargets20260925";
+import { expectedCurlEzVersionAfterFix, FIX_WORKOUT_ID as FIX_20261004_ID, fixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { canonicalStringify } from "../backup/canonicalJson";
 import { resetAndRestore } from "../backup/resetAndRestore";
 import { parseBackup } from "../backup/restoreBackup";
@@ -210,8 +211,12 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
       expect(canonicalStringify(await db.strengthFrames.get(frame.id)), frame.id).toBe(canonicalStringify(recalibrated.get(frame.id) ?? frame));
       expect(await db.strengthFrames.where("exerciseId").equals(frame.exerciseId).count(), frame.exerciseId).toBe(1);
     }
+    const fileWorkouts = (file.stores.workouts ?? []) as WorkoutSession[];
     for (const version of fileVersions) {
-      expect(canonicalStringify(await db.strengthFrameVersions.get(version.id)), version.id).toBe(canonicalStringify(recalibrated.get(version.id) ?? version));
+      const seeded = await db.strengthFrameVersions.get(version.id);
+      /* Seed 31 : le cadre du curl EZ, figé par la seule Muscu A du 04/10 corrigée en curl haltères, se défige. */
+      const expected = expectedCurlEzVersionAfterFix(recalibrated.get(version.id) ?? version, fileWorkouts, seeded?.updatedAt ?? "") as StrengthFrameVersion;
+      expect(canonicalStringify(seeded), version.id).toBe(canonicalStringify(expected));
     }
 
     const covered = new Set(fileFrames.map((frame) => frame.exerciseId));
@@ -233,7 +238,10 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
             : /* Seed 21 : la Muscu A du 27/09, dans l'état constaté, reçoit le leg curl couché et sa durée. */
               workout.id === LEG_CURL_WORKOUT_ID
               ? (addLegCurlCouche20260927(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "") ?? workout)
-              : workout,
+              : /* Seed 31 : la Muscu A du 04/10, dans l'état constaté, reçoit sa traction à 28 kg et son curl haltères. */
+                workout.id === FIX_20261004_ID
+                ? (fixWorkout20261004(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "") ?? workout)
+                : workout,
       ),
       ...(added ? [buildWorkout20260925(added.createdAt)] : []),
     ];
