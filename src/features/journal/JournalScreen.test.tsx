@@ -229,3 +229,49 @@ describe("résumé et lignes", () => {
     expect(await db.nutritionDays.count()).toBe(0);
   });
 });
+
+describe("lignes regroupées (affichage seulement)", () => {
+  it("2 × 250 g au petit-déjeuner : une ligne 500 g ; le dîner reste à part ; totaux du jour inchangés ; la base garde 2 lignes", async () => {
+    await saveFood(FROMAGE);
+    await addFoodEntry({ date: "2026-10-05", slot: "breakfast", foodId: "f-fb", quantity: 250, now: "2026-10-05T06:00:00.000Z" }, nextId);
+    await addFoodEntry({ date: "2026-10-05", slot: "breakfast", foodId: "f-fb", quantity: 250, now: "2026-10-05T06:05:00.000Z" }, nextId);
+    await addFoodEntry({ date: "2026-10-05", slot: "dinner", foodId: "f-fb", quantity: 100, now: "2026-10-05T18:00:00.000Z" }, nextId);
+    renderJournal();
+
+    const breakfast = await screen.findByRole("region", { name: "Petit-déjeuner" });
+    await waitFor(() => expect(within(breakfast).getAllByRole("button", { name: /Fromage blanc/ })).toHaveLength(1));
+    const group = within(breakfast).getByRole("button", { name: /Fromage blanc/ });
+    expect(group.textContent).toContain("500 g");
+    expect(group.textContent).toContain("230 kcal");
+    expect(group.textContent).toContain("40,0 g P");
+    expect(mealTotal(breakfast)).toBe("230 kcal · 40,0 g P");
+    expect(within(meal("Dîner")).getAllByRole("button", { name: /Fromage blanc/ })).toHaveLength(1);
+    expect(within(tile("kcal")).getByText("276 kcal")).toBeTruthy();
+    expect(await db.foodLogEntries.count()).toBe(3);
+  });
+
+  it("toucher le groupe : la quantité totale, « Regroupe 2 saisies » ; 500 → 300 g : la plus récente porte la baisse ; supprimer : « 2 saisies seront supprimées »", async () => {
+    await saveFood(FROMAGE);
+    const first = await addFoodEntry({ date: "2026-10-05", slot: "breakfast", foodId: "f-fb", quantity: 250, now: "2026-10-05T06:00:00.000Z" }, nextId);
+    const second = await addFoodEntry({ date: "2026-10-05", slot: "breakfast", foodId: "f-fb", quantity: 250, now: "2026-10-05T06:05:00.000Z" }, nextId);
+    renderJournal();
+
+    fireEvent.click(await within(await screen.findByRole("region", { name: "Petit-déjeuner" })).findByRole("button", { name: /Fromage blanc/ }));
+    let sheet = screen.getByRole("dialog");
+    expect((within(sheet).getByLabelText("Quantité en g") as HTMLInputElement).value).toBe("500");
+    expect(within(sheet).getByText("Regroupe 2 saisies")).toBeTruthy();
+    fireEvent.change(within(sheet).getByLabelText("Quantité en g"), { target: { value: "300" } });
+    fireEvent.click(within(sheet).getByRole("button", { name: /^Enregistrer/ }));
+    await waitFor(async () => expect((await db.foodLogEntries.get(second.id))?.quantity).toBe(50));
+    expect(await db.foodLogEntries.get(first.id)).toEqual(first);
+    await waitFor(() => expect(within(meal("Petit-déjeuner")).getByRole("button", { name: /Fromage blanc/ }).textContent).toContain("300 g"));
+
+    fireEvent.click(within(meal("Petit-déjeuner")).getByRole("button", { name: /Fromage blanc/ }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Supprimer la ligne/ }));
+    sheet = screen.getByRole("dialog");
+    expect(within(sheet).getByText("2 saisies seront supprimées")).toBeTruthy();
+    fireEvent.click(within(sheet).getByRole("button", { name: /^Supprimer\s*La ligne disparaît/ }));
+    await waitFor(() => expect(within(summary()).getByText("Journée non renseignée")).toBeTruthy());
+    expect(await db.foodLogEntries.count()).toBe(0);
+  });
+});

@@ -17,6 +17,8 @@ import {
   addMealTemplateEntries,
   archiveFood,
   createFoodWithEntry,
+  deleteEntries,
+  GROUP_CHANGED_MESSAGE,
   deleteEntry,
   deleteFood,
   EMPTY_DAY_MESSAGE,
@@ -33,6 +35,7 @@ import {
   setDayComplete,
   setFoodFavorite,
   updateEntryQuantity,
+  updateGroupQuantity,
 } from "./nutritionRepository";
 
 /**
@@ -293,5 +296,71 @@ describe("bibliothèque (phase 3A.3)", () => {
     expect((await getFoods()).map((item) => item.id)).toEqual([]);
     await reactivateFood("f-r", T2);
     expect(await getFood("f-r")).toMatchObject({ status: "active", updatedAt: T2 });
+  });
+});
+
+describe("groupes de lignes (regroupement visuel)", () => {
+  const thon = () => food("f-thon", "Thon tomate (leader price)", { nutrients: { kcal: 111, proteinG: 14, carbsG: 3, fatG: 4.6 } });
+
+  async function twoThons() {
+    await saveFood(thon());
+    await saveMealTemplate({ id: "meal-1", name: "Midi", items: [{ id: "i", foodId: "f-thon", quantity: 160 }], position: 0, status: "active", createdAt: T, updatedAt: T });
+    const [fromTemplate] = await addMealTemplateEntries({ date: DAY, slot: "lunch", mealTemplateId: "meal-1", now: "2026-10-05T11:00:00.000Z" }, nextId);
+    const manual = await addFoodEntry({ date: DAY, slot: "lunch", foodId: "f-thon", quantity: 160, now: "2026-10-05T11:05:00.000Z" }, nextId);
+    return { first: fromTemplate!, second: manual };
+  }
+
+  it("320 → 400, 250, 100 : la plus récente d'abord ; bases, IDs et provenances intacts ; chaque ligne = calcul(base, quantité)", async () => {
+    const { first, second } = await twoThons();
+    const ids = [first.id, second.id];
+
+    await updateGroupQuantity(ids, 400, T2);
+    expect((await db.foodLogEntries.get(first.id))!).toEqual(first);
+    expect(await db.foodLogEntries.get(second.id)).toEqual({ ...second, quantity: 240, nutrients: calculateNutrients(second.basis, 240), updatedAt: T2 });
+
+    await updateGroupQuantity(ids, 250, T2);
+    expect((await db.foodLogEntries.get(second.id))!.quantity).toBe(90);
+    expect((await db.foodLogEntries.get(first.id))!).toEqual(first);
+
+    await updateGroupQuantity(ids, 100, T2);
+    expect(await db.foodLogEntries.get(second.id)).toBeUndefined();
+    const kept = (await db.foodLogEntries.get(first.id))!;
+    expect(kept).toEqual({ ...first, quantity: 100, nutrients: calculateNutrients(first.basis, 100), updatedAt: T2 });
+    /* La provenance du repas favori reste sur sa ligne, telle quelle. */
+    expect([kept.mealTemplateId, kept.groupId]).toEqual([first.mealTemplateId, first.groupId]);
+    expect(entryIsConsistent(kept)).toBe(true);
+    expect(await db.foodLogEntries.count()).toBe(1);
+  });
+
+  it("quantité nulle refusée ; groupe changé entre ouverture et validation (ligne disparue ou incompatible) : refus sans aucune écriture", async () => {
+    const { first, second } = await twoThons();
+    await expect(updateGroupQuantity([first.id, second.id], 0, T2)).rejects.toThrow("Quantité : supérieure à 0.");
+
+    await db.foodLogEntries.put({ ...second, name: "Autre thon" });
+    const before = await db.foodLogEntries.toArray();
+    await expect(updateGroupQuantity([first.id, second.id], 250, T2)).rejects.toThrow(GROUP_CHANGED_MESSAGE);
+    await expect(deleteEntries([first.id, second.id])).rejects.toThrow(GROUP_CHANGED_MESSAGE);
+    expect(await db.foodLogEntries.toArray()).toEqual(before);
+
+    await db.foodLogEntries.delete(second.id);
+    await expect(updateGroupQuantity([first.id, second.id], 250, T2)).rejects.toThrow(GROUP_CHANGED_MESSAGE);
+    await expect(deleteEntries([first.id, second.id])).rejects.toThrow(GROUP_CHANGED_MESSAGE);
+    expect(await db.foodLogEntries.get(first.id)).toEqual(first);
+  });
+
+  it("supprimer un groupe : toutes ses lignes en une fois ; dernière ligne du jour : journée « non renseignée »", async () => {
+    const { first, second } = await twoThons();
+    await setDayComplete(DAY, true, T2);
+    await deleteEntries([first.id, second.id]);
+    expect(await db.foodLogEntries.count()).toBe(0);
+    expect(await db.nutritionDays.get(DAY)).toBeUndefined();
+    expect((await getDaySummary(DAY)).state).toBe("unrecorded");
+  });
+
+  it("une ligne seule passe aussi par le groupe : comportement inchangé", async () => {
+    await saveFood(thon());
+    const only = await addFoodEntry({ date: DAY, slot: "dinner", foodId: "f-thon", quantity: 160, now: T }, nextId);
+    await updateGroupQuantity([only.id], 200, T2);
+    expect(await db.foodLogEntries.get(only.id)).toEqual({ ...only, quantity: 200, nutrients: calculateNutrients(only.basis, 200), updatedAt: T2 });
   });
 });

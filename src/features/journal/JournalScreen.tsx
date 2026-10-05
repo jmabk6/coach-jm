@@ -3,7 +3,8 @@ import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { paths } from "../../app/paths";
 import { BottomSheet } from "../../components/ui/BottomSheet";
-import { deleteEntry, getDaySummary, setDayComplete, updateEntryQuantity, type DaySummary } from "../../db/repositories/nutritionRepository";
+import { deleteEntries, getDaySummary, setDayComplete, updateGroupQuantity, type DaySummary } from "../../db/repositories/nutritionRepository";
+import { groupEntries, type EntryGroup } from "../../domain/rules/entryGroupRules";
 import type { FoodLogEntry } from "../../domain";
 import {
   formatJournalDay,
@@ -54,8 +55,9 @@ export function JournalScreen() {
   const [summary, setSummary] = useState<DaySummary>();
   const [version, setVersion] = useState(0);
   const navigate = useNavigate();
-  const [editing, setEditing] = useState<FoodLogEntry>();
-  const [deleting, setDeleting] = useState<FoodLogEntry>();
+  /* Une ligne affichée = un groupe de saisies compatibles (une ou plusieurs), jamais fusionnées en base. */
+  const [editing, setEditing] = useState<EntryGroup>();
+  const [deleting, setDeleting] = useState<EntryGroup>();
   const [error, setError] = useState<string>();
 
   const reload = () => setVersion((value) => value + 1);
@@ -125,17 +127,20 @@ export function JournalScreen() {
                     <Plus size={20} aria-hidden="true" />
                   </button>
                 </div>
-                {entries.map((entry) => (
-                  <button key={entry.id} type="button" className="journal-line" onClick={() => setEditing(entry)}>
-                    <span className="journal-line__name">
-                      {entry.name}
-                      {entry.estimated && <span className="journal-line__estimated">≈ estimé</span>}
-                    </span>
-                    <span className="journal-line__kcal">{formatKcal(entry.nutrients.kcal)}</span>
-                    <span className="journal-line__quantity">{formatQuantity(entry.quantity, entry.unit, entry)}</span>
-                    <span className="journal-line__protein">{entry.nutrients.proteinG !== undefined ? `${formatGrams(entry.nutrients.proteinG)} P` : ""}</span>
-                  </button>
-                ))}
+                {groupEntries(entries).map((group) => {
+                  const first = group.entries[0]!;
+                  return (
+                    <button key={first.id} type="button" className="journal-line" onClick={() => setEditing(group)}>
+                      <span className="journal-line__name">
+                        {first.name}
+                        {first.estimated && <span className="journal-line__estimated">≈ estimé</span>}
+                      </span>
+                      <span className="journal-line__kcal">{formatKcal(group.nutrients.kcal)}</span>
+                      <span className="journal-line__quantity">{formatQuantity(group.quantity, first.unit, first)}</span>
+                      <span className="journal-line__protein">{group.nutrients.proteinG !== undefined ? `${formatGrams(group.nutrients.proteinG)} P` : ""}</span>
+                    </button>
+                  );
+                })}
               </section>
             );
           })}
@@ -160,7 +165,7 @@ export function JournalScreen() {
 
       {editing && (
         <EntrySheet
-          entry={editing}
+          group={editing}
           onDismiss={() => setEditing(undefined)}
           onSaved={() => {
             setEditing(undefined);
@@ -175,7 +180,7 @@ export function JournalScreen() {
       {deleting && (
         <BottomSheet
           title="Supprimer cette ligne ?"
-          message={`${deleting.name} · ${formatQuantity(deleting.quantity, deleting.unit, deleting)} · ${formatKcal(deleting.nutrients.kcal)}`}
+          message={`${deleting.entries[0]!.name} · ${formatQuantity(deleting.quantity, deleting.entries[0]!.unit, deleting.entries[0]!)} · ${formatKcal(deleting.nutrients.kcal)}`}
           actions={[
             {
               label: "Supprimer",
@@ -185,13 +190,19 @@ export function JournalScreen() {
                 void (async () => {
                   const target = deleting;
                   setDeleting(undefined);
-                  await deleteEntry(target.id);
+                  try {
+                    await deleteEntries(target.ids);
+                  } catch (caught) {
+                    setError(caught instanceof Error ? caught.message : String(caught));
+                  }
                   reload();
                 })(),
             },
           ]}
           onDismiss={() => setDeleting(undefined)}
-        />
+        >
+          {deleting.ids.length > 1 && <p className="journal-sheet__note">{`${deleting.ids.length} saisies seront supprimées`}</p>}
+        </BottomSheet>
       )}
     </section>
   );
@@ -250,11 +261,12 @@ function DaySummaryBlock({ summary }: { summary: DaySummary }) {
   );
 }
 
-function EntrySheet({ entry, onSaved, onDismiss, onDelete }: { entry: FoodLogEntry; onSaved: () => void; onDismiss: () => void; onDelete: () => void }) {
-  const [text, setText] = useState(String(entry.quantity).replace(".", ","));
+function EntrySheet({ group, onSaved, onDismiss, onDelete }: { group: EntryGroup; onSaved: () => void; onDismiss: () => void; onDelete: () => void }) {
+  const entry = group.entries[0]!;
+  const [text, setText] = useState(String(group.quantity).replace(".", ","));
   const [error, setError] = useState<string>();
   const parsed = parseQuantityInput(text);
-  /* Aperçu depuis la base figée de la ligne, comme l'enregistrement. */
+  /* Aperçu depuis la base figée, commune à toutes les saisies du groupe, comme l'enregistrement. */
   const preview = parsed.ok ? calculateNutrients(entry.basis, parsed.quantity) : undefined;
   /* Le nom d'unité figé dans la ligne (« boîtes »), au pluriel s'il est enregistré. */
   const unit = unitWord(2, entry.unit, entry);
@@ -262,7 +274,8 @@ function EntrySheet({ entry, onSaved, onDismiss, onDelete }: { entry: FoodLogEnt
   async function save() {
     if (!parsed.ok) return setError(parsed.message);
     try {
-      await updateEntryQuantity(entry.id, parsed.quantity, new Date().toISOString());
+      /* Quantité totale : la saisie la plus récente porte d'abord le changement. */
+      await updateGroupQuantity(group.ids, parsed.quantity, new Date().toISOString());
       onSaved();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
@@ -280,6 +293,7 @@ function EntrySheet({ entry, onSaved, onDismiss, onDelete }: { entry: FoodLogEnt
       onDismiss={onDismiss}
     >
       <div className="journal-form">
+        {group.ids.length > 1 && <p className="journal-sheet__note journal-form__wide">{`Regroupe ${group.ids.length} saisies`}</p>}
         <label className="journal-form__wide">
           <span>Quantité</span>
           <span className="journal-form__unit">

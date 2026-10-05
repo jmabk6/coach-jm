@@ -332,3 +332,11 @@
   color: var(--color-text-soft);
   font-weight: 600;
 }
+
+/* Mention discrète d'un groupe de saisies, dans les feuilles seulement. */
+.journal-sheet__note {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  text-align: center;
+}

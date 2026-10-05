@@ -13,6 +13,7 @@ import {
   type DayTotals,
   type NutritionDayState,
 } from "../../domain/rules/nutritionRules";
+import { groupKeyOf, redistributeQuantity } from "../../domain/rules/entryGroupRules";
 
 /**
  * Alimentation (phase 3A.1, 05/10/2026) — aliments, repas favoris, journal
@@ -23,6 +24,7 @@ import {
 
 export const FOOD_IN_USE_MESSAGE = "Aliment utilisé par le journal ou un repas favori : archivez-le plutôt que de le supprimer.";
 export const EMPTY_DAY_MESSAGE = "Une journée sans aucune saisie ne peut pas être déclarée complète.";
+export const GROUP_CHANGED_MESSAGE = "Le journal a changé : réessaie.";
 
 type NewId = () => Id;
 const randomId: NewId = () => crypto.randomUUID();
@@ -239,6 +241,54 @@ export async function deleteEntry(id: Id): Promise<void> {
     if (!entry) throw new Error("Ligne introuvable");
     await db.foodLogEntries.delete(id);
     if ((await db.foodLogEntries.where("date").equals(entry.date).count()) === 0) await db.nutritionDays.delete(entry.date);
+  });
+}
+
+/**
+ * Relit les lignes d'un groupe affiché, dans la transaction : toutes encore
+ * là et toujours compatibles entre elles, sinon refus sans rien écrire.
+ */
+async function readGroup(ids: readonly Id[]): Promise<FoodLogEntry[]> {
+  if (ids.length === 0) throw new Error(GROUP_CHANGED_MESSAGE);
+  const entries = await db.foodLogEntries.bulkGet([...ids]);
+  if (entries.some((entry) => entry === undefined)) throw new Error(GROUP_CHANGED_MESSAGE);
+  const found = entries as FoodLogEntry[];
+  if (found.length > 1) {
+    const key = groupKeyOf(found[0]!);
+    if (key === undefined || found.some((entry) => groupKeyOf(entry) !== key)) throw new Error(GROUP_CHANGED_MESSAGE);
+  }
+  return found;
+}
+
+/**
+ * Nouvelle quantité totale d'un groupe (regroupement visuel) : de la saisie
+ * la plus récente vers la plus ancienne ; chaque ligne modifiée se
+ * recalcule depuis sa propre base, une ligne tombée à 0 est supprimée. Les
+ * autres lignes, les IDs et les provenances ne changent pas.
+ */
+export async function updateGroupQuantity(ids: readonly Id[], total: number, now: string): Promise<void> {
+  const error = quantityError(total);
+  if (error) throw new Error(error);
+  await db.transaction("rw", db.foodLogEntries, async () => {
+    const entries = await readGroup(ids);
+    const plan = redistributeQuantity(entries, total);
+    for (const entry of entries) {
+      const quantity = plan.quantities[entry.id];
+      if (quantity !== undefined) await db.foodLogEntries.put(withQuantity(entry, quantity, now));
+    }
+    if (plan.deleted.length > 0) await db.foodLogEntries.bulkDelete(plan.deleted);
+  });
+}
+
+/** Supprime toutes les lignes d'un groupe ; si le jour devient vide, il redevient « non renseigné ». */
+export async function deleteEntries(ids: readonly Id[]): Promise<void> {
+  await db.transaction("rw", db.foodLogEntries, db.nutritionDays, async () => {
+    const entries = await readGroup(ids);
+    await db.foodLogEntries.bulkDelete(entries.map((entry) => entry.id));
+    const dates = new Set(entries.map((entry) => entry.date));
+    for (const date of dates) {
+      if ((await db.foodLogEntries.where("date").equals(date).count()) === 0) await db.nutritionDays.delete(date);
+    }
   });
 }
 
