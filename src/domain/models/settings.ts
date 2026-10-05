@@ -2,6 +2,7 @@ import type { Id } from "./exercise";
 import type { Weekday } from "./program";
 import type { PlannedTest } from "./testProtocol";
 import type { NutritionTargets } from "./nutrition";
+import type { BodyCompositionTargets } from "./body";
 
 /**
  * Réglages de l'application (conception V2 § 3.9) : un enregistrement par
@@ -106,6 +107,10 @@ export interface InstallMarkers {
   tractionLightNote20261005?: string;
   /** Seed 35 : compositions Withings des pesées déplacées vers les mesures corporelles (module Corps, option C). */
   legacyComposition20261005?: string;
+  /** Seed 36 : cible personnelle indicative de composition (valeurs initiales, phase 2.1). */
+  bodyTargets20261005?: string;
+  /** Seed 37 : objectif Poids 75 → 80 kg, échéance gardée (phase 2.1). */
+  weightGoalTarget20261005?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */
@@ -125,7 +130,9 @@ export type SettingsRecord =
    * de cet appareil est éligible à l'enregistrement. Absent : RENPHO
    * (`DEFAULT_WEIGHT_REFERENCE_DEVICE`).
    */
-  | { key: "weightReferenceDevice"; value: string };
+  | { key: "weightReferenceDevice"; value: string }
+  /** Cible personnelle indicative de composition corporelle (phase 2.1). */
+  | { key: "bodyCompositionTargets"; value: BodyCompositionTargets };
 
 export type SettingsKey = SettingsRecord["key"];
 

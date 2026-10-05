@@ -29,9 +29,10 @@ const CURVE_MONTHS = 12;
 export function BodyCompositionSection({ summaries }: { summaries: CompositionSummary[] }) {
   return (
     <section className="goal-section">
-      <h2>Composition corporelle</h2>
+      {/* Phase 2.1 : les relevés Withings historiques, à part de la cible (RENPHO). */}
+      <h2>Composition Withings</h2>
       <p className="goal-section__lead">
-        Notée avec la pesée, facultative. Moyenne du mois à partir de {MIN_READINGS_PER_MONTH} relevés ; le poids reste l'indicateur principal.
+        Relevés de la balance Withings, notés avec la pesée. Moyenne du mois à partir de {MIN_READINGS_PER_MONTH} relevés ; le poids reste l'indicateur principal.
       </p>
       <ul className="goal-secondary">
         {summaries.map((summary) => (

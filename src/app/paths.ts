@@ -37,6 +37,8 @@ export const ROUTES = {
   bodyMeasurementNew: "/corps/mesures/nouvelle",
   bodyMeasurement: "/corps/mesures/:id",
   bodyMeasurementEdit: "/corps/mesures/:id/modifier",
+  /** Objectifs › Poids › Modifier la cible de composition (phase 2.1). */
+  bodyTargets: "/objectifs/weight/cible",
 } as const;
 
 /**
@@ -117,6 +119,7 @@ export const paths = {
   bodyMeasurementNew: () => ROUTES.bodyMeasurementNew,
   bodyMeasurement: (id: string) => `${ROUTES.bodyMeasurements}/${id}`,
   bodyMeasurementEdit: (id: string) => `${ROUTES.bodyMeasurements}/${id}/modifier`,
+  bodyTargets: () => ROUTES.bodyTargets,
 } as const;
 
 /** Vrai si `pathname` est la route `base` ou l'une de ses sous-routes. */

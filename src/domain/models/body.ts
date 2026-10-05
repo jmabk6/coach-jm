@@ -91,3 +91,22 @@ export interface BodyMeasurement {
   createdAt: string;
   updatedAt: string;
 }
+
+/** Une plage de cible : un minimum, un maximum, ou les deux. */
+export interface BodyTargetRange {
+  min?: number;
+  max?: number;
+}
+
+/**
+ * Cible personnelle indicative de composition corporelle (phase 2.1,
+ * 05/10/2026) : jamais une norme médicale. Réglable dans l'application ;
+ * indépendante de l'objectif Poids et du pari traction V6.
+ */
+export interface BodyCompositionTargets {
+  weightKg: BodyTargetRange;
+  fatPct: BodyTargetRange;
+  fatKg: BodyTargetRange;
+  skeletalMuscleKg: BodyTargetRange;
+  updatedAt: string;
+}

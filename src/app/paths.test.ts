@@ -29,6 +29,7 @@ describe("chemins de l'application", () => {
       bodyMeasurementNew: "/corps/mesures/nouvelle",
       bodyMeasurement: "/corps/mesures/:id",
       bodyMeasurementEdit: "/corps/mesures/:id/modifier",
+      bodyTargets: "/objectifs/weight/cible",
     });
     expect(paths.bodyMeasurement("m1")).toBe("/corps/mesures/m1");
     expect(paths.bodyMeasurementEdit("m1")).toBe("/corps/mesures/m1/modifier");

@@ -19,6 +19,8 @@ import { seedLegPressMuscuA20261005 } from "../program/seedLegPressMuscuA";
 import { seedCurlHalteresMuscuA20261004 } from "../program/seedCurlHalteresMuscuA";
 import { seedTractionLightNote20261005 } from "../program/seedTractionLightNote";
 import { seedLegacyComposition20261005 } from "../body/seedLegacyComposition";
+import { seedBodyTargets20261005 } from "../body/seedBodyTargets";
+import { seedWeightGoal8020261005 } from "../goals/seedWeightGoal80";
 import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
@@ -109,6 +111,10 @@ export const SEEDS: SeedStep[] = [
   { name: "tractionLightNote20261005", dependsOn: ["programV2", "tractionV620261004"], run: () => seedTractionLightNote20261005() },
   /* Seed 35 (05/10/2026) : la composition Withings des pesées passe dans les mesures corporelles (option C). */
   { name: "legacyComposition20261005", run: () => seedLegacyComposition20261005() },
+  /* Seed 36 (05/10/2026) : la cible personnelle indicative de composition, valeurs initiales. */
+  { name: "bodyTargets20261005", run: () => seedBodyTargets20261005() },
+  /* Seed 37 (05/10/2026) : l'objectif Poids passe de 75 à 80 kg, échéance gardée. */
+  { name: "weightGoalTarget20261005", dependsOn: ["goals"], run: () => seedWeightGoal8020261005() },
 ];
 
 /**

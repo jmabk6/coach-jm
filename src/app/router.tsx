@@ -34,6 +34,7 @@ import { SessionPreviewScreen } from "../features/today/SessionPreviewScreen";
 import { BodyMeasurementsScreen } from "../features/body/BodyMeasurementsScreen";
 import { BodyMeasurementFormScreen } from "../features/body/BodyMeasurementFormScreen";
 import { BodyMeasurementScreen } from "../features/body/BodyMeasurementScreen";
+import { BodyTargetsScreen } from "../features/body/BodyTargetsScreen";
 
 export const router = createHashRouter([
   {
@@ -58,6 +59,7 @@ export const router = createHashRouter([
       { path: "workouts/:workoutId/blocks/:blockId", element: <WorkoutBlockDetailScreen /> },
       { path: routeSegment(ROUTES.goals), element: <GoalsScreen /> },
       { path: routeSegment(ROUTES.goal), element: <GoalDetailScreen /> },
+      { path: routeSegment(ROUTES.bodyTargets), element: <BodyTargetsScreen /> },
       { path: routeSegment(ROUTES.plus), element: <PlusScreen /> },
       { path: routeSegment(ROUTES.plusTests), element: <TestProtocolsScreen /> },
       { path: routeSegment(ROUTES.plusProfile), element: <ProfileScreen /> },

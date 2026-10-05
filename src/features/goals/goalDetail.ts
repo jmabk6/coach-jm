@@ -221,6 +221,7 @@ export async function loadGoalDetail(key: GoalKey, today: string): Promise<GoalD
   ]);
 
   const progress = goalProgressFrom(goal, results, weights, today);
+  const withings = withingsCompositionReadings(weights, bodyMeasurements);
   const protocolId = goalProtocolId(goal, progress.segment);
   const protocol = protocols.find((item) => item.id === protocolId);
   const version = protocol ? await getTestProtocolVersion(protocol.activeVersionId) : undefined;
@@ -253,9 +254,10 @@ export async function loadGoalDetail(key: GoalKey, today: string): Promise<GoalD
     ...(nextTest ? { nextTest } : {}),
     secondary,
     ...(goal.key === "traction" ? { bet: v6Progress(workouts, weights, today, results) } : {}),
-    /* Composition de l'objectif Poids : les relevés Withings seuls (mesures « withings » et compositions des pesées), jamais mêlés à la RENPHO. */
-    ...(goal.key === "weight"
-      ? { composition: [compositionSummary(withingsCompositionReadings(weights, bodyMeasurements), "fatPct", today), compositionSummary(withingsCompositionReadings(weights, bodyMeasurements), "muscleKg", today)] }
+    /* Composition de l'objectif Poids : les relevés Withings seuls (mesures « withings » et compositions des pesées), jamais mêlés
+       à la RENPHO ; affichée seulement s'il en existe (phase 2.1, règle d'affichage, aucune donnée retirée). */
+    ...(goal.key === "weight" && withings.length > 0
+      ? { composition: [compositionSummary(withings, "fatPct", today), compositionSummary(withings, "muscleKg", today)] }
       : {}),
     linkedSessions: linkedSessionsOf(goal, workouts, exerciseById),
   };

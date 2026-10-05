@@ -63,7 +63,8 @@ describe("objectif Poids — composition corporelle", () => {
     await db.weightEntries.bulkAdd(ENTRIES);
     renderGoal("weight");
 
-    const section = (await screen.findByRole("heading", { name: "Composition corporelle" })).closest("section") as HTMLElement;
+    /* Phase 2.1 : la section des relevés Withings prend son propre titre ; « Composition corporelle » est la comparaison avec la cible. */
+    const section = (await screen.findByRole("heading", { name: "Composition Withings" })).closest("section") as HTMLElement;
     const fat = section.querySelector('[data-composition="fatPct"]') as HTMLElement;
     const muscle = section.querySelector('[data-composition="muscleKg"]') as HTMLElement;
 
@@ -80,18 +81,29 @@ describe("objectif Poids — composition corporelle", () => {
     expect(within(muscle).getByText("Estimation de la balance")).toBeDefined();
   });
 
-  it("aucun relevé : les deux cartes « pas assez de relevés », sans courbe ; les autres objectifs n'ont pas la section", async () => {
+  it("aucun relevé Withings : la section Withings disparaît (règle d'affichage seule) ; les autres objectifs n'ont aucune section de composition", async () => {
     await db.weightEntries.add(entry("2026-09-24", 81.2));
     renderGoal("weight");
     await screen.findByRole("heading", { name: "Composition corporelle" });
-    expect(screen.getAllByText("Pas assez de relevés")).toHaveLength(2);
-    expect(screen.getAllByText("septembre 2026 : 0 sur 4 minimum")).toHaveLength(2);
-    expect(document.querySelectorAll(".composition-card__curve")).toHaveLength(0);
+    expect(screen.queryByRole("heading", { name: "Composition Withings" })).toBeNull();
+    expect(screen.queryByText("Pas assez de relevés")).toBeNull();
+    expect(document.querySelectorAll(".composition-card")).toHaveLength(0);
     cleanup();
 
     renderGoal("traction");
     await screen.findByText("Évolution", { exact: false });
     expect(screen.queryByRole("heading", { name: "Composition corporelle" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Composition Withings" })).toBeNull();
+  });
+
+  it("un seul relevé Withings migré (mesure « withings ») suffit à afficher la section ; aucune donnée Withings n'est retirée", async () => {
+    await db.bodyMeasurements.add({
+      id: "body-withings-w1", date: "2026-09-24", takenAt: T, device: "withings", source: "weight_entry", weightReference: false,
+      weightKg: 81.2, fatPct: 19.1, originWeightEntryId: "w1", createdAt: T, updatedAt: T,
+    });
+    renderGoal("weight");
+    expect(await screen.findByRole("heading", { name: "Composition Withings" })).toBeDefined();
+    expect(await db.bodyMeasurements.count()).toBe(1);
   });
 
   it("le statut de l'objectif Poids ne dépend pas de la composition", async () => {

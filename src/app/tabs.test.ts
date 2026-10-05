@@ -20,6 +20,7 @@ describe("barre d'onglets (lot B)", () => {
     ["/planning", "planning"],
     ["/planning/programmation", "planning"],
     ["/objectifs", "goals"],
+    ["/objectifs/weight/cible", "goals"],
     ["/seances", "sessions"],
     ["/seances/abc/blocks/b1", "sessions"],
     ["/plus", "plus"],

@@ -403,3 +403,104 @@
 .body-list__value {
   font-weight: 700;
 }
+
+/* Phase 2.1 : composition corporelle et cible personnelle indicative (Objectifs › Poids). */
+.body-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 8px;
+}
+
+.body-panel__meta {
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+}
+
+.body-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.body-panel__table th,
+.body-panel__table td {
+  padding: 7px 0 7px 10px;
+  border-top: 1px solid var(--color-border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.body-panel__table thead th {
+  border-top: 0;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.body-panel__table th[scope="row"] {
+  padding-left: 0;
+  color: var(--color-text-soft);
+  font-weight: 600;
+  text-align: left;
+}
+
+.body-panel__current {
+  font-weight: 700;
+}
+
+.body-panel__check {
+  margin-left: 3px;
+  color: var(--color-success);
+  vertical-align: -2px;
+}
+
+.body-panel__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.body-panel__foot {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.body-panel__foot a {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Écran « Modifier la cible ». */
+.body-targets {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px 8px;
+}
+
+.body-targets__row {
+  display: contents;
+}
+
+.body-targets__head {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.body-targets__label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+}
+
+.body-targets__label small {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}

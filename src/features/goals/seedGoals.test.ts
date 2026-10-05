@@ -41,7 +41,8 @@ describe("les 7 objectifs", () => {
     expect(traction.currentSegmentId).toBe(traction.segments[0]!.id);
 
     const weight = goals.find((goal) => goal.key === "weight")!;
-    expect(weight.segments).toMatchObject([{ role: "final", measure: { source: "weight_weekly_average" }, direction: "decrease", target: 75, dueDate: "2027-03-31" }]);
+    /* Semé à 75 kg (lot H), passé à 80 kg par le seed 37 (05/10/2026), échéance gardée. */
+    expect(weight.segments).toMatchObject([{ role: "final", measure: { source: "weight_weekly_average" }, direction: "decrease", target: 80, dueDate: "2027-03-31" }]);
 
     for (const goal of goals.filter((item) => item.key !== "traction" && item.key !== "weight")) {
       expect(goal.segments, goal.key).toHaveLength(1);

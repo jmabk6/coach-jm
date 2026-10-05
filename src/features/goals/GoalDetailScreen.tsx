@@ -12,6 +12,7 @@ import { formatTestNumber } from "../../domain/rules/testResultRules";
 import { todayLocalDate } from "../today/useTodayData";
 import { activateNextSegment, editGoalSegment, LEGS_MEASURES } from "./goalActions";
 import { BodyCompositionSection } from "./BodyCompositionSection";
+import { BodyCompositionPanel } from "../body/BodyCompositionPanel";
 import { TractionBetSection } from "./TractionBetSection";
 import { v6ShortStatus } from "./tractionV6View";
 import { GoalCurveChart } from "./GoalCurveChart";
@@ -149,6 +150,9 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
   return (
     <>
       {detail.bet && <TractionBetSection bet={detail.bet} />}
+
+      {/* Phase 2.1 : composition corporelle et cible personnelle indicative, indépendantes de l'objectif Poids. */}
+      {weight && <BodyCompositionPanel />}
 
       {weight ? (
         <section className="goal-section goal-test">

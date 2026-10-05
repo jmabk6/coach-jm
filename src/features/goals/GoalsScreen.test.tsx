@@ -69,7 +69,8 @@ describe("M4 — liste des objectifs", () => {
     /* Traction : le segment courant et sa cible, jamais inventée. */
     expect(within(row("traction")).getByText("Assistance minimale → 0 kg")).toBeDefined();
     expect(within(row("traction")).getByText("Objectif : 0 kg")).toBeDefined();
-    expect(within(row("weight")).getByText("Objectif : 75 kg")).toBeDefined();
+    /* Seed 37 (05/10/2026) : 75 → 80 kg. */
+    expect(within(row("weight")).getByText("Objectif : 80 kg")).toBeDefined();
   });
 
   it("badges : date du prochain test par la place des tests, pesée du jour", async () => {
