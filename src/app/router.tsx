@@ -40,6 +40,8 @@ import { AddFoodScreen } from "../features/journal/AddFoodScreen";
 import { NewFoodScreen } from "../features/journal/NewFoodScreen";
 import { FoodsScreen } from "../features/foods/FoodsScreen";
 import { FoodEditScreen } from "../features/foods/FoodEditScreen";
+import { MealTemplatesScreen } from "../features/foods/MealTemplatesScreen";
+import { MealTemplateEditScreen } from "../features/foods/MealTemplateEditScreen";
 
 export const router = createHashRouter([
   {
@@ -71,6 +73,9 @@ export const router = createHashRouter([
       { path: routeSegment(ROUTES.plusFoods), element: <FoodsScreen /> },
       { path: routeSegment(ROUTES.plusFoodNew), element: <FoodEditScreen /> },
       { path: routeSegment(ROUTES.plusFood), element: <FoodEditScreen /> },
+      { path: routeSegment(ROUTES.plusMealTemplates), element: <MealTemplatesScreen /> },
+      { path: routeSegment(ROUTES.plusMealTemplateNew), element: <MealTemplateEditScreen /> },
+      { path: routeSegment(ROUTES.plusMealTemplate), element: <MealTemplateEditScreen /> },
       { path: routeSegment(ROUTES.plus), element: <PlusScreen /> },
       { path: routeSegment(ROUTES.plusTests), element: <TestProtocolsScreen /> },
       { path: routeSegment(ROUTES.plusProfile), element: <ProfileScreen /> },

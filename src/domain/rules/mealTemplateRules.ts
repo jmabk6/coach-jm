@@ -136,3 +136,88 @@ export function templateFromMeal(entries: readonly FoodLogEntry[], foods: Readon
   }
   return result;
 }
+
+/* ——— Plus › Repas favoris (phase 3A.4b) ——— */
+
+/** La ligne de la liste : nombre d'éléments à corriger ; kcal actuelles seulement si tout est prêt. */
+export function templateHealth(template: MealTemplate, foods: ReadonlyMap<Id, Food>): { problems: number; kcal?: number } {
+  const view = templateLines(template, foods);
+  const problems = view.lines.length - view.readyCount;
+  return problems > 0 ? { problems } : { problems: 0, kcal: view.totals.kcal };
+}
+
+export interface TemplateFormItem {
+  /** Identifiant de l'élément (existant ou nouveau) : clé d'affichage et de réordonnancement. */
+  key: Id;
+  foodId: Id;
+  quantity: string;
+  state: TemplateItemState;
+  /** Unité modifiée : l'ancienne quantité, pour mémoire (« 320 g »). */
+  previous?: string;
+}
+
+export interface TemplateFormValues {
+  name: string;
+  defaultSlot: MealSlot | "";
+  items: TemplateFormItem[];
+}
+
+const quantityText = (value: number) => String(value).replace(".", ",");
+
+/** Le formulaire d'un repas favori ; un élément d'unité modifiée est vidé, son ancienne quantité gardée pour mémoire. */
+export function editFormOf(template: MealTemplate, foods: ReadonlyMap<Id, Food>): TemplateFormValues {
+  return {
+    name: template.name,
+    defaultSlot: template.defaultSlot ?? "",
+    items: template.items.map((item) => {
+      const state = templateItemState(item, foods.get(item.foodId));
+      if (state !== "unit_changed") return { key: item.id, foodId: item.foodId, quantity: quantityText(item.quantity), state };
+      const unit = item.unit === "g" || item.unit === "ml" ? item.unit : item.unitLabel ?? (item.unit === "piece" ? "pièce" : "portion");
+      return { key: item.id, foodId: item.foodId, quantity: "", state, previous: `${quantityText(item.quantity)} ${unit}` };
+    }),
+  };
+}
+
+export type ParsedTemplateForm =
+  | { ok: true; name: string; items: Array<{ id: Id; foodId: Id; quantity: number; resetUnit?: true }> }
+  | { ok: false; message: string };
+
+/** Valide le formulaire : nom, au moins un aliment, chaque aliment une seule fois, quantités, unité modifiée corrigée. */
+export function parseTemplateForm(form: TemplateFormValues, foods: ReadonlyMap<Id, Food>): ParsedTemplateForm {
+  const name = form.name.trim();
+  if (name === "") return { ok: false, message: "Nom du repas : obligatoire." };
+  if (form.items.length === 0) return { ok: false, message: "Repas favori : au moins un aliment." };
+  const seen = new Set<Id>();
+  const items: Array<{ id: Id; foodId: Id; quantity: number; resetUnit?: true }> = [];
+  for (const item of form.items) {
+    const foodName = foods.get(item.foodId)?.name ?? item.foodId;
+    if (seen.has(item.foodId)) return { ok: false, message: `Un aliment ne peut figurer qu'une fois : ${foodName}` };
+    seen.add(item.foodId);
+    if (item.state === "unit_changed" && item.quantity.trim() === "") return { ok: false, message: `Corrige ou retire : ${foodName}` };
+    const text = item.quantity.trim().replace(/\s/g, "").replace(",", ".");
+    const value = Number(text);
+    if (text === "" || !/^\d+(\.\d+)?$/.test(text) || !(value > 0)) return { ok: false, message: `${foodName} : Quantité : supérieure à 0.` };
+    items.push({ id: item.key, foodId: item.foodId, quantity: value, ...(item.state === "unit_changed" ? { resetUnit: true as const } : {}) });
+  }
+  return { ok: true, name, items };
+}
+
+/** Choisir un aliment : bibliothèque active (favoris d'abord, puis par nom) ; un aliment déjà présent est signalé, non ajoutable. */
+export function pickerFoods(foods: readonly Food[], present: ReadonlySet<Id>, query: string): Array<{ food: Food; present: boolean }> {
+  const wanted = normalizeSearch(query);
+  return foods
+    .filter((food) => food.status === "active" && normalizeSearch(food.name).includes(wanted))
+    .sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || a.name.localeCompare(b.name, "fr", { sensitivity: "base" }))
+    .map((food) => ({ food, present: present.has(food.id) }));
+}
+
+/** Glisser-déposer : l'élément glissé prend la place de celui survolé. */
+export function moveId(ids: readonly Id[], activeId: Id, overId: Id): Id[] {
+  const from = ids.indexOf(activeId);
+  const to = ids.indexOf(overId);
+  if (from < 0 || to < 0 || from === to) return [...ids];
+  const next = [...ids];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved!);
+  return next;
+}

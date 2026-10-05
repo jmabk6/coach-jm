@@ -46,7 +46,7 @@ describe("Plus", () => {
   it("profil, exercices, routines, protocoles ; puis réglages, sauvegarde, à propos", () => {
     inRouter(<PlusScreen />);
     const titles = Array.from(document.querySelectorAll(".plus-list__title")).map((node) => node.textContent);
-    expect(titles).toEqual(["Mon profil", "Modèles de séances", "Aliments", "Exercices", "Routines du soir", "Protocoles de tests", "Réglages", "Sauvegarde", "À propos"]);
+    expect(titles).toEqual(["Mon profil", "Modèles de séances", "Aliments", "Repas favoris", "Exercices", "Routines du soir", "Protocoles de tests", "Réglages", "Sauvegarde", "À propos"]);
     expect(screen.queryByText(/Vibration/)).toBeNull();
   });
 

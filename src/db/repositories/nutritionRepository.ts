@@ -98,8 +98,16 @@ export async function getMealTemplates(options: { includeArchived?: boolean } = 
 
 /** Un repas favori tel qu'on l'écrit : l'unité des éléments est mémorisée par la couche données. */
 export type MealTemplateDraft = Omit<MealTemplate, "items"> & {
-  items: Array<Pick<MealTemplateItem, "id" | "foodId" | "quantity"> & Partial<Pick<MealTemplateItem, "unit" | "unitLabel" | "unitLabelPlural">>>;
+  items: Array<
+    Pick<MealTemplateItem, "id" | "foodId" | "quantity"> &
+      Partial<Pick<MealTemplateItem, "unit" | "unitLabel" | "unitLabelPlural">> & {
+        /** Unité modifiée corrigée dans Plus › Repas favoris (3A.4b) : l'élément mémorise l'unité actuelle de l'aliment. */
+        resetUnit?: boolean;
+      }
+  >;
 };
+
+export const TEMPLATES_CHANGED_MESSAGE = "La liste a changé : réessaie.";
 
 /** L'unité de l'aliment, à mémoriser dans un élément. */
 function unitSnapshot(food: Food): Pick<MealTemplateItem, "unit" | "unitLabel" | "unitLabelPlural"> {
@@ -121,14 +129,22 @@ export async function saveMealTemplate(template: MealTemplateDraft): Promise<voi
   }
   await db.transaction("rw", db.mealTemplates, db.foods, async () => {
     const previous = await db.mealTemplates.get(template.id);
+    /* Un repas favori archivé est en lecture seule (3A.4b) : on le réactive d'abord. */
+    if (previous?.status === "archived" && template.status === "archived") throw new Error("Repas favori archivé : réactive-le avant de le modifier.");
     const items: MealTemplateItem[] = [];
+    const seen = new Set<Id>();
     for (const item of template.items) {
       const food = await db.foods.get(item.foodId);
       if (!food) throw new Error(`Aliment introuvable : ${item.foodId}`);
+      /* Un repas favori = des quantités totales par aliment : un même aliment une seule fois. */
+      if (seen.has(item.foodId)) throw new Error(`Un aliment ne peut figurer qu'une fois : ${food.name}`);
+      seen.add(item.foodId);
       const error = quantityError(item.quantity);
       if (error) throw new Error(error);
-      const kept = previous?.items.find((old) => old.id === item.id && old.foodId === item.foodId && old.quantity === item.quantity);
+      const kept = item.resetUnit ? undefined : previous?.items.find((old) => old.id === item.id && old.foodId === item.foodId && old.quantity === item.quantity);
       if (kept) {
+        /* Un élément inchangé garde son unité mémorisée ; si l'aliment a changé d'unité, il faut le corriger ou le retirer. */
+        if (templateItemState(kept, food) === "unit_changed") throw new Error(`Corrige ou retire : ${food.name}`);
         items.push(kept);
         continue;
       }
@@ -136,6 +152,33 @@ export async function saveMealTemplate(template: MealTemplateDraft): Promise<voi
       items.push({ id: item.id, foodId: item.foodId, quantity: item.quantity, ...unitSnapshot(food) });
     }
     await db.mealTemplates.put({ ...template, name: template.name.trim(), items });
+  });
+}
+
+/**
+ * Réactive un repas favori archivé : en fin de liste ; ou, pour « Annuler »
+ * juste après l'archivage, à sa place d'avant (l'archivage ne la change pas).
+ */
+export async function reactivateMealTemplate(id: Id, now: string, options: { keepPosition?: boolean } = {}): Promise<void> {
+  await db.transaction("rw", db.mealTemplates, async () => {
+    const template = await db.mealTemplates.get(id);
+    if (!template) throw new Error("Repas favori introuvable");
+    const active = (await db.mealTemplates.toArray()).filter((item) => item.status === "active" && item.id !== id);
+    const position = options.keepPosition ? template.position : active.reduce((max, item) => Math.max(max, item.position + 1), 0);
+    await db.mealTemplates.put({ ...template, status: "active", position, updatedAt: now });
+  });
+}
+
+/** Nouvel ordre des repas favoris actifs, en une transaction ; refus sans écriture si la liste ne correspond plus. */
+export async function reorderMealTemplates(ids: readonly Id[], now: string): Promise<void> {
+  await db.transaction("rw", db.mealTemplates, async () => {
+    const active = (await db.mealTemplates.toArray()).filter((item) => item.status === "active");
+    const same = active.length === ids.length && new Set(ids).size === ids.length && active.every((item) => ids.includes(item.id));
+    if (!same) throw new Error(TEMPLATES_CHANGED_MESSAGE);
+    for (const [index, id] of ids.entries()) {
+      const template = active.find((item) => item.id === id)!;
+      if (template.position !== index) await db.mealTemplates.put({ ...template, position: index, updatedAt: now });
+    }
   });
 }
 

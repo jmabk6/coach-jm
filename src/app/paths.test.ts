@@ -36,7 +36,11 @@ describe("chemins de l'application", () => {
       plusFoods: "/plus/aliments",
       plusFoodNew: "/plus/aliments/nouveau",
       plusFood: "/plus/aliments/:id",
+      plusMealTemplates: "/plus/repas-favoris",
+      plusMealTemplateNew: "/plus/repas-favoris/nouveau",
+      plusMealTemplate: "/plus/repas-favoris/:id",
     });
+    expect(paths.plusMealTemplate("m1")).toBe("/plus/repas-favoris/m1");
     expect(paths.journalAdd("2026-10-05", "lunch")).toBe("/journal/ajouter?date=2026-10-05&repas=lunch");
     expect(paths.journalNewFood("2026-10-05", "lunch", "thon")).toBe("/journal/nouvel-aliment?date=2026-10-05&repas=lunch&nom=thon");
     expect(paths.plusFood("f1")).toBe("/plus/aliments/f1");

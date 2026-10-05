@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Food, FoodLogEntry, MealTemplate } from "../models";
 import {
+  editFormOf,
+  moveId,
+  parseTemplateForm,
+  pickerFoods,
   searchTemplates,
+  templateHealth,
   templateFromMeal,
   templateItemState,
   templateLines,
@@ -123,5 +128,56 @@ describe("créer depuis un repas consommé", () => {
     });
     const onlyEstimate = [estimatedExtraEntry({ id: "x", date: "2026-10-05", slot: "lunch", nutrients: { kcal: 650 }, now: T })];
     expect(templateFromMeal(onlyEstimate, foods()).items).toEqual([]);
+  });
+});
+
+describe("Plus › Repas favoris (phase 3A.4b)", () => {
+  const library = (...extra: Food[]) => new Map([THON, TOAST, ...extra].map((item) => [item.id, item]));
+
+  it("ligne de la liste : kcal actuelles si tout est prêt ; sinon « n à corriger » et pas de kcal", () => {
+    expect(templateHealth(template("m", "Déjeuner thon"), library())).toEqual({ problems: 0, kcal: calculateNutrients(THON, 320).kcal + calculateNutrients(TOAST, 40).kcal });
+    expect(templateHealth(template("m", "Déjeuner thon"), library({ ...TOAST, status: "archived" }))).toEqual({ problems: 1 });
+  });
+
+  it("formulaire : quantités préremplies ; élément d'unité modifiée vidé avec l'ancienne quantité affichée", () => {
+    const boxed = { ...THON, unit: "piece" as const, unitLabel: "boîte", unitLabelPlural: "boîtes", referenceQuantity: 1 };
+    const form = editFormOf(template("m", "Déjeuner thon", { defaultSlot: "lunch" }), library(boxed));
+    expect(form).toMatchObject({ name: "Déjeuner thon", defaultSlot: "lunch" });
+    expect(form.items.map((item) => [item.foodId, item.quantity, item.state, item.previous])).toEqual([
+      ["f-thon", "", "unit_changed", "320 g"],
+      ["f-toast", "40", "ready", undefined],
+    ]);
+  });
+
+  it("lecture du formulaire : nom, au moins un aliment, quantités, unité à corriger, un aliment une seule fois", () => {
+    const boxed = { ...THON, unit: "piece" as const, unitLabel: "boîte", referenceQuantity: 1 };
+    const form = editFormOf(template("m", "Déjeuner thon"), library(boxed));
+    expect(parseTemplateForm(form, library(boxed))).toEqual({ ok: false, message: "Corrige ou retire : Thon tomate (leader price)" });
+    form.items[0]!.quantity = "2";
+    expect(parseTemplateForm(form, library(boxed))).toEqual({
+      ok: true,
+      name: "Déjeuner thon",
+      items: [{ id: "m-1", foodId: "f-thon", quantity: 2, resetUnit: true }, { id: "m-2", foodId: "f-toast", quantity: 40 }],
+    });
+    expect(parseTemplateForm({ ...form, name: " " }, library(boxed))).toEqual({ ok: false, message: "Nom du repas : obligatoire." });
+    expect(parseTemplateForm({ ...form, items: [] }, library(boxed))).toEqual({ ok: false, message: "Repas favori : au moins un aliment." });
+    expect(parseTemplateForm({ ...form, items: [form.items[1]!, { ...form.items[1]!, key: "autre" }] }, library(boxed))).toEqual({
+      ok: false, message: "Un aliment ne peut figurer qu'une fois : Toasts multi-céréales",
+    });
+    expect(parseTemplateForm({ ...form, items: [{ ...form.items[1]!, quantity: "0" }] }, library(boxed))).toEqual({ ok: false, message: "Toasts multi-céréales : Quantité : supérieure à 0." });
+  });
+
+  it("ajouter un aliment : bibliothèque active, favoris d'abord, un aliment déjà présent signalé et non ajoutable", () => {
+    const fav = food("f-fav", "Yaourt", { favorite: true });
+    const old = food("f-old", "Ancien", { status: "archived" });
+    const choices = pickerFoods([THON, TOAST, fav, old], new Set(["f-thon"]), "");
+    expect(choices.map((choice) => [choice.food.name, choice.present])).toEqual([["Yaourt", false], ["Thon tomate (leader price)", true], ["Toasts multi-céréales", false]]);
+    expect(pickerFoods([THON, TOAST], new Set(), "toast").map((choice) => choice.food.id)).toEqual(["f-toast"]);
+  });
+
+  it("réordonner : l'élément glissé prend la place de celui survolé", () => {
+    expect(moveId(["a", "b", "c", "d"], "d", "b")).toEqual(["a", "d", "b", "c"]);
+    expect(moveId(["a", "b", "c"], "a", "c")).toEqual(["b", "c", "a"]);
+    expect(moveId(["a", "b"], "a", "a")).toEqual(["a", "b"]);
   });
 });

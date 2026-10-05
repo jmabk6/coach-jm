@@ -29,6 +29,9 @@ import {
   getFoods,
   getMealTemplates,
   reactivateFood,
+  reactivateMealTemplate,
+  reorderMealTemplates,
+  archiveMealTemplate,
   recentFoods,
   saveFood,
   saveMealTemplate,
@@ -429,5 +432,67 @@ describe("repas favoris (phase 3A.4a)", () => {
       addMealTemplateEntries({ date: DAY, slot: "lunch", mealTemplateId: "m-thon", excluded: ["i2"], quantities: { i1: 1 }, now: T2 }, nextId),
     ).rejects.toThrow("Unité modifiée — corriger le repas favori : Thon tomate (leader price)");
     expect(await db.foodLogEntries.count()).toBe(1);
+  });
+});
+
+describe("Plus › Repas favoris (phase 3A.4b)", () => {
+  const thon = () => food("f-thon", "Thon tomate (leader price)", { nutrients: { kcal: 111, proteinG: 14 } });
+  const toast = () => food("f-toast", "Toasts multi-céréales", { nutrients: { kcal: 385, proteinG: 15 } });
+  const draft = (id: string, extra: Partial<Parameters<typeof saveMealTemplate>[0]> = {}) => ({
+    id, name: id, position: 0, status: "active" as const, createdAt: T, updatedAt: T,
+    items: [{ id: `${id}-1`, foodId: "f-thon", quantity: 320 }, { id: `${id}-2`, foodId: "f-toast", quantity: 40 }],
+    ...extra,
+  });
+
+  it("un même aliment une seule fois par repas favori, garanti par la couche données", async () => {
+    await saveFood(thon());
+    await saveFood(toast());
+    await expect(saveMealTemplate(draft("m", { items: [{ id: "a", foodId: "f-thon", quantity: 1 }, { id: "b", foodId: "f-thon", quantity: 1 }] }))).rejects.toThrow(
+      "Un aliment ne peut figurer qu'une fois : Thon tomate (leader price)",
+    );
+    expect(await db.mealTemplates.count()).toBe(0);
+  });
+
+  it("unité modifiée : enregistrement refusé tant que l'élément n'est pas corrigé ; corrigé : nouvelle unité mémorisée, l'ajout au Journal repasse", async () => {
+    await saveFood(thon());
+    await saveFood(toast());
+    await saveMealTemplate(draft("m"));
+    await saveFood({ ...thon(), unit: "piece", unitLabel: "boîte", unitLabelPlural: "boîtes", referenceQuantity: 1, updatedAt: T2 });
+    await expect(saveMealTemplate(draft("m", { name: "Renommé" }))).rejects.toThrow("Corrige ou retire : Thon tomate (leader price)");
+    expect((await getMealTemplates())[0]!.name).toBe("m");
+
+    await saveMealTemplate(draft("m", { items: [{ id: "m-1", foodId: "f-thon", quantity: 2, resetUnit: true }, { id: "m-2", foodId: "f-toast", quantity: 40 }] }));
+    expect((await getMealTemplates())[0]!.items[0]).toEqual({ id: "m-1", foodId: "f-thon", quantity: 2, unit: "piece", unitLabel: "boîte", unitLabelPlural: "boîtes" });
+    const added = await addMealTemplateEntries({ date: DAY, slot: "lunch", mealTemplateId: "m", now: T2 }, nextId);
+    expect(added[0]).toMatchObject({ quantity: 2, unit: "piece", unitLabel: "boîte" });
+  });
+
+  it("archivé : lecture seule ; réactivé : actif et en fin de liste", async () => {
+    await saveFood(thon());
+    await saveFood(toast());
+    await saveMealTemplate(draft("a", { position: 0 }));
+    await saveMealTemplate(draft("b", { position: 1 }));
+    await saveMealTemplate(draft("c", { position: 2 }));
+    await archiveMealTemplate("a", T2);
+    const archived = (await getMealTemplates({ includeArchived: true })).find((item) => item.id === "a")!;
+    await expect(saveMealTemplate({ ...archived, name: "Autre" })).rejects.toThrow("Repas favori archivé : réactive-le avant de le modifier.");
+    /* « Annuler » : sa place d'avant. */
+    await reactivateMealTemplate("a", T2, { keepPosition: true });
+    expect((await getMealTemplates()).map((item) => item.id)).toEqual(["a", "b", "c"]);
+    await archiveMealTemplate("a", T2);
+    /* Réactivation depuis les archivés : en fin de liste. */
+    await reactivateMealTemplate("a", T2);
+    expect((await getMealTemplates()).map((item) => item.id)).toEqual(["b", "c", "a"]);
+  });
+
+  it("réordonner : toutes les positions en une transaction ; liste différente des actifs : refus sans écriture", async () => {
+    await saveFood(thon());
+    await saveFood(toast());
+    for (const [index, id] of ["a", "b", "c"].entries()) await saveMealTemplate(draft(id, { position: index }));
+    await reorderMealTemplates(["c", "a", "b"], T2);
+    expect((await getMealTemplates()).map((item) => [item.id, item.position])).toEqual([["c", 0], ["a", 1], ["b", 2]]);
+    const before = await db.mealTemplates.toArray();
+    await expect(reorderMealTemplates(["a", "b"], T2)).rejects.toThrow("La liste a changé : réessaie.");
+    expect(await db.mealTemplates.toArray()).toEqual(before);
   });
 });

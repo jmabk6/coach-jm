@@ -48,6 +48,10 @@ export const ROUTES = {
   plusFoods: "/plus/aliments",
   plusFoodNew: "/plus/aliments/nouveau",
   plusFood: "/plus/aliments/:id",
+  /** Plus › Repas favoris (phase 3A.4b). */
+  plusMealTemplates: "/plus/repas-favoris",
+  plusMealTemplateNew: "/plus/repas-favoris/nouveau",
+  plusMealTemplate: "/plus/repas-favoris/:id",
 } as const;
 
 /**
@@ -136,6 +140,9 @@ export const paths = {
   plusFoods: () => ROUTES.plusFoods,
   plusFoodNew: () => ROUTES.plusFoodNew,
   plusFood: (id: string) => `${ROUTES.plusFoods}/${id}`,
+  plusMealTemplates: () => ROUTES.plusMealTemplates,
+  plusMealTemplateNew: () => ROUTES.plusMealTemplateNew,
+  plusMealTemplate: (id: string) => `${ROUTES.plusMealTemplates}/${id}`,
 } as const;
 
 /** Vrai si `pathname` est la route `base` ou l'une de ses sous-routes. */
