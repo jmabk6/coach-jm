@@ -35,7 +35,8 @@ afterEach(async () => {
 describe("seed 32 : le modèle Muscu A", () => {
   it("le curl haltères remplace le curl EZ, même place, 3 × 8-12, 1 min 30 ; une brique déjà changée n'est pas touchée", async () => {
     const curl = PROGRAM_V2_TEMPLATES.find((item) => item.id === "v2-muscu-a")!.blocks.find((block) => block.id === "v2-muscu-a-curl");
-    expect(curl).toMatchObject({ position: 6, exerciseId: "curl-halteres", instructions: { sets: 3, reps: { min: 8, max: 12 }, restBetweenSetsSec: 90 }, notes: "Haltères, bras alternés." });
+    /* Position 5 depuis le programme du 05/10 (seed 38 : plus de tirage vertical en Muscu A). */
+    expect(curl).toMatchObject({ position: 5, exerciseId: "curl-halteres", instructions: { sets: 3, reps: { min: 8, max: 12 }, restBetweenSetsSec: 90 }, notes: "Haltères, bras alternés." });
 
     await runSeeds();
     const a = (await db.sessionTemplates.get("v2-muscu-a"))!;

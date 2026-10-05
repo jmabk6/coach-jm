@@ -111,6 +111,8 @@ export interface InstallMarkers {
   bodyTargets20261005?: string;
   /** Seed 37 : objectif Poids 75 → 80 kg, échéance gardée (phase 2.1). */
   weightGoalTarget20261005?: string;
+  /** Seed 38 : programme muscu du 05/10/2026 (A force, B volume, C sans pullover ; cadres rowing, chest press, tirage vertical). */
+  programmeMuscu20261005?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

@@ -210,6 +210,13 @@ export interface PerformedExerciseBlock extends PerformedBaseBlock {
    */
   outsideFrame?: true;
 
+  /**
+   * Référence propre (recopié du modèle, option B du 05/10/2026) : la
+   * « Dernière fois » vient de la dernière exécution de la même brique du
+   * même modèle ; ses séries ne sont la référence d'aucune autre brique.
+   */
+  ownReference?: true;
+
   /** FC étendue (tapis, vélo), facultative en entraînement. */
   heartRate?: {
     samples?: Array<{ atSec: number; bpm: number }>;

@@ -66,6 +66,7 @@ function createExerciseBlock(
     ...(block.role === "warmup" ? { role: "warmup" as const } : {}),
     ...(reduced ? { reducedPrescription: true } : {}),
     ...(block.outsideFrame ? { outsideFrame: true as const } : {}),
+    ...(block.ownReference ? { ownReference: true as const } : {}),
     status: "not_performed",
     snapshotInstructions: structuredClone(block.instructions),
   };

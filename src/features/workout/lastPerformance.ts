@@ -2,6 +2,7 @@ import type {
   CardioStepSettings,
   Id,
   PerformedCardioStep,
+  PerformedExerciseBlock,
   PerformedSeries,
   WorkoutSession,
 } from "../../domain";
@@ -19,6 +20,8 @@ export interface LastPerformance {
    * Toutes les séries validées de cette réalisation, pour le conseil.
    */
   allSeries: PerformedSeries[];
+  /** Référence propre d'une brique : l'exercice réellement fait. */
+  exerciseId?: Id;
 }
 
 /**
@@ -27,6 +30,11 @@ export interface LastPerformance {
  * enfant de groupe, quel que soit le modèle (§1 : l'exercice est
  * référencé, jamais copié). Une réalisation exclue (`exceptWorkoutId`)
  * permet d'ignorer la séance en cours.
+ *
+ * Une brique à **référence propre** (`ownReference`, option B du
+ * 05/10/2026 : rowing volume de Muscu B, chest press de rappel de Muscu A)
+ * n'y entre pas : sa charge n'est jamais la référence d'une autre brique
+ * de l'exercice — ni de la brique lourde, ni de son cadre.
  */
 export function findLastPerformances(
   completedWorkouts: WorkoutSession[],
@@ -34,12 +42,8 @@ export function findLastPerformances(
 ): Map<Id, LastPerformance> {
   const byExercise = new Map<Id, LastPerformance>();
 
-  const ordered = [...completedWorkouts]
-    .filter((workout) => workout.status === "completed" && workout.id !== exceptWorkoutId)
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-
-  for (const workout of ordered) {
-    const seriesByExercise = listSeriesByExercise(workout);
+  for (const workout of newestFirst(completedWorkouts, exceptWorkoutId)) {
+    const seriesByExercise = listSeriesByExercise(workout, { skipOwnReference: true });
 
     for (const [exerciseId, series] of seriesByExercise) {
       if (byExercise.has(exerciseId)) continue;
@@ -58,17 +62,82 @@ export function findLastPerformances(
   return byExercise;
 }
 
+function newestFirst(completedWorkouts: WorkoutSession[], exceptWorkoutId?: Id): WorkoutSession[] {
+  return [...completedWorkouts]
+    .filter((workout) => workout.status === "completed" && workout.id !== exceptWorkoutId)
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+}
+
+/**
+ * `Dernière fois` des briques à référence propre d'un modèle, par brique
+ * du modèle (`sourceBlockId`) : la réalisation terminée la plus récente
+ * **du même modèle** où cette brique porte au moins une série validée.
+ * Jamais d'autre séance : sans exécution précédente, rien.
+ */
+export function findLastOwnBlockPerformances(
+  completedWorkouts: WorkoutSession[],
+  sessionTemplateId: Id | undefined,
+  exceptWorkoutId?: Id,
+): Map<Id, LastPerformance> {
+  const byBlock = new Map<Id, LastPerformance>();
+  if (sessionTemplateId === undefined) return byBlock;
+
+  for (const workout of newestFirst(completedWorkouts, exceptWorkoutId)) {
+    if (workout.sessionTemplateId !== sessionTemplateId) continue;
+
+    for (const block of workout.blocks) {
+      if (block.kind !== "exercise" || block.ownReference !== true || block.sourceBlockId === undefined) continue;
+      if (byBlock.has(block.sourceBlockId)) continue;
+
+      const series = (block.series ?? []).filter((item) => item.status === "completed");
+      if (series.length === 0) continue;
+
+      byBlock.set(block.sourceBlockId, {
+        workoutId: workout.id,
+        date: workout.date,
+        series: series[series.length - 1]!,
+        allSeries: series,
+        exerciseId: block.exerciseId,
+      });
+    }
+  }
+
+  return byBlock;
+}
+
+/**
+ * La `Dernière fois` d'une brique de la séance : celle de sa propre brique
+ * (même modèle, même exercice) si elle est à référence propre, sinon celle
+ * de l'exercice.
+ */
+export function lastTimeOf(
+  block: Pick<PerformedExerciseBlock, "exerciseId" | "sourceBlockId" | "ownReference">,
+  lastByExercise: ReadonlyMap<Id, LastPerformance>,
+  lastByOwnBlock: ReadonlyMap<Id, LastPerformance>,
+): LastPerformance | undefined {
+  if (block.ownReference !== true) return lastByExercise.get(block.exerciseId);
+  const own = block.sourceBlockId !== undefined ? lastByOwnBlock.get(block.sourceBlockId) : undefined;
+  return own && own.exerciseId === block.exerciseId ? own : undefined;
+}
+
 /**
  * Séries validées d'une réalisation, par exercice **réellement effectué** :
  * brique autonome ou enfant de groupe (chaque tour compte pour une
  * série). Une substitution alimente donc le remplaçant, jamais
- * l'exercice initial.
+ * l'exercice initial. `skipOwnReference` écarte les briques à référence
+ * propre (seulement pour la `Dernière fois` ; historique et records les
+ * gardent).
  */
-export function listSeriesByExercise(workout: WorkoutSession): Map<Id, PerformedSeries[]> {
+export function listSeriesByExercise(
+  workout: WorkoutSession,
+  options: { skipOwnReference?: boolean } = {},
+): Map<Id, PerformedSeries[]> {
   const seriesByExercise = new Map<Id, PerformedSeries[]>();
 
   for (const block of workout.blocks) {
     if (block.kind === "exercise") {
+      if (options.skipOwnReference && block.ownReference === true) continue;
+
       const completed = (block.series ?? []).filter(
         (series) => series.status === "completed",
       );

@@ -15,7 +15,9 @@ import { muscuCWithNegatives, seedNegativesMuscuC20261005 } from "./seedNegative
  * - Muscu B en semaine test : traction 2 × 8 ;
  * - Muscu C en semaine test : 3 séries → 2, 2 → 1, « Rester bas » 2 tours,
  *   suspension gardée (allégée comme le reste), échauffement intact ;
- * - Muscu C : négatives 2 × 2 juste après la suspension, dès le 01/11 ;
+ * - Muscu C : négatives 2 × 2 dès le 01/11 — juste après l'échauffement,
+ *   avant la suspension et les sprints depuis le programme du 05/10/2026
+ *   (seed 38 ; elles étaient après la suspension) ;
  * - Cardio C du samedi avant un test : sans le 2e bloc soutenu (≈ 42 min).
  */
 
@@ -29,11 +31,12 @@ const jambes: SnapshotTest = (() => {
   return { test: { protocolId: "protocol-jambes", placement: entry.placement!, targetBlockId: entry.targetBlockId! }, protocolVersionId: "protocol-jambes-v1" };
 })();
 
-describe("Muscu C : négatives à partir du 01/11, juste après la suspension", () => {
-  it("jeudi 08/10 : pas de négatives ; jeudi 05/11 : 2 × 2 après la suspension, avant les sprints", () => {
+describe("Muscu C : négatives à partir du 01/11, juste après l'échauffement", () => {
+  it("jeudi 08/10 : pas de négatives ; jeudi 05/11 : 2 × 2 après l'échauffement, avant la suspension et les sprints", () => {
     expect(ids(snapshot("v2-muscu-c", "2026-10-08"))).not.toContain("v2-muscu-c-negatives");
+    expect(ids(snapshot("v2-muscu-c", "2026-10-29"))).not.toContain("v2-muscu-c-negatives");
     const november = snapshot("v2-muscu-c", "2026-11-05");
-    expect(ids(november).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-suspension", "v2-muscu-c-negatives", "v2-muscu-c-sprints"]);
+    expect(ids(november).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", "v2-muscu-c-sprints"]);
     expect(sets(november, "v2-muscu-c-negatives")).toBe(2);
     expect(exerciseBlock(november, "v2-muscu-c-negatives").snapshotInstructions).toMatchObject({ reps: { min: 2, max: 2 }, restBetweenSetsSec: 150 });
     expect(exerciseBlock(november, "v2-muscu-c-negatives").note).toContain("descente contrôlée d'environ 5 s");
@@ -48,12 +51,12 @@ describe("semaine test : Muscu C −50 %", () => {
     const blocks = snapshot("v2-muscu-c", "2026-10-29", [jambes]);
     expect(ids(blocks)).toEqual([
       "v2-muscu-c-echauffement", "v2-muscu-c-suspension", "test:jambes", "v2-muscu-c-montee-banc", "v2-muscu-c-rester-bas",
-      "v2-muscu-c-pullover", "v2-muscu-c-face-pull", "v2-muscu-c-curl-marteau", "v2-muscu-c-triceps-tete",
+      "v2-muscu-c-tirage-vertical", "v2-muscu-c-face-pull", "v2-muscu-c-curl-marteau", "v2-muscu-c-triceps-tete",
     ]);
     expect(exerciseBlock(blocks, "v2-muscu-c-echauffement").cardioSteps).toHaveLength(1);
     expect(sets(blocks, "v2-muscu-c-suspension")).toBe(2);
     expect(sets(blocks, "v2-muscu-c-montee-banc")).toBe(2);
-    expect(sets(blocks, "v2-muscu-c-pullover")).toBe(2);
+    expect(sets(blocks, "v2-muscu-c-tirage-vertical")).toBe(1);
     expect(sets(blocks, "v2-muscu-c-face-pull")).toBe(2);
     expect(sets(blocks, "v2-muscu-c-curl-marteau")).toBe(2);
     expect(sets(blocks, "v2-muscu-c-triceps-tete")).toBe(1);
@@ -111,24 +114,27 @@ describe("seed 28 : les négatives entrent dans Muscu C", () => {
   const NOW = "2026-10-05T08:00:00.000Z";
   const order = (item: SessionTemplate) => [...item.blocks].sort((a, b) => a.position - b.position).map((block) => block.id);
 
-  it("installation neuve : Muscu C identique au modèle du programme, négatives après la suspension", async () => {
+  it("installation neuve : Muscu C identique au modèle du programme, négatives juste après l'échauffement (programme du 05/10)", async () => {
     await runSeeds();
     const c = (await db.sessionTemplates.get("v2-muscu-c"))!;
     expect(order(c)).toEqual(order(template("v2-muscu-c")));
-    expect(order(c).slice(1, 4)).toEqual(["v2-muscu-c-suspension", "v2-muscu-c-negatives", "v2-muscu-c-sprints"]);
+    expect(order(c).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", "v2-muscu-c-sprints"]);
   });
 
-  it("base d'avant (Muscu C sans négatives) : insérées après la suspension, positions décalées ; second passage : rien", async () => {
+  it("base d'avant (Muscu C sans négatives) : insérées après la suspension (place du seed 28), positions décalées ; second passage : rien", async () => {
     await runSeeds(SEEDS.filter((seed) => seed.name !== "negativesMuscuC20261005"));
     const c = (await db.sessionTemplates.get("v2-muscu-c"))!;
+    const at = c.blocks.find((block) => block.id === "v2-muscu-c-negatives")!.position;
     const without: SessionTemplate = {
       ...c,
-      blocks: c.blocks.filter((block) => block.id !== "v2-muscu-c-negatives").map((block) => (block.position > 2 ? { ...block, position: block.position - 1 } : block)),
+      blocks: c.blocks.filter((block) => block.id !== "v2-muscu-c-negatives").map((block) => (block.position > at ? { ...block, position: block.position - 1 } : block)),
     };
     await db.sessionTemplates.put(without);
     await seedNegativesMuscuC20261005(NOW);
     const after = (await db.sessionTemplates.get("v2-muscu-c"))!;
-    expect(order(after)).toEqual(order(template("v2-muscu-c")));
+    const expected = order(template("v2-muscu-c")).filter((id) => id !== "v2-muscu-c-negatives");
+    expected.splice(expected.indexOf("v2-muscu-c-suspension") + 1, 0, "v2-muscu-c-negatives");
+    expect(order(after)).toEqual(expected);
     expect([...after.blocks].map((block) => block.position).sort((a, b) => a - b)).toEqual(after.blocks.map((_, index) => index));
     expect(((await db.settings.get("install"))!.value as InstallMarkers).negativesMuscuC20261005).toBe(NOW);
     expect(muscuCWithNegatives(after, NOW)).toBeUndefined();

@@ -85,6 +85,17 @@ export interface ExerciseBlock extends BaseBlock {
    * de séries — la traction légère de Muscu B, un cran plus assistée que A.
    */
   outsideFrame?: true;
+
+  /**
+   * Référence propre (programme du 05/10/2026, option B) : la brique de
+   * volume ou de rappel d'un exercice qui a ailleurs sa brique lourde
+   * (rowing de Muscu B, chest press de Muscu A). Sa « Dernière fois » et
+   * sa charge conseillée viennent de la dernière exécution de cette même
+   * brique dans ce même modèle, jamais d'une autre séance ; ses séries ne
+   * servent de référence à aucune autre brique de l'exercice. Historique
+   * et records restent communs. Va avec `outsideFrame`.
+   */
+  ownReference?: true;
 }
 
 export interface GroupBlock extends BaseBlock {

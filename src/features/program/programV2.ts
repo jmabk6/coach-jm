@@ -36,18 +36,22 @@ function exercise(
   position: number,
   exerciseId: string,
   instructions: ExerciseInstructions,
-  extra: Partial<Pick<ExerciseBlock, "notes" | "role" | "outsideFrame">> = {},
+  extra: Partial<Pick<ExerciseBlock, "notes" | "role" | "outsideFrame" | "ownReference">> = {},
 ): ExerciseBlock {
   return { id, kind: "exercise", position, exerciseId, instructions, ...extra };
 }
 
-function reps(sets: number, min: number, max: number, restBetweenSetsSec: number): ExerciseInstructions {
-  return { shape: "reps", sets, reps: { min, max }, restBetweenSetsSec };
+function reps(sets: number, min: number, max: number, restBetweenSetsSec: number, targetRpe?: { min: number; max: number }): ExerciseInstructions {
+  return { shape: "reps", sets, reps: { min, max }, restBetweenSetsSec, ...(targetRpe ? { targetRpe } : {}) };
 }
 
 /** Repos : gros mouvements 2 min (traction de Muscu A 3 min), isolations 90 s. */
 const BIG = 120;
 const ISOLATION = 90;
+/** Programme muscu du 05/10/2026 : les briques lourdes (rowing de A, chest press de B), 2 min 30. */
+const HEAVY = 150;
+/** RPE 8-9 au plus, jamais 10 (briques lourdes et chest press de rappel). */
+const RPE_8_9 = { min: 8, max: 9 };
 
 function step(
   id: string,
@@ -85,8 +89,26 @@ export const LEG_PRESS_A_NOTE = "Environ 2 reps en réserve (RPE 8), jamais à l
 export const TRACTION_LIGHT_NOTE = "Traction légère, en premier : l'aide de volume du dernier palier A validé (elle ne descend qu'après la validation du palier A suivant), 3 × 8-10, RPE 6-8, jamais à l'échec. Semaine test : 2 × 8.";
 /** La consigne d'avant le 05/10/2026 (« A + 7 kg »), remplacée par le seed 34. */
 export const TRACTION_LIGHT_NOTE_A_PLUS_7 = "Traction légère, en premier : un cran d'aide au-dessus de la Muscu A (A + 7 kg), 3 × 8-10, RPE 6-8, jamais à l'échec. Semaine test : 2 × 8.";
-/** Muscu C, tractions négatives (pari V6, à partir du 01/11/2026). */
-export const NEGATIVES_NOTE = "Juste après la suspension, avant les sprints : descente contrôlée d'environ 5 s, 2 à 3 min de repos, jamais à l'échec. Passer à 2 × 3 seulement si la récupération et les coudes vont bien.";
+/** Muscu C, tractions négatives (pari V6, à partir du 01/11/2026) ; place du 05/10/2026 : juste après l'échauffement. */
+export const NEGATIVES_NOTE = "Juste après l'échauffement, à frais, avant la suspension et les sprints : descente contrôlée d'environ 5 s, 2 min 30 de repos, jamais à l'échec. Passer à 2 × 3 seulement si la récupération et les coudes vont bien.";
+/** La consigne d'avant le 05/10/2026 (négatives après la suspension), remplacée par le seed 38. */
+export const NEGATIVES_NOTE_AFTER_SUSPENSION = "Juste après la suspension, avant les sprints : descente contrôlée d'environ 5 s, 2 à 3 min de repos, jamais à l'échec. Passer à 2 × 3 seulement si la récupération et les coudes vont bien.";
+/** Muscu A, rowing lourd (05/10/2026). */
+export const ROWING_HEAVY_NOTE = "Lourd / force : RPE 8-9 au plus, jamais RPE 10.";
+/** Muscu B, rowing de volume (05/10/2026) : référence propre, jamais la charge du dimanche. */
+export const ROWING_VOLUME_NOTE = "Volume : charge volontairement plus légère que le rowing lourd du dimanche, 1 min 30 à 2 min de repos, jamais RPE 10. Charge : celle du dernier rowing de Muscu B.";
+/** Muscu A, chest press de rappel (05/10/2026) : référence propre, jamais la charge du mardi. */
+export const CHEST_PRESS_REMINDER_NOTE = "Rappel modéré : RPE 8-9 au plus, jamais RPE 10. Charge : celle du dernier chest press de Muscu A.";
+/** Muscu B, chest press lourd (05/10/2026). */
+export const CHEST_PRESS_HEAVY_NOTE = "Lourd / force : RPE 8-9 au plus, jamais RPE 10.";
+/** Muscu C, tirage vertical de volume (05/10/2026, à la place du pullover). */
+export const TIRAGE_VOLUME_NOTE = "Volume : RPE 8 au plus, jamais RPE 10. 1 min 30 à 2 min de repos.";
+/** Muscu C, sprints vélo (05/10/2026) : consigne durable, sans date — étalonnage à la première séance, puis même résistance. */
+export const SPRINTS_NOTE = "Première séance : étalonne la résistance pour pouvoir sprinter rapidement pendant 12 s. Ensuite, conserve le même vélo si possible et la même résistance à chaque séance.";
+/** La consigne des sprints d'avant le 05/10/2026. */
+export const SPRINTS_NOTE_BEFORE = "Même vélo, même résistance à chaque séance.";
+/** Muscu C, montée sur banc (05/10/2026). */
+export const MONTEE_BANC_NOTE = "8 par jambe. Mouvement contrôlé, pas de step-up explosif.";
 /** Muscu C, suspension (03/10/2026). */
 export const SUSPENSION_NOTE = "Facile et technique : omoplates basses et serrées, bras tendus. Pas un test de durée maximale : s'arrêter bien avant la fatigue du grip, pour arriver frais à la Muscu A.";
 
@@ -103,12 +125,14 @@ const muscuA: TemplateContent = {
     warmup("v2-muscu-a"),
     /* Pari traction V6 (04/10/2026) : 3 séries jusqu'à 5 reps propres, 3 min de repos. */
     exercise("v2-muscu-a-traction", 1, "traction-assistee", reps(3, 1, 5, 180)),
-    exercise("v2-muscu-a-rowing", 2, "rowing-poulie-basse", reps(3, 8, 12, BIG)),
-    exercise("v2-muscu-a-tirage-vertical", 3, "tirage-vertical", reps(2, 8, 12, BIG)),
-    /* N5 : 2 séries contre 3 au cadre (suit B) — prescription réduite, ni palier ni stagnation. */
-    exercise("v2-muscu-a-chest-press", 4, "chest-press", reps(2, 8, 12, BIG)),
-    exercise("v2-muscu-a-elevations", 5, "elevations-laterales-halteres", reps(3, 12, 15, ISOLATION)),
-    exercise("v2-muscu-a-curl", 6, CURL_BICEPS_ID, reps(3, 8, 12, ISOLATION), { notes: CURL_HALTERES_NOTE }),
+    /* Programme du 05/10/2026 : rowing lourd 3 × 6-8, 2 min 30, RPE 8-9 — la brique du cadre rowing. */
+    exercise("v2-muscu-a-rowing", 2, "rowing-poulie-basse", reps(3, 6, 8, HEAVY, RPE_8_9), { notes: ROWING_HEAVY_NOTE }),
+    /* Chest press de rappel 2 × 8-12 (le cadre lourd est celui de Muscu B) : hors palier, référence propre. */
+    exercise("v2-muscu-a-chest-press", 3, "chest-press", reps(2, 8, 12, BIG, RPE_8_9), { notes: CHEST_PRESS_REMINDER_NOTE, outsideFrame: true, ownReference: true }),
+    exercise("v2-muscu-a-elevations", 4, "elevations-laterales-halteres", reps(3, 12, 15, ISOLATION)),
+    exercise("v2-muscu-a-curl", 5, CURL_BICEPS_ID, reps(3, 8, 12, ISOLATION), { notes: CURL_HALTERES_NOTE }),
+    /* Leg curl couché à la place du leg curl assis (décision du 27/09/2026). */
+    exercise("v2-muscu-a-leg-curl", 6, "leg-curl-couche", reps(2, 10, 12, ISOLATION)),
     /* Leg press (05/10/2026) : 2 × 10-12, environ 2 reps en réserve. Hors palier (le cadre est celui de
        Muscu B) : la charge reprend la dernière séance, ni objectif ni conseil du cadre. */
     exercise(
@@ -118,8 +142,6 @@ const muscuA: TemplateContent = {
       { shape: "reps", sets: 2, reps: { min: 10, max: 12 }, targetRpe: { min: 8, max: 8 }, restBetweenSetsSec: BIG },
       { notes: LEG_PRESS_A_NOTE, outsideFrame: true },
     ),
-    /* Leg curl couché à la place du leg curl assis (décision du 27/09/2026). */
-    exercise("v2-muscu-a-leg-curl", 8, "leg-curl-couche", reps(2, 10, 12, ISOLATION)),
   ],
 };
 
@@ -136,12 +158,15 @@ const muscuB: TemplateContent = {
     /* Pari traction V6 (04/10/2026) : la traction légère en premier, faite à frais ; 3 × 8-10,
        2 × 8 en semaine test. Hors palier : ni validation du cadre, ni stagnation. */
     exercise("v2-muscu-b-traction", 1, "traction-assistee", reps(3, 8, 10, BIG), { notes: TRACTION_LIGHT_NOTE, outsideFrame: true }),
-    exercise("v2-muscu-b-chest-press", 2, "chest-press", reps(3, 8, 12, BIG)),
+    /* Programme du 05/10/2026 : chest press lourd 3 × 6-8, 2 min 30, RPE 8-9 — la brique du cadre chest press. */
+    exercise("v2-muscu-b-chest-press", 2, "chest-press", reps(3, 6, 8, HEAVY, RPE_8_9), { notes: CHEST_PRESS_HEAVY_NOTE }),
     exercise("v2-muscu-b-developpe-incline", 3, "developpe-incline-halteres", reps(3, 8, 12, BIG)),
-    exercise("v2-muscu-b-developpe-epaules", 4, "developpe-epaules-machine", reps(3, 8, 10, BIG)),
-    exercise("v2-muscu-b-elevations", 5, "elevations-laterales-halteres", reps(3, 12, 15, ISOLATION)),
-    exercise("v2-muscu-b-extension-triceps", 6, "extension-triceps-poulie", reps(3, 10, 15, ISOLATION)),
-    exercise("v2-muscu-b-presse", 7, "presse-cuisses", reps(3, 10, 12, BIG)),
+    /* Rowing de volume 2 × 10-15 (le cadre lourd est celui de Muscu A) : hors palier, référence propre. */
+    exercise("v2-muscu-b-rowing", 4, "rowing-poulie-basse", reps(2, 10, 15, BIG), { notes: ROWING_VOLUME_NOTE, outsideFrame: true, ownReference: true }),
+    exercise("v2-muscu-b-developpe-epaules", 5, "developpe-epaules-machine", reps(3, 8, 10, BIG)),
+    exercise("v2-muscu-b-elevations", 6, "elevations-laterales-halteres", reps(3, 12, 15, ISOLATION)),
+    exercise("v2-muscu-b-extension-triceps", 7, "extension-triceps-poulie", reps(3, 10, 15, ISOLATION)),
+    exercise("v2-muscu-b-presse", 8, "presse-cuisses", reps(3, 10, 12, BIG)),
   ],
 };
 
@@ -171,14 +196,16 @@ const muscuC: TemplateContent = {
   description: "Environ 70 min.",
   blocks: [
     warmup("v2-muscu-c"),
+    /* Pari V6 : 2 × 2 négatives, présentes dans la séance à partir du 01/11/2026 seulement ;
+       place du 05/10/2026 : juste après l'échauffement, à frais. */
+    exercise("v2-muscu-c-negatives", 1, "traction-negative", reps(2, 2, 2, 150), { notes: NEGATIVES_NOTE }),
     /* Pari traction (03/10/2026) : suspension et omoplates, facile et technique. */
-    exercise("v2-muscu-c-suspension", 1, "suspension-omoplates", { shape: "duration", sets: 3, durationSec: { min: 20, max: 30 }, restBetweenSetsSec: 60 }, { notes: SUSPENSION_NOTE }),
-    /* Pari V6 : 2 × 2 négatives, présentes dans la séance à partir du 01/11/2026 seulement. */
-    exercise("v2-muscu-c-negatives", 2, "traction-negative", reps(2, 2, 2, 150), { notes: NEGATIVES_NOTE }),
-    exercise("v2-muscu-c-sprints", 3, "sprint-velo", { shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 }, { notes: "Même vélo, même résistance à chaque séance." }),
-    exercise("v2-muscu-c-montee-banc", 4, "montee-banc", reps(3, 8, 8, 60), { notes: "8 par jambe." }),
+    exercise("v2-muscu-c-suspension", 2, "suspension-omoplates", { shape: "duration", sets: 3, durationSec: { min: 20, max: 30 }, restBetweenSetsSec: 60 }, { notes: SUSPENSION_NOTE }),
+    exercise("v2-muscu-c-sprints", 3, "sprint-velo", { shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 }, { notes: SPRINTS_NOTE }),
+    exercise("v2-muscu-c-montee-banc", 4, "montee-banc", reps(3, 8, 8, 60), { notes: MONTEE_BANC_NOTE }),
     resterBas,
-    exercise("v2-muscu-c-pullover", 6, "pullover-poulie", reps(3, 10, 15, ISOLATION)),
+    /* Programme du 05/10/2026 : le tirage vertical de volume remplace le pullover. */
+    exercise("v2-muscu-c-tirage-vertical", 6, "tirage-vertical", reps(2, 10, 15, BIG), { notes: TIRAGE_VOLUME_NOTE }),
     exercise("v2-muscu-c-face-pull", 7, "face-pull", reps(3, 12, 15, ISOLATION), { notes: FACE_PULL_NOTE }),
     exercise("v2-muscu-c-curl-marteau", 8, "curl-marteau-halteres", reps(3, 10, 15, ISOLATION)),
     exercise("v2-muscu-c-triceps-tete", 9, "extension-triceps-dessus-tete", reps(2, 10, 15, ISOLATION)),
@@ -387,12 +414,28 @@ export const PROGRAM_V2_FRAMES: FrameSpecV2[] = [
   { exerciseId: "extension-triceps-dessus-tete", workSets: 2, repRange: { min: 10, max: 15 }, restSec: ISOLATION, increment: 2.5 },
 ];
 
+/** Cadres du programme muscu du 05/10/2026 (seed 38) : nouvelles versions, sans objectif en cours. */
+export interface FrameSpec20261005 {
+  exerciseId: string;
+  workSets: number;
+  repRange: { min: number; max: number };
+  rpeTarget: number;
+  restSec: number;
+}
+
+export const PROGRAM_MUSCU_20261005_FRAMES: FrameSpec20261005[] = [
+  { exerciseId: "rowing-poulie-basse", workSets: 3, repRange: { min: 6, max: 8 }, rpeTarget: 9, restSec: HEAVY },
+  { exerciseId: "chest-press", workSets: 3, repRange: { min: 6, max: 8 }, rpeTarget: 9, restSec: HEAVY },
+  { exerciseId: "tirage-vertical", workSets: 2, repRange: { min: 10, max: 15 }, rpeTarget: 8, restSec: BIG },
+];
+
 /* -------------------------------------------------------------------------- */
 /* Objectifs : exercices liés                                                 */
 /* -------------------------------------------------------------------------- */
 
 export const GOAL_LINKS_V2: Record<string, string[]> = {
-  traction: ["traction-assistee", "tirage-vertical", "rowing-poulie-basse", "pullover-poulie"],
+  /* 05/10/2026 (seed 38) : le pullover quitte le programme et l'objectif (lien d'affichage seulement), sans remplaçant. */
+  traction: ["traction-assistee", "tirage-vertical", "rowing-poulie-basse"],
   upper_body: [
     "chest-press",
     "developpe-incline-halteres",

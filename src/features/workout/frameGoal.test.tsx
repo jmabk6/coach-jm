@@ -67,6 +67,7 @@ describe("écran de séance — « Pour valider »", () => {
     const rowing = [...document.querySelectorAll<HTMLElement>("li[data-block-id]")].find((item) => item.textContent?.includes("Rowing poulie basse assis"))!;
     fireEvent.click(within(rowing).getAllByRole("button")[0]!);
     const goal = await within(rowing).findByText(/Pour valider :/);
-    expect(goal.closest(".wblock__goal")?.textContent).toBe("Pour valider : 3 × 12 · RPE ≤ 8 · à 40 kg");
+    /* Cadre rowing du 05/10/2026 (seed 38) : 3 × 6-8, RPE 9 au plus, sans objectif en cours (les 40 kg du protocole 8-12 effacés). */
+    expect(goal.closest(".wblock__goal")?.textContent).toBe("Pour valider : 3 × 8 · RPE ≤ 9");
   }, 20000);
 });

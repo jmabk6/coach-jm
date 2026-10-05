@@ -21,6 +21,7 @@ import { seedTractionLightNote20261005 } from "../program/seedTractionLightNote"
 import { seedLegacyComposition20261005 } from "../body/seedLegacyComposition";
 import { seedBodyTargets20261005 } from "../body/seedBodyTargets";
 import { seedWeightGoal8020261005 } from "../goals/seedWeightGoal80";
+import { seedProgramMuscu20261005 } from "../program/seedProgramMuscu20261005";
 import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
@@ -115,13 +116,19 @@ export const SEEDS: SeedStep[] = [
   { name: "bodyTargets20261005", run: () => seedBodyTargets20261005() },
   /* Seed 37 (05/10/2026) : l'objectif Poids passe de 75 à 80 kg, échéance gardée. */
   { name: "weightGoalTarget20261005", dependsOn: ["goals"], run: () => seedWeightGoal8020261005() },
+  /* Seed 38 (05/10/2026) : programme muscu — A force sans tirage vertical, B volume, C sans pullover ; trois cadres. */
+  {
+    name: "programmeMuscu20261005",
+    dependsOn: ["programV2", "tractionPriority20261003", "tractionV620261004", "negativesMuscuC20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005"],
+    run: () => seedProgramMuscu20261005(),
+  },
 ];
 
 /**
  * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
  * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
  */
-export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005"].includes(seed.name));
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005", "programmeMuscu20261005"].includes(seed.name));
 
 export interface SeedReport {
   ran: string[];

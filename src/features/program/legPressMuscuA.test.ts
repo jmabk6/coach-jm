@@ -15,11 +15,18 @@ import { muscuAWithLegPress, seedLegPressMuscuA20261005 } from "./seedLegPressMu
  * couché ; 2 × 10-12, 2 min de repos, environ 2 reps en réserve. La
  * charge reprend la dernière connue, jamais inventée. Le pari traction V6
  * ne change pas ; le dimanche de test, la leg press reste après le test.
+ * Programme du 05/10/2026 (seed 38) : plus de tirage vertical, le leg curl
+ * passe avant la leg press.
  */
 
 const NOW = "2026-10-05T08:00:00.000Z";
 const ORDER = [
-  "v2-muscu-a-echauffement", "v2-muscu-a-traction", "v2-muscu-a-rowing", "v2-muscu-a-tirage-vertical", "v2-muscu-a-chest-press",
+  "v2-muscu-a-echauffement", "v2-muscu-a-traction", "v2-muscu-a-rowing", "v2-muscu-a-chest-press",
+  "v2-muscu-a-elevations", "v2-muscu-a-curl", "v2-muscu-a-leg-curl", "v2-muscu-a-presse",
+];
+/** Le seed 30 insère la leg press juste avant le leg curl (sa place du 05/10, avant le seed 38). */
+const ORDER_SEED_30 = [
+  "v2-muscu-a-echauffement", "v2-muscu-a-traction", "v2-muscu-a-rowing", "v2-muscu-a-chest-press",
   "v2-muscu-a-elevations", "v2-muscu-a-curl", "v2-muscu-a-presse", "v2-muscu-a-leg-curl",
 ];
 const order = (template: Pick<SessionTemplate, "blocks">) => [...template.blocks].sort((a, b) => a.position - b.position).map((block) => block.id);
@@ -37,7 +44,7 @@ afterEach(async () => {
 });
 
 describe("le modèle Muscu A", () => {
-  it("ordre final : échauffement, traction, rowing, tirage, chest press, élévations, curl EZ, leg press, leg curl ; leg press 2 × 10-12, 2 min, RPE 8", () => {
+  it("ordre final : échauffement, traction, rowing, chest press, élévations, curl, leg curl, leg press ; leg press 2 × 10-12, 2 min, RPE 8", () => {
     expect(order(muscuA())).toEqual(ORDER);
     const press = muscuA().blocks.find((block) => block.id === "v2-muscu-a-presse")!;
     expect(press).toMatchObject({
@@ -61,17 +68,14 @@ describe("seed 30", () => {
   it("base d'avant : leg press insérée entre curl et leg curl, positions continues ; séance faite intacte ; second passage : rien", async () => {
     await runSeeds(SEEDS.filter((seed) => seed.name !== "legPressMuscuA20261005"));
     const a = (await db.sessionTemplates.get("v2-muscu-a"))!;
-    await db.sessionTemplates.put({
-      ...a,
-      blocks: a.blocks.filter((block) => block.id !== "v2-muscu-a-presse").map((block) => (block.id === "v2-muscu-a-leg-curl" ? { ...block, position: 7 } : block)),
-    });
+    await db.sessionTemplates.put({ ...a, blocks: a.blocks.filter((block) => block.id !== "v2-muscu-a-presse") });
     const done = { id: "w-done", date: "2026-10-04", status: "completed", sessionTemplateId: "v2-muscu-a", blocks: [{ id: "x", kind: "exercise", exerciseId: "leg-curl-couche" }] } as unknown as WorkoutSession;
     await db.workouts.put(done);
 
     await seedLegPressMuscuA20261005(NOW);
 
     const after = (await db.sessionTemplates.get("v2-muscu-a"))!;
-    expect(order(after)).toEqual(ORDER);
+    expect(order(after)).toEqual(ORDER_SEED_30);
     expect(after.blocks.map((block) => block.position).sort((x, y) => x - y)).toEqual(after.blocks.map((_, index) => index));
     expect(await db.workouts.get("w-done")).toEqual(done);
     expect(((await db.settings.get("install"))!.value as InstallMarkers).legPressMuscuA20261005).toBe(NOW);
@@ -87,8 +91,8 @@ describe("en séance", () => {
       { test: { protocolId: "protocol-traction", placement: "replace_block", targetBlockId: "v2-muscu-a-traction" }, protocolVersionId: "protocol-traction-v3" },
     ]);
     expect(blocks.map((block) => (block.kind === "test" ? "test" : block.sourceBlockId))).toEqual([
-      "v2-muscu-a-echauffement", "test", "v2-muscu-a-rowing", "v2-muscu-a-tirage-vertical", "v2-muscu-a-chest-press",
-      "v2-muscu-a-elevations", "v2-muscu-a-curl", "v2-muscu-a-presse", "v2-muscu-a-leg-curl",
+      "v2-muscu-a-echauffement", "test", "v2-muscu-a-rowing", "v2-muscu-a-chest-press",
+      "v2-muscu-a-elevations", "v2-muscu-a-curl", "v2-muscu-a-leg-curl", "v2-muscu-a-presse",
     ]);
     const press = blocks.find((block) => block.kind !== "test" && block.sourceBlockId === "v2-muscu-a-presse") as PerformedExerciseBlock;
     expect(press.series).toHaveLength(2);

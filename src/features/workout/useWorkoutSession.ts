@@ -19,13 +19,15 @@ import {
 } from "../../db/repositories/workoutRepository";
 import { loadActiveFrameVersions, type ActiveFrameVersions } from "../strength/activeFrameVersions";
 import { applyWorkoutAction, type WorkoutAction } from "./engine/persistWorkout";
-import { findLastPerformances, type LastPerformance } from "./lastPerformance";
+import { findLastOwnBlockPerformances, findLastPerformances, type LastPerformance } from "./lastPerformance";
 
 export interface WorkoutSessionData {
   workout: WorkoutSession;
   template: SessionTemplate | undefined;
   exerciseById: Map<Id, Exercise>;
   lastByExercise: Map<Id, LastPerformance>;
+  /** Briques à référence propre (option B) : leur `Dernière fois`, par brique du modèle. */
+  lastByOwnBlock: Map<Id, LastPerformance>;
   /**
    * Réalisations terminées, pour les références calculées à la demande
    * (`Dernière fois comparable` d'un palier).
@@ -103,6 +105,7 @@ export function useWorkoutSession(): {
         template,
         exerciseById: new Map(exercises.map((exercise) => [exercise.id, exercise])),
         lastByExercise: findLastPerformances(completed, workout.id),
+        lastByOwnBlock: findLastOwnBlockPerformances(completed, workout.sessionTemplateId, workout.id),
         completedWorkouts: completed,
         rpeScale,
         frames,

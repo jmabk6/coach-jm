@@ -59,48 +59,49 @@ describe("modèles V2", () => {
             ? `groupe ${block.name} x${block.rounds}`
             : "note",
       );
+    /* Programme du 05/10/2026 : A force — rowing lourd, chest press de rappel, plus de tirage vertical. */
     expect(describe("v2-muscu-a")).toEqual([
       "tapis",
       "traction-assistee 3x1-5",
-      "rowing-poulie-basse 3x8-12",
-      "tirage-vertical 2x8-12",
+      "rowing-poulie-basse 3x6-8",
       "chest-press 2x8-12",
       "elevations-laterales-halteres 3x12-15",
       "curl-halteres 3x8-12",
-      "presse-cuisses 2x10-12",
       "leg-curl-couche 2x10-12",
+      "presse-cuisses 2x10-12",
     ]);
-    /* Pari traction (03/10/2026) : la traction légère en premier. */
+    /* Pari traction (03/10/2026) : la traction légère en premier ; 05/10 : chest press lourd, rowing de volume. */
     expect(describe("v2-muscu-b")).toEqual([
       "tapis",
       "traction-assistee 3x8-10",
-      "chest-press 3x8-12",
+      "chest-press 3x6-8",
       "developpe-incline-halteres 3x8-12",
+      "rowing-poulie-basse 2x10-15",
       "developpe-epaules-machine 3x8-10",
       "elevations-laterales-halteres 3x12-15",
       "extension-triceps-poulie 3x10-15",
       "presse-cuisses 3x10-12",
     ]);
-    /* Pari traction (03/10/2026) : suspension + omoplates en premier, facile et technique. */
+    /* 05/10/2026 : négatives (dès le 01/11) juste après l'échauffement, puis suspension ; tirage vertical à la place du pullover. */
     expect(describe("v2-muscu-c")).toEqual([
       "tapis",
-      "suspension-omoplates",
       "traction-negative 2x2-2",
+      "suspension-omoplates",
       "sprint-velo",
       "montee-banc 3x8-8",
       "groupe Rester bas x3",
-      "pullover-poulie 3x10-15",
+      "tirage-vertical 2x10-15",
       "face-pull 3x12-15",
       "curl-marteau-halteres 3x10-15",
       "extension-triceps-dessus-tete 2x10-15",
     ]);
   });
 
-  it("durées estimées : Muscu A (81, leg press ajoutée le 05/10), Muscu B (82, traction 3 × 8-10 le 04/10) et C (84 : suspension le 03/10, négatives du pari V6) au-dessus, signalé ; Cardio A 45, B 38, C 57", () => {
-    expect(minutes("v2-muscu-a")).toBe(81);
-    expect(minutes("v2-muscu-c")).toBe(84);
+  it("durées estimées (programme du 05/10) : Muscu A 74, Muscu B 91 et C 82, signalé ; Cardio A 45, B 38, C 57", () => {
+    expect(minutes("v2-muscu-a")).toBe(74);
+    expect(minutes("v2-muscu-c")).toBe(82);
     /* Cinq gros mouvements à 2 min de repos : l'estimation dépasse la cible (rapport du 26/09/2026). */
-    expect(minutes("v2-muscu-b")).toBe(82);
+    expect(minutes("v2-muscu-b")).toBe(91);
     expect([minutes("v2-cardio-a"), minutes("v2-cardio-b"), minutes("v2-cardio-c")]).toEqual([45, 38, 57]);
   });
 
@@ -147,7 +148,7 @@ describe("tests et prescriptions réduites en V2", () => {
 
   it("jambes : le test remplace les sprints de Muscu C", () => {
     const blocks = createWorkoutSnapshot(template("v2-muscu-c"), undefined, undefined, [schedule("jambes")]);
-    expect(order(blocks).slice(0, 5)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-suspension", "v2-muscu-c-negatives", "test:jambes", "v2-muscu-c-montee-banc"]);
+    expect(order(blocks).slice(0, 5)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", "test:jambes", "v2-muscu-c-montee-banc"]);
   });
 });
 

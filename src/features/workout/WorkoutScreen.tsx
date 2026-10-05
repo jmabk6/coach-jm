@@ -62,7 +62,7 @@ import { endWorkout } from "./finishWorkout";
 import { betBannerFor } from "./betBanner";
 import { BET_EXERCISE_ID } from "../goals/tractionBet";
 import { v6State, v6StatusState } from "../goals/tractionV6";
-import { findLastComparableStep } from "./lastPerformance";
+import { findLastComparableStep, lastTimeOf } from "./lastPerformance";
 import { RestBar } from "./RestBar";
 import { RestCard } from "./RestCard";
 import { playRestSignal, primeRestSignal } from "./restSignal";
@@ -270,7 +270,7 @@ export function WorkoutScreen() {
     );
   }
 
-  const { template, exerciseById, lastByExercise, completedWorkouts, rpeScale, frames, testResults, weights } = state;
+  const { template, exerciseById, lastByExercise, lastByOwnBlock, completedWorkouts, rpeScale, frames, testResults, weights } = state;
   const name = template?.name ?? "Séance libre";
   const blocks = [...workout.blocks].sort((a, b) => a.position - b.position);
   const numbering = calculatePerformedNumbering(blocks);
@@ -326,7 +326,7 @@ export function WorkoutScreen() {
         workout,
         exerciseById,
         (block) => {
-          const values = proposeSeriesValues(block, lastByExercise.get(block.exerciseId)?.series);
+          const values = proposeSeriesValues(block, lastTimeOf(block, lastByExercise, lastByOwnBlock)?.series);
           /* Traction du pari : la série prévue par le moteur V6 (repli compris). */
           const pending = [...(block.series ?? [])].sort((a, b) => a.position - b.position).findIndex((series) => series.status !== "completed");
           const planned = bet && pending >= 0 ? betBannerFor(workout, block, bet)?.sets[pending] : undefined;
@@ -340,7 +340,7 @@ export function WorkoutScreen() {
             exerciseById.get(block.exerciseId),
             /* Hors palier : la charge de la dernière séance, jamais l'objectif du cadre. */
             block.frameVersionId && !block.outsideFrame ? frames.versionById.get(block.frameVersionId) : undefined,
-            lastByExercise.get(block.exerciseId)?.allSeries,
+            lastTimeOf(block, lastByExercise, lastByOwnBlock)?.allSeries,
           );
           return advised ? formatAdvisedLoad(advised) : undefined;
         },
@@ -626,7 +626,7 @@ export function WorkoutScreen() {
                 block={block}
                 number={numbering[block.id]}
                 exercise={exerciseById.get(block.exerciseId)}
-                lastTime={lastByExercise.get(block.exerciseId)}
+                lastTime={lastTimeOf(block, lastByExercise, lastByOwnBlock)}
                 expanded={isExpanded(block)}
                 busy={locked}
                 restCard={block.id === currentBlock?.id && restCardInBlock ? restCard : undefined}

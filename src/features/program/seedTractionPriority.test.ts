@@ -28,14 +28,19 @@ afterEach(async () => {
   await db.delete();
 });
 
-/** Les modèles B et C tels que le seed 19 les avait installés avant le 03/10. */
+/**
+ * Les modèles B et C tels que le seed 19 les avait installés avant le 03/10
+ * (sans le rowing de volume que le programme du 05/10 ajoute à Muscu B).
+ */
 async function seededBeforePriority() {
   await runSeeds(SEEDS.filter((seed) => seed.name !== "tractionPriority20261003"));
   const b = (await db.sessionTemplates.get("v2-muscu-b"))!;
   const old = ["v2-muscu-b-echauffement", "v2-muscu-b-chest-press", "v2-muscu-b-developpe-incline", "v2-muscu-b-traction", "v2-muscu-b-developpe-epaules", "v2-muscu-b-elevations", "v2-muscu-b-extension-triceps", "v2-muscu-b-presse"];
   await db.sessionTemplates.put({
     ...b,
-    blocks: b.blocks.map((block) => ({ ...block, position: old.indexOf(block.id), ...(block.id === "v2-muscu-b-traction" ? { notes: "Traction légère : plus d'assistance qu'en A, à ajuster après le test." } : {}) })),
+    blocks: b.blocks
+      .filter((block) => old.includes(block.id))
+      .map((block) => ({ ...block, position: old.indexOf(block.id), ...(block.id === "v2-muscu-b-traction" ? { notes: "Traction légère : plus d'assistance qu'en A, à ajuster après le test." } : {}) })),
   });
   const c = (await db.sessionTemplates.get("v2-muscu-c"))!;
   await db.sessionTemplates.put({
@@ -45,7 +50,7 @@ async function seededBeforePriority() {
 }
 
 describe("seed 24 — priorité traction", () => {
-  it("Muscu B : traction légère en premier, le reste dans le même ordre ; Muscu C : suspension en premier ; identiques aux modèles du programme", async () => {
+  it("Muscu B : traction légère en premier, le reste dans le même ordre (celui du programme) ; Muscu C : suspension en premier", async () => {
     await seededBeforePriority();
     await seedTractionPriority20261003(NOW);
 
@@ -60,10 +65,9 @@ describe("seed 24 — priorité traction", () => {
     expect(c.blocks.find((block) => block.id === "v2-muscu-c-suspension")).toMatchObject({
       exerciseId: "suspension-omoplates", notes: SUSPENSION_NOTE, instructions: { shape: "duration", sets: 3, durationSec: { min: 20, max: 30 } },
     });
-    for (const template of [b, c]) {
-      const definition = PROGRAM_V2_TEMPLATES.find((item) => item.id === template.id)!;
-      expect(order(template)).toEqual([...definition.blocks].sort((x, y) => x.position - y.position).map((block) => block.id));
-    }
+    /* Muscu B dans l'ordre du programme (le rowing de volume du 05/10 vient du seed 38) ; Muscu C : le seed 38 met ensuite les négatives avant la suspension. */
+    const definition = PROGRAM_V2_TEMPLATES.find((item) => item.id === "v2-muscu-b")!;
+    expect(order(b)).toEqual([...definition.blocks].sort((x, y) => x.position - y.position).map((block) => block.id).filter((id) => id !== "v2-muscu-b-rowing"));
     expect(((await db.settings.get("install"))!.value as InstallMarkers).tractionPriority20261003).toBe(NOW);
   });
 
