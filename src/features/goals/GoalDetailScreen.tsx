@@ -151,6 +151,21 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
     <>
       {detail.bet && <TractionBetSection bet={detail.bet} />}
 
+      {/* Objectif Poids en clair (correctif du 05/10/2026) : sa valeur et son échéance, même sans moyenne
+          de la semaine ; « objectif », jamais « cible » — le mot désigne seulement la cible de composition. */}
+      {weight && (
+        <section className="goal-section weight-goal" aria-labelledby="weight-goal-title">
+          <h2 id="weight-goal-title">Objectif Poids</h2>
+          <p className="weight-goal__value">
+            <strong>{segment.target !== undefined ? formatValue(segment.target) : "À définir"}</strong>
+            {(segment.dueDate ?? goal.dueDate) && <span>au {formatFr((segment.dueDate ?? goal.dueDate)!, "d MMMM yyyy")}</span>}
+          </p>
+          <button type="button" className="goal-actions__button" onClick={() => setEditing(true)}>
+            Modifier l'objectif
+          </button>
+        </section>
+      )}
+
       {/* Phase 2.1 : composition corporelle et cible personnelle indicative, indépendantes de l'objectif Poids. */}
       {weight && <BodyCompositionPanel />}
 
@@ -194,9 +209,12 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
         />
         {evaluation.kind === "reached" && <p className="goal-detail__reached">{reachedLabel(goal, evaluation.role)}</p>}
         <div className="goal-actions">
-          <button type="button" className="goal-actions__button" onClick={() => setEditing(true)}>
-            {goal.key === "legs" ? "Modifier la mesure, la cible et l'échéance" : "Modifier la cible et l'échéance"}
-          </button>
+          {/* Poids : le bouton est dans le bloc « Objectif Poids », plus haut. */}
+          {!weight && (
+            <button type="button" className="goal-actions__button" onClick={() => setEditing(true)}>
+              {goal.key === "legs" ? "Modifier la mesure, la cible et l'échéance" : "Modifier la cible et l'échéance"}
+            </button>
+          )}
           {evaluation.kind === "reached" && evaluation.role === "intermediate" && nextSegment && (
             <button type="button" className="goal-actions__button goal-actions__button--primary" onClick={() => setActivating(true)}>
               {goal.key === "traction" ? "Passer à la traction stricte" : `Passer à : ${nextSegment.label}`}
@@ -284,6 +302,8 @@ function SegmentSheet({ detail, today, onDone, onDismiss }: { detail: GoalDetail
   const { goal, progress, version } = detail;
   const { segment } = progress;
   const legs = goal.key === "legs";
+  /* Poids : « objectif », jamais « cible » (le mot désigne la cible de composition). */
+  const weight = segment.measure?.source === "weight_weekly_average";
   const [target, setTarget] = useState(segment.target !== undefined ? formatTestNumber(segment.target) : "");
   const [dueDate, setDueDate] = useState(segment.dueDate ?? "");
   const [measureKey, setMeasureKey] = useState(segment.measure?.source === "test" ? segment.measure.measureKey : "");
@@ -308,14 +328,18 @@ function SegmentSheet({ detail, today, onDone, onDismiss }: { detail: GoalDetail
 
   return (
     <BottomSheet
-      title={goal.title}
-      message="Vide = à définir. Le statut, le départ et l'atteinte se recalculent aussitôt."
+      title={weight ? "Modifier l'objectif Poids" : goal.title}
+      message={
+        weight
+          ? "Vide = à définir. Le statut, le départ et l'atteinte se recalculent aussitôt ; la composition corporelle ne change pas."
+          : "Vide = à définir. Le statut, le départ et l'atteinte se recalculent aussitôt."
+      }
       actions={[
         {
           label: "Enregistrer",
           tone: "primary",
           disabled: !valid,
-          hint: valid ? undefined : "Échéance dans le futur, cible numérique",
+          hint: valid ? undefined : weight ? "Échéance dans le futur, objectif numérique" : "Échéance dans le futur, cible numérique",
           onSelect: () => void save(),
         },
       ]}
@@ -335,10 +359,17 @@ function SegmentSheet({ detail, today, onDone, onDismiss }: { detail: GoalDetail
             </select>
           </label>
         )}
-        <label>
-          <span>Cible</span>
-          <input inputMode="decimal" value={target} onChange={(event) => setTarget(event.target.value)} placeholder="à définir" />
-        </label>
+        {weight ? (
+          <label>
+            <span>Objectif (kg)</span>
+            <input inputMode="decimal" aria-label="Objectif en kg" value={target} onChange={(event) => setTarget(event.target.value)} placeholder="à définir" />
+          </label>
+        ) : (
+          <label>
+            <span>Cible</span>
+            <input inputMode="decimal" value={target} onChange={(event) => setTarget(event.target.value)} placeholder="à définir" />
+          </label>
+        )}
         <label>
           <span>Échéance</span>
           <input type="date" value={dueDate} min={today} onChange={(event) => setDueDate(event.target.value)} />

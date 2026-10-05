@@ -742,3 +742,23 @@
   font-size: 0.72rem;
   font-weight: 400;
 }
+
+/* Objectif Poids en clair (correctif du 05/10/2026). */
+.weight-goal__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.weight-goal__value strong {
+  font-size: 1.5rem;
+}
+
+.weight-goal__value span {
+  color: var(--color-text-soft);
+}
+
+.weight-goal .goal-actions__button {
+  justify-self: start;
+}
