@@ -7,10 +7,11 @@ import type { Id } from "./exercise";
  *   référence (100 g, 1 pièce, 1 portion) ;
  * - `MealTemplate` : un repas favori, vraie composition d'aliments avec
  *   leurs quantités (ajustables à l'ajout) ;
- * - `FoodLogEntry` : ce qui a été mangé, un jour, à un repas — calories et
- *   macros **figées à la saisie** : modifier ensuite un aliment ou un
- *   favori ne réécrit jamais le passé (comme une séance garde sa copie du
- *   modèle) ;
+ * - `FoodLogEntry` : ce qui a été mangé, un jour, à un repas — sa base de
+ *   calcul (`basis`) est **copiée à la saisie** et ne change plus ; ses
+ *   valeurs se calculent toujours depuis cette base et la quantité courante
+ *   (phase 3A.1), jamais arrondies à l'enregistrement : modifier ensuite un
+ *   aliment ou un favori ne réécrit jamais le passé ;
  * - `NutritionDay` : la journée déclarée complète. Une journée non
  *   renseignée n'est jamais une journée à 0 kcal.
  */
@@ -36,9 +37,23 @@ export interface Food {
   nutrients: Nutrients;
   /** Valeurs approximatives. */
   estimated?: true;
+  /** Aliment favori : en tête de la liste d'ajout (phase 3A). */
+  favorite?: true;
+  /** Quantité proposée d'office à l'ajout, dans l'unité de l'aliment (ex. 125 pour un pot). */
+  defaultQuantity?: number;
   status: "active" | "archived";
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Base de calcul d'une ligne du journal : les valeurs de l'aliment (ou de
+ * l'extra saisi) pour une quantité de référence, copiées **une seule fois**
+ * à l'ajout et immuables ensuite.
+ */
+export interface NutritionBasis {
+  referenceQuantity: number;
+  nutrients: Nutrients;
 }
 
 export interface MealTemplateItem {
@@ -67,7 +82,9 @@ export interface FoodLogEntry {
   name: string;
   quantity: number;
   unit: FoodUnit;
-  /** Figées à la saisie. */
+  /** Copiée à l'ajout, jamais modifiée (phase 3A.1). */
+  basis: NutritionBasis;
+  /** Toujours `calculateNutrients(basis, quantity)`, en pleine précision : l'arrondi n'est qu'un affichage. */
   nutrients: Nutrients;
   /** Valeurs estimées (extra approximatif). */
   estimated?: true;

@@ -6,6 +6,7 @@ import Dexie from "dexie";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NEW_IN_V4 } from "../../db/database";
 import type { BodyMeasurement, Food, FoodLogEntry, MealTemplate, NutritionDay, WeightEntry } from "../../domain";
+import { calculateNutrients } from "../../domain/rules/nutritionRules";
 import { canonicalStringify } from "./canonicalJson";
 import { readBackup, serializeBackup } from "./exportBackup";
 import { parseBackup, restoreInto } from "./restoreBackup";
@@ -45,8 +46,17 @@ const measurement: BodyMeasurement = {
 const weight: WeightEntry = { id: "weight-body-2026-10-05", date: "2026-10-05", kg: 91.9, bodyMeasurementId: "body-1", createdAt: T, updatedAt: T };
 const food: Food = { id: "food-1", name: "Fromage blanc 0 %", unit: "g", referenceQuantity: 100, nutrients: { kcal: 46, proteinG: 8, carbsG: 3.9, fatG: 0.1 }, status: "active", createdAt: T, updatedAt: T };
 const template: MealTemplate = { id: "meal-1", name: "Fromage blanc + fruits rouges + céréales", defaultSlot: "breakfast", items: [{ id: "i1", foodId: "food-1", quantity: 250 }], position: 0, status: "active", createdAt: T, updatedAt: T };
-const log: FoodLogEntry = { id: "log-1", date: "2026-10-05", slot: "breakfast", name: "Fromage blanc 0 %", quantity: 250, unit: "g", nutrients: { kcal: 115, proteinG: 20, carbsG: 9.8, fatG: 0.3 }, foodId: "food-1", mealTemplateId: "meal-1", createdAt: T, updatedAt: T };
-const extra: FoodLogEntry = { id: "log-2", date: "2026-10-05", slot: "extra", name: "6 carrés de chocolat", quantity: 1, unit: "portion", nutrients: { kcal: 320 }, estimated: true, createdAt: T, updatedAt: T };
+/* Phase 3A.1 : la ligne porte sa base figée ; ses valeurs en pleine précision (3,9 × 250 ÷ 100…). */
+const log: FoodLogEntry = {
+  id: "log-1", date: "2026-10-05", slot: "breakfast", name: "Fromage blanc 0 %", quantity: 250, unit: "g",
+  basis: { referenceQuantity: 100, nutrients: { kcal: 46, proteinG: 8, carbsG: 3.9, fatG: 0.1 } },
+  nutrients: calculateNutrients({ referenceQuantity: 100, nutrients: { kcal: 46, proteinG: 8, carbsG: 3.9, fatG: 0.1 } }, 250),
+  foodId: "food-1", mealTemplateId: "meal-1", createdAt: T, updatedAt: T,
+};
+const extra: FoodLogEntry = {
+  id: "log-2", date: "2026-10-05", slot: "extra", name: "6 carrés de chocolat", quantity: 1, unit: "portion",
+  basis: { referenceQuantity: 1, nutrients: { kcal: 320 } }, nutrients: { kcal: 320 }, estimated: true, createdAt: T, updatedAt: T,
+};
 const day: NutritionDay = { date: "2026-10-05", complete: true, updatedAt: T };
 
 async function populated() {
