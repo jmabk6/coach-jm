@@ -16,13 +16,18 @@ function open(entry: string) {
 afterEach(cleanup);
 
 describe("AppShell (lot B)", () => {
-  it("affiche les cinq onglets dans l'ordre et allume le bon", () => {
+  it("affiche les cinq onglets dans l'ordre et allume le bon (phase 3A.2 : Journal ; une séance relève de Plus)", () => {
     open("/seances/abc");
 
     const nav = screen.getByRole("navigation", { name: "Navigation principale" });
     const links = Array.from(nav.querySelectorAll("a"));
-    expect(links.map((link) => link.textContent)).toEqual(["Accueil", "Planning", "Objectifs", "Séances", "Plus"]);
-    expect(links.find((link) => link.getAttribute("aria-current") === "page")?.textContent).toBe("Séances");
+    expect(links.map((link) => link.textContent)).toEqual(["Accueil", "Planning", "Objectifs", "Journal", "Plus"]);
+    expect(links.find((link) => link.getAttribute("aria-current") === "page")?.textContent).toBe("Plus");
+    cleanup();
+
+    open("/journal?date=2026-10-04");
+    const journal = Array.from(screen.getByRole("navigation", { name: "Navigation principale" }).querySelectorAll("a"));
+    expect(journal.find((link) => link.getAttribute("aria-current") === "page")?.textContent).toBe("Journal");
   });
 
   it.each(["/seance-en-cours", "/seance-en-cours?add=x", "/seance-en-cours/exercice-rapide"])(

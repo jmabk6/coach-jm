@@ -30,7 +30,10 @@ describe("chemins de l'application", () => {
       bodyMeasurement: "/corps/mesures/:id",
       bodyMeasurementEdit: "/corps/mesures/:id/modifier",
       bodyTargets: "/objectifs/weight/cible",
+      journal: "/journal",
     });
+    expect(paths.journal()).toBe("/journal");
+    expect(paths.journal("2026-10-04")).toBe("/journal?date=2026-10-04");
     expect(paths.bodyMeasurement("m1")).toBe("/corps/mesures/m1");
     expect(paths.bodyMeasurementEdit("m1")).toBe("/corps/mesures/m1/modifier");
     expect(paths.goals()).toBe("/objectifs");

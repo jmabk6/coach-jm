@@ -1,4 +1,4 @@
-import { CalendarDays, Dumbbell, Ellipsis, House, Target, type LucideIcon } from "lucide-react";
+import { CalendarDays, Ellipsis, House, NotebookPen, Target, type LucideIcon } from "lucide-react";
 import { isUnder, paths, ROUTES } from "./paths";
 
 /**
@@ -7,7 +7,7 @@ import { isUnder, paths, ROUTES } from "./paths";
  * pures, testées à part du composant.
  */
 
-export type TabKey = "home" | "planning" | "goals" | "sessions" | "plus";
+export type TabKey = "home" | "planning" | "goals" | "journal" | "plus";
 
 export interface Tab {
   key: TabKey;
@@ -20,21 +20,22 @@ export const TABS: readonly Tab[] = [
   { key: "home", to: paths.home(), label: "Accueil", icon: House },
   { key: "planning", to: paths.planning(), label: "Planning", icon: CalendarDays },
   { key: "goals", to: paths.goals(), label: "Objectifs", icon: Target },
-  { key: "sessions", to: paths.sessions(), label: "Séances", icon: Dumbbell },
+  /* Phase 3A.2 : Journal remplace Séances, désormais dans Plus › Modèles de séances (adresses inchangées). */
+  { key: "journal", to: paths.journal(), label: "Journal", icon: NotebookPen },
   { key: "plus", to: paths.plus(), label: "Plus", icon: Ellipsis },
 ];
 
 /**
- * L'onglet allumé pour une adresse. La bibliothèque d'exercices relève
- * de Plus ; un récapitulatif de séance n'allume aucun onglet, puisqu'on y
+ * L'onglet allumé pour une adresse. La bibliothèque d'exercices et les
+ * modèles de séances (phase 3A.2) relèvent de Plus ; un récapitulatif de séance n'allume aucun onglet, puisqu'on y
  * arrive de partout.
  */
 export function activeTabFor(pathname: string): TabKey | undefined {
   if (pathname === ROUTES.home || isUnder(pathname, "/aujourdhui") || isUnder(pathname, "/corps")) return "home";
   if (isUnder(pathname, ROUTES.planning)) return "planning";
   if (isUnder(pathname, ROUTES.goals)) return "goals";
-  if (isUnder(pathname, ROUTES.sessions)) return "sessions";
-  if (isUnder(pathname, ROUTES.plus) || isUnder(pathname, "/exercises")) return "plus";
+  if (isUnder(pathname, ROUTES.journal)) return "journal";
+  if (isUnder(pathname, ROUTES.plus) || isUnder(pathname, "/exercises") || isUnder(pathname, ROUTES.sessions)) return "plus";
 
   return undefined;
 }

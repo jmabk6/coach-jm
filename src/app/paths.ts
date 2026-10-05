@@ -39,6 +39,8 @@ export const ROUTES = {
   bodyMeasurementEdit: "/corps/mesures/:id/modifier",
   /** Objectifs › Poids › Modifier la cible de composition (phase 2.1). */
   bodyTargets: "/objectifs/weight/cible",
+  /** Journal alimentaire (phase 3A.2) ; le jour dans `?date=AAAA-MM-JJ`. */
+  journal: "/journal",
 } as const;
 
 /**
@@ -120,6 +122,8 @@ export const paths = {
   bodyMeasurement: (id: string) => `${ROUTES.bodyMeasurements}/${id}`,
   bodyMeasurementEdit: (id: string) => `${ROUTES.bodyMeasurements}/${id}/modifier`,
   bodyTargets: () => ROUTES.bodyTargets,
+
+  journal: (date?: string) => withQuery(ROUTES.journal, { date }),
 } as const;
 
 /** Vrai si `pathname` est la route `base` ou l'une de ses sous-routes. */

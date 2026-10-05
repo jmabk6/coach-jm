@@ -7,7 +7,8 @@ describe("barre d'onglets (lot B)", () => {
       ["Accueil", "/"],
       ["Planning", "/planning"],
       ["Objectifs", "/objectifs"],
-      ["Séances", "/seances"],
+      /* Phase 3A.2 : Journal remplace Séances, passé dans Plus › Modèles de séances. */
+      ["Journal", "/journal"],
       ["Plus", "/plus"],
     ]);
   });
@@ -21,8 +22,10 @@ describe("barre d'onglets (lot B)", () => {
     ["/planning/programmation", "planning"],
     ["/objectifs", "goals"],
     ["/objectifs/weight/cible", "goals"],
-    ["/seances", "sessions"],
-    ["/seances/abc/blocks/b1", "sessions"],
+    ["/journal", "journal"],
+    /* Les modèles de séances gardent leurs adresses ; ils relèvent désormais de Plus. */
+    ["/seances", "plus"],
+    ["/seances/abc/blocks/b1", "plus"],
     ["/plus", "plus"],
     ["/exercises", "plus"],
     ["/exercises/tirage-vertical", "plus"],

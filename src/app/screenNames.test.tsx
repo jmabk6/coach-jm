@@ -33,10 +33,10 @@ describe("noms d'écran et écrans provisoires (lot B.4)", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Planning" })).toBeTruthy();
   });
 
-  it("Plus : ni Statistiques (lot N), ni Séances", () => {
+  it("Plus : pas de Statistiques (lot N) ; « Modèles de séances » vers /seances (phase 3A.2)", () => {
     inRouter(<PlusScreen />, "/plus");
     expect(screen.queryByText("Statistiques")).toBeNull();
-    expect(screen.queryByText("Séances")).toBeNull();
+    expect(screen.getByText("Modèles de séances").closest("a")?.getAttribute("href")).toBe("/seances");
     expect(screen.getByText("Exercices").closest("a")?.getAttribute("href")).toBe("/exercises");
   });
 });

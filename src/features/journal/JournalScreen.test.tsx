@@ -1,0 +1,223 @@
+// @vitest-environment jsdom
+import "fake-indexeddb/auto";
+
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "../../db/database";
+import { addEstimatedExtra, addFoodEntry, saveFood } from "../../db/repositories/nutritionRepository";
+import type { Food } from "../../domain";
+import { calculateNutrients } from "../../domain/rules/nutritionRules";
+import { JournalScreen } from "./JournalScreen";
+
+/**
+ * Journal (phase 3A.2) : le jour (jamais dans le futur, gardé dans
+ * l'adresse), le résumé (jamais 0 kcal pour une journée non renseignée,
+ * macros partielles signalées), les cinq repas, l'estimation, la quantité,
+ * la suppression, la journée complète.
+ */
+
+process.env.TZ = "Europe/Paris";
+
+const T = "2026-10-05T06:00:00.000Z";
+let counter = 0;
+const nextId = () => `id-${(counter += 1)}`;
+
+function Probe() {
+  const location = useLocation();
+  return <output data-testid="url">{`${location.pathname}${location.search}`}</output>;
+}
+
+function renderJournal(entry = "/journal") {
+  return render(
+    <MemoryRouter initialEntries={[entry]}>
+      <Routes>
+        <Route path="/journal" element={<><JournalScreen /><Probe /></>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+const url = () => screen.getByTestId("url").textContent;
+const meal = (label: string) => screen.getByRole("region", { name: label });
+const summary = () => screen.getByRole("region", { name: "Résumé de la journée" });
+
+const FROMAGE: Food = {
+  id: "f-fb", name: "Fromage blanc 0 %", unit: "g", referenceQuantity: 100, nutrients: { kcal: 46, proteinG: 8, carbsG: 3.9, fatG: 0.1 },
+  status: "active", createdAt: T, updatedAt: T,
+};
+
+beforeEach(async () => {
+  counter = 0;
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-05T10:00:00"));
+  db.close();
+  await db.delete();
+  await db.open();
+});
+
+afterEach(async () => {
+  cleanup();
+  vi.useRealTimers();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+});
+
+describe("jour affiché", () => {
+  it("s'ouvre sur aujourd'hui : titre, « Aujourd'hui », jour suivant impossible ; cinq repas dans l'ordre", async () => {
+    renderJournal();
+    expect(await screen.findByRole("heading", { level: 1, name: "Lundi 5 octobre" })).toBeTruthy();
+    expect(screen.getByText("Aujourd'hui")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Aujourd'hui" })).toBeNull();
+    expect((screen.getByRole("button", { name: "Jour suivant" }) as HTMLButtonElement).disabled).toBe(true);
+    const sections = await screen.findAllByRole("region", { name: /^(Petit-déjeuner|Déjeuner|Collation|Dîner|Extras)$/ });
+    expect(sections.map((section) => section.getAttribute("aria-label"))).toEqual(["Petit-déjeuner", "Déjeuner", "Collation", "Dîner", "Extras"]);
+  });
+
+  it("jour précédent, suivant, bouton Aujourd'hui : l'adresse suit", async () => {
+    renderJournal();
+    await screen.findByRole("heading", { level: 1, name: "Lundi 5 octobre" });
+    fireEvent.click(screen.getByRole("button", { name: "Jour précédent" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Dimanche 4 octobre" })).toBeTruthy();
+    expect(url()).toBe("/journal?date=2026-10-04");
+    fireEvent.click(screen.getByRole("button", { name: "Jour précédent" }));
+    expect(url()).toBe("/journal?date=2026-10-03");
+    fireEvent.click(screen.getByRole("button", { name: "Jour suivant" }));
+    expect(url()).toBe("/journal?date=2026-10-04");
+    fireEvent.click(screen.getByRole("button", { name: "Aujourd'hui" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Lundi 5 octobre" })).toBeTruthy();
+    expect(url()).toBe("/journal?date=2026-10-05");
+  });
+
+  it("rechargement : la date de l'adresse est gardée ; future ou illisible : retour à aujourd'hui, adresse corrigée", async () => {
+    renderJournal("/journal?date=2026-10-01");
+    expect(await screen.findByRole("heading", { level: 1, name: "Jeudi 1er octobre" })).toBeTruthy();
+    cleanup();
+    renderJournal("/journal?date=2026-10-01");
+    expect(await screen.findByRole("heading", { level: 1, name: "Jeudi 1er octobre" })).toBeTruthy();
+    cleanup();
+
+    renderJournal("/journal?date=2026-12-25");
+    expect(await screen.findByRole("heading", { level: 1, name: "Lundi 5 octobre" })).toBeTruthy();
+    await waitFor(() => expect(url()).toBe("/journal?date=2026-10-05"));
+    cleanup();
+    renderJournal("/journal?date=n-importe-quoi");
+    await waitFor(() => expect(url()).toBe("/journal?date=2026-10-05"));
+  });
+});
+
+describe("résumé et lignes", () => {
+  it("journée non renseignée : « — », jamais 0 kcal ; « complète » impossible", async () => {
+    renderJournal();
+    await waitFor(() => expect(within(summary()).getByText("Journée non renseignée")).toBeTruthy());
+    expect(within(summary()).getByText("—")).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/\b0 kcal/);
+    const complete = screen.getByRole("checkbox", { name: "Journée alimentaire complète" }) as HTMLInputElement;
+    expect(complete.disabled).toBe(true);
+    expect(complete.checked).toBe(false);
+  });
+
+  it("journée en cours : totaux connus, macros partielles « ≥ » (jamais comptées comme 0), lignes avec quantité, kcal, protéines, « ≈ estimé »", async () => {
+    await saveFood(FROMAGE);
+    await addFoodEntry({ date: "2026-10-05", slot: "breakfast", foodId: "f-fb", quantity: 250, now: T }, nextId);
+    await addEstimatedExtra({ date: "2026-10-05", name: "Chocolat", nutrients: { kcal: 320 }, now: T }, nextId);
+    renderJournal();
+
+    await waitFor(() => expect(within(summary()).getByText("435 kcal")).toBeTruthy());
+    expect(within(summary()).getByText("≥ 20,0 g")).toBeTruthy();
+    expect(within(summary()).getByText(/Journée en cours · non comptée/)).toBeTruthy();
+    expect(within(summary()).getByText(/glucides ≥ 9,8 g · lipides ≥ 0,3 g/)).toBeTruthy();
+
+    const breakfast = meal("Petit-déjeuner");
+    expect(within(breakfast).getByText("115 kcal · 20,0 g P")).toBeTruthy();
+    const line = within(breakfast).getByRole("button", { name: /Fromage blanc 0 %/ });
+    expect(line.textContent).toContain("250 g");
+    expect(line.textContent).toContain("115 kcal");
+    expect(line.textContent).toContain("20,0 g P");
+
+    const extra = within(meal("Extras")).getByRole("button", { name: /Chocolat/ });
+    expect(extra.textContent).toContain("≈ estimé");
+    expect(extra.textContent).toContain("320 kcal");
+    expect(extra.textContent).not.toContain(" g P");
+  });
+
+  it("estimation depuis le Déjeuner : ligne du Déjeuner, marquée estimée ; kcal obligatoires", async () => {
+    renderJournal();
+    fireEvent.click(await within(await screen.findByRole("region", { name: "Déjeuner" })).findByRole("button", { name: "Ajouter au déjeuner" }));
+    const sheet = screen.getByRole("dialog");
+    expect(within(sheet).getByRole("heading", { name: "Estimation · Déjeuner" })).toBeTruthy();
+    fireEvent.click(within(sheet).getByRole("button", { name: /^Enregistrer/ }));
+    expect(within(screen.getByRole("dialog")).getByRole("alert").textContent).toBe("Calories estimées : obligatoires.");
+
+    fireEvent.change(within(sheet).getByLabelText("Nom (facultatif)"), { target: { value: "Restaurant" } });
+    fireEvent.change(within(sheet).getByLabelText("Calories en kcal"), { target: { value: "650" } });
+    fireEvent.change(within(sheet).getByLabelText("Protéines en g (facultatif)"), { target: { value: "35" } });
+    fireEvent.click(within(sheet).getByRole("button", { name: /^Enregistrer/ }));
+
+    await waitFor(() => expect(within(meal("Déjeuner")).getByRole("button", { name: /Restaurant/ })).toBeTruthy());
+    const [row] = await db.foodLogEntries.toArray();
+    expect(row).toMatchObject({ slot: "lunch", name: "Restaurant", estimated: true, quantity: 1, unit: "portion", nutrients: { kcal: 650, proteinG: 35 } });
+    expect(within(summary()).getByText("650 kcal")).toBeTruthy();
+  });
+
+  it("modifier la quantité : recalcul depuis la base ; supprimer : confirmation d'abord", async () => {
+    await saveFood(FROMAGE);
+    const entry = await addFoodEntry({ date: "2026-10-05", slot: "breakfast", foodId: "f-fb", quantity: 250, now: T }, nextId);
+    await addFoodEntry({ date: "2026-10-05", slot: "dinner", foodId: "f-fb", quantity: 100, now: T }, nextId);
+    renderJournal();
+
+    fireEvent.click(await within(await screen.findByRole("region", { name: "Petit-déjeuner" })).findByRole("button", { name: /Fromage blanc 0 %/ }));
+    let sheet = screen.getByRole("dialog");
+    const quantity = within(sheet).getByLabelText("Quantité en g") as HTMLInputElement;
+    expect(quantity.value).toBe("250");
+    fireEvent.change(quantity, { target: { value: "300" } });
+    expect(within(sheet).getByText(/138 kcal/)).toBeTruthy();
+    fireEvent.click(within(sheet).getByRole("button", { name: /^Enregistrer/ }));
+    await waitFor(() => expect(within(meal("Petit-déjeuner")).getByText("138 kcal · 24,0 g P")).toBeTruthy());
+    expect((await db.foodLogEntries.get(entry.id))!.nutrients).toEqual(calculateNutrients(entry.basis, 300));
+
+    fireEvent.click(within(meal("Petit-déjeuner")).getByRole("button", { name: /Fromage blanc 0 %/ }));
+    sheet = screen.getByRole("dialog");
+    fireEvent.click(within(sheet).getByRole("button", { name: /^Supprimer la ligne/ }));
+    const confirm = screen.getByRole("dialog");
+    expect(within(confirm).getByRole("heading", { name: "Supprimer cette ligne ?" })).toBeTruthy();
+    fireEvent.click(within(confirm).getByRole("button", { name: "Annuler" }));
+    expect(await db.foodLogEntries.count()).toBe(2);
+
+    fireEvent.click(within(meal("Petit-déjeuner")).getByRole("button", { name: /Fromage blanc 0 %/ }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Supprimer la ligne/ }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Supprimer\s*La ligne disparaît/ }));
+    await waitFor(() => expect(within(meal("Petit-déjeuner")).queryByRole("button", { name: /Fromage blanc/ })).toBeNull());
+    expect(await db.foodLogEntries.get(entry.id)).toBeUndefined();
+  });
+
+  it("journée complète : cochée puis gardée après une modification ; décochable ; la dernière ligne supprimée la remet non renseignée", async () => {
+    await saveFood(FROMAGE);
+    await addFoodEntry({ date: "2026-10-05", slot: "breakfast", foodId: "f-fb", quantity: 250, now: T }, nextId);
+    renderJournal();
+    const box = (await screen.findByRole("checkbox", { name: "Journée alimentaire complète" })) as HTMLInputElement;
+    await waitFor(() => expect(box.disabled).toBe(false));
+    fireEvent.click(box);
+    await waitFor(() => expect(within(summary()).getByText(/Journée complète/)).toBeTruthy());
+    expect(box.checked).toBe(true);
+
+    /* Une correction ne défait pas la déclaration. */
+    fireEvent.click(within(meal("Petit-déjeuner")).getByRole("button", { name: /Fromage blanc/ }));
+    fireEvent.change(within(screen.getByRole("dialog")).getByLabelText("Quantité en g"), { target: { value: "200" } });
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Enregistrer/ }));
+    await waitFor(() => expect(within(summary()).getByText("92 kcal")).toBeTruthy());
+    expect(within(summary()).getByText(/Journée complète/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Journée alimentaire complète" }));
+    await waitFor(() => expect(within(summary()).getByText(/Journée en cours · non comptée/)).toBeTruthy());
+    fireEvent.click(screen.getByRole("checkbox", { name: "Journée alimentaire complète" }));
+    await waitFor(() => expect(within(summary()).getByText(/Journée complète/)).toBeTruthy());
+
+    fireEvent.click(within(meal("Petit-déjeuner")).getByRole("button", { name: /Fromage blanc/ }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Supprimer la ligne/ }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Supprimer\s*La ligne disparaît/ }));
+    await waitFor(() => expect(within(summary()).getByText("Journée non renseignée")).toBeTruthy());
+    const after = screen.getByRole("checkbox", { name: "Journée alimentaire complète" }) as HTMLInputElement;
+    expect([after.checked, after.disabled]).toEqual([false, true]);
+    expect(await db.nutritionDays.count()).toBe(0);
+  });
+});

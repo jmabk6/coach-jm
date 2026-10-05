@@ -1,0 +1,294 @@
+/* Journal alimentaire (phase 3A.2) : compact, une liste par repas, pas de grosses cartes. */
+.journal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 24px;
+}
+
+.journal__day {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+}
+
+.journal__arrow {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--color-accent);
+}
+
+.journal__arrow:disabled {
+  color: var(--color-text-muted);
+  opacity: 0.4;
+}
+
+.journal__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.journal__title h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  text-align: center;
+}
+
+.journal__today {
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+}
+
+.journal__today--button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Résumé : une bande compacte. */
+.journal-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-soft);
+}
+
+.journal-summary--complete {
+  background: var(--color-success-soft);
+}
+
+.journal-summary__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+
+.journal-summary__kcal {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.journal-summary__protein {
+  color: var(--color-text-soft);
+}
+
+.journal-summary__protein strong {
+  color: var(--color-text);
+  font-size: 1.1rem;
+}
+
+.journal-summary__macros,
+.journal-summary__note {
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+}
+
+.journal-summary__note {
+  color: var(--color-text-muted);
+}
+
+.journal-summary__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.journal-summary--complete .journal-summary__state {
+  color: var(--color-success-strong);
+}
+
+/* Repas : un en-tête et ses lignes, séparés par un filet. */
+.journal-meal {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--color-border);
+}
+
+.journal-meal__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 44px;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.journal-meal__head h2 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.journal-meal__total {
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.journal-meal__add {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  /* Toujours la dernière colonne, même sans total (repas vide). */
+  grid-column: 3;
+  justify-self: end;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.journal-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 10px;
+  align-items: baseline;
+  min-height: 48px;
+  padding: 6px 0 6px 10px;
+  border: 0;
+  border-left: 3px solid var(--color-border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.journal-line + .journal-line {
+  margin-top: 2px;
+}
+
+.journal-line__name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journal-line__estimated {
+  margin-left: 6px;
+  color: var(--color-warning);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.journal-line__kcal {
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.journal-line__quantity,
+.journal-line__protein {
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+}
+
+.journal-line__protein {
+  text-align: right;
+}
+
+/* Journée complète. */
+.journal-complete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 4px;
+  border-top: 1px solid var(--color-border);
+  font-weight: 600;
+}
+
+.journal-complete input {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--color-success);
+}
+
+.journal-complete--disabled {
+  color: var(--color-text-muted);
+}
+
+.journal__hint,
+.journal__error {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.journal__hint {
+  color: var(--color-text-muted);
+}
+
+.journal__error,
+.journal-form__error {
+  color: var(--color-danger-strong);
+}
+
+/* Formulaires des feuilles (estimation, quantité). */
+.journal-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.journal-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.journal-form__wide {
+  grid-column: 1 / -1;
+}
+
+.journal-form__unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-soft);
+  font-weight: 400;
+}
+
+.journal-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.05rem;
+}
+
+.journal-form__preview,
+.journal-form__error {
+  margin: 0;
+}
+
+.journal-form__preview {
+  color: var(--color-text-soft);
+  font-weight: 600;
+}
