@@ -32,6 +32,13 @@ export interface Food {
   id: Id;
   name: string;
   unit: FoodUnit;
+  /**
+   * Unité comptée (`piece`) seulement : son nom affiché, au singulier
+   * (« boîte », « barre », « paquet »…) et, facultatif, au pluriel. Aucun
+   * pluriel n'est inventé : sans `unitLabelPlural`, le singulier s'affiche.
+   */
+  unitLabel?: string;
+  unitLabelPlural?: string;
   /** Quantité à laquelle se rapportent `nutrients` (100 pour 100 g, 1 pour une pièce). */
   referenceQuantity: number;
   nutrients: Nutrients;
@@ -82,6 +89,9 @@ export interface FoodLogEntry {
   name: string;
   quantity: number;
   unit: FoodUnit;
+  /** Libellés d'unité copiés à l'ajout (phase 3A.3) : renommer l'unité de l'aliment ne change pas le passé. */
+  unitLabel?: string;
+  unitLabelPlural?: string;
   /** Copiée à l'ajout, jamais modifiée (phase 3A.1). */
   basis: NutritionBasis;
   /** Toujours `calculateNutrients(basis, quantity)`, en pleine précision : l'arrondi n'est qu'un affichage. */

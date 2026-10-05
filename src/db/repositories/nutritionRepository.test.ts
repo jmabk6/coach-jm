@@ -16,6 +16,7 @@ import {
   addFoodEntry,
   addMealTemplateEntries,
   archiveFood,
+  createFoodWithEntry,
   deleteEntry,
   deleteFood,
   EMPTY_DAY_MESSAGE,
@@ -25,6 +26,7 @@ import {
   getFood,
   getFoods,
   getMealTemplates,
+  reactivateFood,
   recentFoods,
   saveFood,
   saveMealTemplate,
@@ -247,5 +249,49 @@ describe("sauvegarde", () => {
     expect(await db.foodLogEntries.count()).toBe((file.stores.foodLogEntries ?? []).length);
     expect((await getFoods({ includeArchived: true })).length).toBe((file.stores.foods ?? []).length);
     if ((file.stores.foodLogEntries ?? []).length === 0) expect((await getDaySummary(DAY)).state).toBe("unrecorded");
+  });
+});
+
+describe("bibliothèque (phase 3A.3)", () => {
+  it("nouvel aliment ajouté au repas en une seule transaction : l'aliment et la ligne, ou rien", async () => {
+    const thon = food("f-thon", "Thon tomate", { unit: "piece", unitLabel: "boîte", unitLabelPlural: "boîtes", referenceQuantity: 1, nutrients: { kcal: 176, proteinG: 25 }, defaultQuantity: 1 });
+    const entry = await createFoodWithEntry(thon, { date: DAY, slot: "lunch", quantity: 1, now: T }, nextId);
+    expect(await getFood("f-thon")).toEqual(thon);
+    expect(entry).toMatchObject({ slot: "lunch", foodId: "f-thon", quantity: 1, unit: "piece", unitLabel: "boîte", nutrients: { kcal: 176, proteinG: 25 } });
+    expect(await getDayEntries(DAY)).toHaveLength(1);
+
+    /* Quantité refusée : ni l'aliment ni la ligne. */
+    await expect(createFoodWithEntry(food("f-bad", "Barre"), { date: DAY, slot: "lunch", quantity: 0, now: T }, nextId)).rejects.toThrow("Quantité : supérieure à 0.");
+    expect(await getFood("f-bad")).toBeUndefined();
+    /* Aliment refusé : rien non plus. */
+    await expect(createFoodWithEntry(food("f-bad", " "), { date: DAY, slot: "lunch", quantity: 1, now: T }, nextId)).rejects.toThrow("Nom de l'aliment : obligatoire.");
+    expect(await getDayEntries(DAY)).toHaveLength(1);
+  });
+
+  it("modifier nom, valeurs, référence, unité et libellé d'un aliment ne touche aucune ancienne ligne", async () => {
+    const thon = food("f-thon", "Thon tomate", { unit: "piece", unitLabel: "boîte", unitLabelPlural: "boîtes", referenceQuantity: 1, nutrients: { kcal: 176, proteinG: 25 } });
+    await saveFood(thon);
+    const entry = await addFoodEntry({ date: DAY, slot: "lunch", foodId: "f-thon", quantity: 2, now: T }, nextId);
+    const before = (await db.foodLogEntries.get(entry.id))!;
+    /* Libellé d'unité renommé, puis passage en grammes avec d'autres valeurs. */
+    await saveFood({ ...thon, unitLabel: "conserve", unitLabelPlural: "conserves", updatedAt: T2 });
+    expect(await db.foodLogEntries.get(entry.id)).toEqual(before);
+    const { unitLabel: _label, unitLabelPlural: _plural, ...withoutLabels } = thon;
+    void _label;
+    void _plural;
+    await saveFood({ ...withoutLabels, name: "Thon à la tomate", unit: "g", referenceQuantity: 100, nutrients: { kcal: 130, proteinG: 18 }, updatedAt: T2 });
+    expect(await db.foodLogEntries.get(entry.id)).toEqual(before);
+    /* Une nouvelle consommation prend les nouvelles valeurs. */
+    const after = await addFoodEntry({ date: DAY, slot: "dinner", foodId: "f-thon", quantity: 100, now: T2 }, nextId);
+    expect(after).toMatchObject({ name: "Thon à la tomate", unit: "g", nutrients: { kcal: 130 } });
+  });
+
+  it("libellé d'unité réservé aux unités comptées ; archiver puis réactiver", async () => {
+    await expect(saveFood(food("f-g", "Riz", { unitLabel: "boîte" }))).rejects.toThrow("Libellé d'unité : seulement pour une unité comptée.");
+    await saveFood(food("f-r", "Riz"));
+    await archiveFood("f-r", T2);
+    expect((await getFoods()).map((item) => item.id)).toEqual([]);
+    await reactivateFood("f-r", T2);
+    expect(await getFood("f-r")).toMatchObject({ status: "active", updatedAt: T2 });
   });
 });

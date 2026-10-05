@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { paths } from "../../app/paths";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { deleteEntry, getDaySummary, setDayComplete, updateEntryQuantity, type DaySummary } from "../../db/repositories/nutritionRepository";
-import type { FoodLogEntry, MealSlot } from "../../domain";
+import type { FoodLogEntry } from "../../domain";
 import {
   formatJournalDay,
   formatQuantity,
@@ -12,20 +13,12 @@ import {
   journalDayBefore,
   parseQuantityInput,
   resolveJournalDate,
+  unitWord,
 } from "../../domain/rules/journalRules";
 import { calculateNutrients, dayTotals, formatGrams, formatKcal, MEAL_SLOT_LABELS, MEAL_SLOTS } from "../../domain/rules/nutritionRules";
 import { todayLocalDate } from "../today/useTodayData";
-import { EstimateSheet } from "./EstimateSheet";
+import { ADD_LABELS } from "./mealLabels";
 import "./JournalScreen.css";
-
-/** « Ajouter au déjeuner », « à la collation », « aux extras ». */
-const ADD_LABELS: Record<MealSlot, string> = {
-  breakfast: "Ajouter au petit-déjeuner",
-  lunch: "Ajouter au déjeuner",
-  snack: "Ajouter à la collation",
-  dinner: "Ajouter au dîner",
-  extra: "Ajouter aux extras",
-};
 
 /** « 115 kcal · 20,0 g P », protéines omises si aucune ligne ne les donne, « ≥ » si partielles. */
 function mealLine(entries: readonly FoodLogEntry[]): string {
@@ -39,8 +32,8 @@ function mealLine(entries: readonly FoodLogEntry[]): string {
  * Journal alimentaire (phase 3A.2) : le jour (aujourd'hui au plus tard,
  * gardé dans l'adresse), un résumé compact — jamais 0 kcal pour une
  * journée non renseignée, macros partielles signalées « ≥ » —, les cinq
- * repas et leurs lignes, la journée complète. Le « + » ouvre pour
- * l'instant l'estimation ; l'ajout d'aliments viendra en 3A.3.
+ * repas et leurs lignes, la journée complète. Le « + » d'un repas ouvre
+ * l'écran Ajouter (phase 3A.3) : aliments, nouvel aliment, estimation.
  */
 export function JournalScreen() {
   const [params, setParams] = useSearchParams();
@@ -48,7 +41,7 @@ export function JournalScreen() {
   const { date, corrected } = resolveJournalDate(params.get("date"), today);
   const [summary, setSummary] = useState<DaySummary>();
   const [version, setVersion] = useState(0);
-  const [adding, setAdding] = useState<MealSlot>();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState<FoodLogEntry>();
   const [deleting, setDeleting] = useState<FoodLogEntry>();
   const [error, setError] = useState<string>();
@@ -116,7 +109,7 @@ export function JournalScreen() {
                 <div className="journal-meal__head">
                   <h2>{MEAL_SLOT_LABELS[slot]}</h2>
                   {entries.length > 0 && <span className="journal-meal__total">{mealLine(entries)}</span>}
-                  <button type="button" className="journal-meal__add" aria-label={ADD_LABELS[slot]} onClick={() => setAdding(slot)}>
+                  <button type="button" className="journal-meal__add" aria-label={ADD_LABELS[slot]} onClick={() => navigate(paths.journalAdd(date, slot))}>
                     <Plus size={20} aria-hidden="true" />
                   </button>
                 </div>
@@ -127,7 +120,7 @@ export function JournalScreen() {
                       {entry.estimated && <span className="journal-line__estimated">≈ estimé</span>}
                     </span>
                     <span className="journal-line__kcal">{formatKcal(entry.nutrients.kcal)}</span>
-                    <span className="journal-line__quantity">{formatQuantity(entry.quantity, entry.unit)}</span>
+                    <span className="journal-line__quantity">{formatQuantity(entry.quantity, entry.unit, entry)}</span>
                     <span className="journal-line__protein">{entry.nutrients.proteinG !== undefined ? `${formatGrams(entry.nutrients.proteinG)} P` : ""}</span>
                   </button>
                 ))}
@@ -153,17 +146,6 @@ export function JournalScreen() {
         </>
       )}
 
-      {adding && (
-        <EstimateSheet
-          date={date}
-          slot={adding}
-          onDismiss={() => setAdding(undefined)}
-          onSaved={() => {
-            setAdding(undefined);
-            reload();
-          }}
-        />
-      )}
       {editing && (
         <EntrySheet
           entry={editing}
@@ -181,7 +163,7 @@ export function JournalScreen() {
       {deleting && (
         <BottomSheet
           title="Supprimer cette ligne ?"
-          message={`${deleting.name} · ${formatQuantity(deleting.quantity, deleting.unit)} · ${formatKcal(deleting.nutrients.kcal)}`}
+          message={`${deleting.name} · ${formatQuantity(deleting.quantity, deleting.unit, deleting)} · ${formatKcal(deleting.nutrients.kcal)}`}
           actions={[
             {
               label: "Supprimer",
@@ -250,7 +232,8 @@ function EntrySheet({ entry, onSaved, onDismiss, onDelete }: { entry: FoodLogEnt
   const parsed = parseQuantityInput(text);
   /* Aperçu depuis la base figée de la ligne, comme l'enregistrement. */
   const preview = parsed.ok ? calculateNutrients(entry.basis, parsed.quantity) : undefined;
-  const unit = entry.unit === "piece" ? "pièces" : entry.unit === "portion" ? "portions" : entry.unit;
+  /* Le nom d'unité figé dans la ligne (« boîtes »), au pluriel s'il est enregistré. */
+  const unit = unitWord(2, entry.unit, entry);
 
   async function save() {
     if (!parsed.ok) return setError(parsed.message);

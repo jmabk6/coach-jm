@@ -67,6 +67,8 @@ export function entryFromFood(food: Food, input: EntryFromFoodInput): FoodLogEnt
     name: food.name,
     quantity: input.quantity,
     unit: food.unit,
+    ...(food.unitLabel !== undefined ? { unitLabel: food.unitLabel } : {}),
+    ...(food.unitLabelPlural !== undefined ? { unitLabelPlural: food.unitLabelPlural } : {}),
     basis,
     nutrients: calculateNutrients(basis, input.quantity),
     ...(food.estimated ? { estimated: true as const } : {}),
@@ -198,6 +200,11 @@ export function nutrientsError(nutrients: Nutrients): string | undefined {
 export function foodError(food: Food): string | undefined {
   if (typeof food.name !== "string" || food.name.trim() === "") return "Nom de l'aliment : obligatoire.";
   if (!FOOD_UNITS.includes(food.unit)) return "Unité inconnue.";
+  for (const label of [food.unitLabel, food.unitLabelPlural]) {
+    if (label === undefined) continue;
+    if (food.unit !== "piece") return "Libellé d'unité : seulement pour une unité comptée.";
+    if (label.trim() === "" || label.length > 30) return "Libellé d'unité : 1 à 30 caractères.";
+  }
   if (!positive(food.referenceQuantity) || food.referenceQuantity > MAX_QUANTITY) return "Quantité de référence : supérieure à 0.";
   const nutrients = nutrientsError(food.nutrients);
   if (nutrients) return nutrients;

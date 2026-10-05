@@ -23,6 +23,8 @@ describe("barre d'onglets (lot B)", () => {
     ["/objectifs", "goals"],
     ["/objectifs/weight/cible", "goals"],
     ["/journal", "journal"],
+    ["/journal/ajouter", "journal"],
+    ["/plus/aliments/f1", "plus"],
     /* Les modèles de séances gardent leurs adresses ; ils relèvent désormais de Plus. */
     ["/seances", "plus"],
     ["/seances/abc/blocks/b1", "plus"],

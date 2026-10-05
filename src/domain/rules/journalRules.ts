@@ -85,12 +85,22 @@ export function parseQuantityInput(text: string): ParsedQuantity {
 
 const quantityFormat = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
 
-/** « 250 g », « 1 portion », « 2 portions », « 1,5 pièce », « 3 pièces ». */
-export function formatQuantity(quantity: number, unit: FoodUnit): string {
-  const number = quantityFormat.format(quantity);
-  if (unit === "g" || unit === "ml") return `${number} ${unit}`;
+export interface UnitLabels {
+  unitLabel?: string;
+  unitLabelPlural?: string;
+}
+
+/** Le nom de l'unité pour une quantité : g et ml tels quels ; libellé enregistré (pluriel seulement s'il est enregistré) ; sinon pièce(s), portion(s). */
+export function unitWord(quantity: number, unit: FoodUnit, labels: UnitLabels = {}): string {
+  if (unit === "g" || unit === "ml") return unit;
+  if (unit === "piece" && labels.unitLabel) return quantity >= 2 && labels.unitLabelPlural ? labels.unitLabelPlural : labels.unitLabel;
   const word = unit === "piece" ? "pièce" : "portion";
-  return `${number} ${quantity >= 2 ? `${word}s` : word}`;
+  return quantity >= 2 ? `${word}s` : word;
+}
+
+/** « 250 g », « 1 boîte », « 2 boîtes », « 3 sachet » (sans pluriel enregistré), « 1 portion », « 2 portions ». */
+export function formatQuantity(quantity: number, unit: FoodUnit, labels: UnitLabels = {}): string {
+  return `${quantityFormat.format(quantity)} ${unitWord(quantity, unit, labels)}`;
 }
 
 /** Total d'une macro : « ≥ » quand une ligne ne la renseigne pas (jamais comptée comme 0). */

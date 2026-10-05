@@ -31,7 +31,15 @@ describe("chemins de l'application", () => {
       bodyMeasurementEdit: "/corps/mesures/:id/modifier",
       bodyTargets: "/objectifs/weight/cible",
       journal: "/journal",
+      journalAdd: "/journal/ajouter",
+      journalNewFood: "/journal/nouvel-aliment",
+      plusFoods: "/plus/aliments",
+      plusFoodNew: "/plus/aliments/nouveau",
+      plusFood: "/plus/aliments/:id",
     });
+    expect(paths.journalAdd("2026-10-05", "lunch")).toBe("/journal/ajouter?date=2026-10-05&repas=lunch");
+    expect(paths.journalNewFood("2026-10-05", "lunch", "thon")).toBe("/journal/nouvel-aliment?date=2026-10-05&repas=lunch&nom=thon");
+    expect(paths.plusFood("f1")).toBe("/plus/aliments/f1");
     expect(paths.journal()).toBe("/journal");
     expect(paths.journal("2026-10-04")).toBe("/journal?date=2026-10-04");
     expect(paths.bodyMeasurement("m1")).toBe("/corps/mesures/m1");

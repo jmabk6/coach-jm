@@ -67,6 +67,14 @@ export async function archiveFood(id: Id, now: string): Promise<void> {
   });
 }
 
+export async function reactivateFood(id: Id, now: string): Promise<void> {
+  await db.transaction("rw", db.foods, async () => {
+    const food = await db.foods.get(id);
+    if (!food) throw new Error("Aliment introuvable");
+    await db.foods.put({ ...food, status: "active", updatedAt: now });
+  });
+}
+
 /** Supprime un aliment jamais utilisé ; sinon refus : on l'archive. */
 export async function deleteFood(id: Id): Promise<void> {
   await db.transaction("rw", db.foods, db.foodLogEntries, db.mealTemplates, async () => {
@@ -133,6 +141,28 @@ export async function addFoodEntry(input: AddFoodEntryInput, newId: NewId = rand
     const food = await db.foods.get(input.foodId);
     if (!food) throw new Error("Aliment introuvable");
     const entry = entryFromFood(food, { id: `log-${newId()}`, date: input.date, slot: input.slot, quantity: input.quantity, now: input.now });
+    await db.foodLogEntries.add(entry);
+    return entry;
+  });
+}
+
+/**
+ * Nouvel aliment ajouté aussitôt au repas (phase 3A.3) : l'aliment et sa
+ * ligne dans une seule transaction — les deux, ou rien.
+ */
+export async function createFoodWithEntry(
+  food: Food,
+  input: Omit<AddFoodEntryInput, "foodId">,
+  newId: NewId = randomId,
+): Promise<FoodLogEntry> {
+  const foodProblem = foodError(food);
+  if (foodProblem) throw new Error(foodProblem);
+  const quantityProblem = quantityError(input.quantity);
+  if (quantityProblem) throw new Error(quantityProblem);
+  return db.transaction("rw", db.foods, db.foodLogEntries, async () => {
+    const saved: Food = { ...food, name: food.name.trim() };
+    await db.foods.put(saved);
+    const entry = entryFromFood(saved, { id: `log-${newId()}`, date: input.date, slot: input.slot, quantity: input.quantity, now: input.now });
     await db.foodLogEntries.add(entry);
     return entry;
   });

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpDown, ClipboardCheck, Dumbbell, Info, LayoutList, Moon, Settings, UserRound } from "lucide-react";
+import { Apple, ArrowUpDown, ClipboardCheck, Dumbbell, Info, LayoutList, Moon, Settings, UserRound } from "lucide-react";
 import "./PlusScreen.css";
 import { paths } from "../../app/paths";
 
@@ -22,6 +22,8 @@ const TOOLS: Entry[] = [
   { to: paths.plusProfile(), icon: <UserRound size={22} strokeWidth={2} />, title: "Mon profil", meta: "Mes informations personnelles" },
   /* Phase 3A.2 : l'ancien onglet Séances ; ses adresses (/seances…) ne changent pas. */
   { to: paths.sessions(), icon: <LayoutList size={22} strokeWidth={2} />, title: "Modèles de séances", meta: "Créer, modifier et ordonner les séances" },
+  /* Phase 3A.3 : la bibliothèque du Journal. */
+  { to: paths.plusFoods(), icon: <Apple size={22} strokeWidth={2} />, title: "Aliments", meta: "Bibliothèque, favoris, valeurs nutritionnelles" },
   { to: "/exercises", icon: <Dumbbell size={22} strokeWidth={2} />, title: "Exercices", meta: "Bibliothèque, fiches et création d'exercices" },
   { to: paths.plusRoutines(), icon: <Moon size={22} strokeWidth={2} />, title: "Routines du soir", meta: "Tronc et souplesse, chaque soir" },
   { to: paths.plusTests(), icon: <ClipboardCheck size={22} strokeWidth={2} />, title: "Protocoles de tests", meta: "Résultats, saisie d'un test passé, tests à replanifier" },

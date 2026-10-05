@@ -1,0 +1,336 @@
+/* Bibliothèque d'aliments et écran Ajouter (phase 3A.3) : listes fines, gros champs, pas de cartes. */
+.food-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 24px;
+}
+
+.food-screen__note {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+}
+
+.food-screen__toggle {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 600;
+}
+
+.food-picker__search {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.food-picker__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.food-picker__action {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.food-picker__section {
+  display: flex;
+  flex-direction: column;
+}
+
+.food-picker__section h2 {
+  margin: 6px 0 2px;
+  color: var(--color-text-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.food-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  gap: 0 8px;
+  align-items: center;
+  min-height: 52px;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.food-row__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.food-row__star {
+  flex: none;
+  color: var(--color-warning);
+}
+
+.food-row__meta {
+  grid-column: 1;
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+}
+
+.food-row__chevron {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--color-text-muted);
+}
+
+/* Liste de la bibliothèque. */
+.food-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.food-list__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.food-list__link {
+  display: flex;
+  flex-direction: column;
+  min-height: 52px;
+  justify-content: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.food-list__star {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: var(--color-text-muted);
+}
+
+.food-list__star--on {
+  color: var(--color-warning);
+}
+
+.food-list__star--on svg {
+  fill: currentColor;
+}
+
+.food-list__reactivate {
+  grid-column: 2;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.food-list--archived .food-list__item {
+  grid-template-columns: minmax(0, 1fr) auto;
+  color: var(--color-text-soft);
+}
+
+/* Formulaire d'aliment. */
+.food-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.food-form__row,
+.food-form__macros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.food-form__macros {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.food-form__field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.food-form__input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.food-form__unit {
+  flex: none;
+  color: var(--color-text-soft);
+  font-weight: 400;
+}
+
+.food-form input[type="text"],
+.food-form select,
+.food-quantity input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.05rem;
+}
+
+.food-form__favorite {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  font-weight: 600;
+}
+
+.food-form__favorite input {
+  width: 22px;
+  height: 22px;
+}
+
+.food-form__meal {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+}
+
+.food-form__meal legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.food-form__preview {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-weight: 600;
+}
+
+.food-form__error {
+  margin: 0;
+  color: var(--color-danger-strong);
+}
+
+.food-form__button {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+}
+
+.food-form__button--primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.food-form__button--quiet {
+  border-color: transparent;
+  color: var(--color-text-soft);
+}
+
+/* Feuille de quantité. */
+.food-quantity {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.food-quantity__reference {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.88rem;
+}
+
+.food-quantity__field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.food-quantity__shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.food-quantity__shortcuts button {
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+}
+
+.food-quantity__preview {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.food-quantity__preview span {
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+}

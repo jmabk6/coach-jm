@@ -33,6 +33,7 @@ function renderJournal(entry = "/journal") {
     <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/journal" element={<><JournalScreen /><Probe /></>} />
+        <Route path="/journal/ajouter" element={<Probe />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -140,23 +141,13 @@ describe("résumé et lignes", () => {
     expect(extra.textContent).not.toContain(" g P");
   });
 
-  it("estimation depuis le Déjeuner : ligne du Déjeuner, marquée estimée ; kcal obligatoires", async () => {
-    renderJournal();
-    fireEvent.click(await within(await screen.findByRole("region", { name: "Déjeuner" })).findByRole("button", { name: "Ajouter au déjeuner" }));
-    const sheet = screen.getByRole("dialog");
-    expect(within(sheet).getByRole("heading", { name: "Estimation · Déjeuner" })).toBeTruthy();
-    fireEvent.click(within(sheet).getByRole("button", { name: /^Enregistrer/ }));
-    expect(within(screen.getByRole("dialog")).getByRole("alert").textContent).toBe("Calories estimées : obligatoires.");
-
-    fireEvent.change(within(sheet).getByLabelText("Nom (facultatif)"), { target: { value: "Restaurant" } });
-    fireEvent.change(within(sheet).getByLabelText("Calories en kcal"), { target: { value: "650" } });
-    fireEvent.change(within(sheet).getByLabelText("Protéines en g (facultatif)"), { target: { value: "35" } });
-    fireEvent.click(within(sheet).getByRole("button", { name: /^Enregistrer/ }));
-
-    await waitFor(() => expect(within(meal("Déjeuner")).getByRole("button", { name: /Restaurant/ })).toBeTruthy());
-    const [row] = await db.foodLogEntries.toArray();
-    expect(row).toMatchObject({ slot: "lunch", name: "Restaurant", estimated: true, quantity: 1, unit: "portion", nutrients: { kcal: 650, proteinG: 35 } });
-    expect(within(summary()).getByText("650 kcal")).toBeTruthy();
+  it("le + d'un repas ouvre l'écran Ajouter de ce repas et de ce jour (phase 3A.3) ; une estimation y reste une ligne du repas, marquée estimée", async () => {
+    await addEstimatedExtra({ date: "2026-10-04", slot: "lunch", name: "Restaurant", nutrients: { kcal: 650, proteinG: 35 }, now: T }, nextId);
+    renderJournal("/journal?date=2026-10-04");
+    const lunch = await screen.findByRole("region", { name: "Déjeuner" });
+    await waitFor(() => expect(within(lunch).getByRole("button", { name: /Restaurant/ }).textContent).toContain("≈ estimé"));
+    fireEvent.click(within(lunch).getByRole("button", { name: "Ajouter au déjeuner" }));
+    await waitFor(() => expect(url()).toBe("/journal/ajouter?date=2026-10-04&repas=lunch"));
   });
 
   it("modifier la quantité : recalcul depuis la base ; supprimer : confirmation d'abord", async () => {

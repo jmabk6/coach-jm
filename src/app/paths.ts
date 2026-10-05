@@ -41,6 +41,13 @@ export const ROUTES = {
   bodyTargets: "/objectifs/weight/cible",
   /** Journal alimentaire (phase 3A.2) ; le jour dans `?date=AAAA-MM-JJ`. */
   journal: "/journal",
+  /** Ajouter à un repas (phase 3A.3) : `?date=…&repas=breakfast|lunch|snack|dinner|extra`. */
+  journalAdd: "/journal/ajouter",
+  journalNewFood: "/journal/nouvel-aliment",
+  /** Plus › Aliments (phase 3A.3). */
+  plusFoods: "/plus/aliments",
+  plusFoodNew: "/plus/aliments/nouveau",
+  plusFood: "/plus/aliments/:id",
 } as const;
 
 /**
@@ -124,6 +131,11 @@ export const paths = {
   bodyTargets: () => ROUTES.bodyTargets,
 
   journal: (date?: string) => withQuery(ROUTES.journal, { date }),
+  journalAdd: (date: string, slot: string) => withQuery(ROUTES.journalAdd, { date, repas: slot }),
+  journalNewFood: (date: string, slot: string, name?: string) => withQuery(ROUTES.journalNewFood, { date, repas: slot, nom: name || undefined }),
+  plusFoods: () => ROUTES.plusFoods,
+  plusFoodNew: () => ROUTES.plusFoodNew,
+  plusFood: (id: string) => `${ROUTES.plusFoods}/${id}`,
 } as const;
 
 /** Vrai si `pathname` est la route `base` ou l'une de ses sous-routes. */

@@ -36,6 +36,10 @@ import { BodyMeasurementFormScreen } from "../features/body/BodyMeasurementFormS
 import { BodyMeasurementScreen } from "../features/body/BodyMeasurementScreen";
 import { BodyTargetsScreen } from "../features/body/BodyTargetsScreen";
 import { JournalScreen } from "../features/journal/JournalScreen";
+import { AddFoodScreen } from "../features/journal/AddFoodScreen";
+import { NewFoodScreen } from "../features/journal/NewFoodScreen";
+import { FoodsScreen } from "../features/foods/FoodsScreen";
+import { FoodEditScreen } from "../features/foods/FoodEditScreen";
 
 export const router = createHashRouter([
   {
@@ -62,6 +66,11 @@ export const router = createHashRouter([
       { path: routeSegment(ROUTES.goal), element: <GoalDetailScreen /> },
       { path: routeSegment(ROUTES.bodyTargets), element: <BodyTargetsScreen /> },
       { path: routeSegment(ROUTES.journal), element: <JournalScreen /> },
+      { path: routeSegment(ROUTES.journalAdd), element: <AddFoodScreen /> },
+      { path: routeSegment(ROUTES.journalNewFood), element: <NewFoodScreen /> },
+      { path: routeSegment(ROUTES.plusFoods), element: <FoodsScreen /> },
+      { path: routeSegment(ROUTES.plusFoodNew), element: <FoodEditScreen /> },
+      { path: routeSegment(ROUTES.plusFood), element: <FoodEditScreen /> },
       { path: routeSegment(ROUTES.plus), element: <PlusScreen /> },
       { path: routeSegment(ROUTES.plusTests), element: <TestProtocolsScreen /> },
       { path: routeSegment(ROUTES.plusProfile), element: <ProfileScreen /> },
