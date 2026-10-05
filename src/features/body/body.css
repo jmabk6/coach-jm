@@ -1,7 +1,7 @@
 /* Corps, phase 2 : carte « dernière mesure », saisie, détail et liste des mesures corporelles. */
 
 /* Carte de l'Accueil : compacte, sous la pesée. */
-.body-card {
+.today-card.body-card {
   flex-direction: row;
   align-items: center;
   gap: 8px;
@@ -69,7 +69,7 @@
   color: var(--color-accent);
 }
 
-.body-card--empty {
+.today-card.body-card--empty {
   justify-content: space-between;
 }
 
