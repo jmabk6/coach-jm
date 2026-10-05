@@ -185,11 +185,30 @@ export function JournalScreen() {
   );
 }
 
+/** Une tuile du résumé : la valeur (avec son « ≥ » éventuel) et son libellé, dans la couleur de la tuile. */
+function SummaryTile({ kind, value, label }: { kind: "kcal" | "protein"; value: string; label: string }) {
+  return (
+    <div className={`journal-summary__tile journal-summary__tile--${kind}`}>
+      <strong className="journal-summary__value">{value}</strong>
+      <span className="journal-summary__label">{label}</span>
+    </div>
+  );
+}
+
+/**
+ * Résumé du jour : deux tuiles de même importance — Calories (ambre),
+ * Protéines (bleu) —, puis, discrets, glucides, lipides et l'état de la
+ * journée. Journée complète : bordure et statut verts, tuiles inchangées.
+ * Non renseignée : « — » atténués, jamais de faux zéro. Affichage seul.
+ */
 function DaySummaryBlock({ summary }: { summary: DaySummary }) {
   if (summary.state === "unrecorded") {
     return (
       <section className="journal-summary journal-summary--empty" aria-label="Résumé de la journée">
-        <strong className="journal-summary__kcal">—</strong>
+        <div className="journal-summary__tiles">
+          <SummaryTile kind="kcal" value="—" label="Calories" />
+          <SummaryTile kind="protein" value="—" label="Protéines" />
+        </div>
         <span className="journal-summary__state">Journée non renseignée</span>
       </section>
     );
@@ -199,29 +218,22 @@ function DaySummaryBlock({ summary }: { summary: DaySummary }) {
   const count = summary.entries.length;
   /* Aucune ligne ne donne la macro : inconnue (« — »), jamais 0 ; certaines seulement : « ≥ ». */
   const macro = (key: "proteinG" | "carbsG" | "fatG") => (partial[key] === count ? "—" : formatTotalGrams(totals[key], partial[key] > 0));
-  const anyPartial = (["proteinG", "carbsG", "fatG"] as const).some((key) => partial[key] > 0 && partial[key] < count);
+  const estimated = totals.estimatedEntries > 0 ? ` · ${totals.estimatedEntries} estimée${totals.estimatedEntries > 1 ? "s" : ""}` : "";
   return (
     <section className={`journal-summary${summary.state === "complete" ? " journal-summary--complete" : ""}`} aria-label="Résumé de la journée">
-      <div className="journal-summary__main">
-        <strong className="journal-summary__kcal">{formatKcal(totals.kcal)}</strong>
-        <span className="journal-summary__protein">
-          <strong>{macro("proteinG")}</strong> protéines
-        </span>
+      <div className="journal-summary__tiles">
+        <SummaryTile kind="kcal" value={formatKcal(totals.kcal)} label="Calories" />
+        <SummaryTile kind="protein" value={macro("proteinG")} label="Protéines" />
       </div>
-      <span className="journal-summary__macros">
-        {`glucides ${macro("carbsG")} · lipides ${macro("fatG")}`}
-      </span>
-      <span className="journal-summary__state">
-        {summary.state === "complete" ? (
-          <>
-            <Check size={14} strokeWidth={3} aria-hidden="true" /> Journée complète
-          </>
-        ) : (
-          "Journée en cours · non comptée"
-        )}
-        {totals.estimatedEntries > 0 && ` · ${totals.estimatedEntries} estimée${totals.estimatedEntries > 1 ? "s" : ""}`}
-      </span>
-      {anyPartial && <span className="journal-summary__note">≥ : au moins une ligne sans cette valeur</span>}
+      <span className="journal-summary__macros">{`Glucides ${macro("carbsG")} · Lipides ${macro("fatG")}`}</span>
+      {summary.state === "complete" ? (
+        <span className="journal-summary__state journal-summary__state--complete">
+          <Check size={14} strokeWidth={3} aria-hidden="true" />
+          {`Journée complète${estimated}`}
+        </span>
+      ) : (
+        <span className="journal-summary__state">{`Journée en cours · non comptée${estimated}`}</span>
+      )}
     </section>
   );
 }

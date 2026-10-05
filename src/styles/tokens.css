@@ -35,6 +35,12 @@
   --color-warning-soft: #fff4e5;
   --color-warning-border: #fedf89;
 
+  /* Journal (05/10/2026) : calories en ambre, protéines en bleu — mêmes teintes que warning et accent. */
+  --color-kcal: #b45309;
+  --color-kcal-soft: #fff4e5;
+  --color-protein: #175cd3;
+  --color-protein-soft: #eaf1ff;
+
   --color-danger: #c2413b;
   --color-danger-strong: #b42318;
   --color-danger-soft: #fdeaea;
@@ -124,6 +130,11 @@
   --color-warning-strong: #f5b86a;
   --color-warning-soft: #3a2a14;
   --color-warning-border: #6b4d1e;
+
+  --color-kcal: #f0a045;
+  --color-kcal-soft: #3a2a14;
+  --color-protein: #9db9ff;
+  --color-protein-soft: #1c2a4a;
 
   --color-danger: #ff6b64;
   --color-danger-strong: #ff8a84;

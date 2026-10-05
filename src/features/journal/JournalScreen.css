@@ -57,62 +57,87 @@
   font-weight: 600;
 }
 
-/* Résumé : une bande compacte. */
+/* Résumé : deux tuiles égales (Calories ambre, Protéines bleu), puis le secondaire en gris. */
 .journal-summary {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 10px 14px;
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface-soft);
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
 }
 
 .journal-summary--complete {
-  background: var(--color-success-soft);
+  border: 1.5px solid var(--color-success-strong);
 }
 
-.journal-summary__main {
+.journal-summary__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.journal-summary__tile {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 14px;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 10px;
 }
 
-.journal-summary__kcal {
-  font-size: 1.5rem;
+.journal-summary__tile--kcal {
+  background: var(--color-kcal-soft);
+  color: var(--color-kcal);
+}
+
+.journal-summary__tile--protein {
+  background: var(--color-protein-soft);
+  color: var(--color-protein);
+}
+
+.journal-summary__value {
+  overflow: hidden;
+  font-size: 1.45rem;
   font-weight: 800;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.journal-summary__protein {
-  color: var(--color-text-soft);
+.journal-summary__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+  text-transform: uppercase;
 }
 
-.journal-summary__protein strong {
-  color: var(--color-text);
-  font-size: 1.1rem;
+/* Journée non renseignée : « — » et libellés atténués, fonds gardés. */
+.journal-summary--empty .journal-summary__value,
+.journal-summary--empty .journal-summary__label {
+  opacity: 0.45;
 }
 
 .journal-summary__macros,
-.journal-summary__note {
+.journal-summary__state {
+  padding: 0 4px;
   color: var(--color-text-soft);
-  font-size: 0.82rem;
-}
-
-.journal-summary__note {
-  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.25;
 }
 
 .journal-summary__state {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--color-text-soft);
-  font-size: 0.85rem;
-  font-weight: 600;
 }
 
-.journal-summary--complete .journal-summary__state {
+.journal-summary__state--complete {
   color: var(--color-success-strong);
+  font-weight: 700;
 }
 
 /* Repas : un en-tête et ses lignes, séparés par un filet. */

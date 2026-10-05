@@ -42,6 +42,7 @@ function renderJournal(entry = "/journal") {
 const url = () => screen.getByTestId("url").textContent;
 const meal = (label: string) => screen.getByRole("region", { name: label });
 const summary = () => screen.getByRole("region", { name: "Résumé de la journée" });
+const tile = (kind: "kcal" | "protein") => summary().querySelector(`.journal-summary__tile--${kind}`) as HTMLElement;
 
 const FROMAGE: Food = {
   id: "f-fb", name: "Fromage blanc 0 %", unit: "g", referenceQuantity: 100, nutrients: { kcal: 46, proteinG: 8, carbsG: 3.9, fatG: 0.1 },
@@ -110,7 +111,12 @@ describe("résumé et lignes", () => {
   it("journée non renseignée : « — », jamais 0 kcal ; « complète » impossible", async () => {
     renderJournal();
     await waitFor(() => expect(within(summary()).getByText("Journée non renseignée")).toBeTruthy());
-    expect(within(summary()).getByText("—")).toBeTruthy();
+    /* Deux tuiles, Calories et Protéines, chacune « — » : aucun faux zéro. */
+    expect(within(tile("kcal")).getByText("—")).toBeTruthy();
+    expect(within(tile("kcal")).getByText("Calories")).toBeTruthy();
+    expect(within(tile("protein")).getByText("—")).toBeTruthy();
+    expect(within(tile("protein")).getByText("Protéines")).toBeTruthy();
+    expect(within(summary()).queryByText(/Glucides/)).toBeNull();
     expect(document.body.textContent).not.toMatch(/\b0 kcal/);
     const complete = screen.getByRole("checkbox", { name: "Journée alimentaire complète" }) as HTMLInputElement;
     expect(complete.disabled).toBe(true);
@@ -123,10 +129,13 @@ describe("résumé et lignes", () => {
     await addEstimatedExtra({ date: "2026-10-05", name: "Chocolat", nutrients: { kcal: 320 }, now: T }, nextId);
     renderJournal();
 
-    await waitFor(() => expect(within(summary()).getByText("435 kcal")).toBeTruthy());
-    expect(within(summary()).getByText("≥ 20,0 g")).toBeTruthy();
-    expect(within(summary()).getByText(/Journée en cours · non comptée/)).toBeTruthy();
-    expect(within(summary()).getByText(/glucides ≥ 9,8 g · lipides ≥ 0,3 g/)).toBeTruthy();
+    /* Deux tuiles de même importance : Calories, Protéines ; le reste en dessous, discret. */
+    await waitFor(() => expect(within(tile("kcal")).getByText("435 kcal")).toBeTruthy());
+    expect(within(tile("protein")).getByText("≥ 20,0 g")).toBeTruthy();
+    expect(within(summary()).getByText("Glucides ≥ 9,8 g · Lipides ≥ 0,3 g")).toBeTruthy();
+    expect(within(summary()).getByText("Journée en cours · non comptée · 1 estimée")).toBeTruthy();
+    /* La ligne d'explication du « ≥ » a disparu : le symbole suffit. */
+    expect(within(summary()).queryByText(/au moins une ligne/)).toBeNull();
 
     const breakfast = meal("Petit-déjeuner");
     expect(within(breakfast).getByText("115 kcal · 20,0 g P")).toBeTruthy();
