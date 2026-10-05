@@ -119,7 +119,13 @@ export type SettingsRecord =
   | { key: "testSchedule"; value: TestScheduleEntry[] }
   | { key: "install"; value: InstallMarkers }
   /** Repères nutritionnels configurables (module Alimentation) ; aucun seuil codé en dur. */
-  | { key: "nutritionTargets"; value: NutritionTargets };
+  | { key: "nutritionTargets"; value: NutritionTargets }
+  /**
+   * Appareil de référence du poids du jour (Corps, phase 2) : une mesure
+   * de cet appareil est éligible à l'enregistrement. Absent : RENPHO
+   * (`DEFAULT_WEIGHT_REFERENCE_DEVICE`).
+   */
+  | { key: "weightReferenceDevice"; value: string };
 
 export type SettingsKey = SettingsRecord["key"];
 

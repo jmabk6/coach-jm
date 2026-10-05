@@ -42,6 +42,7 @@ import { paths } from "../../app/paths";
 import { formatFullDate } from "../../domain/rules/programRules";
 import { WeightCard } from "../weight/WeightCard";
 import { MeasurementsCard } from "../weight/MeasurementsCard";
+import { BodyMeasurementCard } from "../body/BodyMeasurementCard";
 import { SessionName } from "../sessions/SessionName";
 
 /**
@@ -144,6 +145,8 @@ export function TodayScreen() {
           soir → objectifs → prochaines séances. */}
       {/* Pesée du jour (lot I.1), sur une ligne. */}
       <WeightCard today={data.today} />
+      {/* Dernière mesure corporelle (Corps, phase 2) : une carte compacte, le détail sur son écran. */}
+      <BodyMeasurementCard />
       {/* Mensurations du matin, le lundi d'une semaine de tests (lot I.3). */}
       <MeasurementsCard today={data.today} />
 

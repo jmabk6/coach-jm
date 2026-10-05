@@ -121,40 +121,24 @@ describe("moyennes mensuelles", () => {
   });
 });
 
-describe("enregistrement", () => {
-  it("poids seul : aucune clé de composition ; avec la composition : les deux valeurs arrondies", async () => {
+describe("enregistrement (Corps, phase 2 : la pesée ne porte plus que le poids)", () => {
+  it("poids seul : aucune clé de composition, même si un ancien formulaire en envoie", async () => {
     const plain = await recordWeight("2026-09-24", "81,4", NOW);
     expect(Object.keys(plain).sort()).toEqual(["createdAt", "date", "id", "kg", "updatedAt"]);
 
-    const full = await recordWeight("2026-09-25", { kg: "81,2", fatPct: "18,44", muscleKg: "62,06" }, NOW);
-    expect(full).toMatchObject({ kg: 81.2, fatPct: 18.4, muscleKg: 62.1 });
-
-    const partial = await recordWeight("2026-09-26", { kg: "81", fatPct: "", muscleKg: "62" }, NOW);
-    expect(partial).not.toHaveProperty("fatPct");
-    expect(partial.muscleKg).toBe(62);
+    const legacy = await recordWeight("2026-09-25", { kg: "81,2", fatPct: "18,44", muscleKg: "62,06" } as unknown as string, NOW);
+    expect(Object.keys(legacy).sort()).toEqual(["createdAt", "date", "id", "kg", "updatedAt"]);
+    expect(legacy.kg).toBe(81.2);
   });
 
-  it("valeur hors bornes : message, rien d'écrit", async () => {
-    await expect(recordWeight("2026-09-24", { kg: "81", fatPct: "70" }, NOW)).rejects.toThrow("Masse grasse : entre 3 et 60 %.");
-    await expect(recordWeight("2026-09-24", { kg: "81", muscleKg: "15" }, NOW)).rejects.toThrow("Masse musculaire : entre 20 et 120 kg.");
-    expect(await db.weightEntries.count()).toBe(0);
-  });
+  it("une ancienne composition reste lisible : seconde saisie du jour et correction ne changent que le poids", async () => {
+    await db.weightEntries.add({ id: "w-old", date: "2026-09-24", kg: 81.4, fatPct: 18.4, muscleKg: 62, createdAt: NOW.toISOString(), updatedAt: NOW.toISOString() });
+    await recordWeight("2026-09-24", "81,1", NOW);
+    expect(await db.weightEntries.get("w-old")).toMatchObject({ kg: 81.1, fatPct: 18.4, muscleKg: 62 });
 
-  it("seconde saisie du jour : la composition suit la nouvelle saisie ; correction : valeurs remplacées, champ vidé = effacé", async () => {
-    const first = await recordWeight("2026-09-24", { kg: "81,4", fatPct: "18,4", muscleKg: "62" }, NOW);
-    await recordWeight("2026-09-24", { kg: "81,1", fatPct: "18,2", muscleKg: "" }, NOW);
-    const replaced = (await db.weightEntries.get(first.id))!;
-    expect(replaced).toMatchObject({ kg: 81.1, fatPct: 18.2 });
-    expect(replaced).not.toHaveProperty("muscleKg");
-
-    await correctWeight(first.id, "2026-09-24", { kg: "81", fatPct: "", muscleKg: "61,9" }, NOW);
-    const corrected = (await db.weightEntries.get(first.id))!;
-    expect(corrected).toMatchObject({ kg: 81, muscleKg: 61.9 });
-    expect(corrected).not.toHaveProperty("fatPct");
-
-    /* Correction du poids seul (chaîne) : la composition reste. */
-    await correctWeight(first.id, "2026-09-24", "80,8", NOW);
-    expect(await db.weightEntries.get(first.id)).toMatchObject({ kg: 80.8, muscleKg: 61.9 });
+    await correctWeight("w-old", "2026-09-24", "80,8", NOW);
+    expect(await db.weightEntries.get("w-old")).toMatchObject({ kg: 80.8, fatPct: 18.4, muscleKg: 62 });
+    expect(await db.weightEntries.count()).toBe(1);
   });
 });
 
@@ -175,7 +159,7 @@ describe("sauvegarde", () => {
     const restored = await db.weightEntries.toArray();
     expect(compositionSummary(restored, "fatPct", "2026-09-26").current.count).toBe(0);
 
-    await recordWeight("2026-09-26", { kg: "81,5", fatPct: "18,4", muscleKg: "62" }, NOW);
+    await db.weightEntries.add({ id: "w-complete", date: "2026-09-26", kg: 81.5, fatPct: 18.4, muscleKg: 62, createdAt: "x", updatedAt: "x" });
     const roundTrip = parseBackup(serializeBackup(await readBackup(db, { now: NOW, buildTime: "b", userAgent: "t", standalone: true })));
     expect(roundTrip.stores.weightEntries).toEqual(expect.arrayContaining([expect.objectContaining({ date: "2026-09-26", fatPct: 18.4, muscleKg: 62 })]));
   });

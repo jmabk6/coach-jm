@@ -55,7 +55,9 @@ describe("mesures corporelles et pesée du jour", () => {
   });
 
   it("pesée manuelle Withings remplacée : pesée liée sans composition, l'originale gardée ; références qui changent ; suppression : l'originale revient à l'identique", async () => {
-    const manual = await recordWeight("2026-10-05", { kg: "91,6", fatPct: "27,0", muscleKg: "63,1" }, new Date("2026-10-05T05:10:00.000Z"), () => "manuel");
+    /* Pesée Withings d'avant la phase 2 (la saisie de la composition a quitté la pesée). */
+    const manual = { id: "weight-manuel", date: "2026-10-05", kg: 91.6, fatPct: 27.0, muscleKg: 63.1, createdAt: "2026-10-05T05:10:00.000Z", updatedAt: "2026-10-05T05:10:00.000Z" };
+    await db.weightEntries.add(manual);
     await saveBodyMeasurement(measure("m2", "2026-10-05", "08:00", 92.2), NOW);
     const linked = await db.weightEntries.get("weight-manuel");
     expect(linked).toEqual({ id: "weight-manuel", date: "2026-10-05", kg: 92.2, bodyMeasurementId: "m2", createdAt: manual.createdAt, updatedAt: NOW });

@@ -30,7 +30,7 @@ export const TABS: readonly Tab[] = [
  * arrive de partout.
  */
 export function activeTabFor(pathname: string): TabKey | undefined {
-  if (pathname === ROUTES.home || isUnder(pathname, "/aujourdhui")) return "home";
+  if (pathname === ROUTES.home || isUnder(pathname, "/aujourdhui") || isUnder(pathname, "/corps")) return "home";
   if (isUnder(pathname, ROUTES.planning)) return "planning";
   if (isUnder(pathname, ROUTES.goals)) return "goals";
   if (isUnder(pathname, ROUTES.sessions)) return "sessions";

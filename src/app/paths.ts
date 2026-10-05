@@ -32,6 +32,11 @@ export const ROUTES = {
   /** Plus > Routines du soir, Plus > À propos (M11, lot L.5). */
   plusRoutines: "/plus/routines",
   plusAbout: "/plus/a-propos",
+  /** Corps (phase 2) : mesures corporelles, depuis l'Accueil. */
+  bodyMeasurements: "/corps/mesures",
+  bodyMeasurementNew: "/corps/mesures/nouvelle",
+  bodyMeasurement: "/corps/mesures/:id",
+  bodyMeasurementEdit: "/corps/mesures/:id/modifier",
 } as const;
 
 /**
@@ -107,6 +112,11 @@ export const paths = {
   plusBackup: () => ROUTES.plusBackup,
   plusRoutines: () => ROUTES.plusRoutines,
   plusAbout: () => ROUTES.plusAbout,
+
+  bodyMeasurements: () => ROUTES.bodyMeasurements,
+  bodyMeasurementNew: () => ROUTES.bodyMeasurementNew,
+  bodyMeasurement: (id: string) => `${ROUTES.bodyMeasurements}/${id}`,
+  bodyMeasurementEdit: (id: string) => `${ROUTES.bodyMeasurements}/${id}/modifier`,
 } as const;
 
 /** Vrai si `pathname` est la route `base` ou l'une de ses sous-routes. */

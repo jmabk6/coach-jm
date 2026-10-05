@@ -15,6 +15,8 @@ describe("barre d'onglets (lot B)", () => {
   it.each([
     ["/", "home"],
     ["/aujourdhui/apercu/p1", "home"],
+    ["/corps/mesures/nouvelle", "home"],
+    ["/corps/mesures/m1/modifier", "home"],
     ["/planning", "planning"],
     ["/planning/programmation", "planning"],
     ["/objectifs", "goals"],

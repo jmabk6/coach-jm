@@ -164,6 +164,15 @@
   color: var(--color-danger);
 }
 
+/* Pesée liée à une mesure corporelle (Corps, phase 2) : à la place de Corriger / Supprimer. */
+.weight-card__row-source {
+  grid-column: span 2;
+  padding: 0 4px;
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+  text-align: right;
+}
+
 .weight-card__form--inline {
   grid-column: 1 / -1;
 }

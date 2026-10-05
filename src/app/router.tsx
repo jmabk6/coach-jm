@@ -31,6 +31,9 @@ import { WorkoutScreen } from "../features/workout/WorkoutScreen";
 import { QuickExerciseScreen } from "../features/workout/QuickExerciseScreen";
 import { TodayScreen } from "../features/today/TodayScreen";
 import { SessionPreviewScreen } from "../features/today/SessionPreviewScreen";
+import { BodyMeasurementsScreen } from "../features/body/BodyMeasurementsScreen";
+import { BodyMeasurementFormScreen } from "../features/body/BodyMeasurementFormScreen";
+import { BodyMeasurementScreen } from "../features/body/BodyMeasurementScreen";
 
 export const router = createHashRouter([
   {
@@ -42,6 +45,10 @@ export const router = createHashRouter([
         path: "aujourdhui/apercu/:plannedSessionId",
         element: <SessionPreviewScreen />,
       },
+      { path: routeSegment(ROUTES.bodyMeasurements), element: <BodyMeasurementsScreen /> },
+      { path: routeSegment(ROUTES.bodyMeasurementNew), element: <BodyMeasurementFormScreen /> },
+      { path: routeSegment(ROUTES.bodyMeasurement), element: <BodyMeasurementScreen /> },
+      { path: routeSegment(ROUTES.bodyMeasurementEdit), element: <BodyMeasurementFormScreen /> },
       { path: routeSegment(ROUTES.workoutLive), element: <WorkoutScreen /> },
       { path: routeSegment(ROUTES.quickExercise), element: <QuickExerciseScreen /> },
       { path: routeSegment(ROUTES.workoutEnd), element: <WorkoutEndScreen /> },

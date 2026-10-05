@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronRight, Scale } from "lucide-react";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { getWeightEntries } from "../../db/repositories/weightRepository";
-import type { WeightEntry } from "../../domain";
+import { getBodyMeasurements } from "../../db/repositories/bodyRepository";
+import type { BodyMeasurement, WeightEntry } from "../../domain";
 import { addDays, parseISO } from "date-fns";
 import { formatDayLabel, formatLocalDate } from "../../domain/rules/programRules";
 import {
@@ -12,17 +13,23 @@ import {
   MIN_WEIGHINGS_PER_WEEK,
   weightWeekSummary,
 } from "../../domain/rules/weightRules";
-import { COMPOSITION_SPECS, formatComposition, type CompositionKey } from "../../domain/rules/bodyCompositionRules";
-import { correctWeight, recordWeight, removeWeight, todayForWeight, type WeightForm } from "./weightActions";
+import { formatComposition, type CompositionKey } from "../../domain/rules/bodyCompositionRules";
+import { bodyDeviceLabel, localTimeOf } from "../../domain/rules/bodyMeasurementForm";
+import { correctWeight, recordWeight, removeWeight, todayForWeight } from "./weightActions";
 import "./WeightCard.css";
 
 /**
  * Carte « Pesée du jour » de l'Accueil (lot I.1). Pas encore de pesée
  * aujourd'hui : le champ est ouvert. Déjà une pesée : la valeur s'affiche,
- * modifiable (remplacement, jamais de doublon). Masse grasse et masse
- * musculaire se notent avec, facultatives (26/09/2026). Un jour passé se choisit
+ * modifiable (remplacement, jamais de doublon). Un jour passé se choisit
  * pour une pesée oubliée ; jamais un jour futur. La liste des pesées
  * récentes permet de corriger et de supprimer.
+ *
+ * Corps, phase 2 (05/10/2026) : la pesée ne porte plus que le poids ; la
+ * composition se saisit dans une mesure corporelle. Les anciennes
+ * compositions restent lisibles, jamais modifiables ici. Une pesée liée à
+ * la mesure de référence du jour dit d'où vient son poids et ne se corrige
+ * ni ne se supprime à la main.
  */
 
 const RECENT_COUNT = 14;
@@ -37,51 +44,17 @@ function formatKgInput(kg: number | undefined): string {
   return kg === undefined ? "" : String(kg).replace(".", ",");
 }
 
-const EMPTY_FORM: Required<WeightForm> = { kg: "", fatPct: "", muscleKg: "" };
-
-function formOf(entry: WeightEntry | undefined): Required<WeightForm> {
-  return { kg: formatKgInput(entry?.kg), fatPct: formatKgInput(entry?.fatPct), muscleKg: formatKgInput(entry?.muscleKg) };
-}
-
 const COMPOSITION_KEYS: readonly CompositionKey[] = ["fatPct", "muscleKg"];
 
-/** « MG 18,4 % · MM 62,1 kg », ou rien sans composition. */
+/** « MG 18,4 % · MM 62,1 kg » d'une ancienne pesée (lecture seule), ou rien. */
 function compositionLine(entry: WeightEntry): string | undefined {
   const parts = COMPOSITION_KEYS.flatMap((key) => (entry[key] === undefined ? [] : [`${key === "fatPct" ? "MG" : "MM"} ${formatComposition(key, entry[key])}`]));
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
-/**
- * Masse grasse et masse musculaire (26/09/2026) : facultatives, estimées
- * par la balance ; vides, rien n'est enregistré.
- */
-function CompositionFields({ form, onChange, labelSuffix = "" }: { form: Required<WeightForm>; onChange: (form: Required<WeightForm>) => void; labelSuffix?: string }) {
-  return (
-    <>
-      {COMPOSITION_KEYS.map((key) => {
-        const spec = COMPOSITION_SPECS[key];
-        return (
-          <label key={key} className="weight-card__field weight-card__field--optional">
-            <span>
-              {spec.label} <small>facultatif</small>
-            </span>
-            <span className="weight-card__input">
-              <input
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                placeholder={key === "fatPct" ? "ex. 18,4" : "ex. 62,1"}
-                aria-label={`${spec.label} en ${spec.unit}${labelSuffix}`}
-                value={form[key]}
-                onChange={(event) => onChange({ ...form, [key]: event.target.value })}
-              />
-              <span>{spec.unit}</span>
-            </span>
-          </label>
-        );
-      })}
-    </>
-  );
+/** La mesure dont une pesée liée reprend le poids. */
+function sourceOf(entry: WeightEntry | undefined, measurements: readonly BodyMeasurement[]): BodyMeasurement | undefined {
+  return entry?.bodyMeasurementId === undefined ? undefined : measurements.find((measurement) => measurement.id === entry.bodyMeasurementId);
 }
 
 interface WeightCardProps {
@@ -91,9 +64,10 @@ interface WeightCardProps {
 
 export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
   const [entries, setEntries] = useState<WeightEntry[] | undefined>();
+  const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(today);
-  const [form, setForm] = useState<Required<WeightForm>>(EMPTY_FORM);
+  const [kg, setKg] = useState("");
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
@@ -108,8 +82,10 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
   useEffect(() => {
     let cancelled = false;
 
-    void getWeightEntries().then((loaded) => {
-      if (!cancelled) setEntries(loaded);
+    void Promise.all([getWeightEntries(), getBodyMeasurements()]).then(([loaded, loadedMeasurements]) => {
+      if (cancelled) return;
+      setEntries(loaded);
+      setMeasurements(loadedMeasurements);
     });
 
     return () => {
@@ -121,13 +97,14 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
 
   const todayEntry = entries.find((entry) => entry.date === today);
   const existingForDate = entries.find((entry) => entry.date === date);
+  const linkedSource = sourceOf(existingForDate, measurements);
 
   async function submit() {
     setBusy(true);
     setError(undefined);
     try {
-      await recordWeight(date, form);
-      setForm(EMPTY_FORM);
+      await recordWeight(date, kg);
+      setKg("");
       setDate(today);
       setEditing(false);
       await load();
@@ -140,20 +117,20 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
 
   const recent = [...entries].sort((a, b) => b.date.localeCompare(a.date)).slice(0, RECENT_COUNT);
 
-  function openFull(nextDate: string, nextForm: Required<WeightForm>) {
+  function openFull(nextDate: string, nextKg: string) {
     setEditing(true);
     setError(undefined);
     setDate(nextDate);
-    setForm(nextForm);
+    setKg(nextKg);
   }
 
   /* Accueil compact (27/09/2026) : une seule ligne ; le formulaire complet
-     (composition, autre jour, moyennes, pesées récentes) s'ouvre au toucher. */
+     (autre jour, moyennes, pesées récentes) s'ouvre au toucher. */
   if (!editing) {
     return (
       <section className="today-card weight-card weight-card--compact" aria-label="Pesée du jour">
         {todayEntry ? (
-          <button type="button" className="weight-card__done" onClick={() => openFull(today, formOf(todayEntry))}>
+          <button type="button" className="weight-card__done" onClick={() => openFull(today, formatKgInput(todayEntry.kg))}>
             <span className="weight-card__done-label">
               Pesée <Check size={16} strokeWidth={3} aria-label="faite" />
             </span>
@@ -181,8 +158,8 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
                   autoComplete="off"
                   placeholder="00,0"
                   aria-label="Poids en kg"
-                  value={form.kg}
-                  onChange={(event) => setForm({ ...form, kg: event.target.value })}
+                  value={kg}
+                  onChange={(event) => setKg(event.target.value)}
                 />
                 <span>kg</span>
               </span>
@@ -197,11 +174,8 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
             )}
             <span className="weight-card__quick-links">
               {/* Pesée oubliée : le formulaire complet s'ouvre sur la veille. */}
-              <button type="button" onClick={() => openFull(formatLocalDate(addDays(parseISO(today), -1)), EMPTY_FORM)}>
+              <button type="button" onClick={() => openFull(formatLocalDate(addDays(parseISO(today), -1)), "")}>
                 autre jour
-              </button>
-              <button type="button" onClick={() => openFull(today, form)}>
-                + composition
               </button>
             </span>
           </>
@@ -237,13 +211,12 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
               autoComplete="off"
               placeholder="ex. 81,4"
               aria-label="Poids en kg"
-              value={form.kg}
-              onChange={(event) => setForm({ ...form, kg: event.target.value })}
+              value={kg}
+              onChange={(event) => setKg(event.target.value)}
             />
             <span>kg</span>
           </span>
         </label>
-        <CompositionFields form={form} onChange={setForm} />
         <label className="weight-card__field">
           <span>Jour</span>
           <input
@@ -254,7 +227,11 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
             onChange={(event) => setDate(event.target.value)}
           />
         </label>
-        {existingForDate && (
+        {linkedSource ? (
+          <p className="weight-card__hint">
+            Poids repris de la mesure {bodyDeviceLabel(linkedSource.device)} de {localTimeOf(linkedSource.takenAt)} : pour le changer, modifiez la mesure.
+          </p>
+        ) : existingForDate && (
           <p className="weight-card__hint">
             {formatDay(date, today)} : {formatWeightKg(existingForDate.kg)} déjà noté, la nouvelle valeur le remplacera.
           </p>
@@ -265,7 +242,7 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
           </p>
         )}
         <div className="weight-card__actions">
-          <button type="button" className="weight-card__cancel" onClick={() => { setEditing(false); setError(undefined); setForm(EMPTY_FORM); setDate(today); }}>
+          <button type="button" className="weight-card__cancel" onClick={() => { setEditing(false); setError(undefined); setKg(""); setDate(today); }}>
             Fermer
           </button>
           <button type="submit" className="weight-card__submit" disabled={busy}>
@@ -305,16 +282,23 @@ export function WeightCard({ today = todayForWeight() }: WeightCardProps) {
                 <>
                   <span className="weight-card__day">{formatDay(entry.date, today)}</span>
                   <span className="weight-card__kg">{formatWeightKg(entry.kg)}</span>
-                  <button type="button" className="weight-card__row-action" onClick={() => setCorrecting(entry)}>
-                    Corriger
-                  </button>
-                  <button
-                    type="button"
-                    className="weight-card__row-action weight-card__row-action--danger"
-                    onClick={() => setDeleting(entry)}
-                  >
-                    Supprimer
-                  </button>
+                  {entry.bodyMeasurementId !== undefined ? (
+                    /* Pesée liée : son poids vient de la mesure, qui se modifie sur son écran. */
+                    <span className="weight-card__row-source">mesure {bodyDeviceLabel(sourceOf(entry, measurements)?.device ?? "unknown")}</span>
+                  ) : (
+                    <>
+                      <button type="button" className="weight-card__row-action" onClick={() => setCorrecting(entry)}>
+                        Corriger
+                      </button>
+                      <button
+                        type="button"
+                        className="weight-card__row-action weight-card__row-action--danger"
+                        onClick={() => setDeleting(entry)}
+                      >
+                        Supprimer
+                      </button>
+                    </>
+                  )}
                   {compositionLine(entry) && <span className="weight-card__row-composition">{compositionLine(entry)}</span>}
                 </>
               )}
@@ -360,7 +344,7 @@ function CorrectionForm({
   onSaved: () => Promise<void>;
 }) {
   const [date, setDate] = useState(entry.date);
-  const [form, setForm] = useState(formOf(entry));
+  const [kg, setKg] = useState(formatKgInput(entry.kg));
   const [error, setError] = useState<string>();
 
   return (
@@ -371,7 +355,7 @@ function CorrectionForm({
         event.preventDefault();
         void (async () => {
           try {
-            await correctWeight(entry.id, date, form);
+            await correctWeight(entry.id, date, kg);
             await onSaved();
           } catch (caught) {
             setError(caught instanceof Error ? caught.message : String(caught));
@@ -384,12 +368,11 @@ function CorrectionForm({
           type="text"
           inputMode="decimal"
           aria-label={`Poids corrigé du ${entry.date}`}
-          value={form.kg}
-          onChange={(event) => setForm({ ...form, kg: event.target.value })}
+          value={kg}
+          onChange={(event) => setKg(event.target.value)}
         />
         <span>kg</span>
       </span>
-      <CompositionFields form={form} onChange={setForm} labelSuffix={` corrigée du ${entry.date}`} />
       <input type="date" aria-label={`Jour corrigé du ${entry.date}`} max={today} value={date} onChange={(event) => setDate(event.target.value)} />
       {error && (
         <p className="weight-card__error" role="alert">

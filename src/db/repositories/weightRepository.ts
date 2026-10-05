@@ -66,11 +66,9 @@ export async function saveWeightEntry(
     if (existing?.bodyMeasurementId !== undefined) throw new Error(LINKED_WEIGHT_MESSAGE);
 
     if (existing && existing.id !== entry.id) {
-      /* La composition suit la nouvelle saisie : une grandeur absente est effacée. */
+      /* Seul le poids change (Corps, phase 2) : une ancienne composition reste lisible. */
       await db.weightEntries.put(merged(existing, {
         kg: entry.kg,
-        fatPct: entry.fatPct,
-        muscleKg: entry.muscleKg,
         updatedAt: entry.updatedAt,
       }));
 

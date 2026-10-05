@@ -25,7 +25,13 @@ describe("chemins de l'application", () => {
       plusBackup: "/plus/sauvegarde",
       plusRoutines: "/plus/routines",
       plusAbout: "/plus/a-propos",
+      bodyMeasurements: "/corps/mesures",
+      bodyMeasurementNew: "/corps/mesures/nouvelle",
+      bodyMeasurement: "/corps/mesures/:id",
+      bodyMeasurementEdit: "/corps/mesures/:id/modifier",
     });
+    expect(paths.bodyMeasurement("m1")).toBe("/corps/mesures/m1");
+    expect(paths.bodyMeasurementEdit("m1")).toBe("/corps/mesures/m1/modifier");
     expect(paths.goals()).toBe("/objectifs");
     expect(paths.plusTests()).toBe("/plus/protocoles");
   });

@@ -1,6 +1,7 @@
 import { db } from "../database";
 import type { BodyMeasurement, Id } from "../../domain";
-import { weightSyncFor } from "../../domain/rules/bodyWeightRules";
+import { DEFAULT_WEIGHT_REFERENCE_DEVICE, weightSyncFor } from "../../domain/rules/bodyWeightRules";
+import { getSetting } from "./settingsRepository";
 import { LINKED_WEIGHT_MESSAGE } from "./weightRepository";
 
 /**
@@ -30,6 +31,15 @@ function checkMeasurement(measurement: BodyMeasurement): void {
 /** Toutes les mesures, de la plus ancienne à la plus récente. */
 export async function getBodyMeasurements(): Promise<BodyMeasurement[]> {
   return db.bodyMeasurements.orderBy("takenAt").toArray();
+}
+
+export async function getBodyMeasurement(id: Id): Promise<BodyMeasurement | undefined> {
+  return db.bodyMeasurements.get(id);
+}
+
+/** L'appareil de référence du moment : le réglage, sinon RENPHO. */
+export async function getWeightReferenceDevice(): Promise<string> {
+  return (await getSetting("weightReferenceDevice")) ?? DEFAULT_WEIGHT_REFERENCE_DEVICE;
 }
 
 async function syncWeightOf(date: string, now: string): Promise<void> {
