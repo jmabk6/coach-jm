@@ -364,3 +364,70 @@ describe("groupes de lignes (regroupement visuel)", () => {
     expect(await db.foodLogEntries.get(only.id)).toEqual({ ...only, quantity: 200, nutrients: calculateNutrients(only.basis, 200), updatedAt: T2 });
   });
 });
+
+describe("repas favoris (phase 3A.4a)", () => {
+  const thon = () => food("f-thon", "Thon tomate (leader price)", { nutrients: { kcal: 111, proteinG: 14, carbsG: 3, fatG: 4.6 } });
+  const toast = () => food("f-toast", "Toasts multi-céréales", { nutrients: { kcal: 385, proteinG: 15 } });
+  const draft = (extra: Partial<Parameters<typeof saveMealTemplate>[0]> = {}) => ({
+    id: "m-thon", name: "Déjeuner thon", defaultSlot: "lunch" as const, position: 0, status: "active" as const, createdAt: T, updatedAt: T,
+    items: [{ id: "i1", foodId: "f-thon", quantity: 320 }, { id: "i2", foodId: "f-toast", quantity: 40 }],
+    ...extra,
+  });
+
+  it("l'unité de chaque aliment est mémorisée à l'enregistrement ; aucun total stocké ; repas habituel Extras refusé", async () => {
+    await saveFood(thon());
+    await saveFood(toast());
+    await saveMealTemplate(draft());
+    const saved = (await getMealTemplates())[0]!;
+    expect(saved.items).toEqual([
+      { id: "i1", foodId: "f-thon", quantity: 320, unit: "g" },
+      { id: "i2", foodId: "f-toast", quantity: 40, unit: "g" },
+    ]);
+    expect(JSON.stringify(saved)).not.toMatch(/kcal|nutrients/);
+    await expect(saveMealTemplate(draft({ id: "m-x", defaultSlot: "extra" }))).rejects.toThrow("Repas habituel : petit-déjeuner, déjeuner, collation ou dîner.");
+  });
+
+  it("nouvel élément d'un aliment archivé refusé ; un élément déjà présent dont l'aliment est archivé depuis reste enregistrable", async () => {
+    await saveFood(thon());
+    await saveFood(toast());
+    await saveMealTemplate(draft());
+    await archiveFood("f-toast", T2);
+    await saveMealTemplate(draft({ name: "Déjeuner thon (midi)" }));
+    expect((await getMealTemplates())[0]).toMatchObject({ name: "Déjeuner thon (midi)" });
+    await saveFood(food("f-old", "Ancien", { status: "archived" }));
+    await expect(saveMealTemplate(draft({ id: "m-2", items: [{ id: "a", foodId: "f-old", quantity: 10 }] }))).rejects.toThrow("Aliment archivé : Ancien");
+  });
+
+  it("ajout : base ACTUELLE des aliments ; anciennes lignes jamais réécrites ; le favori ne change pas ; provenance sur chaque ligne", async () => {
+    await saveFood(thon());
+    await saveFood(toast());
+    await saveMealTemplate(draft());
+    const template = (await getMealTemplates())[0]!;
+    const first = await addMealTemplateEntries({ date: "2026-10-04", slot: "lunch", mealTemplateId: "m-thon", now: T }, nextId);
+    const firstStored = await db.foodLogEntries.bulkGet(first.map((entry) => entry.id));
+
+    await saveFood({ ...thon(), nutrients: { kcal: 100, proteinG: 15 }, updatedAt: T2 });
+    const second = await addMealTemplateEntries({ date: DAY, slot: "lunch", mealTemplateId: "m-thon", now: T2 }, nextId);
+    expect(second[0]).toMatchObject({ foodId: "f-thon", quantity: 320, basis: { referenceQuantity: 100, nutrients: { kcal: 100, proteinG: 15 } }, mealTemplateId: "m-thon" });
+    expect(second[0]!.groupId).toBe(second[1]!.groupId);
+    expect(second[0]!.groupId).not.toBe(first[0]!.groupId);
+    expect(await db.foodLogEntries.bulkGet(first.map((entry) => entry.id))).toEqual(firstStored);
+    expect((await getMealTemplates())[0]).toEqual(template);
+  });
+
+  it("élément archivé ou d'unité modifiée non décoché : refus sans aucune écriture ; décoché : le reste est ajouté", async () => {
+    await saveFood(thon());
+    await saveFood(toast());
+    await saveMealTemplate(draft());
+    await archiveFood("f-toast", T2);
+    await expect(addMealTemplateEntries({ date: DAY, slot: "lunch", mealTemplateId: "m-thon", now: T2 }, nextId)).rejects.toThrow("Aliment archivé : Toasts multi-céréales");
+    expect(await db.foodLogEntries.count()).toBe(0);
+    expect(await addMealTemplateEntries({ date: DAY, slot: "lunch", mealTemplateId: "m-thon", excluded: ["i2"], now: T2 }, nextId)).toHaveLength(1);
+
+    await saveFood({ ...thon(), unit: "piece", unitLabel: "boîte", referenceQuantity: 1, updatedAt: T2 });
+    await expect(
+      addMealTemplateEntries({ date: DAY, slot: "lunch", mealTemplateId: "m-thon", excluded: ["i2"], quantities: { i1: 1 }, now: T2 }, nextId),
+    ).rejects.toThrow("Unité modifiée — corriger le repas favori : Thon tomate (leader price)");
+    expect(await db.foodLogEntries.count()).toBe(1);
+  });
+});

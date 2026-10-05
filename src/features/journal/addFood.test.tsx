@@ -150,12 +150,12 @@ describe("écran Ajouter", () => {
     expect(names("Autres aliments")).toEqual(["Pâtes complètes"]);
     expect(screen.queryByText("Pâte à tartiner")).toBeNull();
 
-    type("Rechercher un aliment", "PA");
+    type("Rechercher un aliment ou un repas", "PA");
     const results = await screen.findByRole("region", { name: "Résultats" });
     expect(within(results).getAllByRole("button").map((button) => button.textContent?.split(/\d/)[0]?.trim())).toEqual(["Pain de mie", "Pastèque", "Pâtes complètes"]);
     expect(screen.queryByRole("region", { name: "Favoris" })).toBeNull();
 
-    type("Rechercher un aliment", "quinoa");
+    type("Rechercher un aliment ou un repas", "quinoa");
     expect(await screen.findByText("Aucun aliment trouvé.")).toBeTruthy();
     expect(screen.getByRole("link", { name: "+ Nouvel aliment" }).getAttribute("href")).toBe("/journal/nouvel-aliment?date=2026-10-05&repas=lunch&nom=quinoa");
   });

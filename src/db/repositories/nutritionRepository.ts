@@ -1,5 +1,5 @@
 import { db } from "../database";
-import type { Food, FoodLogEntry, Id, MealSlot, MealTemplate, Nutrients } from "../../domain";
+import type { Food, FoodLogEntry, Id, MealSlot, MealTemplate, MealTemplateItem, Nutrients } from "../../domain";
 import {
   dayState,
   dayTotals,
@@ -14,6 +14,7 @@ import {
   type NutritionDayState,
 } from "../../domain/rules/nutritionRules";
 import { groupKeyOf, redistributeQuantity } from "../../domain/rules/entryGroupRules";
+import { TEMPLATE_DEFAULT_SLOTS, templateItemState } from "../../domain/rules/mealTemplateRules";
 
 /**
  * Alimentation (phase 3A.1, 05/10/2026) — aliments, repas favoris, journal
@@ -95,17 +96,46 @@ export async function getMealTemplates(options: { includeArchived?: boolean } = 
   return templates.filter((template) => options.includeArchived || template.status === "active");
 }
 
-/** Crée ou remplace un repas favori : un nom, au moins un aliment connu, des quantités valides. */
-export async function saveMealTemplate(template: MealTemplate): Promise<void> {
+/** Un repas favori tel qu'on l'écrit : l'unité des éléments est mémorisée par la couche données. */
+export type MealTemplateDraft = Omit<MealTemplate, "items"> & {
+  items: Array<Pick<MealTemplateItem, "id" | "foodId" | "quantity"> & Partial<Pick<MealTemplateItem, "unit" | "unitLabel" | "unitLabelPlural">>>;
+};
+
+/** L'unité de l'aliment, à mémoriser dans un élément. */
+function unitSnapshot(food: Food): Pick<MealTemplateItem, "unit" | "unitLabel" | "unitLabelPlural"> {
+  return { unit: food.unit, ...(food.unitLabel !== undefined ? { unitLabel: food.unitLabel } : {}), ...(food.unitLabelPlural !== undefined ? { unitLabelPlural: food.unitLabelPlural } : {}) };
+}
+
+/**
+ * Crée ou remplace un repas favori : un nom, au moins un aliment connu, des
+ * quantités valides, un repas habituel parmi les quatre repas (pas Extras).
+ * Un nouvel élément mémorise l'unité actuelle de son aliment et ne peut pas
+ * viser un aliment archivé ; un élément inchangé garde son unité mémorisée.
+ * Aucun total nutritionnel n'est stocké.
+ */
+export async function saveMealTemplate(template: MealTemplateDraft): Promise<void> {
   if (template.name.trim() === "") throw new Error("Nom du repas : obligatoire.");
   if (template.items.length === 0) throw new Error("Repas favori : au moins un aliment.");
+  if (template.defaultSlot !== undefined && !TEMPLATE_DEFAULT_SLOTS.includes(template.defaultSlot)) {
+    throw new Error("Repas habituel : petit-déjeuner, déjeuner, collation ou dîner.");
+  }
   await db.transaction("rw", db.mealTemplates, db.foods, async () => {
+    const previous = await db.mealTemplates.get(template.id);
+    const items: MealTemplateItem[] = [];
     for (const item of template.items) {
-      if (!(await db.foods.get(item.foodId))) throw new Error(`Aliment introuvable : ${item.foodId}`);
+      const food = await db.foods.get(item.foodId);
+      if (!food) throw new Error(`Aliment introuvable : ${item.foodId}`);
       const error = quantityError(item.quantity);
       if (error) throw new Error(error);
+      const kept = previous?.items.find((old) => old.id === item.id && old.foodId === item.foodId && old.quantity === item.quantity);
+      if (kept) {
+        items.push(kept);
+        continue;
+      }
+      if (food.status !== "active") throw new Error(`Aliment archivé : ${food.name}`);
+      items.push({ id: item.id, foodId: item.foodId, quantity: item.quantity, ...unitSnapshot(food) });
     }
-    await db.mealTemplates.put({ ...template, name: template.name.trim() });
+    await db.mealTemplates.put({ ...template, name: template.name.trim(), items });
   });
 }
 
@@ -195,8 +225,12 @@ export async function addMealTemplateEntries(input: AddMealTemplateInput, newId:
       const error = quantityError(quantity);
       if (error) throw new Error(error);
       const food = await db.foods.get(item.foodId);
-      if (!food) throw new Error("Aliment introuvable");
-      entries.push(entryFromFood(food, { id: `log-${newId()}`, date: input.date, slot: input.slot, quantity, now: input.now, groupId, mealTemplateId: template.id }));
+      /* Jamais d'ajout silencieux : un aliment archivé ou d'unité modifiée doit être décoché (rien n'est écrit sinon). */
+      const state = templateItemState(item, food);
+      if (state === "missing") throw new Error("Aliment introuvable");
+      if (state === "archived") throw new Error(`Aliment archivé : ${food!.name}`);
+      if (state === "unit_changed") throw new Error(`Unité modifiée — corriger le repas favori : ${food!.name}`);
+      entries.push(entryFromFood(food!, { id: `log-${newId()}`, date: input.date, slot: input.slot, quantity, now: input.now, groupId, mealTemplateId: template.id }));
     }
     await db.foodLogEntries.bulkAdd(entries);
     return entries;

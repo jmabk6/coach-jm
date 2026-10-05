@@ -68,6 +68,14 @@ export interface MealTemplateItem {
   foodId: Id;
   /** Dans l'unité de l'aliment. */
   quantity: number;
+  /**
+   * L'unité de l'aliment quand l'élément a été enregistré (phase 3A.4a) :
+   * si l'aliment change d'unité ensuite, l'élément est bloqué au lieu
+   * d'ajouter « 320 boîtes ». Rien d'autre n'est figé (nom, valeurs).
+   */
+  unit: FoodUnit;
+  unitLabel?: string;
+  unitLabelPlural?: string;
 }
 
 export interface MealTemplate {

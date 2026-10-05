@@ -45,7 +45,7 @@ const measurement: BodyMeasurement = {
 };
 const weight: WeightEntry = { id: "weight-body-2026-10-05", date: "2026-10-05", kg: 91.9, bodyMeasurementId: "body-1", createdAt: T, updatedAt: T };
 const food: Food = { id: "food-1", name: "Fromage blanc 0 %", unit: "g", referenceQuantity: 100, nutrients: { kcal: 46, proteinG: 8, carbsG: 3.9, fatG: 0.1 }, status: "active", createdAt: T, updatedAt: T };
-const template: MealTemplate = { id: "meal-1", name: "Fromage blanc + fruits rouges + céréales", defaultSlot: "breakfast", items: [{ id: "i1", foodId: "food-1", quantity: 250 }], position: 0, status: "active", createdAt: T, updatedAt: T };
+const template: MealTemplate = { id: "meal-1", name: "Fromage blanc + fruits rouges + céréales", defaultSlot: "breakfast", items: [{ id: "i1", foodId: "food-1", quantity: 250, unit: "g" }], position: 0, status: "active", createdAt: T, updatedAt: T };
 /* Phase 3A.1 : la ligne porte sa base figée ; ses valeurs en pleine précision (3,9 × 250 ÷ 100…). */
 const log: FoodLogEntry = {
   id: "log-1", date: "2026-10-05", slot: "breakfast", name: "Fromage blanc 0 %", quantity: 250, unit: "g",

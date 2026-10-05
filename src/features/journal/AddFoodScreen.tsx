@@ -3,14 +3,16 @@ import { ChevronRight, Star } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { paths } from "../../app/paths";
 import { BottomSheet } from "../../components/ui/BottomSheet";
-import { addFoodEntry, getFoods, recentFoods } from "../../db/repositories/nutritionRepository";
-import type { Food, MealSlot } from "../../domain";
+import { addFoodEntry, getFoods, getMealTemplates, recentFoods } from "../../db/repositories/nutritionRepository";
+import type { Food, MealSlot, MealTemplate } from "../../domain";
+import { searchTemplates, templateLines, templateSections } from "../../domain/rules/mealTemplateRules";
 import { addScreenSections, searchFoods } from "../../domain/rules/foodLibraryRules";
 import { formatQuantity, parseQuantityInput, resolveJournalDate, unitWord } from "../../domain/rules/journalRules";
 import { calculateNutrients, formatGrams, formatKcal } from "../../domain/rules/nutritionRules";
 import { BodyNav } from "../body/BodyNav";
 import { todayLocalDate } from "../today/useTodayData";
 import { EstimateSheet } from "./EstimateSheet";
+import { MealTemplateSheet } from "./MealTemplateSheet";
 import { ADD_LABELS, mealSlotOf } from "./mealLabels";
 import "../foods/foods.css";
 
@@ -21,9 +23,10 @@ function referenceText(food: Food): string {
 
 /**
  * Ajouter à un repas (phase 3A.3) : recherche, « + Nouvel aliment »,
- * « + Estimation » (le formulaire de la 3A.2), puis Favoris, Récents (au
- * plus 8, ce repas d'abord) et Autres aliments — chaque aliment une fois.
- * Toucher un aliment ouvre sa quantité, préremplie.
+ * « + Estimation » (le formulaire de la 3A.2), puis Repas favoris (3A.4a :
+ * ceux de ce repas d'abord, les autres repliés), Favoris, Récents (au plus
+ * 8, ce repas d'abord) et Autres aliments — chaque aliment une fois.
+ * Toucher un aliment ouvre sa quantité, un repas favori sa feuille.
  */
 export function AddFoodScreen() {
   const [params] = useSearchParams();
@@ -31,7 +34,11 @@ export function AddFoodScreen() {
   const today = todayLocalDate();
   const { date } = resolveJournalDate(params.get("date"), today);
   const slot = mealSlotOf(params.get("repas"));
+  /* Toute la bibliothèque, archivés compris : les repas favoris doivent pouvoir les signaler. */
   const [foods, setFoods] = useState<Food[]>();
+  const [templates, setTemplates] = useState<MealTemplate[]>([]);
+  const [chosenTemplate, setChosenTemplate] = useState<MealTemplate>();
+  const [showOtherTemplates, setShowOtherTemplates] = useState(false);
   const [recents, setRecents] = useState<Food[]>([]);
   const [query, setQuery] = useState("");
   const [chosen, setChosen] = useState<Food>();
@@ -40,10 +47,11 @@ export function AddFoodScreen() {
   useEffect(() => {
     if (!slot) return;
     let cancelled = false;
-    void Promise.all([getFoods(), recentFoods(slot)]).then(([loadedFoods, loadedRecents]) => {
+    void Promise.all([getFoods({ includeArchived: true }), recentFoods(slot), getMealTemplates()]).then(([loadedFoods, loadedRecents, loadedTemplates]) => {
       if (cancelled) return;
       setFoods(loadedFoods);
       setRecents(loadedRecents);
+      setTemplates(loadedTemplates);
     });
     return () => {
       cancelled = true;
@@ -60,6 +68,28 @@ export function AddFoodScreen() {
   const searching = query.trim() !== "";
   const sections = foods ? addScreenSections(foods, recents) : undefined;
   const results = foods && searching ? searchFoods(foods, query) : [];
+  const foodsById = new Map((foods ?? []).map((food) => [food.id, food]));
+  const templateGroups = templateSections(templates, slot);
+  const foundTemplates = searching ? searchTemplates(templates, query) : [];
+
+  const templateRows = (label: string, items: MealTemplate[], extra?: React.ReactNode) =>
+    (items.length > 0 || extra) && (
+      <section className="food-picker__section" aria-label={label}>
+        <h2>{label}</h2>
+        {items.map((template) => {
+          const view = templateLines(template, foodsById);
+          const count = template.items.length;
+          return (
+            <button key={template.id} type="button" className="food-row" onClick={() => setChosenTemplate(template)}>
+              <span className="food-row__name">{template.name}</span>
+              <span className="food-row__meta">{`${count} aliment${count > 1 ? "s" : ""} · ${formatKcal(view.totals.kcal)}${view.readyCount < count ? " · à vérifier" : ""}`}</span>
+              <ChevronRight size={16} className="food-row__chevron" aria-hidden="true" />
+            </button>
+          );
+        })}
+        {extra}
+      </section>
+    );
 
   const section = (label: string, items: Food[]) =>
     items.length > 0 && (
@@ -85,8 +115,8 @@ export function AddFoodScreen() {
       <input
         type="search"
         className="food-picker__search"
-        aria-label="Rechercher un aliment"
-        placeholder="Rechercher un aliment…"
+        aria-label="Rechercher un aliment ou un repas"
+        placeholder="Rechercher un aliment ou un repas…"
         autoComplete="off"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
@@ -101,10 +131,22 @@ export function AddFoodScreen() {
       </div>
 
       {searching ? (
-        results.length > 0 ? section("Résultats", results) : <p className="food-screen__note">Aucun aliment trouvé.</p>
+        <>
+          {templateRows("Repas favoris", foundTemplates)}
+          {results.length > 0 ? section("Résultats", results) : foundTemplates.length === 0 && <p className="food-screen__note">Aucun aliment trouvé.</p>}
+        </>
       ) : (
         sections && (
           <>
+            {templateRows(
+              "Repas favoris",
+              [...templateGroups.primary, ...(showOtherTemplates ? templateGroups.others : [])],
+              templateGroups.others.length > 0 && (
+                <button type="button" className="food-screen__toggle" aria-expanded={showOtherTemplates} onClick={() => setShowOtherTemplates((open) => !open)}>
+                  {showOtherTemplates ? "Masquer les autres repas favoris" : `Autres repas favoris (${templateGroups.others.length})`}
+                </button>
+              ),
+            )}
             {section("Favoris", sections.favorites)}
             {section("Récents", sections.recents)}
             {section("Autres aliments", sections.others)}
@@ -116,6 +158,9 @@ export function AddFoodScreen() {
       )}
 
       {chosen && <QuantitySheet food={chosen} date={date} slot={slot} onDismiss={() => setChosen(undefined)} onAdded={backToJournal} />}
+      {chosenTemplate && (
+        <MealTemplateSheet template={chosenTemplate} foods={foodsById} date={date} slot={slot} onDismiss={() => setChosenTemplate(undefined)} onAdded={backToJournal} />
+      )}
       {estimating && <EstimateSheet date={date} slot={slot} onDismiss={() => setEstimating(false)} onSaved={backToJournal} />}
     </section>
   );

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Ellipsis, Plus } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { paths } from "../../app/paths";
 import { BottomSheet } from "../../components/ui/BottomSheet";
-import { deleteEntries, getDaySummary, setDayComplete, updateGroupQuantity, type DaySummary } from "../../db/repositories/nutritionRepository";
+import { deleteEntries, getDaySummary, getFoods, setDayComplete, updateGroupQuantity, type DaySummary } from "../../db/repositories/nutritionRepository";
+import { templateFromMeal, type TemplateFromMeal } from "../../domain/rules/mealTemplateRules";
+import { SaveTemplateSheet } from "./SaveTemplateSheet";
 import { groupEntries, type EntryGroup } from "../../domain/rules/entryGroupRules";
-import type { FoodLogEntry } from "../../domain";
+import type { Food, FoodLogEntry, Id, MealSlot } from "../../domain";
 import {
   formatJournalDay,
   formatQuantity,
@@ -59,6 +61,11 @@ export function JournalScreen() {
   const [editing, setEditing] = useState<EntryGroup>();
   const [deleting, setDeleting] = useState<EntryGroup>();
   const [error, setError] = useState<string>();
+  /* Repas favoris (3A.4a) : menu ••• d'un repas, enregistrement, confirmation. */
+  const [foods, setFoods] = useState<ReadonlyMap<Id, Food>>(new Map());
+  const [menuSlot, setMenuSlot] = useState<MealSlot>();
+  const [saving, setSaving] = useState<{ slot: MealSlot; content: TemplateFromMeal }>();
+  const [notice, setNotice] = useState<string>();
 
   const reload = () => setVersion((value) => value + 1);
   const goTo = (next: string) => setParams({ date: next }, { replace: true });
@@ -70,8 +77,10 @@ export function JournalScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    void getDaySummary(date).then((loaded) => {
-      if (!cancelled) setSummary(loaded);
+    void Promise.all([getDaySummary(date), getFoods({ includeArchived: true })]).then(([loaded, library]) => {
+      if (cancelled) return;
+      setSummary(loaded);
+      setFoods(new Map(library.map((food) => [food.id, food])));
     });
     return () => {
       cancelled = true;
@@ -115,14 +124,26 @@ export function JournalScreen() {
       {loaded && (
         <>
           <DaySummaryBlock summary={loaded} />
+          {notice && (
+            <p className="journal__notice" role="status">
+              {notice}
+            </p>
+          )}
 
           {MEAL_SLOTS.map((slot) => {
             const entries = loaded.entries.filter((entry) => entry.slot === slot);
+            /* « ••• » seulement si au moins un aliment de la bibliothèque peut être repris. */
+            const reusable = entries.length > 0 ? templateFromMeal(entries, foods) : undefined;
             return (
               <section key={slot} className="journal-meal" aria-label={MEAL_SLOT_LABELS[slot]}>
                 <div className="journal-meal__head">
                   <h2>{MEAL_SLOT_LABELS[slot]}</h2>
                   {entries.length > 0 && <MealTotal entries={entries} />}
+                  {reusable && reusable.items.length > 0 && (
+                    <button type="button" className="journal-meal__more" aria-label={`Actions : ${MEAL_SLOT_LABELS[slot]}`} onClick={() => setMenuSlot(slot)}>
+                      <Ellipsis size={18} aria-hidden="true" />
+                    </button>
+                  )}
                   <button type="button" className="journal-meal__add" aria-label={ADD_LABELS[slot]} onClick={() => navigate(paths.journalAdd(date, slot))}>
                     <Plus size={20} aria-hidden="true" />
                   </button>
@@ -174,6 +195,35 @@ export function JournalScreen() {
           onDelete={() => {
             setDeleting(editing);
             setEditing(undefined);
+          }}
+        />
+      )}
+      {menuSlot && (
+        <BottomSheet
+          title={MEAL_SLOT_LABELS[menuSlot]}
+          actions={[
+            {
+              label: "Enregistrer comme repas favori",
+              hint: "Ses aliments et leurs quantités, réutilisables en un toucher",
+              onSelect: () => {
+                const slot = menuSlot;
+                setMenuSlot(undefined);
+                setSaving({ slot, content: templateFromMeal(loaded?.entries.filter((entry) => entry.slot === slot) ?? [], foods) });
+              },
+            },
+          ]}
+          onDismiss={() => setMenuSlot(undefined)}
+        />
+      )}
+      {saving && (
+        <SaveTemplateSheet
+          slot={saving.slot}
+          content={saving.content}
+          foods={foods}
+          onDismiss={() => setSaving(undefined)}
+          onSaved={(name) => {
+            setSaving(undefined);
+            setNotice(`Repas favori « ${name} » enregistré.`);
           }}
         />
       )}
