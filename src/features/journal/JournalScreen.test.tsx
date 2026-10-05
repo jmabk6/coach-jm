@@ -41,6 +41,7 @@ function renderJournal(entry = "/journal") {
 
 const url = () => screen.getByTestId("url").textContent;
 const meal = (label: string) => screen.getByRole("region", { name: label });
+const mealTotal = (section: HTMLElement) => section.querySelector(".journal-meal__total")?.textContent;
 const summary = () => screen.getByRole("region", { name: "Résumé de la journée" });
 const tile = (kind: "kcal" | "protein") => summary().querySelector(`.journal-summary__tile--${kind}`) as HTMLElement;
 
@@ -123,7 +124,7 @@ describe("résumé et lignes", () => {
     expect(complete.checked).toBe(false);
   });
 
-  it("journée en cours : totaux connus, macros partielles « ≥ » (jamais comptées comme 0), lignes avec quantité, kcal, protéines, « ≈ estimé »", async () => {
+  it("journée en cours : totaux connus, macros partielles « ≥ » (jamais comptées comme 0), lignes avec quantité, kcal, protéines, « ≈ estimé » ; repas en bandeaux", async () => {
     await saveFood(FROMAGE);
     await addFoodEntry({ date: "2026-10-05", slot: "breakfast", foodId: "f-fb", quantity: 250, now: T }, nextId);
     await addEstimatedExtra({ date: "2026-10-05", name: "Chocolat", nutrients: { kcal: 320 }, now: T }, nextId);
@@ -138,7 +139,14 @@ describe("résumé et lignes", () => {
     expect(within(summary()).queryByText(/au moins une ligne/)).toBeNull();
 
     const breakfast = meal("Petit-déjeuner");
-    expect(within(breakfast).getByText("115 kcal · 20,0 g P")).toBeTruthy();
+    /* Bandeau du repas : total à droite, kcal en ambre et protéines en bleu (deux morceaux distincts). */
+    expect(mealTotal(breakfast)).toBe("115 kcal · 20,0 g P");
+    expect(breakfast.querySelector(".journal-meal__head .journal-meal__kcal")?.textContent).toBe("115 kcal");
+    expect(breakfast.querySelector(".journal-meal__head .journal-meal__protein")?.textContent).toBe("20,0 g P");
+    /* Repas vide : son bandeau seul, sans total ni ligne. */
+    const lunchHead = meal("Déjeuner");
+    expect(lunchHead.querySelector(".journal-meal__total")).toBeNull();
+    expect(within(lunchHead).getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual(["Ajouter au déjeuner"]);
     const line = within(breakfast).getByRole("button", { name: /Fromage blanc 0 %/ });
     expect(line.textContent).toContain("250 g");
     expect(line.textContent).toContain("115 kcal");
@@ -172,7 +180,7 @@ describe("résumé et lignes", () => {
     fireEvent.change(quantity, { target: { value: "300" } });
     expect(within(sheet).getByText(/138 kcal/)).toBeTruthy();
     fireEvent.click(within(sheet).getByRole("button", { name: /^Enregistrer/ }));
-    await waitFor(() => expect(within(meal("Petit-déjeuner")).getByText("138 kcal · 24,0 g P")).toBeTruthy());
+    await waitFor(() => expect(mealTotal(meal("Petit-déjeuner"))).toBe("138 kcal · 24,0 g P"));
     expect((await db.foodLogEntries.get(entry.id))!.nutrients).toEqual(calculateNutrients(entry.basis, 300));
 
     fireEvent.click(within(meal("Petit-déjeuner")).getByRole("button", { name: /Fromage blanc 0 %/ }));

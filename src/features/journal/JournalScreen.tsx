@@ -20,12 +20,24 @@ import { todayLocalDate } from "../today/useTodayData";
 import { ADD_LABELS } from "./mealLabels";
 import "./JournalScreen.css";
 
-/** « 115 kcal · 20,0 g P », protéines omises si aucune ligne ne les donne, « ≥ » si partielles. */
-function mealLine(entries: readonly FoodLogEntry[]): string {
+/**
+ * Total d'un repas dans son bandeau : « 115 kcal » en ambre · « 20,0 g P » en
+ * bleu ; protéines omises si aucune ligne ne les donne, « ≥ » si partielles.
+ */
+function MealTotal({ entries }: { entries: readonly FoodLogEntry[] }) {
   const totals = dayTotals(entries)!;
   const withProtein = entries.length - totals.entriesWithoutMacros.proteinG;
-  if (withProtein === 0) return formatKcal(totals.kcal);
-  return `${formatKcal(totals.kcal)} · ${formatTotalGrams(totals.proteinG, totals.entriesWithoutMacros.proteinG > 0)} P`;
+  return (
+    <span className="journal-meal__total">
+      <span className="journal-meal__kcal">{formatKcal(totals.kcal)}</span>
+      {withProtein > 0 && (
+        <>
+          {" · "}
+          <span className="journal-meal__protein">{`${formatTotalGrams(totals.proteinG, totals.entriesWithoutMacros.proteinG > 0)} P`}</span>
+        </>
+      )}
+    </span>
+  );
 }
 
 /**
@@ -108,7 +120,7 @@ export function JournalScreen() {
               <section key={slot} className="journal-meal" aria-label={MEAL_SLOT_LABELS[slot]}>
                 <div className="journal-meal__head">
                   <h2>{MEAL_SLOT_LABELS[slot]}</h2>
-                  {entries.length > 0 && <span className="journal-meal__total">{mealLine(entries)}</span>}
+                  {entries.length > 0 && <MealTotal entries={entries} />}
                   <button type="button" className="journal-meal__add" aria-label={ADD_LABELS[slot]} onClick={() => navigate(paths.journalAdd(date, slot))}>
                     <Plus size={20} aria-hidden="true" />
                   </button>
