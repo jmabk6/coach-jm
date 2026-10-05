@@ -202,9 +202,15 @@ export function checkTestLinks(stores) {
   return violations;
 }
 
-/** Clé primaire d'un store : `key` pour les réglages (v3), `id` partout ailleurs. */
+/**
+ * Clé primaire d'un store, celle du schéma Dexie de l'app : `key` pour les
+ * réglages (v3), `date` pour les journées d'Alimentation (nutritionDays,
+ * v4 : une journée par date, sans champ `id`), `id` partout ailleurs.
+ */
+const PRIMARY_KEYS = { settings: "key", nutritionDays: "date" };
+
 export function primaryKeyOf(store) {
-  return store === "settings" ? "key" : "id";
+  return PRIMARY_KEYS[store] ?? "id";
 }
 
 export function storeHashesOf(stores) {
