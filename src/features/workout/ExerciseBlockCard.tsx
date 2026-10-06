@@ -312,11 +312,10 @@ export function ExerciseBlockCard({
           <ol className="wseries">
             {[...block.cardioSteps]
               .sort((a, b) => a.position - b.position)
-              .map((step, index, ordered) => (
+              .map((step, index) => (
                 <StepRow
                   key={step.id}
                   step={step}
-                  next={nextUpcoming(ordered, index)}
                   prescription={
                     block.snapshotInstructions.shape === "steps"
                       ? formatPlannedStep(block.snapshotInstructions.steps, step.id)
@@ -779,12 +778,6 @@ function StepReference({
   );
 }
 
-/** Le prochain palier à venir après celui-ci, et son numéro d'affichage. */
-function nextUpcoming(ordered: PerformedCardioStep[], index: number): { step: PerformedCardioStep; number: number } | undefined {
-  const at = ordered.findIndex((other, position) => position > index && other.status === "upcoming");
-  return at < 0 ? undefined : { step: ordered[at]!, number: at + 1 };
-}
-
 /** La consigne prévue d'un palier réalisé : son id porte celui du palier du modèle. */
 function formatPlannedStep(steps: SessionStepInstruction[], performedStepId: string): string | undefined {
   const planned = steps.find((item) => performedStepId.endsWith(`-step-${item.id}`));
@@ -794,8 +787,6 @@ function formatPlannedStep(steps: SessionStepInstruction[], performedStepId: str
 
 interface StepRowProps {
   step: PerformedCardioStep;
-  /** Palier en cours : le prochain palier à faire et son numéro, annoncés en tête (06/10/2026). */
-  next?: { step: PerformedCardioStep; number: number } | undefined;
   /** Consigne en plage ou avec RPE cible (D16), lue sous le palier. */
   prescription: string | undefined;
   index: number;
@@ -815,7 +806,6 @@ interface StepRowProps {
  */
 function StepRow({
   step,
-  next,
   prescription,
   index,
   editing,
@@ -881,10 +871,6 @@ function StepRow({
           <span className="wseries__meta">En cours · {line}</span>
           {planned}
           {adapted}
-          {/* 06/10/2026 : les réglages du palier suivant, lisibles sans faire défiler ni valider trop tôt. */}
-          <span className="wseries__next">
-            {next ? `Ensuite : Palier ${next.number} · ${formatCardioSettingsLine(next.step.settings)}` : "Dernier palier"}
-          </span>
         </span>
         <div className="wseries__form">
           <StepForm
