@@ -475,6 +475,12 @@
   font-weight: 600;
 }
 
+/* Objectif Poids, historique des pesées (06/10/2026) : l'en-tête Date à gauche, comme les dates. */
+.body-panel__table.weight-history__table thead th:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
 /* Écran « Modifier la cible ». */
 .body-targets {
   display: grid;

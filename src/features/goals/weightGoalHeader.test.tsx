@@ -110,3 +110,15 @@ describe("objectif Poids, en clair", () => {
     expect(screen.queryByRole("heading", { name: "Objectif Poids" })).toBeNull();
   });
 });
+
+describe("objectif Poids : historique des pesées (06/10/2026)", () => {
+  it("le tableau jour par jour suit la courbe ; il n'apparaît pas dans un autre objectif", async () => {
+    renderApp();
+    const table = await screen.findByRole("table", { name: "Historique des pesées" }, { timeout: 4000 });
+    expect([...table.querySelectorAll("tbody tr")].map((row) => [...row.querySelectorAll("th, td")].map((cell) => cell.textContent))).toEqual([["5/10", "91,2", "—", "—", "—"]]);
+    cleanup();
+    renderApp("/objectifs/traction");
+    await screen.findAllByRole("heading", { level: 2 }, { timeout: 4000 });
+    expect(screen.queryByRole("table", { name: "Historique des pesées" })).toBeNull();
+  }, 20000);
+});

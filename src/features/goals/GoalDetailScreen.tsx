@@ -13,6 +13,7 @@ import { todayLocalDate } from "../today/useTodayData";
 import { activateNextSegment, editGoalSegment, LEGS_MEASURES } from "./goalActions";
 import { BodyCompositionSection } from "./BodyCompositionSection";
 import { BodyCompositionPanel } from "../body/BodyCompositionPanel";
+import { WeightHistoryTable } from "../body/WeightHistoryTable";
 import { TractionBetSection } from "./TractionBetSection";
 import { v6ShortStatus } from "./tractionV6View";
 import { GoalCurveChart } from "./GoalCurveChart";
@@ -222,6 +223,9 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
           )}
         </div>
       </section>
+
+      {/* 06/10/2026 : toutes les pesées, une par ligne, avec la composition de la balance de référence. */}
+      {weight && <WeightHistoryTable />}
 
       {secondary.length > 0 && (
         <section className="goal-section">
