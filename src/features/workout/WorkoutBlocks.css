@@ -292,6 +292,14 @@
   font-size: 0.82rem;
 }
 
+/* Palier cardio en cours : le suivant, bien visible (06/10/2026). */
+.wseries__next {
+  margin-top: 4px;
+  color: var(--color-accent);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .wseries__state {
   color: var(--color-text-soft);
   font-size: 0.78rem;
