@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "../../db/database";
-import type { InstallMarkers, PerformedBlock, PerformedExerciseBlock, PerformedGroupBlock, SessionTemplate } from "../../domain";
+import type { InstallMarkers, PerformedBlock, PerformedExerciseBlock, SessionTemplate } from "../../domain";
 import { v6SnapshotAdjustments } from "../goals/tractionV6";
 import { createWorkoutSnapshot, type SnapshotTest } from "../workout/createWorkoutSnapshot";
 import { resumeSeedsForTests, runSeeds, SEEDS } from "../seed/runSeeds";
@@ -13,8 +13,9 @@ import { muscuCWithNegatives, seedNegativesMuscuC20261005 } from "./seedNegative
  * Programme du pari V6 (05/10/2026) : semaines test allégées et
  * tractions négatives à partir du 01/11.
  * - Muscu B en semaine test : traction 2 × 8 ;
- * - Muscu C en semaine test : 3 séries → 2, 2 → 1, « Rester bas » 2 tours,
- *   suspension gardée (allégée comme le reste), échauffement intact ;
+ * - Muscu C en semaine test : 3 séries → 2, 2 → 1, suspension gardée
+ *   (allégée comme le reste), échauffement et tapis incliné intacts (Muscu C
+ *   du 09/10/2026, seed 39 : plus de circuit ni de sprints) ;
  * - Muscu C : négatives 2 × 2 dès le 01/11 — juste après l'échauffement,
  *   avant la suspension et les sprints depuis le programme du 05/10/2026
  *   (seed 38 ; elles étaient après la suspension) ;
@@ -32,44 +33,45 @@ const jambes: SnapshotTest = (() => {
 })();
 
 describe("Muscu C : négatives à partir du 01/11, juste après l'échauffement", () => {
-  it("jeudi 08/10 : pas de négatives ; jeudi 05/11 : 2 × 2 après l'échauffement, avant la suspension et les sprints", () => {
+  it("jeudi 08/10 : pas de négatives ; jeudi 05/11 : 2 × 2 après l'échauffement, avant la suspension", () => {
     expect(ids(snapshot("v2-muscu-c", "2026-10-08"))).not.toContain("v2-muscu-c-negatives");
     expect(ids(snapshot("v2-muscu-c", "2026-10-29"))).not.toContain("v2-muscu-c-negatives");
     const november = snapshot("v2-muscu-c", "2026-11-05");
-    expect(ids(november).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", "v2-muscu-c-sprints"]);
+    expect(ids(november).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", "v2-muscu-c-tirage-vertical"]);
     expect(sets(november, "v2-muscu-c-negatives")).toBe(2);
     expect(exerciseBlock(november, "v2-muscu-c-negatives").snapshotInstructions).toMatchObject({ reps: { min: 2, max: 2 }, restBetweenSetsSec: 150 });
     expect(exerciseBlock(november, "v2-muscu-c-negatives").note).toContain("descente contrôlée d'environ 5 s");
     /* Hors semaine test : rien d'allégé. */
     expect(sets(november, "v2-muscu-c-suspension")).toBe(3);
-    expect((november.find((block) => block.kind === "group") as PerformedGroupBlock).plannedRounds).toBe(3);
+    expect(sets(november, "v2-muscu-c-ecarte")).toBe(3);
   });
 });
 
 describe("semaine test : Muscu C −50 %", () => {
-  it("jeudi 29/10 (S4) : 3 → 2, 2 → 1, Rester bas 2 tours, suspension gardée, échauffement intact (test jambes forcé ici : il remplacerait les sprints)", () => {
+  it("jeudi 29/10 (S4) : 3 → 2, 2 → 1, suspension gardée, échauffement et tapis incliné intacts (test jambes forcé ici : sans sprints, il se place après l'échauffement)", () => {
     const blocks = snapshot("v2-muscu-c", "2026-10-29", [jambes]);
     expect(ids(blocks)).toEqual([
-      "v2-muscu-c-echauffement", "v2-muscu-c-suspension", "test:jambes", "v2-muscu-c-montee-banc", "v2-muscu-c-rester-bas",
-      "v2-muscu-c-tirage-vertical", "v2-muscu-c-face-pull", "v2-muscu-c-curl-marteau", "v2-muscu-c-triceps-tete",
+      "v2-muscu-c-echauffement", "test:jambes", "v2-muscu-c-suspension", "v2-muscu-c-tirage-vertical", "v2-muscu-c-ecarte", "v2-muscu-c-elevations",
+      "v2-muscu-c-face-pull", "v2-muscu-c-curl-marteau", "v2-muscu-c-triceps-tete", "v2-muscu-c-tapis-incline",
     ]);
     expect(exerciseBlock(blocks, "v2-muscu-c-echauffement").cardioSteps).toHaveLength(1);
     expect(sets(blocks, "v2-muscu-c-suspension")).toBe(2);
-    expect(sets(blocks, "v2-muscu-c-montee-banc")).toBe(2);
     expect(sets(blocks, "v2-muscu-c-tirage-vertical")).toBe(1);
+    expect(sets(blocks, "v2-muscu-c-ecarte")).toBe(2);
+    expect(sets(blocks, "v2-muscu-c-elevations")).toBe(2);
     expect(sets(blocks, "v2-muscu-c-face-pull")).toBe(2);
     expect(sets(blocks, "v2-muscu-c-curl-marteau")).toBe(2);
     expect(sets(blocks, "v2-muscu-c-triceps-tete")).toBe(1);
-    const group = blocks.find((block) => block.kind === "group") as PerformedGroupBlock;
-    expect(group.plannedRounds).toBe(2);
-    expect(group.rounds).toHaveLength(2);
+    expect(exerciseBlock(blocks, "v2-muscu-c-tapis-incline").cardioSteps).toHaveLength(3);
+    expect(blocks.some((block) => block.kind === "group")).toBe(false);
   });
 
-  it("jeudi 26/11 (S8) : négatives 1 × 2 (une vraie mini-série de deux descentes) ; sans test jambes (suspendu), les sprints 6 → 3", () => {
+  it("jeudi 26/11 (S8) : négatives 1 × 2 (une vraie mini-série de deux descentes) ; tapis incliné intact (20 min)", () => {
     const blocks = snapshot("v2-muscu-c", "2026-11-26");
     expect(sets(blocks, "v2-muscu-c-negatives")).toBe(1);
     expect(exerciseBlock(blocks, "v2-muscu-c-negatives").snapshotInstructions).toMatchObject({ sets: 1, reps: { min: 2, max: 2 }, restBetweenSetsSec: 150 });
-    expect(sets(blocks, "v2-muscu-c-sprints")).toBe(3);
+    const tapis = exerciseBlock(blocks, "v2-muscu-c-tapis-incline").cardioSteps!;
+    expect(tapis.reduce((sum, step) => sum + (step.settings.durationSec ?? 0), 0)).toBe(1200);
   });
 });
 
@@ -118,7 +120,7 @@ describe("seed 28 : les négatives entrent dans Muscu C", () => {
     await runSeeds();
     const c = (await db.sessionTemplates.get("v2-muscu-c"))!;
     expect(order(c)).toEqual(order(template("v2-muscu-c")));
-    expect(order(c).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", "v2-muscu-c-sprints"]);
+    expect(order(c).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", "v2-muscu-c-tirage-vertical"]);
   });
 
   it("base d'avant (Muscu C sans négatives) : insérées après la suspension (place du seed 28), positions décalées ; second passage : rien", async () => {

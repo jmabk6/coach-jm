@@ -286,6 +286,44 @@ const repsFixed = (sets: number, count: number, restBetweenSetsSec: number): Exe
   restBetweenSetsSec,
 });
 
+/** Routine A, montées sur support (09/10/2026, seed 39). */
+export const ROUTINE_MONTEE_NOTE = "Par jambe, sur un support stable et antidérapant, fait pour ton poids ; monter sans élan, mouvement contrôlé. Douleur au genou : arrêt.";
+
+/** Routine A, circuit « Rester bas » (09/10/2026, seed 39) : le circuit de Muscu C, fait à la maison. */
+const routineResterBas: GroupBlock = {
+  id: "v1-routine-a-rester-bas",
+  kind: "group",
+  position: 3,
+  name: "Rester bas",
+  rounds: 3,
+  restBetweenRoundsSec: 90,
+  children: [
+    { id: "v1-routine-a-chaise", position: 0, exerciseId: "chaise-60", instructions: { shape: "duration", durationSec: { min: 30, max: 45 } }, notes: CHAISE_NOTE },
+    { id: "v1-routine-a-marche-laterale", position: 1, exerciseId: "marche-laterale-elastique", instructions: { shape: "reps", reps: { min: 10, max: 10 } }, notes: "10 pas par côté." },
+    { id: "v1-routine-a-mollets", position: 2, exerciseId: "mollets-debout", instructions: { shape: "reps", reps: { min: 15, max: 20 } } },
+  ],
+};
+
+/**
+ * Routine A à partir du seed 39 (09/10/2026) : la montée sur support et le
+ * circuit « Rester bas » après le dead bug, avant les étirements ; le
+ * contenu d'origine (seed 13) reste celui de `PROGRAM_V1_ROUTINES`.
+ */
+export const ROUTINE_A_20261009: Pick<TemplateContent, "description" | "blocks"> = {
+  description: "~25 min.",
+  blocks: [
+    exercise("v1-routine-a-planche", 0, "planche", hold(3, 30, 30), { notes: HOLD_PROGRESSION }),
+    exercise("v1-routine-a-dead-bug", 1, "dead-bug", repsFixed(2, 8, 30), { notes: "8 par côté." }),
+    exercise("v1-routine-a-montee", 2, "montee-banc", reps(3, 8, 10, 60), { notes: ROUTINE_MONTEE_NOTE }),
+    routineResterBas,
+    exercise("v1-routine-a-flechisseurs", 4, "mobilite-flechisseur-hanche", hold(2, 30, 15), {
+      notes: "Par côté. Coussin sous le genou au sol ; en cas de gêne, le faire debout.",
+    }),
+    exercise("v1-routine-a-ischios", 5, "mobilite-ischio-jambiers", hold(2, 30, 15), { notes: "Par côté." }),
+    exercise("v1-routine-a-enfant", 6, "import-position-enfant", hold(1, 60, 0)),
+  ],
+};
+
 export const PROGRAM_V1_ROUTINES: TemplateContent[] = [
   {
     id: "v1-routine-a",

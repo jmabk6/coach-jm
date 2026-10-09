@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "../../db/database";
 import type {
   ExerciseBlock,
+  SessionBlock,
   Goal,
   InstallMarkers,
   PerformedBlock,
@@ -41,7 +42,7 @@ import { createWorkoutSnapshot } from "../workout/createWorkoutSnapshot";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import { proposeSeriesValues } from "../workout/engine/workoutBlocks";
 import { findLastOwnBlockPerformances, findLastPerformances, lastTimeOf, listSeriesByExercise } from "../workout/lastPerformance";
-import { GOAL_LINKS_V2, NEGATIVES_NOTE, NEGATIVES_NOTE_AFTER_SUSPENSION, PROGRAM_V2_TEMPLATES, SPRINTS_NOTE, TRACTION_LIGHT_NOTE } from "./programV2";
+import { GOAL_LINKS_V2, MUSCU_C_BLOCKS_BEFORE_20261009, NEGATIVES_NOTE, NEGATIVES_NOTE_AFTER_SUSPENSION, PROGRAM_V2_TEMPLATES, SPRINTS_NOTE, TRACTION_LIGHT_NOTE } from "./programV2";
 import { BLOCKS_BEFORE_20261005, seedProgramMuscu20261005, toProgramMuscu20261005, tractionGoalWithoutPullover } from "./seedProgramMuscu20261005";
 
 /**
@@ -136,23 +137,18 @@ describe("pari V6 : inchangé", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("Muscu C : négatives", () => {
-  it("6. jamais avant le 01/11 (jeudis 08/10, 22/10, 29/10) ; 7. dès le 05/11 : échauffement → négatives → suspension → vélo → la suite", () => {
+  it("6. jamais avant le 01/11 (jeudis 08/10, 22/10, 29/10) ; 7. dès le 05/11 : échauffement → négatives → suspension → la suite (Muscu C du 09/10, seed 39)", () => {
     for (const date of ["2026-10-08", "2026-10-22", "2026-10-29"]) expect(ids(snapshotOn("v2-muscu-c", date)), date).not.toContain(V6_NEGATIVES_BLOCK_ID);
-    expect(ids(snapshotOn("v2-muscu-c", "2026-10-08"))).toEqual([
-      "v2-muscu-c-echauffement", "v2-muscu-c-suspension", "v2-muscu-c-sprints", "v2-muscu-c-montee-banc", "v2-muscu-c-rester-bas",
-      "v2-muscu-c-tirage-vertical", "v2-muscu-c-face-pull", "v2-muscu-c-curl-marteau", "v2-muscu-c-triceps-tete",
-    ]);
-    expect(ids(snapshotOn("v2-muscu-c", "2026-11-05"))).toEqual([
-      "v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", "v2-muscu-c-sprints", "v2-muscu-c-montee-banc", "v2-muscu-c-rester-bas",
-      "v2-muscu-c-tirage-vertical", "v2-muscu-c-face-pull", "v2-muscu-c-curl-marteau", "v2-muscu-c-triceps-tete",
-    ]);
+    const rest = [
+      "v2-muscu-c-tirage-vertical", "v2-muscu-c-ecarte", "v2-muscu-c-elevations", "v2-muscu-c-face-pull", "v2-muscu-c-curl-marteau", "v2-muscu-c-triceps-tete", "v2-muscu-c-tapis-incline",
+    ];
+    expect(ids(snapshotOn("v2-muscu-c", "2026-10-08"))).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-suspension", ...rest]);
+    expect(ids(snapshotOn("v2-muscu-c", "2026-11-05"))).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", ...rest]);
     expect(block("v2-muscu-c", V6_NEGATIVES_BLOCK_ID).notes).toBe(NEGATIVES_NOTE);
     expect(NEGATIVES_NOTE).toContain("Juste après l'échauffement");
     expect(NEGATIVES_NOTE).toContain("2 min 30 de repos");
     expect(NEGATIVES_NOTE).toContain("jamais à l'échec");
-    /* Vélo : étalonnage le jeudi 08/10, puis même résistance ; pas de moteur de progression. */
-    expect(block("v2-muscu-c", "v2-muscu-c-sprints")).toMatchObject({ notes: SPRINTS_NOTE, instructions: { shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 } });
-    /* Consigne durable : vraie dans plusieurs mois, sans date. */
+    /* Les sprints vélo ont quitté Muscu C le 09/10 (seed 39) ; leur consigne, durable et sans date, reste celle du 05/10. */
     expect(SPRINTS_NOTE).toBe("Première séance : étalonne la résistance pour pouvoir sprinter rapidement pendant 12 s. Ensuite, conserve le même vélo si possible et la même résistance à chaque séance.");
     expect(SPRINTS_NOTE).not.toMatch(/\d{1,2}\/\d{1,2}|20\d\d|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche/i);
   });
@@ -190,9 +186,9 @@ describe("Muscu A, B, C", () => {
   it("13. Muscu C sans pullover ; 14. tirage vertical 2 × 10-15 à sa place, brique du cadre", () => {
     expect(template("v2-muscu-c").blocks.some((item) => item.kind === "exercise" && item.exerciseId === "pullover-poulie")).toBe(false);
     const tirage = block("v2-muscu-c", "v2-muscu-c-tirage-vertical");
-    expect(tirage).toMatchObject({ position: 6, exerciseId: "tirage-vertical", instructions: { shape: "reps", sets: 2, reps: { min: 10, max: 15 }, restBetweenSetsSec: 120 } });
+    /* Position 3 depuis la Muscu C du 09/10 (seed 39 : sprints, montée et « Rester bas » sortis). */
+    expect(tirage).toMatchObject({ position: 3, exerciseId: "tirage-vertical", instructions: { shape: "reps", sets: 2, reps: { min: 10, max: 15 }, restBetweenSetsSec: 120 } });
     expect([tirage.outsideFrame, tirage.ownReference]).toEqual([undefined, undefined]);
-    expect(block("v2-muscu-c", "v2-muscu-c-montee-banc").notes).toContain("pas de step-up explosif");
   });
 
   it("15. Cardio A, B, C : définitions identiques à celles d'avant le programme du 05/10 (empreinte)", () => {
@@ -317,17 +313,29 @@ describe("seed 38", () => {
         }
         return next;
       });
-    const added: ExerciseBlock[] =
+    /* Muscu C d'avant le 05/10 : avec sprints, montée et « Rester bas » (sortis le 09/10 par le seed 39). */
+    const legacyC: SessionBlock[] = [
+      { id: "v2-muscu-c-sprints", kind: "exercise", position: 3, exerciseId: "sprint-velo", instructions: { shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 }, notes: "Même vélo, même résistance à chaque séance." },
+      { id: "v2-muscu-c-montee-banc", kind: "exercise", position: 4, exerciseId: "montee-banc", instructions: { shape: "reps", sets: 3, reps: { min: 8, max: 8 }, restBetweenSetsSec: 60 }, notes: "8 par jambe." },
+      {
+        id: "v2-muscu-c-rester-bas", kind: "group", position: 5, name: "Rester bas", rounds: 3, restBetweenRoundsSec: 90,
+        children: [{ id: "v2-muscu-c-chaise", position: 0, exerciseId: "chaise-60", instructions: { shape: "duration", durationSec: { min: 30, max: 45 } } }],
+      },
+    ];
+    const added: SessionBlock[] =
       item.id === "v2-muscu-a"
         ? [{ id: "v2-muscu-a-tirage-vertical", kind: "exercise", position: 3, exerciseId: "tirage-vertical", instructions: { shape: "reps", sets: 2, reps: { min: 8, max: 12 }, restBetweenSetsSec: 120 } }]
         : item.id === "v2-muscu-c"
-          ? [{ id: "v2-muscu-c-pullover", kind: "exercise", position: 6, exerciseId: "pullover-poulie", instructions: { shape: "reps", sets: 3, reps: { min: 10, max: 15 }, restBetweenSetsSec: 90 } }]
+          ? [
+              { id: "v2-muscu-c-pullover", kind: "exercise", position: 6, exerciseId: "pullover-poulie", instructions: { shape: "reps", sets: 3, reps: { min: 10, max: 15 }, restBetweenSetsSec: 90 } },
+              ...legacyC.filter((entry) => !item.blocks.some((other) => other.id === entry.id)),
+            ]
           : [];
     return { ...item, blocks: [...kept, ...added] };
   }
 
   async function installBefore() {
-    await runSeeds(SEEDS.filter((seed) => seed.name !== "programmeMuscu20261005"));
+    await runSeeds(SEEDS.filter((seed) => seed.name !== "programmeMuscu20261005" && seed.name !== "programmeMuscuC20261009"));
     for (const id of ["v2-muscu-a", "v2-muscu-b", "v2-muscu-c"]) await db.sessionTemplates.put(before((await db.sessionTemplates.get(id))!));
   }
 
@@ -557,7 +565,7 @@ describe("18. sauvegarde réelle", () => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     await resetAndRestore(parseBackup(await readFile(realPath!, "utf8")), db);
     resumeSeedsForTests();
-    await runSeeds(SEEDS.filter((seed) => seed.name !== "programmeMuscu20261005"));
+    await runSeeds(SEEDS.filter((seed) => seed.name !== "programmeMuscu20261005" && seed.name !== "programmeMuscuC20261009"));
     const workouts = await db.workouts.toArray();
     const milestones = await db.strengthMilestones.toArray();
     const planned = await db.plannedSessions.toArray();
@@ -569,13 +577,20 @@ describe("18. sauvegarde réelle", () => {
     const tractionVersions = await db.strengthFrameVersions.where("frameId").equals(tractionFrame.id).toArray();
 
     resumeSeedsForTests();
-    const report = await runSeeds();
+    /* Le seed 39 (Muscu C du 09/10, Routine A) a son propre test sur la base réelle. */
+    const report = await runSeeds(SEEDS.filter((seed) => seed.name !== "programmeMuscuC20261009"));
     expect(report.failed).toEqual([]);
 
-    for (const id of ["v2-muscu-a", "v2-muscu-b", "v2-muscu-c"]) {
+    for (const id of ["v2-muscu-a", "v2-muscu-b"]) {
       const after = (await db.sessionTemplates.get(id))!;
       expect(order(after), id).toEqual(order(template(id)));
     }
+    /* Muscu C : la définition du 09/10 sur une base d'avant le seed 38 (il la reconstruit) ; sur une base où le
+       seed 38 était déjà passé, la C du 05/10 — le seed 39, exclu ici, a son propre test sur base réelle. */
+    const c = order((await db.sessionTemplates.get("v2-muscu-c"))!);
+    expect([order(template("v2-muscu-c")).join(), [...MUSCU_C_BLOCKS_BEFORE_20261009].sort().join()]).toContain(
+      c.join() === order(template("v2-muscu-c")).join() ? c.join() : [...c].sort().join(),
+    );
     expect(await db.workouts.toArray()).toEqual(workouts);
     expect(await db.strengthMilestones.toArray()).toEqual(milestones);
     expect(await db.plannedSessions.toArray()).toEqual(planned);

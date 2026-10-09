@@ -54,7 +54,8 @@ describe("Plus", () => {
     inRouter(<RoutinesScreen />);
     const link = await screen.findByRole("link", { name: /Routine A — Avant du tronc et hanches/ });
     expect(link.getAttribute("href")).toBe("/seances/v1-routine-a");
-    expect(within(link).getByText("5 exercices · ~12 min")).toBeDefined();
+    /* Seed 39 (09/10/2026) : montée sur support et circuit « Rester bas » ajoutés à la Routine A. */
+    expect(within(link).getByText("7 exercices · ~25 min")).toBeDefined();
     expect(screen.getByRole("link", { name: /Routine C — Abdos et épaules/ })).toBeDefined();
   });
 

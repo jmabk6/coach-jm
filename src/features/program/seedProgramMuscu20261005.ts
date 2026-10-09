@@ -105,7 +105,17 @@ export function toProgramMuscu20261005(template: SessionTemplate, now: string): 
     if (existing.kind === "exercise" && target.kind === "exercise" && CHANGED.has(target.id)) return withDefinition(existing, target);
     return { ...existing, position: target.position };
   });
-  return { ...template, blocks, updatedAt: now };
+  /* Muscu C (seed 39, 09/10/2026) : son nom et son sous-titre suivent la définition. */
+  const naming =
+    template.id === "v2-muscu-c"
+      ? {
+          name: definition.name,
+          tags: [...(definition.tags ?? [])],
+          ...(definition.subtitle !== undefined ? { subtitle: definition.subtitle } : {}),
+          ...(definition.description !== undefined ? { description: definition.description } : {}),
+        }
+      : {};
+  return { ...template, ...naming, blocks, updatedAt: now };
 }
 
 const sameSpec = (version: StrengthFrameVersion, spec: FrameSpec20261005) =>

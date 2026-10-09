@@ -113,6 +113,8 @@ export interface InstallMarkers {
   weightGoalTarget20261005?: string;
   /** Seed 38 : programme muscu du 05/10/2026 (A force, B volume, C sans pullover ; cadres rowing, chest press, tirage vertical). */
   programmeMuscu20261005?: string;
+  /** Seed 39 : Muscu C haut du corps (écarté, élévations, tapis incliné), jambes padel dans la Routine A, cadre de l'écarté. */
+  programmeMuscuC20261009?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

@@ -1,14 +1,12 @@
 import type {
   ExerciseBlock,
   ExerciseInstructions,
-  GroupBlock,
   SessionTemplate,
   SpeedInclineStepInstruction,
   StrengthProgressionType,
   TestScheduleEntry,
   WeeklyProgram,
 } from "../../domain";
-import { CHAISE_NOTE } from "./programV1";
 
 /**
  * Programme V2 (validé le 26/09/2026, contenu sportif figé), en place à
@@ -170,30 +168,43 @@ const muscuB: TemplateContent = {
   ],
 };
 
-const resterBas: GroupBlock = {
-  id: "v2-muscu-c-rester-bas",
-  kind: "group",
-  position: 5,
-  name: "Rester bas",
-  rounds: 3,
-  restBetweenRoundsSec: 90,
-  children: [
-    { id: "v2-muscu-c-chaise", position: 0, exerciseId: "chaise-60", instructions: { shape: "duration", durationSec: { min: 30, max: 45 } }, notes: CHAISE_NOTE },
-    { id: "v2-muscu-c-marche-laterale", position: 1, exerciseId: "marche-laterale-elastique", instructions: { shape: "reps", reps: { min: 10, max: 10 } }, notes: "10 pas par côté." },
-    { id: "v2-muscu-c-mollets", position: 2, exerciseId: "mollets-debout", instructions: { shape: "reps", reps: { min: 15, max: 20 } } },
-  ],
-};
-
 export const FACE_PULL_NOTE = "Poulie à hauteur du visage, corde, tirer vers le front en écartant les mains, coudes hauts ; charge légère, sans à-coups.";
 
+/** Muscu C, écarté à la poulie (09/10/2026) : les pecs en isolation, à côté des développés de A et B. */
+export const ECARTE_NOTE = "Coudes légèrement fléchis, amplitude confortable, sans à-coups ; RPE 8 au plus.";
+/** Muscu C, tapis incliné de fin de séance (09/10/2026) : la pente se règle sur les bpm, cible de départ. */
+export const TAPIS_INCLINE_NOTE =
+  "Travail : vise 115-125 bpm (autour de 120), cible de départ à ajuster. Règle la pente pour y rester et attends 1 à 2 min entre deux changements ; tu dois pouvoir parler en phrases, sans te tenir aux poignées. Au-dessus de 130 bpm durablement, baisse la pente. Note les bpm en fin de palier.";
+
+/** Les briques de Muscu C après le seed 38 (programme du 05/10/2026), avant le seed 39. */
+export const MUSCU_C_BLOCKS_BEFORE_20261009 = [
+  "v2-muscu-c-echauffement",
+  "v2-muscu-c-negatives",
+  "v2-muscu-c-suspension",
+  "v2-muscu-c-sprints",
+  "v2-muscu-c-montee-banc",
+  "v2-muscu-c-rester-bas",
+  "v2-muscu-c-tirage-vertical",
+  "v2-muscu-c-face-pull",
+  "v2-muscu-c-curl-marteau",
+  "v2-muscu-c-triceps-tete",
+] as const;
+
+/**
+ * Muscu C, haut du corps (décision du 09/10/2026, seed 39) : le step et
+ * « Rester bas » passent à la maison (Routine A du soir), les sprints vélo
+ * sont remplacés par 20 min de tapis incliné réglé sur les bpm ;
+ * l'écarté à la poulie et les élévations latérales entrent. Les
+ * négatives du pari V6 et les allègements des semaines test ne changent pas.
+ */
 const muscuC: TemplateContent = {
   id: "v2-muscu-c",
-  name: "Muscu C — Jambes padel + rappel haut",
+  name: "Muscu C — Haut du corps + tapis",
   category: "Musculation",
   letter: "C",
-  subtitle: "Jambes padel + rappel haut",
-  tags: ["Jambes", "Padel"],
-  description: "Environ 70 min.",
+  subtitle: "Haut du corps + tapis",
+  tags: ["Haut du corps", "Dos"],
+  description: "Environ 80 min.",
   blocks: [
     warmup("v2-muscu-c"),
     /* Pari V6 : 2 × 2 négatives, présentes dans la séance à partir du 01/11/2026 seulement ;
@@ -201,14 +212,29 @@ const muscuC: TemplateContent = {
     exercise("v2-muscu-c-negatives", 1, "traction-negative", reps(2, 2, 2, 150), { notes: NEGATIVES_NOTE }),
     /* Pari traction (03/10/2026) : suspension et omoplates, facile et technique. */
     exercise("v2-muscu-c-suspension", 2, "suspension-omoplates", { shape: "duration", sets: 3, durationSec: { min: 20, max: 30 }, restBetweenSetsSec: 60 }, { notes: SUSPENSION_NOTE }),
-    exercise("v2-muscu-c-sprints", 3, "sprint-velo", { shape: "duration", sets: 6, durationSec: 12, restBetweenSetsSec: 48 }, { notes: SPRINTS_NOTE }),
-    exercise("v2-muscu-c-montee-banc", 4, "montee-banc", reps(3, 8, 8, 60), { notes: MONTEE_BANC_NOTE }),
-    resterBas,
     /* Programme du 05/10/2026 : le tirage vertical de volume remplace le pullover. */
-    exercise("v2-muscu-c-tirage-vertical", 6, "tirage-vertical", reps(2, 10, 15, BIG), { notes: TIRAGE_VOLUME_NOTE }),
-    exercise("v2-muscu-c-face-pull", 7, "face-pull", reps(3, 12, 15, ISOLATION), { notes: FACE_PULL_NOTE }),
-    exercise("v2-muscu-c-curl-marteau", 8, "curl-marteau-halteres", reps(3, 10, 15, ISOLATION)),
-    exercise("v2-muscu-c-triceps-tete", 9, "extension-triceps-dessus-tete", reps(2, 10, 15, ISOLATION)),
+    exercise("v2-muscu-c-tirage-vertical", 3, "tirage-vertical", reps(2, 10, 15, BIG), { notes: TIRAGE_VOLUME_NOTE }),
+    /* 09/10/2026 : l'écarté à la poulie, pour varier le travail des pecs (pas une 3e chest press). */
+    exercise("v2-muscu-c-ecarte", 4, "ecarte-poulie", reps(3, 12, 15, ISOLATION), { notes: ECARTE_NOTE }),
+    exercise("v2-muscu-c-elevations", 5, "elevations-laterales-halteres", reps(3, 12, 15, ISOLATION)),
+    exercise("v2-muscu-c-face-pull", 6, "face-pull", reps(3, 12, 15, ISOLATION), { notes: FACE_PULL_NOTE }),
+    exercise("v2-muscu-c-curl-marteau", 7, "curl-marteau-halteres", reps(3, 10, 15, ISOLATION)),
+    exercise("v2-muscu-c-triceps-tete", 8, "extension-triceps-dessus-tete", reps(2, 10, 15, ISOLATION)),
+    /* 09/10/2026 : 20 min de tapis incliné à la place des sprints vélo ; la pente suit les bpm. */
+    exercise(
+      "v2-muscu-c-tapis-incline",
+      9,
+      "tapis",
+      {
+        shape: "steps",
+        steps: [
+          step("v2-muscu-c-tapis-incline-montee", 0, 180, 5, { min: 3, max: 6 }),
+          step("v2-muscu-c-tapis-incline-travail", 1, 840, 5, { min: 6, max: 10 }),
+          step("v2-muscu-c-tapis-incline-retour", 2, 180, 4.5, { min: 0, max: 2 }),
+        ],
+      },
+      { notes: TAPIS_INCLINE_NOTE },
+    ),
   ],
 };
 
@@ -429,6 +455,11 @@ export const PROGRAM_MUSCU_20261005_FRAMES: FrameSpec20261005[] = [
   { exerciseId: "tirage-vertical", workSets: 2, repRange: { min: 10, max: 15 }, rpeTarget: 8, restSec: BIG },
 ];
 
+/** Cadre créé par le seed 39 (09/10/2026) : l'écarté à la poulie de Muscu C, sans objectif en cours. */
+export const PROGRAM_MUSCU_C_20261009_FRAMES: FrameSpec20261005[] = [
+  { exerciseId: "ecarte-poulie", workSets: 3, repRange: { min: 12, max: 15 }, rpeTarget: 8, restSec: ISOLATION },
+];
+
 /* -------------------------------------------------------------------------- */
 /* Objectifs : exercices liés                                                 */
 /* -------------------------------------------------------------------------- */
@@ -439,6 +470,8 @@ export const GOAL_LINKS_V2: Record<string, string[]> = {
   upper_body: [
     "chest-press",
     "developpe-incline-halteres",
+    /* 09/10/2026 (seed 39) : l'écarté à la poulie de Muscu C. */
+    "ecarte-poulie",
     "developpe-epaules-machine",
     "elevations-laterales-halteres",
     "rowing-poulie-basse",

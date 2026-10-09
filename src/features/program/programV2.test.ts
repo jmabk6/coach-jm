@@ -82,24 +82,24 @@ describe("modèles V2", () => {
       "extension-triceps-poulie 3x10-15",
       "presse-cuisses 3x10-12",
     ]);
-    /* 05/10/2026 : négatives (dès le 01/11) juste après l'échauffement, puis suspension ; tirage vertical à la place du pullover. */
+    /* 09/10/2026 (seed 39) : haut du corps — négatives (dès le 01/11) et suspension, écarté et élévations, tapis incliné en fin. */
     expect(describe("v2-muscu-c")).toEqual([
       "tapis",
       "traction-negative 2x2-2",
       "suspension-omoplates",
-      "sprint-velo",
-      "montee-banc 3x8-8",
-      "groupe Rester bas x3",
       "tirage-vertical 2x10-15",
+      "ecarte-poulie 3x12-15",
+      "elevations-laterales-halteres 3x12-15",
       "face-pull 3x12-15",
       "curl-marteau-halteres 3x10-15",
       "extension-triceps-dessus-tete 2x10-15",
+      "tapis",
     ]);
   });
 
-  it("durées estimées (programme du 05/10) : Muscu A 74, Muscu B 91 et C 82, signalé ; Cardio A 45, B 38, C 57", () => {
+  it("durées estimées (programmes du 05/10 et du 09/10) : Muscu A 74, Muscu B 91 et C 96 (négatives comprises), signalé ; Cardio A 45, B 38, C 57", () => {
     expect(minutes("v2-muscu-a")).toBe(74);
-    expect(minutes("v2-muscu-c")).toBe(82);
+    expect(minutes("v2-muscu-c")).toBe(96);
     /* Cinq gros mouvements à 2 min de repos : l'estimation dépasse la cible (rapport du 26/09/2026). */
     expect(minutes("v2-muscu-b")).toBe(91);
     expect([minutes("v2-cardio-a"), minutes("v2-cardio-b"), minutes("v2-cardio-c")]).toEqual([45, 38, 57]);
@@ -146,9 +146,9 @@ describe("tests et prescriptions réduites en V2", () => {
     expect(CARDIO_A_V2_MAIN_STEP_IDS).toHaveLength(6);
   });
 
-  it("jambes : le test remplace les sprints de Muscu C", () => {
+  it("jambes (suspendu jusqu'au 31/03/2027) : sans sprints dans Muscu C depuis le 09/10, le test se place juste après l'échauffement", () => {
     const blocks = createWorkoutSnapshot(template("v2-muscu-c"), undefined, undefined, [schedule("jambes")]);
-    expect(order(blocks).slice(0, 5)).toEqual(["v2-muscu-c-echauffement", "v2-muscu-c-negatives", "v2-muscu-c-suspension", "test:jambes", "v2-muscu-c-montee-banc"]);
+    expect(order(blocks).slice(0, 4)).toEqual(["v2-muscu-c-echauffement", "test:jambes", "v2-muscu-c-negatives", "v2-muscu-c-suspension"]);
   });
 });
 
