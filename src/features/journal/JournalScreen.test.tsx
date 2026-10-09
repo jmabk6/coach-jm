@@ -70,23 +70,27 @@ describe("jour affiché", () => {
     renderJournal();
     expect(await screen.findByRole("heading", { level: 1, name: "Lundi 5 octobre" })).toBeTruthy();
     expect(screen.getByText("Aujourd'hui")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Aujourd'hui" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Revenir à aujourd'hui" })).toBeNull();
     expect((screen.getByRole("button", { name: "Jour suivant" }) as HTMLButtonElement).disabled).toBe(true);
     const sections = await screen.findAllByRole("region", { name: /^(Petit-déjeuner|Déjeuner|Collation|Dîner|Extras)$/ });
     expect(sections.map((section) => section.getAttribute("aria-label"))).toEqual(["Petit-déjeuner", "Déjeuner", "Collation", "Dîner", "Extras"]);
   });
 
-  it("jour précédent, suivant, bouton Aujourd'hui : l'adresse suit", async () => {
+  it("jour précédent, suivant, « Revenir à aujourd'hui » : l'adresse suit ; sous la date, l'écart réel (« Hier », « Avant-hier »), jamais « Aujourd'hui »", async () => {
     renderJournal();
     await screen.findByRole("heading", { level: 1, name: "Lundi 5 octobre" });
     fireEvent.click(screen.getByRole("button", { name: "Jour précédent" }));
     expect(await screen.findByRole("heading", { level: 1, name: "Dimanche 4 octobre" })).toBeTruthy();
     expect(url()).toBe("/journal?date=2026-10-04");
+    expect(screen.getByText("Hier")).toBeTruthy();
+    expect(screen.queryByText("Aujourd'hui")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Jour précédent" }));
     expect(url()).toBe("/journal?date=2026-10-03");
+    expect(await screen.findByText("Avant-hier")).toBeTruthy();
+    expect(screen.queryByText("Aujourd'hui")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Jour suivant" }));
     expect(url()).toBe("/journal?date=2026-10-04");
-    fireEvent.click(screen.getByRole("button", { name: "Aujourd'hui" }));
+    fireEvent.click(screen.getByRole("button", { name: "Revenir à aujourd'hui" }));
     expect(await screen.findByRole("heading", { level: 1, name: "Lundi 5 octobre" })).toBeTruthy();
     expect(url()).toBe("/journal?date=2026-10-05");
   });
@@ -94,6 +98,7 @@ describe("jour affiché", () => {
   it("rechargement : la date de l'adresse est gardée ; future ou illisible : retour à aujourd'hui, adresse corrigée", async () => {
     renderJournal("/journal?date=2026-10-01");
     expect(await screen.findByRole("heading", { level: 1, name: "Jeudi 1er octobre" })).toBeTruthy();
+    expect(screen.getByText("Il y a 4 jours")).toBeTruthy();
     cleanup();
     renderJournal("/journal?date=2026-10-01");
     expect(await screen.findByRole("heading", { level: 1, name: "Jeudi 1er octobre" })).toBeTruthy();

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  relativeDayLabel,
   formatJournalDay,
   formatQuantity,
   formatTotalGrams,
@@ -36,6 +37,18 @@ describe("jour du journal", () => {
   it("titre : « Lundi 5 octobre », « Jeudi 1er octobre »", () => {
     expect(formatJournalDay("2026-10-05")).toBe("Lundi 5 octobre");
     expect(formatJournalDay("2026-10-01")).toBe("Jeudi 1er octobre");
+  });
+});
+
+describe("écart avec aujourd'hui, sous la date (correctif du 10/10/2026)", () => {
+  it("« Aujourd'hui », « Hier », « Avant-hier », puis « Il y a N jours » — jamais « Aujourd'hui » pour un autre jour", () => {
+    expect(relativeDayLabel("2026-10-10", "2026-10-10")).toBe("Aujourd'hui");
+    expect(relativeDayLabel("2026-10-09", "2026-10-10")).toBe("Hier");
+    expect(relativeDayLabel("2026-10-08", "2026-10-10")).toBe("Avant-hier");
+    expect(relativeDayLabel("2026-10-07", "2026-10-10")).toBe("Il y a 3 jours");
+    expect(relativeDayLabel("2026-09-30", "2026-10-10")).toBe("Il y a 10 jours");
+    /* Changement d'heure (25/10/2026) : des jours de calendrier, pas des tranches de 24 h. */
+    expect(relativeDayLabel("2026-10-24", "2026-10-26")).toBe("Avant-hier");
   });
 });
 

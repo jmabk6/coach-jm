@@ -15,6 +15,7 @@ import {
   journalDayAfter,
   journalDayBefore,
   parseQuantityInput,
+  relativeDayLabel,
   resolveJournalDate,
   unitWord,
 } from "../../domain/rules/journalRules";
@@ -108,13 +109,15 @@ export function JournalScreen() {
         </button>
         <div className="journal__title">
           <h1>{formatJournalDay(date)}</h1>
-          {date === today ? (
-            <span className="journal__today">Aujourd'hui</span>
-          ) : (
-            <button type="button" className="journal__today journal__today--button" onClick={() => goTo(today)}>
-              Aujourd'hui
-            </button>
-          )}
+          {/* Correctif du 10/10/2026 : l'écart réel sous la date ; le retour au jour même est un lien distinct. */}
+          <span className="journal__relative">
+            <span className="journal__today">{relativeDayLabel(date, today)}</span>
+            {date !== today && (
+              <button type="button" className="journal__today--button" onClick={() => goTo(today)}>
+                Revenir à aujourd'hui
+              </button>
+            )}
+          </span>
         </div>
         <button type="button" className="journal__arrow" aria-label="Jour suivant" disabled={!next} onClick={() => next && goTo(next)}>
           <ChevronRight size={22} aria-hidden="true" />

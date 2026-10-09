@@ -1,4 +1,4 @@
-import { addDays, format, isValid, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
 import type { FoodUnit, Nutrients } from "../models";
 import { formatFr } from "./dateFr";
 import { formatGrams, nutrientsError, quantityError } from "./nutritionRules";
@@ -28,6 +28,15 @@ export function journalDayBefore(date: string): string {
 export function journalDayAfter(date: string, today: string): string | undefined {
   const next = format(addDays(parseISO(date), 1), "yyyy-MM-dd");
   return next > today ? undefined : next;
+}
+
+/** Sous la date (correctif du 10/10/2026) : « Aujourd'hui », « Hier », « Avant-hier », « Il y a 5 jours ». */
+export function relativeDayLabel(date: string, today: string): string {
+  const days = differenceInCalendarDays(parseISO(today), parseISO(date));
+  if (days <= 0) return "Aujourd'hui";
+  if (days === 1) return "Hier";
+  if (days === 2) return "Avant-hier";
+  return `Il y a ${days} jours`;
 }
 
 /** « Lundi 5 octobre », « Jeudi 1er octobre ». */

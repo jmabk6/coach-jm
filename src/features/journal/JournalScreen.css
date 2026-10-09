@@ -46,6 +46,14 @@
   font-size: 0.82rem;
 }
 
+.journal__relative {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 8px;
+}
+
 .journal__today--button {
   min-height: 32px;
   padding: 0 10px;
