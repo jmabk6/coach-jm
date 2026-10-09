@@ -126,6 +126,17 @@ export interface WorkoutSession {
    */
   endedAt?: string;
 
+  /**
+   * « Reprendre la séance » (10/10/2026) : l'état d'avant « Terminer »
+   * (briques, brique et entrée en cours), gardé tant que la séance attend
+   * d'être enregistrée ; effacé à la reprise et à l'enregistrement.
+   */
+  resumeState?: {
+    blocks: PerformedBlock[];
+    currentBlockId?: Id;
+    currentEntryId?: Id;
+  };
+
   /** Ressenti global, 1 = Très difficile … 5 = Très facile (M10). */
   feeling?: 1 | 2 | 3 | 4 | 5;
 

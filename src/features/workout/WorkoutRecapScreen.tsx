@@ -20,6 +20,7 @@ import {
   Meh,
   MinusCircle,
   PauseCircle,
+  RotateCcw,
   Smile,
   Target,
   Timer,
@@ -50,7 +51,7 @@ import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { frameOutcomesOf } from "../strength/frameReadings";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import { deleteWorkout } from "./deleteWorkout";
-import { confirmWorkout, isAwaitingConfirmation, saveWorkoutFeedback } from "./finishWorkout";
+import { confirmWorkout, isAwaitingConfirmation, reopenWorkout, saveWorkoutFeedback } from "./finishWorkout";
 import { applyWorkoutAction } from "./engine/persistWorkout";
 import { correctDuration } from "./engine/workoutEngine";
 import { durationRuleOf } from "./engine/workoutTime";
@@ -328,6 +329,17 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
     }
   }
 
+  /* « Reprendre la séance » (10/10/2026) : Terminer touché par erreur, retour à la séance là où elle en était. */
+  async function reopen() {
+    try {
+      setSaveError(undefined);
+      await reopenWorkout(workout.id);
+      navigate(paths.workoutLive(), { replace: true });
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : "Reprise impossible");
+    }
+  }
+
   async function confirmDelete() {
     try {
       setDeleteError(undefined);
@@ -434,6 +446,17 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
           {deleteError && <p className="recap__message recap__message--error">{deleteError}</p>}
         </BottomSheet>
       )}
+
+      {view === 1 && pending && workout.resumeState && (
+        <div className="recap__reopen">
+          <span>Terminée par erreur ?</span>
+          <button type="button" className="recap__reopen-button" onClick={() => void reopen()}>
+            <RotateCcw size={16} strokeWidth={2.2} aria-hidden="true" />
+            Reprendre la séance
+          </button>
+        </div>
+      )}
+      {view === 1 && pending && saveError && <p className="recap__message recap__message--error">{saveError}</p>}
 
       {view === 1 && (
         <SummaryView state={state} pending={pending} {...(pending ? { onCorrectDuration: changeDuration } : {})}>

@@ -757,6 +757,35 @@
   opacity: 0.6;
 }
 
+/* « Reprendre la séance » (10/10/2026) : Terminer touché par erreur. */
+.recap__reopen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  margin: 0 0 12px;
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+}
+
+.recap__reopen-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+}
+
 /* Lot E.2 : corrections d'une séance terminée, pas encore enregistrée. */
 .recap-detail__correctable {
   margin: 0 0 12px;

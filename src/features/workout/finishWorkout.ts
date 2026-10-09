@@ -14,7 +14,7 @@ import {
   validateFrame,
   type FrameValidationResult,
 } from "../../domain/rules/strengthRules";
-import { completeWorkoutSession, endWorkoutSession, isAwaitingConfirmation } from "./engine/workoutEngine";
+import { completeWorkoutSession, endWorkoutSession, isAwaitingConfirmation, reopenWorkoutSession } from "./engine/workoutEngine";
 import { calculateActiveDurationSec } from "./engine/workoutTime";
 import { settleTestBlocks } from "../tests/settleTestBlocks";
 
@@ -80,6 +80,27 @@ export async function endWorkout(
     await saveWorkout(ended);
 
     return ended;
+  });
+}
+
+/**
+ * « Reprendre la séance » (10/10/2026) : la séance terminée par erreur,
+ * pas encore enregistrée, revient à l'écran de séance là où elle en était
+ * (`reopenWorkoutSession`). Rien n'est enregistré, aucun jalon.
+ */
+export async function reopenWorkout(
+  workoutId: Id,
+  now: string = new Date().toISOString(),
+): Promise<WorkoutSession> {
+  return db.transaction("rw", db.workouts, async () => {
+    const workout = await getWorkout(workoutId);
+
+    if (!workout) throw new Error("Séance réalisée introuvable");
+
+    const reopened = reopenWorkoutSession(workout, now);
+    await saveWorkout(reopened);
+
+    return reopened;
   });
 }
 

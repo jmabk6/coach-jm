@@ -1644,6 +1644,12 @@ export function endWorkoutSession(
     endedAt: now,
     lastActionAt: now,
     updatedAt: now,
+    /* « Reprendre la séance » (10/10/2026) : l'état d'avant Terminer, rendu tel quel à la reprise. */
+    resumeState: {
+      blocks: next.blocks,
+      ...(next.currentBlockId !== undefined ? { currentBlockId: next.currentBlockId } : {}),
+      ...(next.currentEntryId !== undefined ? { currentEntryId: next.currentEntryId } : {}),
+    },
   };
 
   delete ended.currentBlockId;
@@ -1652,6 +1658,45 @@ export function endWorkoutSession(
   ended.activeDurationSec = calculateActiveDurationSec(ended, now);
 
   return ended;
+}
+
+/**
+ * « Reprendre la séance » (10/10/2026) : « Terminer » touché par erreur.
+ * La séance en attente d'enregistrement revient exactement à son état
+ * d'avant (briques, brique et entrée en cours) ; ressenti et notes déjà
+ * saisis sont gardés. Le temps passé entre Terminer et la reprise devient
+ * une pause : il ne compte pas dans la durée active. Une séance
+ * enregistrée, non terminée ou sans état gardé ne se reprend pas.
+ */
+export function reopenWorkoutSession(
+  workout: WorkoutSession,
+  now: string,
+  newId: NewId = defaultNewId,
+): WorkoutSession {
+  if (workout.status !== "in_progress" || workout.endedAt === undefined) {
+    throw new Error("Seule une séance terminée et pas encore enregistrée peut être reprise");
+  }
+  if (!workout.resumeState) {
+    throw new Error("Cette séance ne peut pas être reprise");
+  }
+
+  const { blocks, currentBlockId, currentEntryId } = workout.resumeState;
+  const reopened: WorkoutSession = {
+    ...workout,
+    blocks,
+    pauses: [...(workout.pauses ?? []), { id: newId(), startedAt: workout.endedAt, endedAt: now }],
+    lastActionAt: now,
+    updatedAt: now,
+    ...(currentBlockId !== undefined ? { currentBlockId } : {}),
+    ...(currentEntryId !== undefined ? { currentEntryId } : {}),
+  };
+
+  delete reopened.endedAt;
+  delete reopened.resumeState;
+
+  reopened.activeDurationSec = calculateActiveDurationSec(reopened, now);
+
+  return reopened;
 }
 
 /**
@@ -1675,6 +1720,8 @@ export function completeWorkoutSession(
     completedAt: ended.endedAt!,
     updatedAt: now,
   };
+  /* Enregistrée : elle ne se reprend plus, l'état d'avant Terminer n'est pas gardé. */
+  delete completed.resumeState;
 
   if (input.feeling !== undefined) completed.feeling = input.feeling;
   if (input.note !== undefined) {
