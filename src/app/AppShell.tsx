@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { ResumeWatcher } from "../features/workout/ResumeWatcher";
+import { ScreenWakeLockKeeper } from "../features/workout/ScreenWakeLockKeeper";
 import { activeTabFor, isTabBarHidden, TABS } from "./tabs";
 import "./AppShell.css";
 
@@ -17,6 +18,8 @@ export function AppShell() {
       </main>
 
       <ResumeWatcher />
+      {/* Écran allumé tant qu'une séance est active (15/10/2026). */}
+      <ScreenWakeLockKeeper />
 
       {!hidden && (
         <nav className="tab-bar" aria-label="Navigation principale">

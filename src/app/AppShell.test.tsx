@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 
 /* La reprise de séance lit la base : sans objet ici. */
 vi.mock("../features/workout/ResumeWatcher", () => ({ ResumeWatcher: () => null }));
+vi.mock("../features/workout/ScreenWakeLockKeeper", () => ({ ScreenWakeLockKeeper: () => null }));
 
 const { AppShell } = await import("./AppShell");
 
