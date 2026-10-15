@@ -73,6 +73,74 @@
   overflow-wrap: anywhere;
 }
 
+/* Objectif Poids (maquette du 15/10/2026) : valeur, sous-ligne, trait, ligne colorée, petite ligne. */
+.goal-card--weight {
+  padding: 10px 8px;
+}
+
+.goal-card--weight .goal-card__value {
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.goal-card__sub {
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
+.goal-card__rule {
+  width: 100%;
+  margin: 6px 0 4px;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.goal-card__highlight {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.goal-card__tone--good {
+  color: var(--color-success-strong);
+}
+
+.goal-card__tone--bad {
+  color: var(--color-danger-strong);
+}
+
+.goal-card__foot {
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
+/* Objectif Poids (15/10/2026) : les moyennes de la semaine, sous la courbe. */
+.weight-weeks {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+}
+
+.weight-weeks div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.weight-weeks dt {
+  color: var(--color-text-soft);
+}
+
+.weight-weeks dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
 .goal-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

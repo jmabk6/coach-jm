@@ -116,7 +116,8 @@ describe("objectif Poids — composition corporelle", () => {
     await db.weightEntries.bulkAdd(ENTRIES);
     renderGoal("weight");
     await waitFor(() => expect(screen.getByRole("heading", { name: "Composition corporelle" })).toBeDefined());
-    const status = screen.getByText("Statut").closest(".goal-card") as HTMLElement;
+    /* 15/10/2026 : la carte « Trajectoire » remplace « Statut » pour le Poids. */
+    const status = screen.getByText("Trajectoire").closest(".goal-card") as HTMLElement;
     const withText = status.textContent;
     cleanup();
 
@@ -124,6 +125,6 @@ describe("objectif Poids — composition corporelle", () => {
     await db.weightEntries.bulkAdd(bare);
     renderGoal("weight");
     await screen.findByRole("heading", { name: "Composition corporelle" });
-    expect((screen.getByText("Statut").closest(".goal-card") as HTMLElement).textContent).toBe(withText);
+    expect((screen.getByText("Trajectoire").closest(".goal-card") as HTMLElement).textContent).toBe(withText);
   });
 });

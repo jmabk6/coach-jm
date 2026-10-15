@@ -6,6 +6,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { paths } from "../../app/paths";
 import { BottomSheet } from "../../components/ui/BottomSheet";
 import type { GoalKey } from "../../domain";
+import type { GoalCurve } from "../../domain/rules/goalRules";
 import { goalDueCard, goalStatusCard, type GoalCardText } from "../../domain/rules/goalListRules";
 import { reachedLabel } from "../../domain/rules/goalRules";
 import { formatTestNumber } from "../../domain/rules/testResultRules";
@@ -21,6 +22,8 @@ import { GoalAdviceTab, GoalExercisesTab } from "./GoalTabs";
 import { loadGoalDetail, type GoalDetail } from "./goalDetail";
 import "./GoalDetailScreen.css";
 import { formatFr } from "../../domain/rules/dateFr";
+import { weightCurrentCard, weightEtaCard, weightPaceCard, weightTrajectory, WEIGHT_LOSS_KG_PER_WEEK, type WeightCardText } from "../../domain/rules/weightGoalRules";
+import type { WeekAverage } from "../../domain/rules/weightRules";
 
 type Tab = "progression" | "exercices" | "conseils";
 
@@ -98,9 +101,20 @@ export function GoalDetailScreen() {
       </header>
 
       <div className="goal-cards">
-        <Card icon={<Gauge size={18} aria-hidden="true" />} title="Aujourd'hui" text={todayCard} />
-        <Card icon={<TrendingUp size={18} aria-hidden="true" />} title="Statut" text={statusCard} />
-        <Card icon={<CalendarDays size={18} aria-hidden="true" />} title="Échéance" text={goalDueCard(segment.dueDate ?? goal.dueDate, today)} />
+        {/* Poids (15/10/2026) : poids actuel, avance ou retard sur −0,5 kg/semaine depuis le départ, échéance estimée ; la moyenne de la semaine passe sous la courbe. */}
+        {detail.weight ? (
+          <>
+            <WeightCard icon={<Gauge size={18} aria-hidden="true" />} title="Poids actuel" text={weightCurrentCard(detail.weight.overview)} />
+            <WeightCard icon={<TrendingUp size={18} aria-hidden="true" />} title="Trajectoire" text={weightPaceCard(detail.weight.overview)} toneOnValue />
+            <WeightCard icon={<CalendarDays size={18} aria-hidden="true" />} title="Échéance estimée" text={weightEtaCard(detail.weight.overview)} />
+          </>
+        ) : (
+          <>
+            <Card icon={<Gauge size={18} aria-hidden="true" />} title="Aujourd'hui" text={todayCard} />
+            <Card icon={<TrendingUp size={18} aria-hidden="true" />} title="Statut" text={statusCard} />
+            <Card icon={<CalendarDays size={18} aria-hidden="true" />} title="Échéance" text={goalDueCard(segment.dueDate ?? goal.dueDate, today)} />
+          </>
+        )}
       </div>
 
       <nav className="goal-tabs" aria-label="Onglets de l'objectif">
@@ -136,6 +150,34 @@ function Card({ icon, title, text }: { icon: React.ReactNode; title: string; tex
   );
 }
 
+/** Trois cartes de 80 px à 375 px : un nombre ne quitte jamais son unité (« 90,4 kg », « −0,5 kg/sem. », « 5 sem. », « 3 j »), « : » ne commence jamais une ligne. */
+const keepTogether = (text: string) => text.replace(/(\d) (?=[a-zé])/g, "$1\u00a0").replace(/ :/g, "\u00a0:");
+
+/** Carte Poids (maquette du 15/10/2026) : valeur, sous-ligne, trait, ligne forte, petite ligne ; vert = favorable, rouge = défavorable (sur la valeur pour la Trajectoire). */
+function WeightCard({ icon, title, text, toneOnValue = false }: { icon: React.ReactNode; title: string; text: WeightCardText; toneOnValue?: boolean }) {
+  const tone = `goal-card__tone--${text.tone ?? "neutral"}`;
+  return (
+    <div className="goal-card goal-card--weight">
+      <span className="goal-card__title">
+        {icon} {title}
+      </span>
+      <strong className={`goal-card__value${toneOnValue ? ` ${tone}` : ""}`}>{keepTogether(text.value)}</strong>
+      {text.sub && <span className="goal-card__sub">{keepTogether(text.sub)}</span>}
+      {(text.highlight || text.foot) && <hr className="goal-card__rule" />}
+      {text.highlight && <span className={`goal-card__highlight${toneOnValue ? "" : ` ${tone}`}`}>{keepTogether(text.highlight)}</span>}
+      {text.foot && <span className="goal-card__foot">{keepTogether(text.foot)}</span>}
+    </div>
+  );
+}
+
+const weekKg = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
+
+/** « 88,6 kg · 4 pesées », « provisoire » sous 3 pesées ; « — » sans pesée. */
+function weekLine(week: WeekAverage): string {
+  if (week.mean === undefined || week.count === 0) return "Aucune pesée";
+  return `${weekKg.format(week.mean)} kg · ${week.count} pesée${week.count > 1 ? "s" : ""}${week.valid ? "" : " (provisoire)"}`;
+}
+
 function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; today: string; onChanged: () => void }) {
   const { goal, progress, protocol, version, formatValue, nextTest, secondary, linkedSessions } = detail;
   const { segment, evaluation, curve } = progress;
@@ -147,6 +189,13 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
   const returnTo = paths.goal(goal.key);
   const measureKey = segment.measure?.source === "test" ? segment.measure.measureKey : version?.primaryMeasureKey;
   const measureLabel = version?.measures.find((measure) => measure.key === measureKey)?.label;
+  /* Poids (15/10/2026) : la trajectoire en pointillé suit −0,5 kg/semaine depuis le départ fixe, jusqu'à l'objectif enregistré. */
+  const weightLine = detail.weight ? weightTrajectory(detail.weight.overview) : undefined;
+  const weightCurve: GoalCurve | undefined = detail.weight
+    ? weightLine
+      ? { ...curve, trajectory: weightLine }
+      : { series: curve.series, ...(curve.provisional ? { provisional: curve.provisional } : {}) }
+    : undefined;
 
   return (
     <>
@@ -159,7 +208,13 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
           <h2 id="weight-goal-title">Objectif Poids</h2>
           <p className="weight-goal__value">
             <strong>{segment.target !== undefined ? formatValue(segment.target) : "À définir"}</strong>
-            {(segment.dueDate ?? goal.dueDate) && <span>au {formatFr((segment.dueDate ?? goal.dueDate)!, "d MMMM yyyy")}</span>}
+            {/* 15/10/2026 : plus d'échéance fixe ; la date estimée à −0,5 kg/semaine depuis la dernière pesée. */}
+            {detail.weight?.overview.eta.kind === "estimate" && (
+              <span>
+                estimé au {formatFr(detail.weight.overview.eta.date, "d MMMM yyyy")} à −{String(WEIGHT_LOSS_KG_PER_WEEK).replace(".", ",")} kg/semaine
+              </span>
+            )}
+            {detail.weight?.overview.eta.kind === "reached" && <span>objectif atteint</span>}
           </p>
           <button type="button" className="goal-actions__button" onClick={() => setEditing(true)}>
             Modifier l'objectif
@@ -173,7 +228,7 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
       {weight ? (
         <section className="goal-section goal-test">
           <h2>Pesée</h2>
-          <p>Chaque matin, sur l'Accueil : la moyenne de la semaine fait foi, jamais la pesée du jour.</p>
+          <p>Chaque matin, sur l'Accueil. La moyenne de la semaine lisse les variations d'un jour à l'autre et aide à suivre la tendance.</p>
         </section>
       ) : (
         protocol && (
@@ -201,13 +256,31 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
       <section className="goal-section">
         <h2>Évolution : {segment.label.toLowerCase()}</h2>
         <GoalCurveChart
-          curve={curve}
+          curve={weightCurve ?? curve}
           today={today}
-          {...(segment.dueDate ?? goal.dueDate ? { dueDate: (segment.dueDate ?? goal.dueDate)! } : {})}
+          {...(detail.weight
+            ? weightCurve?.trajectory
+              ? { dueDate: weightCurve.trajectory[1].date }
+              : {}
+            : segment.dueDate ?? goal.dueDate
+              ? { dueDate: (segment.dueDate ?? goal.dueDate)! }
+              : {})}
           {...(segment.target !== undefined ? { target: segment.target } : {})}
           formatValue={formatValue}
           {...(weight ? { emptyText: "La courbe apparaîtra après ta première semaine de pesées." } : {})}
         />
+        {detail.weight && (
+          <dl className="weight-weeks" aria-label="Moyennes de la semaine">
+            <div>
+              <dt>Moyenne de la semaine en cours</dt>
+              <dd>{weekLine(detail.weight.weeks.current)}</dd>
+            </div>
+            <div>
+              <dt>Semaine précédente</dt>
+              <dd>{weekLine(detail.weight.weeks.lastComplete)}</dd>
+            </div>
+          </dl>
+        )}
         {evaluation.kind === "reached" && <p className="goal-detail__reached">{reachedLabel(goal, evaluation.role)}</p>}
         <div className="goal-actions">
           {/* Poids : le bouton est dans le bloc « Objectif Poids », plus haut. */}
@@ -314,14 +387,16 @@ function SegmentSheet({ detail, today, onDone, onDismiss }: { detail: GoalDetail
   const [error, setError] = useState<string>();
 
   const parsed = target.trim() === "" ? undefined : Number(target.replace(",", "."));
-  const valid = (parsed === undefined || Number.isFinite(parsed)) && (dueDate === "" || dueDate > today) && (!legs || measureKey !== "" || parsed === undefined);
+  /* Poids (15/10/2026) : l'échéance est estimée, plus saisie ; seul l'objectif se modifie. */
+  const valid = (parsed === undefined || Number.isFinite(parsed)) && (weight || dueDate === "" || dueDate > today) && (!legs || measureKey !== "" || parsed === undefined);
   const labelOf = (key: string) => version?.measures.find((measure) => measure.key === key)?.label ?? key;
 
   async function save() {
     try {
       await editGoalSegment(goal.id, segment.id, {
         ...(parsed !== undefined ? { target: parsed } : {}),
-        ...(dueDate ? { dueDate } : {}),
+        /* Poids : l'échéance n'est plus saisie ; celle déjà enregistrée est gardée telle quelle, jamais effacée. */
+        ...(weight ? (segment.dueDate ? { dueDate: segment.dueDate } : {}) : dueDate ? { dueDate } : {}),
         ...(legs && measureKey ? { measureKey, measureLabel: labelOf(measureKey) } : {}),
       });
       onDone();
@@ -335,7 +410,7 @@ function SegmentSheet({ detail, today, onDone, onDismiss }: { detail: GoalDetail
       title={weight ? "Modifier l'objectif Poids" : goal.title}
       message={
         weight
-          ? "Vide = à définir. Le statut, le départ et l'atteinte se recalculent aussitôt ; la composition corporelle ne change pas."
+          ? "Vide = à définir. L'avance ou le retard et l'échéance estimée (−0,5 kg/semaine) se recalculent aussitôt ; la composition corporelle ne change pas."
           : "Vide = à définir. Le statut, le départ et l'atteinte se recalculent aussitôt."
       }
       actions={[
@@ -343,7 +418,7 @@ function SegmentSheet({ detail, today, onDone, onDismiss }: { detail: GoalDetail
           label: "Enregistrer",
           tone: "primary",
           disabled: !valid,
-          hint: valid ? undefined : weight ? "Échéance dans le futur, objectif numérique" : "Échéance dans le futur, cible numérique",
+          hint: valid ? undefined : weight ? "Objectif numérique" : "Échéance dans le futur, cible numérique",
           onSelect: () => void save(),
         },
       ]}
@@ -374,10 +449,12 @@ function SegmentSheet({ detail, today, onDone, onDismiss }: { detail: GoalDetail
             <input inputMode="decimal" value={target} onChange={(event) => setTarget(event.target.value)} placeholder="à définir" />
           </label>
         )}
-        <label>
-          <span>Échéance</span>
-          <input type="date" value={dueDate} min={today} onChange={(event) => setDueDate(event.target.value)} />
-        </label>
+        {!weight && (
+          <label>
+            <span>Échéance</span>
+            <input type="date" value={dueDate} min={today} onChange={(event) => setDueDate(event.target.value)} />
+          </label>
+        )}
         {error && <p className="goal-form__error">{error}</p>}
       </div>
     </BottomSheet>

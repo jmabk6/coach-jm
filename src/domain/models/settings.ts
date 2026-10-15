@@ -115,6 +115,8 @@ export interface InstallMarkers {
   programmeMuscu20261005?: string;
   /** Seed 39 : Muscu C haut du corps (écarté, élévations, tapis incliné), jambes padel dans la Routine A, cadre de l'écarté. */
   programmeMuscuC20261009?: string;
+  /** Seed 40 : départ fixe de l'objectif Poids (première mesure de la balance de référence). */
+  weightGoalStart20261015?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

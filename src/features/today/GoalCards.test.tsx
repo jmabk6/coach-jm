@@ -67,7 +67,8 @@ describe("Accueil — Mes 7 objectifs", () => {
     expect(within(card("traction")).getByText("À mesurer · test dim. 27 sept.")).toBeDefined();
     expect(within(card("cardio")).getByText("À mesurer · test mer. 30 sept.")).toBeDefined();
     expect(within(card("legs")).getByText("Indicateur à choisir après 2 tests")).toBeDefined();
-    expect(within(card("weight")).getByText("À mesurer")).toBeDefined();
+    /* 15/10/2026 : sans mesure RENPHO, une explication, jamais un statut favorable. */
+    expect(within(card("weight")).getByText("Pas encore de pesée RENPHO")).toBeDefined();
     expect(document.querySelectorAll(".goal-card-home__status")).toHaveLength(0);
     expect(card("traction").getAttribute("href")).toBe("/objectifs/traction");
   });
@@ -92,19 +93,22 @@ describe("Accueil — Mes 7 objectifs", () => {
     expect(within(card("traction")).getByText("Palier atteint").className).toContain("goal-card-home__status--reached");
   });
 
-  it("test manqué : « Test à replanifier » ; pesées de la semaine : moyenne provisoire", async () => {
+  it("test manqué : « Test à replanifier » ; Poids : mêmes calculs que l'écran de l'objectif (−0,5 kg/semaine)", async () => {
     const missed: PlannedSession = {
       id: "p", date: "2026-09-16", sessionTemplateId: "v1-cardio-a", status: "skipped", source: "weekly_program", createdAt: T, updatedAt: T,
       tests: [{ protocolId: testProtocolId("cardio"), placement: "replace_block" }],
     };
     await db.plannedSessions.put(missed);
-    await db.weightEntries.bulkPut([
-      { id: "w1", date: "2026-09-21", kg: 80, createdAt: T, updatedAt: T },
-      { id: "w2", date: "2026-09-22", kg: 79, createdAt: T, updatedAt: T },
-    ] as never);
+    /* Mesures RENPHO : 91,15 kg le 5/10 puis 87,75 kg le 15/10 → prévu 90,4 kg, 2,7 kg d'avance. */
+    await db.bodyMeasurements.bulkPut(
+      [["2026-10-05", 91.15], ["2026-10-15", 87.75]].map(([date, kg]) => ({
+        id: `m-${date}`, date, takenAt: `${date}T05:00:00.000Z`, device: "renpho", source: "manual", weightReference: true, weightKg: kg, createdAt: T, updatedAt: T,
+      })) as never,
+    );
     renderCards();
     await screen.findByText("Mes 7 objectifs");
     expect(within(card("cardio")).getByText("À replanifier").className).toContain("goal-card-home__status--warning");
-    expect(within(card("weight")).getByText("79,5 kg · moyenne provisoire")).toBeDefined();
+    expect(within(card("weight")).getByText("87,75 kg · 2,7 kg d'avance")).toBeDefined();
+    expect(within(card("weight")).getByText("En avance").className).toContain("goal-card-home__status--ahead");
   });
 });

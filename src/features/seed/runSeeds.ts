@@ -23,6 +23,7 @@ import { seedBodyTargets20261005 } from "../body/seedBodyTargets";
 import { seedWeightGoal8020261005 } from "../goals/seedWeightGoal80";
 import { seedProgramMuscu20261005 } from "../program/seedProgramMuscu20261005";
 import { seedProgramMuscuC20261009 } from "../program/seedProgramMuscuC20261009";
+import { seedWeightGoalStart20261015 } from "../goals/seedWeightGoalStart";
 import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
@@ -125,6 +126,8 @@ export const SEEDS: SeedStep[] = [
   },
   /* Seed 39 (09/10/2026) : Muscu C haut du corps, jambes padel dans la Routine A, cadre de l'écarté à la poulie. */
   { name: "programmeMuscuC20261009", dependsOn: ["programmeMuscu20261005", "routinesContent", "goals"], run: () => seedProgramMuscuC20261009() },
+  /* Seed 40 (15/10/2026) : le départ fixe de l'objectif Poids. */
+  { name: "weightGoalStart20261015", dependsOn: ["goals"], run: () => seedWeightGoalStart20261015() },
 ];
 
 /**

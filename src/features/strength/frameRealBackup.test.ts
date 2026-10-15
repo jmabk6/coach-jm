@@ -28,6 +28,11 @@ import { currentLoadOf, proposeStartingLoad } from "./frameReadings";
  * validée → second jalon et objectif effacé. Puis les séances sont
  * supprimées : les jalons disparaissent, la version redevient modifiable,
  * et la base est de nouveau celle du fichier plus le cadre.
+ *
+ * Isolation (15/10/2026) : si le fichier porte une séance en cours, la règle
+ * « une seule séance à la fois » est d'abord vérifiée sur la copie de test,
+ * puis la séance est mise de côté le temps du scénario et remise à
+ * l'identique à la fin. Le fichier de sauvegarde n'est jamais modifié.
  */
 describe("lot 4B sur la sauvegarde réelle", () => {
   const path = process.env.COACH_JM_BACKUP;
@@ -48,6 +53,15 @@ describe("lot 4B sur la sauvegarde réelle", () => {
     for (const frame of await db.strengthFrames.where("exerciseId").equals("presse-cuisses").toArray()) {
       await db.strengthFrameVersions.where("frameId").equals(frame.id).delete();
       await db.strengthFrames.delete(frame.id);
+    }
+    /* Une séance en cours dans le fichier (le 15/10, un essai de Muscu C) : la
+       règle tient — une seconde séance est refusée —, puis la séance est mise
+       de côté sur la base de test seulement, et remise à la fin. */
+    const inProgress = (await db.workouts.where("status").equals("in_progress").toArray()).filter((item) => item.endedAt === undefined) as WorkoutSession[];
+    const inProgressSnapshot = canonicalStringify(inProgress);
+    if (inProgress.length > 0) {
+      await expect(startFreeWorkout("2030-01-07", "2030-01-07T17:00:00.000Z")).rejects.toThrow("Une séance est déjà en cours");
+      await db.workouts.bulkDelete(inProgress.map((item) => item.id));
     }
     const initial = await readStores(db);
 
@@ -192,5 +206,14 @@ describe("lot 4B sur la sauvegarde réelle", () => {
     }
     expect(await db.strengthFrameVersions.get(version.id)).not.toHaveProperty("firstOfficialWorkoutId");
     expect(await db.strengthFrames.get(frame.id)).toBeDefined();
+
+    /* La séance en cours du fichier, remise telle quelle : la règle s'applique de nouveau. */
+    if (inProgress.length > 0) {
+      await db.workouts.bulkPut(inProgress);
+      const restored = await db.workouts.bulkGet(inProgress.map((item) => item.id));
+      expect(canonicalStringify(restored)).toBe(inProgressSnapshot);
+      expect(await db.workouts.count()).toBe((initial.counts.workouts ?? 0) + inProgress.length);
+      await expect(startFreeWorkout("2030-01-12", "2030-01-12T17:00:00.000Z")).rejects.toThrow("Une séance est déjà en cours");
+    }
   });
 });

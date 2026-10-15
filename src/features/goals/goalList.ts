@@ -1,10 +1,12 @@
 import { db } from "../../db/database";
+import { getWeightReferenceDevice } from "../../db/repositories/bodyRepository";
 import { getSetting } from "../../db/repositories/settingsRepository";
 import { getAllTestProtocols, getAllTestResults, getTestProtocolVersion } from "../../db/repositories/testRepository";
 import { getWeightEntries } from "../../db/repositories/weightRepository";
 import type { Goal, TestCycleSettings, TestProtocol, TestProtocolVersion } from "../../domain";
 import { goalBadge, goalProtocolId, goalRowText, goalShortStatus, type GoalBadge, type GoalRowText, type GoalShortStatusTone } from "../../domain/rules/goalListRules";
 import { formatTestNumber } from "../../domain/rules/testResultRules";
+import { weightGoalOverview, weightGoalRowText, weightGoalShortStatus } from "../../domain/rules/weightGoalRules";
 import { goalProgressFrom } from "./goalProgress";
 import { v6StatusState } from "./tractionV6";
 import { v6ShortStatus } from "./tractionV6View";
@@ -12,8 +14,8 @@ import { getAllGoals } from "../../db/repositories/goalRepository";
 
 /**
  * Liste des objectifs (M4, lot H.3). Lit les objectifs, les résultats de
- * test, les pesées, les séances planifiées (tests attachés) et le
- * calendrier des tests ; n'écrit rien.
+ * test, les pesées, les mesures corporelles (Poids), les séances planifiées
+ * (tests attachés) et le calendrier des tests ; n'écrit rien.
  */
 export interface GoalListRow {
   goal: Goal;
@@ -60,6 +62,9 @@ export async function loadGoalList(today: string): Promise<GoalList> {
   const versions = await Promise.all(protocols.map((protocol) => getTestProtocolVersion(protocol.activeVersionId)));
   const versionByProtocol = new Map(protocols.map((protocol, index) => [protocol.id, versions[index]]));
   const weighedToday = weights.some((entry) => entry.date === today);
+  /* Poids (15/10/2026) : mêmes calculs que l'écran de l'objectif — mesures de la balance de référence, départ fixe, −0,5 kg/semaine. */
+  const isWeight = (goal: Goal) => goal.segments.some((segment) => segment.measure?.source === "weight_weekly_average");
+  const [bodyMeasurements, device] = goals.some(isWeight) ? await Promise.all([db.bodyMeasurements.toArray(), getWeightReferenceDevice()]) : [[], ""];
 
   const rows = [...goals]
     .sort((a, b) => a.position - b.position)
@@ -70,11 +75,8 @@ export async function loadGoalList(today: string): Promise<GoalList> {
       const protocol = protocolId ? protocolById.get(protocolId) : undefined;
       const measureKey = segment.measure?.source === "test" ? segment.measure.measureKey : undefined;
       const format = formatterFor(goal, measureKey, protocolId ? versionByProtocol.get(protocolId) : undefined);
-      const text = goalRowText(goal, segment, evaluation, format);
-      /* Poids sans semaine complète : la moyenne de la semaine en cours, provisoire (M1). */
-      if (evaluation.kind === "no_result" && progress.curve.provisional) {
-        text.value = `${format(progress.curve.provisional.value)} · moyenne provisoire`;
-      }
+      const overview = isWeight(goal) ? weightGoalOverview(bodyMeasurements, device, segment.target, segment.start) : undefined;
+      const text = overview ? weightGoalRowText(overview) : goalRowText(goal, segment, evaluation, format);
       const badge = goalBadge({
         goal,
         segment,
@@ -87,7 +89,11 @@ export async function loadGoalList(today: string): Promise<GoalList> {
         weighedToday,
         today,
       });
-      const status = goal.key === "traction" && tractionState && evaluation.kind === "tracking" ? v6ShortStatus(tractionState, today) : goalShortStatus(evaluation);
+      const status = overview
+        ? weightGoalShortStatus(overview)
+        : goal.key === "traction" && tractionState && evaluation.kind === "tracking"
+          ? v6ShortStatus(tractionState, today)
+          : goalShortStatus(evaluation);
       return { goal, number: index + 1, text, ...(badge ? { badge } : {}), ...(status ? { status } : {}) };
     });
 

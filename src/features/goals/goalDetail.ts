@@ -1,4 +1,5 @@
 import { db } from "../../db/database";
+import { getWeightReferenceDevice } from "../../db/repositories/bodyRepository";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
 import { getGoalByKey } from "../../db/repositories/goalRepository";
 import { getSetting } from "../../db/repositories/settingsRepository";
@@ -11,6 +12,8 @@ import { v6Progress, type V6Progress } from "./tractionV6View";
 import { goalProtocolId, nextTestDate } from "../../domain/rules/goalListRules";
 import { measureValue } from "../../domain/rules/goalRules";
 import { formatTestNumber } from "../../domain/rules/testResultRules";
+import { weightGoalOverview, type WeightGoalOverview } from "../../domain/rules/weightGoalRules";
+import { weightWeekSummary, type WeightWeekSummary } from "../../domain/rules/weightRules";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
 import {
   buildExercisePerformanceHistory,
@@ -62,6 +65,13 @@ export interface GoalDetail {
   composition?: CompositionSummary[];
   /** Objectif Traction : le pari du 31/03/2027 (03/10/2026). */
   bet?: V6Progress;
+  /**
+   * Objectif Poids (15/10/2026) : poids actuel (balance de référence, comme
+   * « Composition corporelle »), avance ou retard sur −0,5 kg par semaine
+   * depuis le départ, échéance estimée ; la moyenne de la semaine, sous la
+   * courbe.
+   */
+  weight?: { overview: WeightGoalOverview; weeks: WeightWeekSummary };
   linkedSessions: LinkedSession[];
 }
 
@@ -254,6 +264,15 @@ export async function loadGoalDetail(key: GoalKey, today: string): Promise<GoalD
     ...(nextTest ? { nextTest } : {}),
     secondary,
     ...(goal.key === "traction" ? { bet: v6Progress(workouts, weights, today, results) } : {}),
+    ...(weight
+      ? {
+          weight: {
+            /* L'objectif enregistré, jamais une valeur écrite en dur ; plus d'échéance fixe (estimée à −0,5 kg/semaine). */
+            overview: weightGoalOverview(bodyMeasurements, await getWeightReferenceDevice(), progress.segment.target, progress.segment.start),
+            weeks: weightWeekSummary(weights, today),
+          },
+        }
+      : {}),
     /* Composition de l'objectif Poids : les relevés Withings seuls (mesures « withings » et compositions des pesées), jamais mêlés
        à la RENPHO ; affichée seulement s'il en existe (phase 2.1, règle d'affichage, aucune donnée retirée). */
     ...(goal.key === "weight" && withings.length > 0

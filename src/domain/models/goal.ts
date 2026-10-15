@@ -34,6 +34,13 @@ export interface GoalSegment {
   target?: number;
   dueDate?: string;
   label: string;
+  /**
+   * Objectif Poids (décision du 15/10/2026, seed 40) : le départ fixe de la
+   * trajectoire de −0,5 kg par semaine. Enregistré une fois ; une pesée
+   * ajoutée ou supprimée ne le déplace pas. Absent = départ provisoire (la
+   * première pesée de la balance de référence).
+   */
+  start?: { date: string; value: number };
 }
 
 export type GoalSecondaryIndicator =
@@ -41,8 +48,9 @@ export type GoalSecondaryIndicator =
   | { kind: "test_measure"; protocolId: Id; measureKey: string };
 
 /**
- * Rien de dérivé n'est stocké — ni départ, ni statut, ni atteinte : tout
- * se recalcule à l'affichage, suppression de séance comprise.
+ * Rien de dérivé n'est stocké — ni statut, ni atteinte : tout se recalcule
+ * à l'affichage, suppression de séance comprise. Seule exception : le
+ * départ fixe de l'objectif Poids (`GoalSegment.start`, 15/10/2026).
  */
 export interface Goal {
   id: Id;
