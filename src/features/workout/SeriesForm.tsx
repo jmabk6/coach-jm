@@ -1,4 +1,5 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { clearSeriesDraft, readSeriesDraft, writeSeriesDraft, type SeriesDraft } from "./seriesDraft";
 import type { Load, LoadSemantics, PerformedSeriesRole, PerformedSideValue, PowerUnit, RpeScaleVersion } from "../../domain";
 import { loadLabelOf } from "../../domain/rules/loadSemanticsRules";
 import { POWER_UNIT_LABELS, slowestRepSec } from "../../domain/rules/powerRules";
@@ -60,6 +61,11 @@ interface SeriesFormProps {
   /** Unité d'une saisie par côté en répétitions : « pas » pour la marche latérale. */
   sideRepsUnit?: string | undefined;
   submitLabel: string;
+  /**
+   * Série terminée, pas encore enregistrée (15/10/2026) : la saisie est
+   * gardée sous cette clé et retrouvée après un rechargement.
+   */
+  draftKey?: string | undefined;
   onSubmit: (values: SeriesValues) => void;
   onCancel?: () => void;
   busy?: boolean;
@@ -101,52 +107,61 @@ export function SeriesForm({
   powerUnit,
   sideRepsUnit = "reps",
   submitLabel,
+  draftKey,
   onSubmit,
   onCancel,
   busy = false,
 }: SeriesFormProps) {
   const helpId = useId();
+  /* Brouillon retrouvé (rechargement) : il l'emporte sur les valeurs proposées. */
+  const [draft] = useState<SeriesDraft | undefined>(() => (draftKey ? readSeriesDraft(draftKey) : undefined));
+  const restored = <T,>(key: string, fallback: T): T => (draft && draft[key] !== undefined ? (draft[key] as T) : fallback);
   const [loadKind, setLoadKind] = useState<LoadKind>(
-    initial.load?.kind ?? (barWeightKg !== undefined ? "per_side" : "total"),
+    restored("loadKind", initial.load?.kind ?? (barWeightKg !== undefined ? "per_side" : "total")),
   );
   const [load, setLoad] = useState(
-    formatNumberInput(
+    restored("load", formatNumberInput(
       initial.load?.kind === "total"
         ? initial.load.kg
         : initial.load?.kind === "per_side"
           ? initial.load.kgPerSide
           : undefined,
-    ),
+    )),
   );
-  const [reps, setReps] = useState(formatNumberInput(initial.reps));
-  const [duration, setDuration] = useState(formatNumberInput(initial.durationSec));
+  const [reps, setReps] = useState(restored("reps", formatNumberInput(initial.reps)));
+  const [duration, setDuration] = useState(restored("duration", formatNumberInput(initial.durationSec)));
   const [left, setLeft] = useState(
-    formatNumberInput(
+    restored("left", formatNumberInput(
       layout === "reps_per_side"
         ? sideValue(initial.sideValues, "left", "reps")
         : sideValue(initial.sideValues, "left", "durationSec"),
-    ),
+    )),
   );
   const [right, setRight] = useState(
-    formatNumberInput(
+    restored("right", formatNumberInput(
       layout === "reps_per_side"
         ? sideValue(initial.sideValues, "right", "reps")
         : sideValue(initial.sideValues, "right", "durationSec"),
-    ),
+    )),
   );
   const [repDurations, setRepDurations] = useState<string[]>(
-    (initial.repDurationsSec ?? []).map((value) => formatNumberInput(value)),
+    restored("repDurations", (initial.repDurationsSec ?? []).map((value) => formatNumberInput(value))),
   );
-  const [resultValue, setResultValue] = useState(formatNumberInput(initial.result?.value));
-  const [chosenUnit, setChosenUnit] = useState<PowerUnit>(initial.result?.unit ?? powerUnit ?? "watts");
+  const [resultValue, setResultValue] = useState(restored("resultValue", formatNumberInput(initial.result?.value)));
+  const [chosenUnit, setChosenUnit] = useState<PowerUnit>(restored("chosenUnit", initial.result?.unit ?? powerUnit ?? "watts"));
   const resultUnit = powerUnit ?? chosenUnit;
-  const [resistance, setResistance] = useState(formatNumberInput(initial.resistance));
-  const [rpe, setRpe] = useState(formatNumberInput(initial.rpe));
+  const [resistance, setResistance] = useState(restored("resistance", formatNumberInput(initial.resistance)));
+  const [rpe, setRpe] = useState(restored("rpe", formatNumberInput(initial.rpe)));
   const [rpeHelpOpen, setRpeHelpOpen] = useState(false);
-  const [role, setRole] = useState<PerformedSeriesRole>(initial.role ?? DEFAULT_SERIES_ROLE);
-  const [sideLimited, setSideLimited] = useState(initial.sideLimited === true);
-  const [noteOpen, setNoteOpen] = useState(Boolean(initial.note));
-  const [note, setNote] = useState(initial.note ?? "");
+  const [role, setRole] = useState<PerformedSeriesRole>(restored("role", initial.role ?? DEFAULT_SERIES_ROLE));
+  const [sideLimited, setSideLimited] = useState(restored("sideLimited", initial.sideLimited === true));
+  const [noteOpen, setNoteOpen] = useState(restored("noteOpen", Boolean(initial.note)));
+  const [note, setNote] = useState(restored("note", initial.note ?? ""));
+  useEffect(() => {
+    if (!draftKey) return;
+    writeSeriesDraft(draftKey, { loadKind, load, reps, duration, left, right, repDurations, resultValue, chosenUnit, resistance, rpe, role, sideLimited, noteOpen, note });
+  }, [draftKey, loadKind, load, reps, duration, left, right, repDurations, resultValue, chosenUnit, resistance, rpe, role, sideLimited, noteOpen, note]);
+
   /* Le drapeau ne se pose que sur une série de travail bilatérale : un
      exercice mesuré par côté a déjà ses deux valeurs. */
   const sideLimitedAvailable =
@@ -259,6 +274,7 @@ export function SeriesForm({
       onSubmit={(event) => {
         event.preventDefault();
         if (!measured || busy) return;
+        if (draftKey) clearSeriesDraft(draftKey);
         onSubmit(buildValues());
       }}
     >

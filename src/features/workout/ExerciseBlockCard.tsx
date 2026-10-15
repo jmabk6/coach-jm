@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronUp, EllipsisVertical, Plus, Target } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, EllipsisVertical, Hourglass, Plus, Target } from "lucide-react";
 import { advisedLoadOf, formatAdvisedLoad } from "./advisedLoad";
 import type {
   CardioStepSettings,
@@ -29,6 +29,7 @@ import {
 } from "./engine/workoutBlocks";
 import type { LastComparableStep, LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
+import { seriesDraftKey } from "./seriesDraft";
 import type { BetSet } from "../goals/tractionBet";
 import { formatDecimal } from "./workoutRecap";
 import { SimpleMeasurementForm } from "./SimpleMeasurementForm";
@@ -57,10 +58,15 @@ interface ExerciseBlockCardProps {
   expanded: boolean;
   busy: boolean;
   /**
-   * Carte de repos à afficher en tête du contenu quand cette brique est
-   * la brique courante (§12).
+   * Carte de repos quand cette brique est la brique courante (§12). Pour
+   * les séries (15/10/2026) : juste sous la série dont le repos court
+   * (`restAfterEntryId`), donc au-dessus de la suivante ; repos venu de
+   * l'exercice précédent : au-dessus de la première série.
    */
   restCard?: ReactNode;
+  restAfterEntryId?: Id | undefined;
+  /** Séance en cours : portée des brouillons de saisie (15/10/2026). */
+  workoutId?: Id | undefined;
   /**
    * Nom de l'exercice prévu à l'origine quand la brique a été remplacée
    * (§13) : la ligne `Prévu : <origine>`.
@@ -88,6 +94,8 @@ interface ExerciseBlockCardProps {
   onOpenMenu: () => void;
   onUnskip: () => void;
   onValidateSeries: (seriesId: Id, values: SeriesValues) => void;
+  /** « Série terminée · Démarrer le repos » (15/10/2026). */
+  onEndSeries?: (seriesId: Id) => void;
   onEditSeries: (seriesId: Id, values: SeriesValues) => void;
   onAddSeries: () => void;
   onFinishBlock: () => void;
@@ -117,6 +125,8 @@ export function ExerciseBlockCard({
   expanded,
   busy,
   restCard,
+  restAfterEntryId,
+  workoutId,
   originalName,
   rpeTable,
   frameVersion,
@@ -126,6 +136,7 @@ export function ExerciseBlockCard({
   onOpenMenu,
   onUnskip,
   onValidateSeries,
+  onEndSeries,
   onEditSeries,
   onAddSeries,
   onFinishBlock,
@@ -232,7 +243,6 @@ export function ExerciseBlockCard({
 
       {expanded && !skipped && block.series && (
         <div className="wblock__content">
-          {restCard}
           {bet ? <BetGoal bet={bet} /> : frameVersion && <FrameGoal block={block} frameVersion={frameVersion} lastTime={lastTime} />}
           {/* Avec le bandeau du pari, la ligne « Conseillé » du cadre ferait doublon. */}
           {/* Traction légère de Muscu B (pari V6) : hors palier, le cadre de la Muscu A ne s'y affiche pas. */}
@@ -258,9 +268,11 @@ export function ExerciseBlockCard({
                 <span />
               </li>
             )}
+            {/* Repos venu de l'exercice précédent : au-dessus de la première série (15/10/2026). */}
+            {restCard && restAfterEntryId === undefined && <li className="wseries__rest-slot">{restCard}</li>}
             {[...block.series]
               .sort((a, b) => a.position - b.position)
-              .map((series, index) => (
+              .flatMap((series, index) => [
                 <SeriesRow
                   key={series.id}
                   block={block}
@@ -276,12 +288,20 @@ export function ExerciseBlockCard({
                   onEdit={() => setEditingId(series.id)}
                   onCancelEdit={() => setEditingId(undefined)}
                   onValidate={(values) => onValidateSeries(series.id, values)}
+                  onEnd={onEndSeries ? () => onEndSeries(series.id) : undefined}
+                  draftKey={workoutId ? seriesDraftKey(workoutId, series.id) : undefined}
                   onSaveEdit={(values) => {
                     setEditingId(undefined);
                     onEditSeries(series.id, values);
                   }}
-                />
-              ))}
+                />,
+                /* Le chrono sous la série terminée, au-dessus de la suivante : il ne bouge pas à l'enregistrement. */
+                restCard && restAfterEntryId === series.id ? (
+                  <li key={`rest-${series.id}`} className="wseries__rest-slot">
+                    {restCard}
+                  </li>
+                ) : null,
+              ])}
           </ol>
 
           <div className={`wblock__actions ${awaitingChoice ? "wblock__actions--choice" : ""}`}>
@@ -563,6 +583,9 @@ interface SeriesRowProps {
   onEdit: () => void;
   onCancelEdit: () => void;
   onValidate: (values: SeriesValues) => void;
+  /** « Série terminée · Démarrer le repos » ; absent : saisie directe comme avant. */
+  onEnd?: (() => void) | undefined;
+  draftKey?: string | undefined;
   onSaveEdit: (values: SeriesValues) => void;
 }
 
@@ -602,6 +625,8 @@ function SeriesRow({
   onEdit,
   onCancelEdit,
   onValidate,
+  onEnd,
+  draftKey,
   onSaveEdit,
 }: SeriesRowProps) {
   const label = `Série ${index + 1}`;
@@ -633,6 +658,7 @@ function SeriesRow({
               {series.restComparable === false ? " · hors moyenne" : ""}
             </span>
           )}
+          {series.restUnmeasured && <span className="wseries__rest">Repos non mesuré</span>}
         </span>
         {!editing && (
           <button type="button" className="wseries__edit" onClick={onEdit}>
@@ -699,22 +725,35 @@ function SeriesRow({
             </>
           )}
         </span>
-        <div className="wseries__form">
-          <SeriesForm
-            key={`entry-${series.id}`}
-            layout={layout}
-            initial={{ ...proposed, ...(series.role !== undefined ? { role: series.role } : {}) }}
-            strengthFields={strengthFields}
-            rpeTable={rpeTable}
-            barWeightKg={barWeightKg}
-            loadSemantics={loadSemanticsOf(exercise)}
-            powerUnit={powerUnit}
-            sideRepsUnit={exercise?.measurementLabels?.value}
-            submitLabel={`Valider la série ${index + 1}`}
-            onSubmit={onValidate}
-            busy={busy}
-          />
-        </div>
+        {onEnd && series.endedAt === undefined ? (
+          /* 15/10/2026 : un seul geste en fin de série ; la saisie se fait pendant le repos. */
+          <button type="button" className="wseries__end" onClick={onEnd} disabled={busy}>
+            <span>Série terminée</span>
+            {plannedRestOf(block) > 0 && (
+              <small>
+                <Hourglass size={14} strokeWidth={2.2} aria-hidden="true" /> Démarrer le repos
+              </small>
+            )}
+          </button>
+        ) : (
+          <div className="wseries__form">
+            <SeriesForm
+              key={`entry-${series.id}`}
+              layout={layout}
+              initial={{ ...proposed, ...(series.role !== undefined ? { role: series.role } : {}) }}
+              strengthFields={strengthFields}
+              rpeTable={rpeTable}
+              barWeightKg={barWeightKg}
+              loadSemantics={loadSemanticsOf(exercise)}
+              powerUnit={powerUnit}
+              sideRepsUnit={exercise?.measurementLabels?.value}
+              submitLabel={series.endedAt !== undefined ? `Enregistrer la série ${index + 1}` : `Valider la série ${index + 1}`}
+              draftKey={series.endedAt !== undefined ? draftKey : undefined}
+              onSubmit={onValidate}
+              busy={busy}
+            />
+          </div>
+        )}
       </li>
     );
   }
@@ -918,4 +957,10 @@ function StepRow({
       )}
     </li>
   );
+}
+
+/** Repos prévu après une série (programme, jamais modifié). */
+function plannedRestOf(block: PerformedExerciseBlock): number {
+  const instructions = block.snapshotInstructions;
+  return instructions.shape === "reps" || instructions.shape === "duration" ? instructions.restBetweenSetsSec : 0;
 }

@@ -216,3 +216,55 @@
   color: var(--color-text-soft);
   font-size: 0.75rem;
 }
+
+/* « Démarrer la série suivante » (15/10/2026) : toute la largeur, sous −30 s / +30 s. */
+.rest-card__actions:has(.rest-card__skip--next) {
+  grid-template-columns: 1fr 1fr;
+}
+
+.rest-card__skip--next {
+  grid-column: 1 / -1;
+  order: 1;
+}
+
+/* Entre deux séries (15/10/2026) : compacte, pour tenir avec la saisie sur iPhone. */
+.rest-card.rest-card--compact {
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.rest-card__time.rest-card__time--inline {
+  flex: 1;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 1.6rem;
+}
+
+.rest-card--compact .rest-card__actions {
+  grid-template-columns: 64px 64px minmax(0, 1fr);
+}
+
+.rest-card--compact .rest-card__actions:has(.rest-card__skip--next) {
+  grid-template-columns: 64px 64px minmax(0, 1fr);
+}
+
+.rest-card--compact .rest-card__skip {
+  grid-column: auto;
+  order: 1;
+}
+
+.rest-card--compact .rest-card__adjust,
+.rest-card--compact .rest-card__skip {
+  min-height: 42px;
+  font-size: 0.88rem;
+}
+
+.rest-card__next-line {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+}
+
+.rest-card__next-line strong {
+  color: var(--color-text);
+}

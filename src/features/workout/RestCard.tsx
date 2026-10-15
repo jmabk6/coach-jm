@@ -12,6 +12,16 @@ interface RestCardProps {
   busy: boolean;
   onAdjust: (deltaSec: number) => void;
   onSkip: () => void;
+  /**
+   * Repos parti de « Série terminée » (15/10/2026) : « Démarrer la série
+   * suivante » remplace `Passer` ; c'est le seul geste qui mesure le repos.
+   */
+  onStartNext?: (() => void) | undefined;
+  /**
+   * Entre deux séries (15/10/2026) : une ligne pour le temps, une pour
+   * les commandes, pour rester visible avec la saisie sur iPhone.
+   */
+  compact?: boolean;
 }
 
 export const REST_ADJUST_STEP_SEC = 30;
@@ -35,6 +45,8 @@ export function RestCard({
   busy,
   onAdjust,
   onSkip,
+  onStartNext,
+  compact = false,
 }: RestCardProps) {
   const countdown = getRestCountdown(rest, now);
   const done = countdown.phase === "done";
@@ -47,7 +59,7 @@ export function RestCard({
 
   return (
     <section
-      className={`rest-card ${done ? "rest-card--done" : ""} ${paused ? "rest-card--paused" : ""}`}
+      className={`rest-card ${done ? "rest-card--done" : ""} ${paused ? "rest-card--paused" : ""} ${compact ? "rest-card--compact" : ""}`}
       aria-live="polite"
     >
       <header className="rest-card__head">
@@ -55,6 +67,12 @@ export function RestCard({
           <Hourglass size={18} strokeWidth={2} aria-hidden="true" />
           {done ? "Repos terminé" : "Repos"}
         </span>
+        {compact && (
+          <span className="rest-card__time rest-card__time--inline">
+            {done ? formatMmSs(countdown.elapsedSec) : formatMmSs(countdown.remainingSec)}
+            <small>{done ? "écoulé" : "restant"}</small>
+          </span>
+        )}
         <span className="rest-card__planned">
           prévu {formatMmSs(rest.plannedDurationSec)}
           {adjusted
@@ -63,10 +81,12 @@ export function RestCard({
         </span>
       </header>
 
-      <p className="rest-card__time">
-        {done ? formatMmSs(countdown.elapsedSec) : formatMmSs(countdown.remainingSec)}
-        <small>{done ? "réel, en cours" : "restant"}</small>
-      </p>
+      {!compact && (
+        <p className="rest-card__time">
+          {done ? formatMmSs(countdown.elapsedSec) : formatMmSs(countdown.remainingSec)}
+          <small>{done ? "réel, en cours" : "restant"}</small>
+        </p>
+      )}
 
       <div className="rest-card__track" aria-hidden="true">
         <span style={{ width: `${Math.round(progress * 100)}%` }} />
@@ -77,14 +97,22 @@ export function RestCard({
           <PauseCircle size={16} strokeWidth={2} aria-hidden="true" />
           Séance en pause : le repos continue de courir, il ne comptera pas dans le repos moyen.
         </p>
-      ) : done ? (
+      ) : done && !compact ? (
         <p className="rest-card__note">
-          Le repos réel court jusqu'à la validation suivante, ou jusqu'à `Passer` ; `+30 s`
-          relance un décompte sans le remettre à zéro.
+          {onStartNext
+            ? "Le repos est mesuré jusqu'à « Démarrer la série suivante » ; `+30 s` relance un décompte sans le remettre à zéro."
+            : "Le repos réel court jusqu'à la validation suivante, ou jusqu'à `Passer` ; `+30 s` relance un décompte sans le remettre à zéro."}
         </p>
       ) : null}
 
-      {nextUp && (
+      {nextUp && compact && (
+        <p className="rest-card__next-line">
+          Ensuite : <strong>{nextUp.title}</strong>
+          {nextUp.detail ? ` · ${nextUp.detail}` : ""}
+        </p>
+      )}
+
+      {nextUp && !compact && (
         <div className="rest-card__next">
           <span className="rest-card__next-label">Ensuite</span>
           <span className="rest-card__next-title">{nextUp.title}</span>
@@ -105,11 +133,11 @@ export function RestCard({
         </button>
         <button
           type="button"
-          className="rest-card__skip"
-          onClick={onSkip}
+          className={`rest-card__skip${onStartNext ? " rest-card__skip--next" : ""}`}
+          onClick={onStartNext ?? onSkip}
           disabled={locked}
         >
-          Passer
+          {onStartNext ? "Démarrer la série suivante" : "Passer"}
         </button>
         <button
           type="button"

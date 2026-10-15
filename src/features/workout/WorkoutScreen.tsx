@@ -40,6 +40,8 @@ import {
   skipBlock,
   discardBlock,
   skipRest,
+  endSeries,
+  startNextSeries,
   substituteExercise,
   substituteGroupChild,
   unskipBlock,
@@ -65,6 +67,7 @@ import { v6State, v6StatusState } from "../goals/tractionV6";
 import { findLastComparableStep, lastTimeOf } from "./lastPerformance";
 import { RestBar } from "./RestBar";
 import { RestCard } from "./RestCard";
+import { pruneSeriesDrafts } from "./seriesDraft";
 import { playRestSignal, primeRestSignal } from "./restSignal";
 import { usePreferences } from "../plus/usePreferences";
 import { acceptRaise } from "../strength/frameActions";
@@ -177,6 +180,30 @@ export function WorkoutScreen() {
       if (preferences?.timerSound !== false) playRestSignal();
     }
   }, [rest, restPhase, preferences]);
+
+  /* Clavier ouvert sur iPhone (15/10/2026) : le chrono accroché en bas se cale au-dessus du clavier. */
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () => {
+      const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      document.documentElement.style.setProperty("--keyboard-inset", `${Math.round(inset)}px`);
+    };
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+      document.documentElement.style.removeProperty("--keyboard-inset");
+    };
+  }, []);
+
+  /* Brouillons de saisie (15/10/2026) : ceux d'une autre séance n'ont plus d'objet. */
+  const workoutIdForDrafts = workout?.id;
+  useEffect(() => {
+    if (workoutIdForDrafts) pruneSeriesDrafts(workoutIdForDrafts);
+  }, [workoutIdForDrafts]);
 
   /* Retour de la bibliothèque : `?add=<id>` dans l'ordre de sélection —
      ou, avec `substitute=<brique>[&child=<enfant>]`, le remplaçant choisi. */
@@ -318,12 +345,38 @@ export function WorkoutScreen() {
 
   /* Carte de repos pleine : dans la brique courante si elle est dépliée,
      sinon au-dessus de la liste. */
+  /* Le chrono est au-dessus de la série suivante (15/10/2026) : « Ensuite » seulement quand on change d'exercice. */
+  const restBlock = workout.activeRest ? blocks.find((block) => block.id === workout.activeRest!.afterBlockId) : undefined;
+  const nextInSameBlock =
+    workout.activeRest?.kind === "between_sets" &&
+    restBlock?.kind === "exercise" &&
+    (restBlock.series ?? []).some((series) => series.id !== workout.activeRest!.afterEntryId && (series.status === "active" || series.status === "upcoming"));
+  /* Dernière série encore en saisie (15/10/2026) : « Ensuite » annonce l'exercice suivant, pas la série en cours. */
+  const lastSeriesPending =
+    workout.activeRest?.fromSeriesEnd === true &&
+    restBlock?.kind === "exercise" &&
+    !nextInSameBlock &&
+    workout.currentBlockId === restBlock.id;
+  const followingBlock = lastSeriesPending
+    ? [...blocks]
+        .filter((block) => block.kind !== "note" && block.position > restBlock!.position && block.status !== "performed" && block.status !== "skipped")
+        .sort((a, b) => a.position - b.position)[0]
+    : undefined;
+  /* Chrono déjà en haut de l'exercice suivant : la série juste dessous suffit, pas de « Ensuite ». */
+  const restInNextBlock = workout.activeRest?.fromSeriesEnd === true && restBlock !== undefined && workout.currentBlockId !== restBlock.id;
+  const nextUpSource = restInNextBlock
+    ? undefined
+    : lastSeriesPending
+      ? followingBlock
+        ? { ...workout, currentBlockId: followingBlock.id }
+        : undefined
+      : workout;
   const restCard = workout.activeRest && !intraRoundRest ? (
     <RestCard
       rest={workout.activeRest}
       now={nowIso}
-      nextUp={describeNextUp(
-        workout,
+      nextUp={nextInSameBlock || !nextUpSource ? undefined : describeNextUp(
+        nextUpSource,
         exerciseById,
         (block) => {
           const values = proposeSeriesValues(block, lastTimeOf(block, lastByExercise, lastByOwnBlock)?.series);
@@ -349,6 +402,8 @@ export function WorkoutScreen() {
       busy={busy}
       onAdjust={(delta) => void run((current, at) => adjustRest(current, delta, at))}
       onSkip={() => void run((current, at) => skipRest(current, at))}
+      onStartNext={workout.activeRest.fromSeriesEnd ? () => void run((current, at) => startNextSeries(current, at)) : undefined}
+      compact={workout.activeRest.kind === "between_sets"}
     />
   ) : null;
   const currentBlock = blocks.find((block) => block.id === workout.currentBlockId);
@@ -630,6 +685,8 @@ export function WorkoutScreen() {
                 expanded={isExpanded(block)}
                 busy={locked}
                 restCard={block.id === currentBlock?.id && restCardInBlock ? restCard : undefined}
+                restAfterEntryId={workout.activeRest?.kind === "between_sets" && workout.activeRest.afterBlockId === block.id ? workout.activeRest.afterEntryId : undefined}
+                workoutId={workout.id}
                 originalName={
                   block.originalExerciseId
                     ? exerciseById.get(block.originalExerciseId)?.name ?? "exercice supprimé"
@@ -649,6 +706,7 @@ export function WorkoutScreen() {
                     values.result ? fixExercisePowerUnit(block.exerciseId, values.result.unit) : undefined,
                   )
                 }
+                onEndSeries={(seriesId) => void run((current, at) => endSeries(current, block.id, seriesId, at))}
                 onEditSeries={(seriesId, values) =>
                   void run((current, at) => editSeries(current, block.id, seriesId, values, at))
                 }
@@ -699,7 +757,8 @@ export function WorkoutScreen() {
         Terminer la séance
       </button>
 
-      {workout.activeRest && !intraRoundRest && (
+      {/* Un seul chrono (15/10/2026) : plus de barre basse pour le repos entre séries, qui est au-dessus de la série suivante. */}
+      {workout.activeRest && !intraRoundRest && workout.activeRest.kind !== "between_sets" && (
         <RestBar
           rest={workout.activeRest}
           now={nowIso}

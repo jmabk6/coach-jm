@@ -1072,3 +1072,66 @@
 .wref > div:last-child:nth-child(odd) {
   grid-column: 1 / -1;
 }
+
+/* Repos depuis la fin de série (15/10/2026) : un gros bouton sur la série en cours, */
+/* et le chrono entre la série terminée et la suivante. */
+.wseries__end {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.wseries__end small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.wseries__end:disabled {
+  opacity: 0.5;
+}
+
+.wseries__rest-slot {
+  list-style: none;
+}
+
+.wseries__rest-slot .rest-card {
+  margin: 2px 0;
+}
+
+/* Toute la largeur, y compris dans le tableau (sélecteur composé : l'ordre du CSS diffère en production). */
+.wseries .wseries__row > .wseries__end,
+.wseries.wseries--table .wseries__row > .wseries__end {
+  justify-self: stretch;
+}
+
+/* Un seul chrono, accroché en bas de l'écran tant que sa place (au-dessus de la série suivante) est plus bas ;
+   au-dessus du clavier s'il est ouvert. Aucun défilement automatique. */
+.wseries .wseries__rest-slot {
+  position: sticky;
+  bottom: calc(var(--keyboard-inset, 0px) + 8px);
+  z-index: 3;
+}
+
+.wseries .wseries__rest-slot .rest-card {
+  box-shadow: 0 4px 16px var(--color-shadow-strong);
+  background: var(--color-surface);
+  background-image: linear-gradient(var(--color-accent-soft), var(--color-accent-soft));
+}
+
+.wseries .wseries__rest-slot .rest-card.rest-card--done {
+  background-image: linear-gradient(var(--color-success-soft), var(--color-success-soft));
+}

@@ -406,9 +406,18 @@ export interface PerformedSeries {
   note?: string;
 
   /**
-   * Repos réel après cette série : fin réelle − début (§12).
+   * Repos réel après cette série : fin réelle − début (§12). Depuis le
+   * 15/10/2026, pour une série terminée par « Série terminée », seulement
+   * si « Démarrer la série suivante » a été touché.
    */
   actualRestAfterSec?: number;
+
+  /**
+   * Repos après cette série clos sans « Démarrer la série suivante »
+   * (15/10/2026) : aucun repère du début de la série suivante, donc
+   * « non mesuré », hors repos moyen. Absent sur les anciennes séances.
+   */
+  restUnmeasured?: true;
 
   /**
    * Faux si ce repos a été clôturé par la fin de séance ou chevauché
@@ -420,6 +429,19 @@ export interface PerformedSeries {
    * Ajustements `−30 s` / `+30 s` appliqués pendant ce repos.
    */
   restAdjustmentSec?: number;
+
+  /**
+   * Début de la série, posé par « Démarrer la série suivante »
+   * (15/10/2026). Absent : début inconnu.
+   */
+  startedAt?: string;
+
+  /**
+   * Fin de la série, posée par « Série terminée » (15/10/2026) : le repos
+   * part de cet instant. Distincte de `completedAt`, l'enregistrement des
+   * valeurs. Absente sur les anciennes séances : validation directe.
+   */
+  endedAt?: string;
 
   completedAt?: string;
 }
@@ -640,6 +662,13 @@ export interface ActiveRest {
    * enregistré à part.
    */
   adjustmentSec?: number;
+
+  /**
+   * Repos démarré par « Série terminée » (15/10/2026) : sa fin réelle
+   * n'est mesurée que par « Démarrer la série suivante » ; toute autre
+   * clôture le laisse « non mesuré ». Absent : fonctionnement d'avant.
+   */
+  fromSeriesEnd?: true;
 }
 
 

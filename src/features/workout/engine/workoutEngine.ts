@@ -299,11 +299,28 @@ function closeActiveRest(
   workout: WorkoutSession,
   endedAt: string,
   comparable: boolean,
+  explicitStart = false,
 ): WorkoutSession {
   const rest = workout.activeRest;
 
   if (!rest) {
     return workout;
+  }
+
+  /* Repos parti de « Série terminée » (15/10/2026) : sans « Démarrer la
+     série suivante », aucun repère du début de la série suivante — non
+     mesuré, hors repos moyen. */
+  if (rest.fromSeriesEnd && !explicitStart && rest.kind === "between_sets") {
+    const unmeasured = withExerciseBlock(workout, rest.afterBlockId, (block) => ({
+      ...block,
+      series: (block.series ?? []).map((series) =>
+        series.id === rest.afterEntryId ? { ...series, restUnmeasured: true as const, restComparable: false } : series,
+      ),
+    }));
+    const next = { ...unmeasured };
+    delete next.activeRest;
+
+    return next;
   }
 
   const restSec = actualRestSec(rest, endedAt);
@@ -519,7 +536,10 @@ export function validateSeries(
     throw new Error("Une série validée porte au moins une valeur mesurée");
   }
 
-  let next = closeActiveRest(workout, now, true);
+  /* Série déjà terminée (« Série terminée », 15/10/2026) : son repos court
+     depuis la fin de série ; l'enregistrement n'y touche pas. */
+  const alreadyEnded = series.endedAt !== undefined;
+  let next = alreadyEnded ? workout : closeActiveRest(workout, now, true);
 
   next = withExerciseBlock(next, blockId, (item) => ({
     ...item,
@@ -535,17 +555,108 @@ export function validateSeries(
   }));
 
   next = afterEntryValidated(next, blockId, now);
-  next = startRest(
-    next,
-    "between_sets",
-    plannedRestAfterSeries(block),
-    blockId,
-    seriesId,
-    now,
-    newId,
-  );
+  if (!alreadyEnded) {
+    next = startRest(
+      next,
+      "between_sets",
+      plannedRestAfterSeries(block),
+      blockId,
+      seriesId,
+      now,
+      newId,
+    );
+  }
 
   return touch(next, now);
+}
+
+/**
+ * « Série terminée · Démarrer le repos » (15/10/2026) : la fin de série
+ * est datée et le repos prévu démarre aussitôt ; les valeurs se saisissent
+ * pendant le repos, puis `validateSeries` les enregistre sans toucher au
+ * chrono. Un repos précédent encore ouvert est clos (non mesuré s'il
+ * venait lui aussi d'une fin de série). Second appui : sans effet.
+ */
+export function endSeries(
+  workout: WorkoutSession,
+  blockId: Id,
+  seriesId: Id,
+  now: string,
+  newId: NewId = defaultNewId,
+): WorkoutSession {
+  assertInProgress(workout);
+
+  const block = findExerciseBlock(workout, blockId);
+  const series = block.series?.find((item) => item.id === seriesId);
+
+  if (!series) {
+    throw new Error("Série introuvable");
+  }
+
+  if (series.status === "completed" || series.endedAt !== undefined) {
+    return workout;
+  }
+
+  let next = closeActiveRest(workout, now, true);
+
+  next = withExerciseBlock(next, blockId, (item) => ({
+    ...item,
+    series: (item.series ?? []).map((entry) => (entry.id === seriesId ? { ...entry, endedAt: now } : entry)),
+  }));
+
+  const rested = startRest(next, "between_sets", plannedRestAfterSeries(block), blockId, seriesId, now, newId);
+  next = rested.activeRest && rested !== next ? { ...rested, activeRest: { ...rested.activeRest, fromSeriesEnd: true } } : rested;
+
+  return touch(next, now);
+}
+
+/**
+ * « Démarrer la série suivante » (15/10/2026) : clôt le repos parti de la
+ * fin de série — repos réel mesuré — et date le début de la série
+ * suivante (la suivante de l'exercice, sinon la première de l'exercice
+ * courant). Possible avant la fin du décompte. Sans repos ouvert : sans
+ * effet (second appui).
+ */
+export function startNextSeries(workout: WorkoutSession, now: string): WorkoutSession {
+  assertInProgress(workout);
+
+  const rest = workout.activeRest;
+
+  if (!rest || !rest.fromSeriesEnd) {
+    return workout;
+  }
+
+  let next = closeActiveRest(workout, now, true, true);
+  const target = nextSeriesAfter(next, rest.afterBlockId, rest.afterEntryId);
+
+  if (target) {
+    next = withExerciseBlock(next, target.blockId, (item) => ({
+      ...item,
+      series: (item.series ?? []).map((entry) => (entry.id === target.seriesId ? { ...entry, startedAt: now } : entry)),
+    }));
+  }
+
+  return touch(next, now);
+}
+
+/** La série qui suit un repos : dans le même exercice, sinon la première de l'exercice courant. */
+function nextSeriesAfter(workout: WorkoutSession, blockId: Id, seriesId: Id): { blockId: Id; seriesId: Id } | undefined {
+  const pending = (block: PerformedBlock | undefined, after = -1) =>
+    block?.kind === "exercise"
+      ? [...(block.series ?? [])]
+          .sort((a, b) => a.position - b.position)
+          .find((item) => item.position > after && item.status !== "completed" && item.status !== "not_performed" && item.endedAt === undefined && item.startedAt === undefined)
+      : undefined;
+
+  const own = workout.blocks.find((block) => block.id === blockId);
+  const position = own?.kind === "exercise" ? own.series?.find((item) => item.id === seriesId)?.position ?? -1 : -1;
+  const sameBlock = pending(own, position);
+  if (sameBlock) return { blockId, seriesId: sameBlock.id };
+
+  const current = workout.blocks.find((block) => block.id === workout.currentBlockId);
+  const first = current && current.id !== blockId ? pending(current) : undefined;
+
+  return first && current ? { blockId: current.id, seriesId: first.id } : undefined;
 }
 
 /**
