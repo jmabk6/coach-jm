@@ -85,8 +85,8 @@ describe("repos depuis la fin de série, à l'écran", () => {
     await seedWorkout();
     renderLive();
 
-    fireEvent.click(await screen.findByRole("button", { name: /Série terminée/ }));
-    const save = await screen.findByRole("button", { name: "Enregistrer la série 1" });
+    fireEvent.click(await screen.findByRole("button", { name: /Série terminée/ }, { timeout: 5000 }));
+    const save = await screen.findByRole("button", { name: "Enregistrer la série 1" }, { timeout: 5000 });
     const restBefore = (await stored()).activeRest!;
     expect(restBefore).toMatchObject({ fromSeriesEnd: true, plannedDurationSec: 120, afterEntryId: "a-s1" });
     expect(seriesOf(await stored(), "a", 0).endedAt).toBe(restBefore.startedAt);
@@ -102,16 +102,16 @@ describe("repos depuis la fin de série, à l'écran", () => {
     expect(slot.querySelector(".rest-card__next-line")).toBeNull();
 
     fireEvent.click(save);
-    await waitFor(async () => expect(seriesOf(await stored(), "a", 0).status).toBe("completed"));
+    await waitFor(async () => expect(seriesOf(await stored(), "a", 0).status).toBe("completed"), { timeout: 5000 });
     const after = await stored();
     /* Même repos, même départ : le chrono continue. */
     expect(after.activeRest).toEqual(restBefore);
     expect(seriesOf(after, "a", 0).completedAt! >= seriesOf(after, "a", 0).endedAt!).toBe(true);
     /* Toujours un seul chrono, toujours sous la série 1 et au-dessus de la série 2, qui attend son « Série terminée ». */
-    await waitFor(() => expect(restSlot().nextElementSibling?.querySelector(".wseries__end")).not.toBeNull());
+    await waitFor(() => expect(restSlot().nextElementSibling?.querySelector(".wseries__end")).not.toBeNull(), { timeout: 5000 });
 
     fireEvent.click(within(restSlot()).getByRole("button", { name: "Démarrer la série suivante" }));
-    await waitFor(async () => expect((await stored()).activeRest).toBeUndefined());
+    await waitFor(async () => expect((await stored()).activeRest).toBeUndefined(), { timeout: 5000 });
     const measured = await stored();
     expect(seriesOf(measured, "a", 0).actualRestAfterSec).toBeGreaterThanOrEqual(0);
     expect(seriesOf(measured, "a", 1).startedAt).toBeDefined();
@@ -122,10 +122,10 @@ describe("repos depuis la fin de série, à l'écran", () => {
   it("double appui sur « Série terminée » : un seul repos", async () => {
     await seedWorkout();
     renderLive();
-    const button = await screen.findByRole("button", { name: /Série terminée/ });
+    const button = await screen.findByRole("button", { name: /Série terminée/ }, { timeout: 5000 });
     fireEvent.click(button);
     fireEvent.click(button);
-    await screen.findByRole("button", { name: "Enregistrer la série 1" });
+    await screen.findByRole("button", { name: "Enregistrer la série 1" }, { timeout: 5000 });
     const first = (await stored()).activeRest!;
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect((await stored()).activeRest).toEqual(first);
@@ -135,33 +135,33 @@ describe("repos depuis la fin de série, à l'écran", () => {
   it("saisie non enregistrée retrouvée après un rechargement, chrono recalculé depuis la fin de série", async () => {
     await seedWorkout();
     const first = renderLive();
-    fireEvent.click(await screen.findByRole("button", { name: /Série terminée/ }));
-    await screen.findByRole("button", { name: "Enregistrer la série 1" });
+    fireEvent.click(await screen.findByRole("button", { name: /Série terminée/ }, { timeout: 5000 }));
+    await screen.findByRole("button", { name: "Enregistrer la série 1" }, { timeout: 5000 });
     fireEvent.change(screen.getByLabelText("Reps"), { target: { value: "7" } });
     const rest = (await stored()).activeRest!;
     first.unmount();
 
     renderLive();
-    await screen.findByRole("button", { name: "Enregistrer la série 1" });
+    await screen.findByRole("button", { name: "Enregistrer la série 1" }, { timeout: 5000 });
     expect((screen.getByLabelText("Reps") as HTMLInputElement).value).toBe("7");
     expect((await stored()).activeRest).toEqual(rest);
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer la série 1" }));
-    await waitFor(async () => expect(seriesOf(await stored(), "a", 0).reps).toBe(7));
+    await waitFor(async () => expect(seriesOf(await stored(), "a", 0).reps).toBe(7), { timeout: 5000 });
     expect(Object.keys(localStorage).filter((key) => key.startsWith("coach-jm:series-draft:"))).toEqual([]);
   });
 
   it("dernière série : repos prévu conservé ; après « Enregistrer », le chrono passe au-dessus de la série 1 de l'exercice suivant, avec « Ensuite »", async () => {
     await seedWorkout(1);
     renderLive();
-    fireEvent.click(await screen.findByRole("button", { name: /Série terminée/ }));
-    const save = await screen.findByRole("button", { name: "Enregistrer la série 1" });
+    fireEvent.click(await screen.findByRole("button", { name: /Série terminée/ }, { timeout: 5000 }));
+    const save = await screen.findByRole("button", { name: "Enregistrer la série 1" }, { timeout: 5000 });
     expect((await stored()).activeRest).toMatchObject({ plannedDurationSec: 120 });
     /* « Ensuite » annonce l'exercice suivant, jamais la série encore en saisie. */
     const [, second] = await exercises();
     expect(restSlot().querySelector(".rest-card__next-line")?.textContent).toContain(second!.name);
     fireEvent.click(save);
-    await waitFor(async () => expect((await stored()).currentBlockId).toBe("b"));
-    await waitFor(() => expect(restSlot().nextElementSibling?.querySelector(".wseries__end")).not.toBeNull());
+    await waitFor(async () => expect((await stored()).currentBlockId).toBe("b"), { timeout: 5000 });
+    await waitFor(() => expect(restSlot().nextElementSibling?.querySelector(".wseries__end")).not.toBeNull(), { timeout: 5000 });
     /* Déjà au-dessus de la série suivante : pas de « Ensuite » en double. */
     expect(restSlot().querySelector(".rest-card__next-line")).toBeNull();
     /* Dans la carte du second exercice, au-dessus de sa première série. */

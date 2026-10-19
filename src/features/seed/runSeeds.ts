@@ -25,6 +25,7 @@ import { seedProgramMuscu20261005 } from "../program/seedProgramMuscu20261005";
 import { seedProgramMuscuC20261009 } from "../program/seedProgramMuscuC20261009";
 import { seedWeightGoalStart20261015 } from "../goals/seedWeightGoalStart";
 import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
+import { seedFixTractionRpe20261019 } from "../history/seedFixTractionRpe20261019";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
 import { seedTractionTestV320261005 } from "../tests/seedTractionTestV3";
@@ -128,6 +129,8 @@ export const SEEDS: SeedStep[] = [
   { name: "programmeMuscuC20261009", dependsOn: ["programmeMuscu20261005", "routinesContent", "goals"], run: () => seedProgramMuscuC20261009() },
   /* Seed 40 (15/10/2026) : le départ fixe de l'objectif Poids. */
   { name: "weightGoalStart20261015", dependsOn: ["goals"], run: () => seedWeightGoalStart20261015() },
+  /* Seed 41 (19/10/2026) : RPE 9 sur la dernière traction de la Muscu A du 19/10. */
+  { name: "fixTractionRpe20261019", dependsOn: ["exerciseCatalog"], run: () => seedFixTractionRpe20261019() },
 ];
 
 /**

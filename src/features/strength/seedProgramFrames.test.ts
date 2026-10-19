@@ -8,6 +8,7 @@ import type { PerformedExerciseBlock, SessionTemplate, StrengthFrame, StrengthFr
 import { frameParametersChanged, nextStep, proposeRaise } from "../../domain/rules/strengthRules";
 import { expectedAfterFrameTargets } from "./seedFrameTargets20260925";
 import { expectedCurlEzVersionAfterFix, FIX_WORKOUT_ID as FIX_20261004_ID, fixesOf20261004 } from "../history/seedFixWorkout20261004";
+import { FIX_TRACTION_RPE_20261019_WORKOUT_ID, fixTractionRpe20261019 } from "../history/seedFixTractionRpe20261019";
 import { canonicalStringify } from "../backup/canonicalJson";
 import { resetAndRestore } from "../backup/resetAndRestore";
 import { parseBackup } from "../backup/restoreBackup";
@@ -241,7 +242,10 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
               : /* Seed 31 : la Muscu A du 04/10, dans l'état constaté, reçoit sa traction à 28 kg et son curl haltères. */
                 workout.id === FIX_20261004_ID
                 ? fixesOf20261004(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "")
-                : workout,
+                : /* Seed 41 : RPE 9 sur la dernière traction de la Muscu A du 19/10, dans l'état constaté. */
+                  workout.id === FIX_TRACTION_RPE_20261019_WORKOUT_ID
+                  ? (fixTractionRpe20261019(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "") ?? workout)
+                  : workout,
       ),
       ...(added ? [buildWorkout20260925(added.createdAt)] : []),
     ];

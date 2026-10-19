@@ -117,6 +117,8 @@ export interface InstallMarkers {
   programmeMuscuC20261009?: string;
   /** Seed 40 : départ fixe de l'objectif Poids (première mesure de la balance de référence). */
   weightGoalStart20261015?: string;
+  /** Seed 41 : RPE 9 (et non 5) sur la dernière traction de la Muscu A du 19/10. */
+  fixTractionRpe20261019?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

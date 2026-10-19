@@ -26,6 +26,7 @@ vi.stubEnv("BASE_URL", "/coach-jm/");
 import { CARDIO_A, CARDIO_A_FORMER, PROGRAM_V1_ROUTINES, PROGRAM_V1_ROUTINES_EMPTY } from "../program/programV1";
 import { CORE_LINKED, FLEXIBILITY_LINKED } from "../program/seedProgramV1";
 import { weightGoalAfterSeed37 } from "../goals/seedWeightGoal80";
+import { FIX_TRACTION_RPE_20261019_WORKOUT_ID, fixTractionRpe20261019 } from "../history/seedFixTractionRpe20261019";
 import { deviceSeries } from "../../domain/rules/bodyTargetRules";
 import { DEFAULT_WEIGHT_REFERENCE_DEVICE } from "../../domain/rules/bodyWeightRules";
 const { runSeeds, suspendSeeds, resumeSeedsForTests, SEEDS, SEEDS_BEFORE_PROGRAM_V2 } = await import("./runSeeds");
@@ -65,19 +66,19 @@ async function settingsByKey(): Promise<Record<string, SettingsRecord["value"]>>
 
 describe("runSeeds", () => {
   it("ordre du § 5.2 : settingsDefaults avant tout", () => {
-    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "fixWorkout20261004", "curlHalteresMuscuA20261004", "fixTractionRpe20261004", "tractionLightNote20261005", "legacyComposition20261005", "bodyTargets20261005", "weightGoalTarget20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "weightGoalStart20261015"]);
+    expect(SEEDS.map((seed) => seed.name)).toEqual(["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "fixWorkout20261004", "curlHalteresMuscuA20261004", "fixTractionRpe20261004", "tractionLightNote20261005", "legacyComposition20261005", "bodyTargets20261005", "weightGoalTarget20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "weightGoalStart20261015", "fixTractionRpe20261019"]);
   });
 
   it("base neuve : crée les réglages par défaut, le catalogue et l'échelle ; second passage sans écriture", async () => {
     const first = await runSeeds();
-    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "fixWorkout20261004", "curlHalteresMuscuA20261004", "fixTractionRpe20261004", "tractionLightNote20261005", "legacyComposition20261005", "bodyTargets20261005", "weightGoalTarget20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "weightGoalStart20261015"], failed: [], skipped: [] });
+    expect(first).toMatchObject({ ran: ["settingsDefaults", "exerciseCatalog", "rpeScale", "testProtocols", "programV1", "routines", "frames", "goals", "routinesContent", "cardioASingleBlock", "fixWorkout20260924", "removeSkipped20260924", "addWorkout20260925", "themeLight", "frameTargets20260925", "chair90", "testsWeek20260927", "removeOldMuscuA", "legCurlCouche20260927", "programV2", "archiveProgramV1", "tractionTarget20261003", "tractionIncrement20261003", "tractionPriority20261003", "tractionTest7kg20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "fixWorkout20261004", "curlHalteresMuscuA20261004", "fixTractionRpe20261004", "tractionLightNote20261005", "legacyComposition20261005", "bodyTargets20261005", "weightGoalTarget20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "weightGoalStart20261015", "fixTractionRpe20261019"], failed: [], skipped: [] });
 
     const settings = await settingsByKey();
     expect(Object.keys(settings).sort()).toEqual(["bodyCompositionTargets", "install", "preferences", "testCycle", "testSchedule"]);
     expect(settings.preferences).toEqual(DEFAULT_PREFERENCES);
     expect(settings.testCycle).toEqual({ anchorWeekStart: "2026-09-27", everyWeeks: 4 });
     const iso = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/);
-    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso, testsWeek20260927: iso, removeOldMuscuA: iso, legCurlCouche20260927: iso, programV2: iso, tractionTarget20261003: iso, tractionIncrement20261003: iso, tractionPriority20261003: iso, tractionTest7kg20261003: iso, tractionV620261004: iso, tractionTestV320261005: iso, negativesMuscuC20261005: iso, jambesSuspended20261005: iso, legPressMuscuA20261005: iso, fixWorkout20261004: iso, curlHalteresMuscuA20261004: iso, fixTractionRpe20261004: iso, tractionLightNote20261005: iso, legacyComposition20261005: iso, bodyTargets20261005: iso, weightGoalTarget20261005: iso, programmeMuscu20261005: iso, programmeMuscuC20261009: iso, weightGoalStart20261015: iso, ...(formatLocalDate(new Date()) >= "2026-10-04" ? { archiveProgramV1: iso } : {}) });
+    expect(settings.install).toEqual({ settingsDefaults: iso, testProtocols: iso, programV1: iso, routines: iso, frames: iso, goals: iso, routinesContent: iso, cardioASingleBlock: iso, fixWorkout20260924: iso, removeSkipped20260924: iso, addWorkout20260925: iso, themeLight: iso, frameTargets20260925: iso, chair90: iso, testsWeek20260927: iso, removeOldMuscuA: iso, legCurlCouche20260927: iso, programV2: iso, tractionTarget20261003: iso, tractionIncrement20261003: iso, tractionPriority20261003: iso, tractionTest7kg20261003: iso, tractionV620261004: iso, tractionTestV320261005: iso, negativesMuscuC20261005: iso, jambesSuspended20261005: iso, legPressMuscuA20261005: iso, fixWorkout20261004: iso, curlHalteresMuscuA20261004: iso, fixTractionRpe20261004: iso, tractionLightNote20261005: iso, legacyComposition20261005: iso, bodyTargets20261005: iso, weightGoalTarget20261005: iso, programmeMuscu20261005: iso, programmeMuscuC20261009: iso, weightGoalStart20261015: iso, fixTractionRpe20261019: iso, ...(formatLocalDate(new Date()) >= "2026-10-04" ? { archiveProgramV1: iso } : {}) });
     expect(await db.goals.count()).toBe(7);
     expect(await db.testProtocols.count()).toBe(7);
     expect(await db.exercises.count()).toBeGreaterThan(0);
@@ -214,6 +215,8 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
         if (workout.id === LEG_CURL_WORKOUT_ID) return addLegCurlCouche20260927(workout, updatedAt) ?? workout;
         /* Seed 31 : la Muscu A du 04/10, si elle est dans l'état constaté, reçoit sa traction à 28 kg et son curl haltères. */
         if (workout.id === FIX_20261004_ID) return fixesOf20261004(workout, updatedAt);
+        /* Seed 41 : RPE 9 sur la dernière traction de la Muscu A du 19/10, si elle est dans l'état constaté. */
+        if (workout.id === FIX_TRACTION_RPE_20261019_WORKOUT_ID) return fixTractionRpe20261019(workout, updatedAt) ?? workout;
         return workout;
       }),
       ...(added ? [added] : []),
@@ -230,7 +233,12 @@ describe("T-8 / T-9 (R) — sauvegarde réelle : resetAndRestore puis seeds, deu
         ? { ...goal, linkedExercises: linked.map((exerciseId) => ({ exerciseId })), updatedAt: seededGoal?.updatedAt }
         : goal;
       /* Seed 37 : l'objectif Poids encore à 75 kg passe à 80 kg ; rien d'autre ne change. */
-      const after37 = goal.key === "weight" ? (weightGoalAfterSeed37(linkedGoal as unknown as Goal, seededGoal?.updatedAt ?? "") ?? linkedGoal) : linkedGoal;
+      /* Seulement si le seed 37 n'a pas déjà tourné dans le fichier : un objectif remis à 75 kg par l'utilisateur ensuite reste à 75. */
+      const fileInstall = ((file.stores.settings ?? []) as Array<{ key: string; value?: { weightGoalTarget20261005?: string } }>).find((item) => item.key === "install")?.value;
+      const after37 =
+        goal.key === "weight" && fileInstall?.weightGoalTarget20261005 === undefined
+          ? (weightGoalAfterSeed37(linkedGoal as unknown as Goal, seededGoal?.updatedAt ?? "") ?? linkedGoal)
+          : linkedGoal;
       /* Seed 40 (15/10/2026) : départ fixe = première mesure de la balance de référence du fichier, si le segment courant n'en a pas. */
       const expectedGoal = goal.key === "weight" ? weightGoalAfterSeed40(after37 as unknown as Goal, file.stores, seededGoal?.updatedAt ?? "") : after37;
       expect(canonicalStringify(seededGoal), goal.id).toBe(canonicalStringify(expectedGoal));
