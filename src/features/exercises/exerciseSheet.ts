@@ -1,4 +1,4 @@
-import type { Exercise, PerformedSeries, StrengthFrameVersion, WorkoutSession } from "../../domain";
+import type { Exercise, LoadSteps, PerformedSeries, StrengthFrameVersion, WorkoutSession } from "../../domain";
 import { formatDurationShort } from "../../domain/rules/blockInstructionRules";
 import { formatFr } from "../../domain/rules/dateFr";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
@@ -37,8 +37,12 @@ function prescription(version: StrengthFrameVersion): string {
   return version.repRange ? `${version.workSets} × ${version.repRange.min}–${version.repRange.max}` : `${version.workSets} séries`;
 }
 
-/** La règle du cadre en une phrase (conception v1.6 § 4.2 bis). */
-export function frameRuleSentence(version: StrengthFrameVersion): string {
+/**
+ * La règle du cadre en une phrase (conception v1.6 § 4.2 bis). Avec les
+ * crans réels de l'exercice (22/10/2026), le pas annoncé est celui de la
+ * machine, jamais l'incrément théorique du cadre.
+ */
+export function frameRuleSentence(version: StrengthFrameVersion, steps?: LoadSteps): string {
   const rpe = version.rpeTarget !== undefined ? ` à RPE ≤ ${version.rpeTarget}` : "";
   const top = version.repRange?.max;
 
@@ -50,6 +54,8 @@ export function frameRuleSentence(version: StrengthFrameVersion): string {
       return `${step} quand toutes les séries tiennent la durée${rpe}.`;
     }
     case "charge_croissante": {
+      if (steps?.below?.length) return `Haltère supérieur quand toutes les séries atteignent ${top ?? "le haut de la plage"} répétitions${rpe}.`;
+      if (steps) return `+ ${formatStrengthValue(steps.step, "kg")} quand toutes les séries atteignent ${top ?? "le haut de la plage"} répétitions${rpe}.`;
       if (!version.increment) return `Charge à monter quand toutes les séries atteignent ${top ?? "le haut de la plage"} répétitions${rpe}.`;
       return `+ ${formatStrengthValue(version.increment.value, "kg")} quand toutes les séries atteignent ${top ?? "le haut de la plage"} répétitions${rpe}.`;
     }
@@ -66,7 +72,12 @@ export function nextSessionOf(
   exercise: Exercise,
   version: StrengthFrameVersion | undefined,
   lastSeries: ReadonlyArray<PerformedSeries> | undefined,
+  /** Hausse suspendue (perspectives, douleur signalée) : aucune charge ni hausse annoncée. */
+  suspension?: { reason: string },
 ): NextSession | undefined {
+  if (suspension) {
+    return { headline: "Progression suspendue", details: `${capitalize(suspension.reason)} : choisis la charge selon tes sensations.`, rule: "Aucune hausse proposée tant que la suspension dure.", toFind: false };
+  }
   const advised = advisedLoadOf(exercise, version, lastSeries);
 
   if (!version) {
@@ -81,7 +92,7 @@ export function nextSessionOf(
     return {
       headline: version.progressionType === "duree_croissante" ? "Durée à trouver" : "Charge à trouver",
       details: `Légère, pour ${prescription(version)}${target}. ${rest[0]!.toUpperCase()}${rest.slice(1)}.`,
-      rule: frameRuleSentence(version),
+      rule: frameRuleSentence(version, exercise.loadSteps),
       toFind: true,
     };
   }
@@ -89,7 +100,7 @@ export function nextSessionOf(
   return {
     headline: capitalize(formatAdvisedLoad(advised)),
     details: [prescription(version), rpe, rest].filter(Boolean).join(" · "),
-    rule: frameRuleSentence(version),
+    rule: frameRuleSentence(version, exercise.loadSteps),
     toFind: false,
   };
 }

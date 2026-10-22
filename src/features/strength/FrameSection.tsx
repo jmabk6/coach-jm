@@ -39,6 +39,7 @@ import { BET_EXERCISE_ID } from "../goals/tractionBet";
 import { RaiseInset, StagnationInset } from "./FrameInsets";
 import { readDismissedRaises, rememberDismissedRaise } from "./frameDismissal";
 import { currentLoadOf, lastSessionOutcome, latestMilestone, proposeStartingLoad } from "./frameReadings";
+import { getProgressionTracks, suspendedExerciseIds } from "../perspectives/trackStore";
 import "./FrameSection.css";
 
 interface FrameSectionProps {
@@ -53,6 +54,8 @@ interface FrameState {
   /** La version pointée par le cadre : active, ou archivée en attente d'une suivante. */
   current: StrengthFrameVersion;
   milestones: StrengthMilestone[];
+  /** Hausse automatique suspendue pour cet exercice (perspectives, douleur signalée). */
+  suspended: boolean;
 }
 
 type LoadState = { status: "loading" } | { status: "none" } | ({ status: "ready" } & FrameState);
@@ -108,8 +111,8 @@ export function FrameSection({ exercise, completedWorkouts }: FrameSectionProps)
         return;
       }
 
-      const milestones = await getStrengthMilestonesByVersion(current.id);
-      if (!cancelled) setState({ status: "ready", frame, versions, current, milestones });
+      const [milestones, tracks] = await Promise.all([getStrengthMilestonesByVersion(current.id), getProgressionTracks()]);
+      if (!cancelled) setState({ status: "ready", frame, versions, current, milestones, suspended: suspendedExerciseIds(tracks).has(exercise.id) });
     }
 
     void load();
@@ -230,9 +233,10 @@ export function FrameSection({ exercise, completedWorkouts }: FrameSectionProps)
   /* Suggestions (spec § 7, v1.6 § 4.6) : dérivées, jamais stockées. */
   /* Pari traction V6 : le palier de la traction vient du moteur V6 ; ni hausse ni stagnation du cadre en parallèle. */
   const bet = exercise.id === BET_EXERCISE_ID;
-  const raise = bet ? undefined : proposeRaise(current, milestones, completedWorkouts);
+  /* Hausse automatique suspendue (douleur signalée, perspectives) : ni hausse ni stagnation. */
+  const raise = bet || state.suspended ? undefined : proposeRaise(current, milestones, completedWorkouts, exercise.loadSteps);
   const raiseVisible = raise && !dismissed.includes(raise.milestone.id);
-  const stagnation = bet ? undefined : detectStagnation(current, completedWorkouts, milestones);
+  const stagnation = bet || state.suspended ? undefined : detectStagnation(current, completedWorkouts, milestones);
   const summary = [
     formatFrameVersionSummary(current),
     `repos ${formatSeconds(current.restSec)}`,

@@ -1,6 +1,7 @@
 import type {
   Exercise,
   Id,
+  LoadSteps,
   PerformedSeries,
   PerformedSeriesRole,
   RpeScaleVersion,
@@ -13,6 +14,7 @@ import type {
 } from "../models";
 import { getLoadKg } from "./workoutRules";
 import { isAssistanceExercise } from "./loadSemanticsRules";
+import { nextLoadDown, nextLoadUp } from "./progressionRules";
 
 /**
  * Règles pures du module Musculation (conception v1.6, § 4) : l'échelle
@@ -490,7 +492,14 @@ export function loadToWork(
  * charge et la durée, − incrément pour l'assistance (borné à 0). Sans
  * incrément (D18 : cran de la machine pas encore saisi), aucun cran.
  */
-export function nextStep(version: Pick<StrengthFrameVersion, "progressionType" | "increment">, value: number): number | undefined {
+export function nextStep(
+  version: Pick<StrengthFrameVersion, "progressionType" | "increment">,
+  value: number,
+  steps?: LoadSteps,
+): number | undefined {
+  /* Crans réels de l'équipement (22/10/2026) : ils priment sur l'incrément théorique du cadre. */
+  if (steps && version.progressionType === "charge_croissante") return nextLoadUp(steps, value);
+  if (steps && version.progressionType === "assistance_decroissante") return value <= 0 ? undefined : (nextLoadDown(steps, value) ?? 0);
   if (version.increment === undefined) return undefined;
 
   if (version.progressionType === "assistance_decroissante") {
@@ -541,6 +550,8 @@ export function proposeRaise(
   version: StrengthFrameVersion,
   milestones: ReadonlyArray<StrengthMilestone>,
   workouts: ReadonlyArray<WorkoutSession>,
+  /** Crans réels de l'exercice : la hausse ne propose jamais une charge qui n'existe pas. */
+  steps?: LoadSteps,
 ): RaiseProposal | undefined {
   if (version.status !== "active") return undefined;
 
@@ -567,7 +578,7 @@ export function proposeRaise(
   if (laterSession) return undefined;
 
   /* Sans incrément, aucune hausse n'est proposée (D18). */
-  const value = nextStep(version, last.value);
+  const value = nextStep(version, last.value, steps);
   if (value === undefined) return undefined;
 
   return {

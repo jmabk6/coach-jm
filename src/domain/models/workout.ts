@@ -1,3 +1,4 @@
+import type { DayTarget } from "./progression";
 import type { PerformedTestBlock } from "./testProtocol";
 import type { Id, Load } from "./exercise";
 import type {
@@ -227,6 +228,13 @@ export interface PerformedExerciseBlock extends PerformedBaseBlock {
    * même modèle ; ses séries ne sont la référence d'aucune autre brique.
    */
   ownReference?: true;
+
+  /**
+   * Objectif du jour (perspectives, 22/10/2026) : calculé au démarrage sur
+   * les séances précédentes, puis figé ; les séries notées ne le déplacent
+   * pas. Absent sur les anciennes séances.
+   */
+  dayTarget?: DayTarget;
 
   /** FC étendue (tapis, vélo), facultative en entraînement. */
   heartRate?: {

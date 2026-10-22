@@ -1,3 +1,4 @@
+import type { LoadSteps } from "./progression";
 export type Id = string;
 
 export type ExerciseCategory =
@@ -241,6 +242,13 @@ interface ExerciseBase {
    * par un nouvel exercice. Absente tant que rien n'a été saisi.
    */
   powerUnit?: PowerUnit;
+
+  /**
+   * Crans réels de l'équipement (perspectives, 22/10/2026) : la hausse
+   * proposée et les prévisions n'utilisent que ces charges. Absent : crans
+   * non confirmés, aucune projection présentée comme fiable.
+   */
+  loadSteps?: LoadSteps;
 
   status: ExerciseStatus;
 

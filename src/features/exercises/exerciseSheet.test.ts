@@ -108,4 +108,20 @@ describe("cardio, comment faire, en-tête", () => {
     ]);
     expect(headerTagsOf(byId("traction-assistee"))).toEqual(["Dos", "Tirage", "Machine"]);
   });
+
+  it("avec les crans réels (22/10/2026), la règle annonce le pas de la machine ou l'haltère supérieur, jamais l'incrément théorique", () => {
+    const shoulders = { ...version(), progressionType: "charge_croissante" as const, repRange: { min: 8, max: 10 }, rpeTarget: 9, increment: { unit: "kg" as const, value: 2.5 } };
+    expect(frameRuleSentence(shoulders, { base: 5, step: 5 })).toBe("+ 5 kg quand toutes les séries atteignent 10 répétitions à RPE ≤ 9.");
+    expect(frameRuleSentence(shoulders, { base: 6, step: 2, below: [4, 5] })).toBe("Haltère supérieur quand toutes les séries atteignent 10 répétitions à RPE ≤ 9.");
+    expect(frameRuleSentence(shoulders)).toBe("+ 2,5 kg quand toutes les séries atteignent 10 répétitions à RPE ≤ 9.");
+  });
+
+  it("hausse suspendue (presse, douleurs lombaires) : ni charge conseillée ni hausse annoncée", () => {
+    expect(nextSessionOf(byId("face-pull"), version(), undefined, { reason: "douleurs lombaires à clarifier" })).toEqual({
+      headline: "Progression suspendue",
+      details: "Douleurs lombaires à clarifier : choisis la charge selon tes sensations.",
+      rule: "Aucune hausse proposée tant que la suspension dure.",
+      toFind: false,
+    });
+  });
 });

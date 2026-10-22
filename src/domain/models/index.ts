@@ -9,3 +9,4 @@ export * from "./testProtocol";
 export * from "./settings";
 export * from "./body";
 export * from "./nutrition";
+export * from "./progression";

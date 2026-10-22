@@ -6,6 +6,7 @@ import type { Exercise, PerformedSeries, StrengthFrameVersion, WorkoutSession } 
 import { getActiveExercises, getExercise } from "../../db/repositories/exerciseRepository";
 import { getCompletedWorkouts } from "../../db/repositories/workoutRepository";
 import { getStrengthFrameByExercise, getStrengthFrameVersions } from "../../db/repositories/strengthRepository";
+import { getProgressionTracks } from "../perspectives/trackStore";
 import { formatFr } from "../../domain/rules/dateFr";
 import { formatClassification } from "../../domain/rules/exerciseRules";
 import { loadSemanticsOf } from "../../domain/rules/loadSemanticsRules";
@@ -51,6 +52,8 @@ type LoadState =
       frameVersion: StrengthFrameVersion | undefined;
       /** Séries de la dernière séance de l'exercice, pour la charge conseillée. */
       lastSeries: PerformedSeries[] | undefined;
+      /** Hausse suspendue (perspectives) : la carte « Prochaine séance » ne recommande rien. */
+      suspension: { from: string; reason: string } | undefined;
     }
   | { status: "not-found" }
   | { status: "error"; message: string };
@@ -96,11 +99,12 @@ export function ExerciseDetailScreen() {
       }
 
       try {
-        const [exercise, allExercises, workouts, frame] = await Promise.all([
+        const [exercise, allExercises, workouts, frame, tracks] = await Promise.all([
           getExercise(exerciseId),
           getActiveExercises(),
           getCompletedWorkouts(),
           getStrengthFrameByExercise(exerciseId),
+          getProgressionTracks(),
         ]);
         const versions = frame ? await getStrengthFrameVersions(frame.id) : [];
 
@@ -121,6 +125,7 @@ export function ExerciseDetailScreen() {
           completedWorkouts: workouts,
           frameVersion: active,
           lastSeries: findLastPerformances(workouts).get(exercise.id)?.allSeries,
+          suspension: tracks.find((track) => track.exerciseId === exercise.id && track.suspension && !track.closedAt)?.suspension,
         });
       } catch (error) {
         if (!cancelled) {
@@ -184,7 +189,7 @@ export function ExerciseDetailScreen() {
     );
   }
 
-  const { exercise, performanceHistory, completedWorkouts, frameVersion, lastSeries } = state;
+  const { exercise, performanceHistory, completedWorkouts, frameVersion, lastSeries, suspension } = state;
   const tab = TABS.find((item) => item.key === searchParams.get("onglet"))?.key ?? "progression";
   const settingsOpen = searchParams.get("vue") === "reglages";
 
@@ -244,7 +249,7 @@ export function ExerciseDetailScreen() {
 
   const cardio = isCardioByCourse(exercise);
   const cardioRows = cardio ? cardioRowsOf(exercise, completedWorkouts) : [];
-  const next = cardio ? undefined : nextSessionOf(exercise, frameVersion, lastSeries);
+  const next = cardio ? undefined : nextSessionOf(exercise, frameVersion, lastSeries, suspension);
   const rows = sessionRowsOf(performanceHistory);
   const metric = getDefaultPerformanceMetric(exercise);
   const summary = metric ? buildExercisePerformanceSummary(performanceHistory, metric, loadSemanticsOf(exercise)) : undefined;

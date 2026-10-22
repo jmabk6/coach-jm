@@ -3,6 +3,7 @@ import type { Weekday } from "./program";
 import type { PlannedTest } from "./testProtocol";
 import type { NutritionTargets } from "./nutrition";
 import type { BodyCompositionTargets } from "./body";
+import type { ProgressionTrack } from "./progression";
 
 /**
  * Réglages de l'application (conception V2 § 3.9) : un enregistrement par
@@ -119,6 +120,12 @@ export interface InstallMarkers {
   weightGoalStart20261015?: string;
   /** Seed 41 : RPE 9 (et non 5) sur la dernière traction de la Muscu A du 19/10. */
   fixTractionRpe20261019?: string;
+  /** Seed 42 : crans réels des équipements (perspectives). */
+  loadSteps20261022?: string;
+  /** Seed 43 : développé épaules machine, plafond RPE 9. */
+  shoulderRpe20261022?: string;
+  /** Seed 44 : pistes des perspectives au 31 mars et trajectoires initiales. */
+  perspectiveTracks20261022?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */
@@ -140,7 +147,9 @@ export type SettingsRecord =
    */
   | { key: "weightReferenceDevice"; value: string }
   /** Cible personnelle indicative de composition corporelle (phase 2.1). */
-  | { key: "bodyCompositionTargets"; value: BodyCompositionTargets };
+  | { key: "bodyCompositionTargets"; value: BodyCompositionTargets }
+  /** Perspectives au 31 mars (22/10/2026) : une piste par exercice des séances Muscu A, B, C. */
+  | { key: "progressionTracks"; value: ProgressionTrack[] };
 
 export type SettingsKey = SettingsRecord["key"];
 
