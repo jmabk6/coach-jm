@@ -168,6 +168,14 @@ export interface LoadTargetInput {
   now: string;
 }
 
+/**
+ * Répétitions visées d'une série. Deux notions distinctes : les
+ * **répétitions en réserve** (RPE 9 ≈ 1, RPE 8 ≈ 2) et la **marge sous le
+ * plafond** du cadre. Une série finie au moins 1 point de RPE sous le
+ * plafond avait plus de réserve que le cadre n'en exige : +1 répétition.
+ * Une série finie au plafond garde ses répétitions (voir la répétition
+ * visée de `nextLoadTarget`).
+ */
 const repsAfter = (set: PerformedSet, prescription: LoadPrescription): number =>
   set.rpe !== undefined && set.rpe <= prescription.rpeMax - 1 && set.reps < prescription.repMax
     ? set.reps + 1
@@ -182,7 +190,14 @@ const repsAfter = (set: PerformedSet, prescription: LoadPrescription): number =>
  * 5. RPE manquant ou au-dessus du plafond → à consolider (aucun +1 nulle part) ;
  * 6. haut de la fourchette sur toutes les séries dans le plafond → cran supérieur réel
  *    (transition si grand cran ; au plus un cran par semaine dans un groupe partagé) ;
- * 7. sinon, série par série : +1 si RPE ≤ plafond − 1, sinon mêmes répétitions.
+ * 7. sinon, série par série : +1 si la série a fini au moins 1 point de RPE
+ *    sous le plafond, sinon mêmes répétitions ; si toutes ont fini au
+ *    plafond, +1 visé sur la plus faible, seulement sans dépasser le plafond.
+ *
+ * Transitions : les séries au nouveau cran passent **toujours en premier**
+ * (fraîcheur, et sécurité de la charge la plus lourde) ; une série de plus
+ * au nouveau cran seulement quand toutes celles déjà faites au nouveau cran
+ * atteignent le bas de la fourchette dans le plafond.
  */
 export function nextLoadTarget(input: LoadTargetInput): DayTarget {
   const { prescription: p, steps, last, now } = input;
@@ -234,21 +249,18 @@ export function nextLoadTarget(input: LoadTargetInput): DayTarget {
 
   /* Transition en cours : séries au nouveau cran et séries à l'ancien, dans l'ordre où elles ont été faites. */
   if (light !== heavy) {
-    const heavyIndexes = sets.flatMap((set, index) => (set.kg === heavy ? [index] : []));
-    const heavyCount = heavyIndexes.length;
-    const heavyReady = heavyIndexes.every((index) => sets[index]!.reps >= p.repMin);
-    /* La série convertie est la plus proche du groupe lourd : avant lui s'il est en fin de séance, après lui sinon. */
-    const heavyAtEnd = heavyIndexes[0]! > 0 && heavyIndexes.every((index, position) => index === sets.length - heavyCount + position);
-    const lightIndexes = sets.flatMap((set, index) => (set.kg !== heavy ? [index] : []));
-    const converted = heavyReady ? (heavyAtEnd ? lightIndexes.at(-1) : lightIndexes[0]) : undefined;
-    const nextHeavy = heavyCount + (converted !== undefined ? 1 : 0);
+    const heavySets = sets.filter((set) => set.kg === heavy);
+    const lightSets = sets.filter((set) => set.kg !== heavy);
+    const heavyReady = heavySets.every((set) => set.reps >= p.repMin);
+    const nextHeavy = Math.min(p.sets, heavySets.length + (heavyReady ? 1 : 0));
     const done = nextHeavy === p.sets;
-    const target = sets.map((set, index): SetTarget => {
-      const step = done ? {} : { step: "new" as const };
-      if (set.kg === heavy) return { kg: heavy, reps: repsAfter(set, p), ...step };
-      if (index === converted) return { kg: heavy, reps: p.repMin, ...step };
-      return { kg: set.kg, reps: repsAfter(set, p), step: "previous" };
-    });
+    const step = (value: "new" | "previous") => (done ? {} : { step: value });
+    /* Nouveau cran en premier, quel que soit l'ordre de la séance précédente. */
+    const target: SetTarget[] = [
+      ...heavySets.map((set): SetTarget => ({ kg: heavy, reps: repsAfter(set, p), ...step("new") })),
+      ...(nextHeavy > heavySets.length ? [{ kg: heavy, reps: p.repMin, ...step("new") }] : []),
+      ...lightSets.slice(nextHeavy - heavySets.length).map((set): SetTarget => ({ kg: set.kg, reps: repsAfter(set, p), ...step("previous") })),
+    ];
     return {
       ...base,
       kind: done ? "progress" : "transition",
@@ -279,19 +291,21 @@ export function nextLoadTarget(input: LoadTargetInput): DayTarget {
 
   const target: SetTarget[] = sets.map((set) => ({ kg: set.kg, reps: repsAfter(set, p) }));
   const gained = target.some((set, index) => set.reps! > Math.min(sets[index]!.reps, p.repMax));
-  if (gained) return { ...base, kind: "progress", sets: target, reason: "+1 répétition sur les séries faites avec au moins une répétition de réserve." };
+  if (gained) {
+    return { ...base, kind: "progress", sets: target, reason: `+1 répétition sur les séries finies sous le plafond (RPE ${p.rpeMax - 1} ou moins) : il restait plus de réserve que le plafond n'en demande.` };
+  }
 
   /* Toutes les séries au plafond (RPE accepté, pas un échec) : +1 visé sur la plus faible, seulement dans le plafond. */
   const weakest = sets.reduce<number | undefined>((best, set, index) => (set.reps < p.repMax && (best === undefined || set.reps <= sets[best]!.reps) ? index : best), undefined);
   if (weakest === undefined) {
-    return { ...base, kind: "repeat", sets: target, reason: `Séries faites au plafond (RPE ${p.rpeMax}) : mêmes répétitions, en gardant la réserve.` };
+    return { ...base, kind: "repeat", sets: target, reason: `Séries finies au plafond RPE ${p.rpeMax} : mêmes répétitions.` };
   }
   target[weakest] = { kg: sets[weakest]!.kg, reps: sets[weakest]!.reps + 1, stretch: true };
   return {
     ...base,
     kind: "progress",
     sets: target,
-    reason: `Plafond RPE ${p.rpeMax} accepté : +1 visé à la série ${weakest + 1}, seulement à RPE ≤ ${p.rpeMax} ; refaire ${sets[weakest]!.reps} compte comme atteint.`,
+    reason: `Séries au plafond RPE ${p.rpeMax} (accepté) : +1 visé à la série ${weakest + 1}, seulement sans dépasser RPE ${p.rpeMax} ; refaire ${sets[weakest]!.reps} compte comme atteint.`,
   };
 }
 
@@ -299,11 +313,11 @@ export function nextLoadTarget(input: LoadTargetInput): DayTarget {
 export function describeTransition(sets: ReadonlyArray<SetTarget>): string {
   const group = (step: "previous" | "new") => sets.flatMap((set, index) => (set.step === step ? [index + 1] : []));
   const label = (indexes: number[]) => (indexes.length === 1 ? `série ${indexes[0]}` : `séries ${indexes.slice(0, -1).join(", ")} et ${indexes.at(-1)}`);
-  const parts: string[] = [];
-  const previous = group("previous");
-  const next = group("new");
-  if (previous.length) parts.push(`${label(previous)} à ${formatKg(sets[previous[0]! - 1]!.kg!)} (ancien cran)`);
-  if (next.length) parts.push(`${label(next)} à ${formatKg(sets[next[0]! - 1]!.kg!)} (nouveau cran)`);
+  const groups = (["new", "previous"] as const)
+    .map((step) => ({ step, indexes: group(step) }))
+    .filter((item) => item.indexes.length > 0)
+    .sort((a, b) => a.indexes[0]! - b.indexes[0]!);
+  const parts = groups.map((item) => `${label(item.indexes)} à ${formatKg(sets[item.indexes[0]! - 1]!.kg!)} (${item.step === "new" ? "nouveau" : "ancien"} cran)`);
   return `toutes des séries de travail : ${parts.join(", ")}`;
 }
 

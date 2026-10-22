@@ -75,6 +75,7 @@ import { readDismissedRaises, rememberDismissedRaise } from "../strength/frameDi
 import { useFrameInsights } from "../strength/useFrameInsights";
 import { advisedLoadOf, formatAdvisedLoad } from "./advisedLoad";
 import { WorkoutStepper } from "./WorkoutStepper";
+import { readWorkoutPosition, restoreWorkoutPosition } from "./workoutPosition";
 import { workoutSteps } from "./workoutSteps";
 import { useClock, useWorkoutSession } from "./useWorkoutSession";
 import { calculatePerformedNumbering, describeNextUp } from "./workoutDisplay";
@@ -101,7 +102,8 @@ export function WorkoutScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { state, apply, error, clearError } = useWorkoutSession();
   const [busy, setBusy] = useState(false);
-  const [peekedId, setPeekedId] = useState<Id>();
+  /* Retour d'une perspective (P3) : l'exercice consulté était ouvert, il le reste. */
+  const [peekedId, setPeekedId] = useState<Id | undefined>(() => readWorkoutPosition()?.blockId);
   const [adding, setAdding] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   /* Menu `⋯` d'une brique, puis feuille de remplacement (§13). */
@@ -197,6 +199,13 @@ export function WorkoutScreen() {
       document.documentElement.style.removeProperty("--keyboard-inset");
     };
   }, []);
+
+  /* Retour d'une perspective (P3) : l'exercice consulté revient à sa place. */
+  const ready = state.status === "ready";
+  useEffect(() => {
+    const position = ready ? readWorkoutPosition() : undefined;
+    return position ? restoreWorkoutPosition(position) : undefined;
+  }, [ready]);
 
   /* Brouillons de saisie (15/10/2026) : ceux d'une autre séance n'ont plus d'objet. */
   const workoutIdForDrafts = workout?.id;

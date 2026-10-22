@@ -9,6 +9,8 @@ import { BackupScreen } from "../features/plus/BackupScreen";
 import { RoutinesScreen } from "../features/plus/RoutinesScreen";
 import { AboutScreen } from "../features/plus/AboutScreen";
 import { GoalDetailScreen } from "../features/goals/GoalDetailScreen";
+import { PerspectiveDetailScreen } from "../features/perspectives/PerspectiveDetailScreen";
+import { PerspectivesScreen } from "../features/perspectives/PerspectivesScreen";
 import { ExercisesScreen } from "../features/exercises/ExercisesScreen";
 import { ExerciseDetailScreen } from "../features/exercises/ExerciseDetailScreen";
 import { ExerciseCreateScreen } from "../features/exercises/ExerciseCreateScreen";
@@ -65,6 +67,8 @@ export const router = createHashRouter([
       { path: "workouts/:workoutId", element: <WorkoutRecapScreen /> },
       { path: "workouts/:workoutId/blocks/:blockId", element: <WorkoutBlockDetailScreen /> },
       { path: routeSegment(ROUTES.goals), element: <GoalsScreen /> },
+      { path: routeSegment(ROUTES.perspectives), element: <PerspectivesScreen /> },
+      { path: routeSegment(ROUTES.perspective), element: <PerspectiveDetailScreen /> },
       { path: routeSegment(ROUTES.goal), element: <GoalDetailScreen /> },
       { path: routeSegment(ROUTES.bodyTargets), element: <BodyTargetsScreen /> },
       { path: routeSegment(ROUTES.journal), element: <JournalScreen /> },

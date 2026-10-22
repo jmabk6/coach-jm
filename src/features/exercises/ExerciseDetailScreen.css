@@ -424,3 +424,18 @@
   color: var(--color-text-soft);
   font-size: 28px;
 }
+
+
+/* Perspectives au 31 mars (lot P3) : un lien par séance où figure l'exercice. */
+.exercise-detail__perspectives {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+}
+
+.exercise-detail__perspectives a {
+  color: var(--color-accent);
+  font-weight: 700;
+  text-decoration: none;
+}

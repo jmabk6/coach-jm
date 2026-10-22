@@ -13,6 +13,9 @@ export const ROUTES = {
   planning: "/planning",
   weeklyProgram: "/planning/programmation",
   goals: "/objectifs",
+  /** Objectifs › Perspectives au 31 mars (lot P3, 22/10/2026). */
+  perspectives: "/objectifs/perspectives",
+  perspective: "/objectifs/perspectives/:trackId",
   /** Un objectif (M5 à M7, lot H.4) ; `:key` est la clé de l'objectif. */
   goal: "/objectifs/:key",
   sessions: "/seances",
@@ -102,6 +105,8 @@ export const paths = {
 
   goals: () => ROUTES.goals,
   goal: (key: string, query?: { onglet?: "exercices" | "conseils" }) => withQuery(`${ROUTES.goals}/${key}`, query),
+  perspectives: (query?: { seance?: "A" | "B" | "C" }) => withQuery(ROUTES.perspectives, query),
+  perspective: (trackId: string, query?: { retour?: "seance" }) => withQuery(`${ROUTES.perspectives}/${trackId}`, query),
 
   planning: (query?: { date?: string; view?: "mois"; month?: string }) => withQuery(ROUTES.planning, query),
   weeklyProgram: () => ROUTES.weeklyProgram,

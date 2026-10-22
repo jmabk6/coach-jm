@@ -55,3 +55,22 @@ export function formatDayMonth(date: string): string {
   const [, month, day] = date.split("-");
   return `${day}/${month}`;
 }
+
+/** Une cible de trajectoire ou de prévision : « 60 kg × 8 », « 28 kg d'aide × 5 », « 30 s ». */
+export function formatSetTarget(set: SetTarget | undefined, options: { perDumbbell?: boolean; assistance?: boolean } = {}): string {
+  if (!set) return "—";
+  if (set.kg === undefined) return set.durationSec !== undefined ? `${set.durationSec} s` : set.reps !== undefined ? `${set.reps} rép.` : "—";
+  const load = `${kg(set.kg)}${options.assistance ? " d’aide" : options.perDumbbell ? " par haltère" : ""}`;
+  return set.reps !== undefined ? `${load} × ${set.reps}` : load;
+}
+
+/** Une séance réelle d'une piste : « 55 kg · 8/8/6 · RPE 8/9/9 ». */
+export function formatResult(sets: ReadonlyArray<{ kg: number; reps: number; rpe?: number; durationSec?: number }>, options: { perDumbbell?: boolean; assistance?: boolean } = {}): string {
+  if (sets.length === 0) return "—";
+  const values = sets.map((set) => (set.durationSec !== undefined && set.reps === 0 ? `${set.durationSec} s` : String(set.reps)));
+  const rpe = sets.every((set) => set.rpe === undefined) ? "" : ` · RPE ${sets.map((set) => set.rpe ?? "—").join("/")}`;
+  const loads = [...new Set(sets.map((set) => set.kg))];
+  const suffix = options.assistance ? " d’aide" : options.perDumbbell ? " par haltère" : "";
+  if (loads.length === 1) return loads[0] === 0 ? `${values.join("/")}${rpe}` : `${kg(loads[0]!)}${suffix} · ${values.join("/")}${rpe}`;
+  return `${sets.map((set, index) => `${kg(set.kg)} × ${values[index]}`).join(" · ")}${rpe}`;
+}

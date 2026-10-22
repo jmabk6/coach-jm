@@ -117,9 +117,9 @@ describe("à l'écran, pendant la séance", () => {
     expect(within(block).getByText("55 kg · 8/8/6–7")).toBeDefined();
     expect(within(block).getByText("RPE ≤ 9")).toBeDefined();
     expect(within(block).getByText(/Dernière fois \(/)).toBeDefined();
-    expect(within(block).getByText(/en gardant 1 répétition en réserve/)).toBeDefined();
+    expect(within(block).getByText(/RPE ≤ 9 : finir chaque série avec au moins 1 répétition en réserve/)).toBeDefined();
     expect(within(block).getByText("Dernière fois (21/10) : 55 kg · 8/8/6 · RPE 8/9/9")).toBeDefined();
-    expect(within(block).getByRole("link", { name: "Voir ma perspective ›" }).getAttribute("href")).toBe("/exercises/chest-press");
+    expect(within(block).getByRole("link", { name: "Voir ma perspective ›" }).getAttribute("href")).toBe("/objectifs/perspectives/v2-muscu-b-chest-press?retour=seance");
     /* « Pour valider » et « Conseillé » remplacés ; cadre, consigne et dernière fois repliés. */
     expect(screen.queryByText("Pour valider :")).toBeNull();
     expect(screen.getByText("Cadre, consigne et dernière fois")).toBeDefined();

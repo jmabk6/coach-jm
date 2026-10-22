@@ -16,6 +16,11 @@ import { WorkoutScreen } from "./WorkoutScreen";
  * `Passer` ni « Démarrer la série suivante » (22/10/2026 : −30 s / +30 s
  * seulement, pas de repos réel), saisie retrouvée après un rechargement,
  * dernière série.
+ *
+ * Délai de 20 s par test (22/10/2026) : deux rendus complets de l'écran de
+ * séance et des attentes de 5 s ; sous la charge de la suite complète, le
+ * délai par défaut de 5 s était dépassé (échecs intermittents « Test timed
+ * out »), sans lien avec le parcours lui-même.
  */
 
 const T0 = new Date(Date.now() - 60_000).toISOString();
@@ -124,7 +129,7 @@ describe("repos depuis la fin de série, à l'écran", () => {
     expect(seriesOf(await stored(), "a", 0).actualRestAfterSec).toBeUndefined();
     expect(screen.queryByText(/Repos réel|non mesuré/)).toBeNull();
     expect(document.querySelectorAll(".wseries__rest-slot")).toHaveLength(1);
-  });
+  }, 20000);
 
   it("double appui sur « Série terminée » : un seul repos", async () => {
     await seedWorkout();
@@ -137,7 +142,7 @@ describe("repos depuis la fin de série, à l'écran", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect((await stored()).activeRest).toEqual(first);
     expect(document.querySelectorAll(".wseries__rest-slot")).toHaveLength(1);
-  });
+  }, 20000);
 
   it("saisie non enregistrée retrouvée après un rechargement, chrono recalculé depuis la fin de série", async () => {
     await seedWorkout();
@@ -155,7 +160,7 @@ describe("repos depuis la fin de série, à l'écran", () => {
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer la série 1" }));
     await waitFor(async () => expect(seriesOf(await stored(), "a", 0).reps).toBe(7), { timeout: 5000 });
     expect(Object.keys(localStorage).filter((key) => key.startsWith("coach-jm:series-draft:"))).toEqual([]);
-  });
+  }, 20000);
 
   it("dernière série : repos prévu conservé ; après « Enregistrer », le chrono passe au-dessus de la série 1 de l'exercice suivant, avec « Ensuite »", async () => {
     await seedWorkout(1);
@@ -176,5 +181,5 @@ describe("repos depuis la fin de série, à l'écran", () => {
     expect(cards.findIndex((card) => card.contains(restSlot()))).toBe(1);
     expect(restSlot().parentElement?.querySelector(".wseries__row:not(.wseries__head)")).toBe(restSlot().nextElementSibling);
     expect((await stored()).activeRest).toMatchObject({ afterBlockId: "a", afterEntryId: "a-s1" });
-  });
+  }, 20000);
 });

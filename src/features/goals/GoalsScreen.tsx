@@ -8,6 +8,7 @@ import { todayLocalDate } from "../today/useTodayData";
 import { goalIcon, goalTone } from "./goalIcons";
 import { loadGoalList, type GoalList, type GoalListRow } from "./goalList";
 import "./GoalsScreen.css";
+import "../perspectives/Perspectives.css";
 
 /**
  * M4 — Objectifs (lot H.3) : les 7 objectifs, leur segment courant, leur
@@ -30,6 +31,15 @@ export function GoalsScreen() {
   return (
     <section className="goals">
       <h1>Objectifs</h1>
+
+      {/* Lot P3 (22/10/2026) : les perspectives des exercices de Muscu A, B et C. */}
+      <Link to={paths.perspectives()} className="goals-perspectives">
+        <span>
+          Perspectives au 31 mars
+          <small>Muscu A, B, C : prochaine séance et prévision par exercice</small>
+        </span>
+        <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+      </Link>
 
       {list?.cycle && <TestWeekBanner today={today} cycle={list.cycle} />}
 

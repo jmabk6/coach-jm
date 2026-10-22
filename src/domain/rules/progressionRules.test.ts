@@ -71,12 +71,23 @@ describe("objectif de la prochaine séance (exemples réels)", () => {
     const target = nextLoadTarget({ prescription: presc(3, 6, 8, 9), steps: FIVE, last: result("2026-10-21", [set(55, 8, 8), set(55, 8, 9), set(55, 6, 9)]), now: NOW });
     expect(target).toMatchObject({ kind: "progress", sets: [{ kg: 55, reps: 8 }, { kg: 55, reps: 8 }, { kg: 55, reps: 7, stretch: true }] });
     expect(target.sets[0]!.stretch).toBeUndefined();
-    expect(target.reason).toContain("seulement à RPE ≤ 9");
+    expect(target.reason).toContain("seulement sans dépasser RPE 9");
     expect(assessLoadSession(target, [set(55, 8, 8), set(55, 8, 9), set(55, 6, 9)])).toMatchObject({ kind: "reached" });
     expect(assessLoadSession(target, [set(55, 8, 8), set(55, 8, 9), set(55, 7, 9)])).toMatchObject({ kind: "reached" });
     expect(assessLoadSession(target, [set(55, 8, 8), set(55, 8, 9), set(55, 8, 9)])).toMatchObject({ kind: "exceeded" });
     expect(assessLoadSession(target, [set(55, 8, 8), set(55, 8, 9), set(55, 5, 9)])).toMatchObject({ kind: "consolidate" });
     expect(assessLoadSession(target, [set(55, 8, 8), set(55, 8, 9), set(55, 7, 10)])).toMatchObject({ kind: "consolidate" });
+  });
+
+  it("non-régression (22/10) : séances répétées au plafond RPE 9, jamais de stagnation permanente — +1 visé à chaque séance, puis hausse de charge", () => {
+    const chest = (sets: PerformedSet[]) => nextLoadTarget({ prescription: presc(3, 6, 8, 9), steps: FIVE, last: result("2026-10-21", sets), now: NOW });
+    /* 8/8/6 au plafond : 6–7 visé ; refaire 6 au plafond redonne le même +1 visé, pas « mêmes répétitions ». */
+    for (const rpe of [[8, 9, 9], [9, 9, 9]]) {
+      expect(chest([set(55, 8, rpe[0]), set(55, 8, rpe[1]), set(55, 6, rpe[2])]).sets.map((item) => [item.reps, item.stretch ?? false])).toEqual([[8, false], [8, false], [7, true]]);
+    }
+    /* 7 obtenu au plafond : 8 visé ; 8/8/8 au plafond : palier validé, 60 kg. */
+    expect(chest([set(55, 8, 9), set(55, 8, 9), set(55, 7, 9)]).sets.at(-1)).toEqual({ kg: 55, reps: 8, stretch: true });
+    expect(chest([set(55, 8, 9), set(55, 8, 9), set(55, 8, 9)])).toMatchObject({ kind: "raise", sets: [{ kg: 60, reps: 6 }, { kg: 60, reps: 6 }, { kg: 60, reps: 6 }] });
   });
 
   it("+1 seulement sur les séries à au moins 1 point sous le plafond, jamais au-delà du haut de la fourchette", () => {
@@ -101,11 +112,12 @@ describe("objectif de la prochaine séance (exemples réels)", () => {
     expect(stuck).toMatchObject({ kind: "transition", sets: [{ kg: 17.5, reps: 10 }, { kg: 15, reps: 15 }, { kg: 15, reps: 15 }] });
   });
 
-  it("transition faite dans l'autre sens : écarté C 5 · 5 · 7,5 kg (série lourde en dernier) → 5 · 7,5 · 7,5 kg", () => {
+  it("transition faite dans l'autre sens : écarté C 5 · 5 · 7,5 kg (série lourde en dernier) → 7,5 · 7,5 · 5 kg, nouveau cran en premier", () => {
     const target = nextLoadTarget({ prescription: presc(3, 12, 15, 8), steps: POULIE, last: result("2026-10-15", [set(5, 15, 8), set(5, 15, 8), set(7.5, 12, 8)]), now: NOW });
-    expect(target).toMatchObject({ kind: "transition", sets: [{ kg: 5, reps: 15, step: "previous" }, { kg: 7.5, reps: 12, step: "new" }, { kg: 7.5, reps: 12, step: "new" }] });
-    /* Rôles explicites : trois séries de travail (aucun échauffement), l'ancien cran puis le nouveau. */
-    expect(target.reason).toContain("toutes des séries de travail : série 1 à 5 kg (ancien cran), séries 2 et 3 à 7,5 kg (nouveau cran)");
+    /* La série à 7,5 kg (12 rép., RPE 8) a atteint le bas de la fourchette : une série de plus au nouveau cran,
+       et le nouveau cran toujours en premier — l'ordre de la séance du 15/10 n'est pas repris. */
+    expect(target).toMatchObject({ kind: "transition", sets: [{ kg: 7.5, reps: 12, step: "new" }, { kg: 7.5, reps: 12, step: "new" }, { kg: 5, reps: 15, step: "previous" }] });
+    expect(target.reason).toContain("toutes des séries de travail : séries 1 et 2 à 7,5 kg (nouveau cran), série 3 à 5 kg (ancien cran)");
   });
 
   it("hausse ratée : curl haltères A 8 kg · 12/8/7 · RPE 8/9/9 → 1 série à 8 kg, 2 à 6 kg (×12)", () => {

@@ -3,6 +3,8 @@ import { Target } from "lucide-react";
 import type { DayTarget, Exercise } from "../../domain";
 import { formatTargetLines } from "./dayTargetFormat";
 import type { SessionOutcome } from "../../domain/rules/progressionRules";
+import { paths } from "../../app/paths";
+import { rememberWorkoutPosition } from "../workout/workoutPosition";
 import "./DayTargetBlock.css";
 
 const reserveOf = (rpeMax: number | undefined) => (rpeMax === undefined ? undefined : Math.max(0, 10 - rpeMax));
@@ -22,9 +24,11 @@ interface DayTargetBlockProps {
   lastDate?: string | undefined;
   /** Retour après la dernière série, une fois toutes les séries de l'objectif notées. */
   outcome?: SessionOutcome | undefined;
+  /** Piste de l'exercice (brique du modèle) : « Voir ma perspective » y mène, avec retour à la séance. */
+  trackId?: string | undefined;
 }
 
-export function DayTargetBlock({ target, exercise, lastLine, lastDate, outcome }: DayTargetBlockProps) {
+export function DayTargetBlock({ target, exercise, lastLine, lastDate, outcome, trackId }: DayTargetBlockProps) {
   const perDumbbell = exercise?.equipment === "Haltères";
   const lines = formatTargetLines(target, perDumbbell);
   const reserve = reserveOf(target.rpeMax);
@@ -52,12 +56,12 @@ export function DayTargetBlock({ target, exercise, lastLine, lastDate, outcome }
       <p className="day-target__reason">{target.reason}</p>
       {!suspended && !insufficient && reserve !== undefined && (
         <p className="day-target__hint">
-          Dépassement possible sur n’importe quelle série, en gardant {reserve} répétition{reserve > 1 ? "s" : ""} en réserve.
+          RPE ≤ {target.rpeMax} : finir chaque série avec au moins {reserve} répétition{reserve > 1 ? "s" : ""} en réserve. Tu peux dépasser l’objectif sur n’importe quelle série en gardant cette réserve.
         </p>
       )}
       {outcome && <p className={`day-target__outcome day-target__outcome--${outcome.kind}`}>{outcome.text}</p>}
-      {exercise && (
-        <Link className="day-target__link" to={`/exercises/${exercise.id}`}>
+      {trackId && (
+        <Link className="day-target__link" to={paths.perspective(trackId, { retour: "seance" })} onClick={(event) => rememberWorkoutPosition(event.currentTarget)}>
           Voir ma perspective ›
         </Link>
       )}

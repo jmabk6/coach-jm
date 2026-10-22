@@ -36,8 +36,13 @@ export interface DayTargetContext {
 }
 
 export function dayTargetFor(block: PerformedExerciseBlock, date: string, context: DayTargetContext, now: string): DayTarget | undefined {
-  const track = context.tracks.find((item) => item.id === block.sourceBlockId && !item.closedAt);
-  const spec = context.specs.find((item) => item.id === block.sourceBlockId);
+  return block.sourceBlockId ? dayTargetForTrack(block.sourceBlockId, date, context, now) : undefined;
+}
+
+/** L'objectif de la prochaine séance d'une piste, à une date donnée (séances enregistrées jusqu'à cette date). */
+export function dayTargetForTrack(trackId: Id, date: string, context: DayTargetContext, now: string): DayTarget | undefined {
+  const track = context.tracks.find((item) => item.id === trackId && !item.closedAt);
+  const spec = context.specs.find((item) => item.id === trackId);
   if (!track || !spec || track.engine === "v6") return undefined;
   const reference = track.references.at(-1)?.from;
   const results = trackResults(context.completed, sourceIdsOf(spec, context.specs), reference).filter((result) => result.date <= date);

@@ -1,0 +1,212 @@
+/* Perspectives au 31 mars (lot P3, 22/10/2026) : blocs empilés, lisibles à 375 px, sans tableau large. */
+.perspectives {
+  display: grid;
+  gap: 12px;
+  padding: var(--space-5) var(--space-4);
+}
+
+.perspectives h1 {
+  margin: 0;
+}
+
+.perspectives__back {
+  color: var(--color-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.perspectives__lead,
+.perspectives__message,
+.perspectives__legend {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.perspectives__legend {
+  font-size: 0.82rem;
+}
+
+.perspectives__h2 {
+  margin: 8px 0 0;
+  font-size: 1.05rem;
+}
+
+.perspectives__sessions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+}
+
+.perspectives__sessions button {
+  min-height: 40px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-soft);
+  font-weight: 700;
+}
+
+.perspectives__sessions button.is-active {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.perspectives__list,
+.perspective-weeks {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.perspective-card {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 12px 34px 12px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.perspective-card__head,
+.perspective-week__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.perspective-card__line,
+.perspective-week__line {
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.perspective-card__next strong {
+  color: var(--color-text);
+}
+
+.perspective-card__forecast {
+  font-size: 0.8rem;
+}
+
+.perspective-card__chevron {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  color: var(--color-text-soft);
+  transform: translateY(-50%);
+}
+
+.perspective-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-surface-soft);
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.perspective-tag--ahead,
+.perspective-tag--on_track {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.perspective-tag--consolidate {
+  background: var(--color-orange-soft);
+  color: var(--color-orange);
+}
+
+.perspective-tag--upcoming {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.perspective-summary {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.perspective-summary > div {
+  display: grid;
+  gap: 2px;
+  font-size: 0.9rem;
+}
+
+.perspective-summary__label {
+  color: var(--color-text-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.perspective-summary__reason {
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+}
+
+.perspective-summary__hypotheses summary {
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.perspective-summary__hypotheses p {
+  margin: 6px 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.perspective-week {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.perspective-week__actual {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.goals-perspectives {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.goals-perspectives small {
+  display: block;
+  color: var(--color-text-soft);
+  font-weight: 500;
+}

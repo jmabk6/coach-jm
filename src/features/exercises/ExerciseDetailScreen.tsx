@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { paths } from "../../app/paths";
 import { ArrowDown, ArrowUp, BarChart3, ChevronRight, Dumbbell, Ellipsis, TriangleAlert, Trophy } from "lucide-react";
 import { CartesianGrid, LabelList, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import type { Exercise, PerformedSeries, StrengthFrameVersion, WorkoutSession } from "../../domain";
@@ -54,6 +55,8 @@ type LoadState =
       lastSeries: PerformedSeries[] | undefined;
       /** Hausse suspendue (perspectives) : la carte « Prochaine séance » ne recommande rien. */
       suspension: { from: string; reason: string } | undefined;
+      /** Perspectives au 31 mars de l'exercice, une par séance où il figure (lot P3). */
+      perspectives: Array<{ id: string; session: string }>;
     }
   | { status: "not-found" }
   | { status: "error"; message: string };
@@ -126,6 +129,7 @@ export function ExerciseDetailScreen() {
           frameVersion: active,
           lastSeries: findLastPerformances(workouts).get(exercise.id)?.allSeries,
           suspension: tracks.find((track) => track.exerciseId === exercise.id && track.suspension && !track.closedAt)?.suspension,
+          perspectives: tracks.filter((track) => track.exerciseId === exercise.id && !track.closedAt).map((track) => ({ id: track.id, session: track.session })),
         });
       } catch (error) {
         if (!cancelled) {
@@ -189,7 +193,7 @@ export function ExerciseDetailScreen() {
     );
   }
 
-  const { exercise, performanceHistory, completedWorkouts, frameVersion, lastSeries, suspension } = state;
+  const { exercise, performanceHistory, completedWorkouts, frameVersion, lastSeries, suspension, perspectives } = state;
   const tab = TABS.find((item) => item.key === searchParams.get("onglet"))?.key ?? "progression";
   const settingsOpen = searchParams.get("vue") === "reglages";
 
@@ -314,6 +318,19 @@ export function ExerciseDetailScreen() {
                   <span>{next.rule}</span>
                 </p>
               )}
+            </article>
+          )}
+
+          {perspectives.length > 0 && (
+            <article className="exercise-detail__card">
+              <h2>Perspectives au 31 mars</h2>
+              <p className="exercise-detail__perspectives">
+                {perspectives.map((item) => (
+                  <Link key={item.id} to={paths.perspective(item.id)}>
+                    Muscu {item.session} ›
+                  </Link>
+                ))}
+              </p>
             </article>
           )}
 

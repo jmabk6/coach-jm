@@ -175,7 +175,7 @@ export function ExerciseBlockCard({
   /* Perspectives (P2, 22/10/2026) : objectif du jour figé, et retour une fois toutes ses séries notées. */
   const target = bet ? undefined : block.dayTarget;
   const targetSummary =
-    target && target.kind !== "suspended" && target.kind !== "insufficient" ? formatTargetLines(target, exercise?.equipment === "Haltères")[0] : undefined;
+    target && target.kind !== "suspended" && target.kind !== "insufficient" ? formatTargetLines(target, exercise?.equipment === "Haltères").join(" · ") : undefined;
   const doneSets = target ? workSetsOf(block) : [];
   const outcome =
     target && target.sets.length > 0 && (performed || doneSets.length >= target.sets.length)
@@ -272,6 +272,7 @@ export function ExerciseBlockCard({
               lastLine={lastTime ? formatLastSession(lastTime.allSeries, exercise?.equipment === "Haltères") : undefined}
               lastDate={lastTime ? formatDayMonth(lastTime.date) : undefined}
               outcome={outcome}
+              trackId={block.sourceBlockId}
             />
           ) : (
             frameVersion && <FrameGoal block={block} frameVersion={frameVersion} lastTime={lastTime} />
@@ -797,6 +798,8 @@ function SeriesRow({
     );
   }
 
+  /* Objectif du jour figé (P3) : la série à venir montre déjà sa charge et ses répétitions. */
+  const goal = plannedSet ? undefined : dayTargetCells(block.dayTarget, index);
   return (
     <li className="wseries__row wseries__row--upcoming">
       <span className="wseries__bullet">{index + 1}</span>
@@ -804,8 +807,8 @@ function SeriesRow({
         {tabular ? (
           /* Pari traction : la série à venir affiche ce qui est prévu pour elle. */
           <SeriesCells
-            load={plannedSet ? formatDecimal(plannedSet.assistKg) : "—"}
-            reps={plannedSet ? String(plannedSet.reps) : targetReps(block)}
+            load={plannedSet ? formatDecimal(plannedSet.assistKg) : (goal?.load ?? "—")}
+            reps={plannedSet ? String(plannedSet.reps) : (goal?.reps ?? targetReps(block))}
             rpe="—"
             label={label}
           />
@@ -1002,6 +1005,13 @@ function StepRow({
 function plannedRestOf(block: PerformedExerciseBlock): number {
   const instructions = block.snapshotInstructions;
   return instructions.shape === "reps" || instructions.shape === "duration" ? instructions.restBetweenSetsSec : 0;
+}
+
+/** Cellules d'une série à venir d'après l'objectif du jour : « 7,5 » et « 12 », ou « 6–7 » pour une répétition visée. */
+function dayTargetCells(target: DayTarget | undefined, index: number): { load: string; reps: string } | undefined {
+  const goal = target && target.kind !== "suspended" ? target.sets[index] : undefined;
+  if (goal?.reps === undefined) return undefined;
+  return { load: goal.kg !== undefined ? formatDecimal(goal.kg) : "—", reps: goal.stretch ? `${goal.reps - 1}–${goal.reps}` : String(goal.reps) };
 }
 
 /**
