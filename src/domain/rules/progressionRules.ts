@@ -3,6 +3,7 @@ import type {
   Id,
   LoadSteps,
   PerformedExerciseBlock,
+  PlanWeek,
   SetTarget,
   TrajectoryWeek,
   WorkoutSession,
@@ -296,7 +297,8 @@ export function nextLoadTarget(input: LoadTargetInput): DayTarget {
   }
 
   /* Toutes les séries au plafond (RPE accepté, pas un échec) : +1 visé sur la plus faible, seulement dans le plafond. */
-  const weakest = sets.reduce<number | undefined>((best, set, index) => (set.reps < p.repMax && (best === undefined || set.reps <= sets[best]!.reps) ? index : best), undefined);
+  /* À égalité, la première des plus faibles (la plus fraîche) : la progression ne se concentre pas sur la dernière série. */
+  const weakest = sets.reduce<number | undefined>((best, set, index) => (set.reps < p.repMax && (best === undefined || set.reps < sets[best]!.reps) ? index : best), undefined);
   if (weakest === undefined) {
     return { ...base, kind: "repeat", sets: target, reason: `Séries finies au plafond RPE ${p.rpeMax} : mêmes répétitions.` };
   }
@@ -493,12 +495,23 @@ function addDays(date: string, days: number): string {
   return day.toISOString().slice(0, 10);
 }
 
+/**
+ * Niveau d'une séance complète (correction du 22/10/2026) : la moyenne des
+ * niveaux de **toutes** ses séries. Un progrès sur la dernière série compte
+ * pour sa part, ce que le niveau de la meilleure série ignorait. Sert au
+ * rythme et à la comparaison avec la référence détaillée ; la faisabilité
+ * d'une séance se juge, elle, série par série (`simulateLoadPlan`).
+ */
+export function sessionMeanLevel(result: SessionResult): number {
+  return result.sets.reduce((sum, set) => sum + estimatedLevel(set), 0) / result.sets.length;
+}
+
 /** La meilleure séance de chaque semaine : plusieurs séances d'une semaine ne font qu'un point. */
-export function weeklyLevels(results: ReadonlyArray<SessionResult>): Array<{ week: string; level: number }> {
+export function weeklyLevels(results: ReadonlyArray<SessionResult>, levelOf: (result: SessionResult) => number = sessionLevel): Array<{ week: string; level: number }> {
   const byWeek = new Map<string, number>();
   for (const result of results) {
     const week = mondayOf(result.date);
-    byWeek.set(week, Math.max(byWeek.get(week) ?? 0, sessionLevel(result)));
+    byWeek.set(week, Math.max(byWeek.get(week) ?? 0, levelOf(result)));
   }
   return [...byWeek.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([week, level]) => ({ week, level }));
 }
@@ -591,6 +604,201 @@ export function forecastWeeks(input: ForecastInput): TrajectoryWeek[] {
     weeks.push({ week, level: round2(probable), probable: shape, low: lowShape, high: highShape });
   }
   return weeks;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Séances complètes semaine par semaine (correction du 22/10/2026)            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Niveau d'un objectif complet, compté au minimum accepté : chaque série au
+ * plafond de RPE, la répétition visée comptée sans son +1 (refaire le
+ * nombre précédent suffit). Moyenne des séries, comme `sessionMeanLevel`.
+ */
+export function planLevel(sets: ReadonlyArray<SetTarget>, rpeMax: number): number {
+  const reserve = Math.max(0, 10 - rpeMax);
+  const levels = sets.map((set) => (set.kg ?? 0) * (1 + ((set.stretch ? (set.reps ?? 1) - 1 : (set.reps ?? 0)) + reserve) / 30));
+  return levels.reduce((sum, value) => sum + value, 0) / Math.max(1, levels.length);
+}
+
+/** Croissance cumulée de la capacité, semaine `index` (0 = semaine de départ) : même rythme ralenti que la prévision. */
+function growthAt(pace: number, index: number): number {
+  let growth = 1;
+  for (let step = 1; step <= index; step += 1) growth *= 1 + pace * PACE_DECAY ** step;
+  return growth;
+}
+
+/** En dessous de 3 semaines avec séance, le rythme est **inconnu** (pas nul) : seule la prochaine séance est donnée. */
+export const PACE_KNOWN_FROM = 3;
+/** Séances comparables retenues pour le point de départ et le profil d'effort. */
+export const START_WINDOW = 5;
+
+const median = (values: ReadonlyArray<number>): number => {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
+};
+
+/**
+ * Niveau d'une série pour la **tendance** seulement : RPE absent compté au
+ * plafond (hypothèse prudente, ni réserve inventée). Jamais utilisé par les
+ * règles de l'objectif, où un RPE absent empêche toute validation.
+ */
+const levelAtCap = (set: PerformedSet, rpeMax: number) => estimatedLevel(set.rpe === undefined ? { ...set, rpe: rpeMax } : set);
+
+export interface PlanStart {
+  /** Niveau moyen de départ d'une séance complète. */
+  level: number;
+  /** Part de chaque série dans ce niveau (moyenne 1), jamais croissante d'une série à la suivante. */
+  profile: number[];
+  /** Séances utilisées. */
+  sessions: number;
+}
+
+/**
+ * Point de départ de la projection, sur **plusieurs** séances comparables
+ * (jusqu'à 5), pas sur la seule dernière :
+ * - **niveau** : droite robuste (Theil-Sen : médiane des pentes entre
+ *   séances, puis médiane des ordonnées) évaluée à la date de la dernière
+ *   séance. Elle suit une vraie progression sans retard, et une séance
+ *   isolée ou un RPE mal noté ne la tire pas à lui seul (à partir de
+ *   4 séances ; avec 3, l'effet est limité). Moins de 3 séances : la
+ *   dernière.
+ * - **profil d'effort** : pour chaque rang de série, la médiane de sa part
+ *   dans le niveau de la séance ; une série ne peut pas être plus forte que
+ *   la précédente (une dernière série exceptionnelle n'est pas une
+ *   caractéristique permanente), puis moyenne ramenée à 1.
+ */
+export function estimatePlanStart(history: ReadonlyArray<SessionResult>, sets: number, rpeMax: number): PlanStart {
+  const recent = history.slice(-START_WINDOW).filter((result) => result.sets.length > 0);
+  const t0 = Date.parse(recent[0]!.date);
+  const points = recent.map((result) => {
+    const levels = result.sets.map((set) => levelAtCap(set, rpeMax));
+    const mean = levels.reduce((sum, value) => sum + value, 0) / levels.length;
+    return { x: (Date.parse(result.date) - t0) / (7 * 86_400_000), y: mean, shares: levels.map((value) => value / mean) };
+  });
+  let level = points.at(-1)!.y;
+  if (points.length >= 3) {
+    const slopes: number[] = [];
+    for (let a = 0; a < points.length; a += 1) {
+      for (let b = a + 1; b < points.length; b += 1) {
+        if (points[b]!.x > points[a]!.x + EPSILON) slopes.push((points[b]!.y - points[a]!.y) / (points[b]!.x - points[a]!.x));
+      }
+    }
+    if (slopes.length > 0) {
+      const slope = median(slopes);
+      const intercept = median(points.map((point) => point.y - slope * point.x));
+      level = intercept + slope * points.at(-1)!.x;
+    }
+  }
+  const profile: number[] = [];
+  for (let index = 0; index < sets; index += 1) {
+    const shares = points.flatMap((point) => (point.shares[index] !== undefined ? [point.shares[index]!] : []));
+    const share = shares.length > 0 ? median(shares) : (profile.at(-1) ?? 1);
+    profile.push(index === 0 ? share : Math.min(share, profile[index - 1]!));
+  }
+  const mean = profile.reduce((sum, value) => sum + value, 0) / profile.length;
+  return { level, profile: profile.map((value) => value / mean), sessions: points.length };
+}
+
+export interface LoadPlanInput {
+  /** Séances comparables (la dernière comprise), de la plus ancienne à la plus récente. */
+  history: ReadonlyArray<SessionResult>;
+  prescription: LoadPrescription;
+  steps: LoadSteps;
+  /** Rythme hebdomadaire retenu (déjà multiplié pour la fourchette basse ou haute). */
+  pace: number;
+  fromWeek: string;
+  until: string;
+  /** Objectif réel de la première semaine (règles, groupe partagé compris) ; sinon recalculé. */
+  first?: DayTarget | undefined;
+}
+
+/**
+ * Les objectifs complets, série par série, semaine après semaine :
+ * - **semaine de départ** : l'objectif des règles sur ta dernière séance
+ *   réelle — proposé tel quel, le rythme ne le freine jamais ;
+ * - **semaines suivantes** : les mêmes règles appliquées à la séance
+ *   simulée de la semaine d'avant.
+ *
+ * Validation **interne** (jamais présentée comme un résultat) : une séance
+ * est simulée avec, pour chaque série, la capacité « niveau de départ ×
+ * part de cette série × croissance du rythme », jamais en dessous de ce que
+ * cette série a déjà fait dans la simulation. Une série fait les
+ * répétitions visées si sa capacité le permet au plafond de RPE, sinon ce
+ * qu'elle peut. L'objectif n'est jugé **réalisable** que si chaque série,
+ * prise seule, atteint son minimum (la répétition visée : refaire le nombre
+ * précédent suffit). Réalisable, la séance simulée nourrit l'objectif
+ * suivant : la répétition visée reste visée tant que la capacité de cette
+ * série ne permet pas le +1 entier, puis le +1 entier est compté — jamais
+ * indéfiniment au minimum tant que le rythme est positif. Pas réalisable,
+ * le même objectif est repris la semaine suivante.
+ */
+export function simulateLoadPlan(input: LoadPlanInput): PlanWeek[] {
+  const p = input.prescription;
+  const reserve = Math.max(0, 10 - p.rpeMax);
+  const start = estimatePlanStart(input.history, p.sets, p.rpeMax);
+  const last = input.history.at(-1)!;
+  /* Ce que chaque série a déjà fait dans la simulation : sa capacité ne redescend jamais en dessous. */
+  const floor = start.profile.map(() => 0);
+  const weeks: PlanWeek[] = [];
+  /*
+   * Les règles voient la séance réelle telle qu'elle a été notée : un RPE
+   * absent ne valide jamais un palier ni une hausse (objectif « à
+   * consolider »). Le RPE absent compté au plafond ne sert qu'à estimer la
+   * tendance (`estimatePlanStart`).
+   */
+  let state: SessionResult = last;
+  for (let index = 0, week = input.fromWeek; week <= input.until; index += 1, week = addDays(week, 7)) {
+    const target = index === 0 && input.first ? input.first : nextLoadTarget({ prescription: p, steps: input.steps, last: state, now: "" });
+    const growth = growthAt(input.pace, index);
+    const done = target.sets.map((set, position) => {
+      const kg = set.kg ?? 0;
+      const goal = set.reps ?? 0;
+      const minimum = set.stretch ? goal - 1 : goal;
+      const own = Math.max(start.level * (start.profile[position] ?? start.profile.at(-1)!) * growth, floor[position] ?? 0);
+      const possible = kg > 0 ? Math.floor(30 * (own / kg - 1) - reserve + EPSILON) : goal + 1;
+      const reps = Math.min(goal, possible);
+      return { kg, reps, rpe: possible - reps >= 1 ? p.rpeMax - 1 : p.rpeMax, ok: reps >= minimum };
+    });
+    const feasible = done.length > 0 && done.every((set) => set.ok);
+    weeks.push({
+      week,
+      sets: target.sets.map((set) => ({ ...set })),
+      kind: target.kind,
+      level: round2(planLevel(target.sets, p.rpeMax)),
+      feasible,
+      /* Séance simulée (validation interne), avec le cran de chaque série pendant une transition. */
+      ...(feasible ? { done: done.map(({ kg, reps }, position): SetTarget => ({ kg, reps, ...(target.sets[position]?.step ? { step: target.sets[position]!.step } : {}) })) } : {}),
+    });
+    if (feasible) {
+      state = { workoutId: "simulation", date: week, sets: done.map(({ kg, reps, rpe }) => ({ kg, reps, rpe })) };
+      done.forEach((set, position) => {
+        floor[position] = Math.max(floor[position] ?? 0, estimatedLevel(set));
+      });
+    }
+  }
+  return weeks;
+}
+
+/** Suspension : mêmes règles série par série, chaque série supposée tenue avec de la réserve (+2 s par semaine, jusqu'au haut de la consigne). */
+export function simulateDurationPlan(input: { last: SessionResult; prescription: DurationPrescription; fromWeek: string; until: string; first?: DayTarget | undefined }): PlanWeek[] {
+  const p = input.prescription;
+  const weeks: PlanWeek[] = [];
+  let state = input.last;
+  for (let index = 0, week = input.fromWeek; week <= input.until; index += 1, week = addDays(week, 7)) {
+    const target = index === 0 && input.first ? input.first : nextDurationTarget(p, state, "");
+    const sets = target.sets.map((set) => ({ ...set }));
+    const level = sets.reduce((sum, set) => sum + (set.durationSec ?? 0), 0) / Math.max(1, sets.length);
+    weeks.push({ week, sets, kind: target.kind, level: round2(level), feasible: sets.length > 0, ...(sets.length > 0 ? { done: sets.map((set) => ({ ...set })) } : {}) });
+    if (sets.length > 0) state = { workoutId: "simulation", date: week, sets: sets.map((set) => ({ kg: 0, reps: 0, durationSec: set.durationSec ?? 0, rpe: p.rpeMax - 1 })) };
+  }
+  return weeks;
+}
+
+/** Niveau d'une durée réelle : moyenne des durées tenues (comparable au `level` d'une semaine de suspension). */
+export function sessionMeanDuration(result: SessionResult): number {
+  return result.sets.reduce((sum, set) => sum + (set.durationSec ?? 0), 0) / Math.max(1, result.sets.length);
 }
 
 /* -------------------------------------------------------------------------- */

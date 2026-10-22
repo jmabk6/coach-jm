@@ -4,7 +4,7 @@ import type { DayTarget, PerformedSeries, SetTarget } from "../../domain";
 
 const kg = (value: number) => `${String(Math.round(value * 100) / 100).replace(".", ",")} kg`;
 
-export function formatTargetLines(target: DayTarget, perDumbbell: boolean): string[] {
+export function formatTargetLines(target: Pick<DayTarget, "sets">, perDumbbell: boolean): string[] {
   const unit = (value: number) => `${kg(value)}${perDumbbell ? " par haltère" : ""}`;
   const reps = (set: SetTarget) => (set.stretch && set.reps !== undefined ? `${set.reps - 1}–${set.reps}` : String(set.reps ?? "—"));
   const sets = target.sets;
@@ -54,6 +54,11 @@ export function formatLastSession(series: ReadonlyArray<PerformedSeries>, perDum
 export function formatDayMonth(date: string): string {
   const [, month, day] = date.split("-");
   return `${day}/${month}`;
+}
+
+/** Un objectif complet sur une ligne : « 55 kg · 8/8/7 », ou les groupes d'une transition séparés par « · ». */
+export function formatPlan(sets: ReadonlyArray<SetTarget>, perDumbbell: boolean): string {
+  return formatTargetLines({ sets: [...sets] }, perDumbbell).join(" · ") || "—";
 }
 
 /** Une cible de trajectoire ou de prévision : « 60 kg × 8 », « 28 kg d'aide × 5 », « 30 s ». */

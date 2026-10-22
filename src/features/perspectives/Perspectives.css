@@ -131,7 +131,8 @@
   color: var(--color-orange);
 }
 
-.perspective-tag--upcoming {
+.perspective-tag--upcoming,
+.perspective-tag--in_session {
   background: var(--color-accent-soft);
   color: var(--color-accent);
 }

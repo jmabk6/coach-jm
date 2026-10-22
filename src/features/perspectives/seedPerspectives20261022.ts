@@ -2,7 +2,7 @@ import { db } from "../../db/database";
 import type { Exercise, Id, InstallMarkers, LoadSteps, ProgressionTrack, SessionTemplate, StrengthFrameVersion, WorkoutSession } from "../../domain";
 import { formatLocalDate } from "../../domain/rules/programRules";
 import { frameVersion20261005 } from "../program/seedProgramMuscu20261005";
-import { buildTrack, trackSpecsFrom } from "./tracks";
+import { buildTrack, detailedTrajectory, trackSpecsFrom } from "./tracks";
 
 /**
  * Perspectives au 31 mars, mise en place (lot P1, 22/10/2026).
@@ -12,6 +12,11 @@ import { buildTrack, trackSpecsFrom } from "./tracks";
  *           par défaut des cadres V2, jamais décidée).
  * Seed 44 — les pistes A/B/C et leurs trajectoires initiales ; presse à
  *           cuisses (A et B) en progression suspendue.
+ * Seed 45 — référence détaillée, datée (objectif de chaque série, semaine
+ *           par semaine) ajoutée aux pistes ; la trajectoire initiale garde
+ *           son sens d'origine (repère de meilleure série). Repassé à chaque
+ *           lancement : une piste dont le rythme était inconnu reçoit la
+ *           sienne, datée, dès qu'il est connu ; aucune n'est réécrite.
  *
  * Chacun une seule fois (marqueur), sans jamais écraser une donnée déjà là.
  */
@@ -106,7 +111,10 @@ export function perspectiveTracks20261022(
     const track = buildTrack(spec, specs, workouts, exerciseById.get(spec.exerciseId)?.loadSteps, now, today);
     const reason = SUSPENDED_20261022[spec.exerciseId];
     /* Suspendue : aucune trajectoire (elle ressemblerait à une recommandation) ; elle sera calculée à la reprise. */
-    return reason ? { ...track, initial: { createdAt: now, weeks: [], provisional: true }, suspension: { from: today, reason } } : track;
+    if (!reason) return track;
+    const rest = { ...track };
+    delete rest.detailed;
+    return { ...rest, initial: { createdAt: now, weeks: [], provisional: true }, suspension: { from: today, reason } };
   });
 }
 
@@ -134,5 +142,60 @@ export async function seedPerspectiveTracks20261022(now: string = new Date().toI
       if (tracks.length > 0) await db.settings.put({ key: "progressionTracks", value: tracks });
     }
     await db.settings.put({ key: "install", value: { ...(await markers()), perspectiveTracks20261022: now } });
+  });
+}
+
+/** Les pistes complétées d'une référence détaillée datée (fonction pure) ; celles qui en ont déjà une sont intactes. */
+export function withDetailedReferences(
+  tracks: ReadonlyArray<ProgressionTrack>,
+  templates: ReadonlyArray<SessionTemplate>,
+  exercises: ReadonlyArray<Exercise>,
+  activeVersions: ReadonlyArray<StrengthFrameVersion>,
+  frameExercise: ReadonlyMap<Id, Id>,
+  workouts: ReadonlyArray<WorkoutSession>,
+  now: string,
+  today: string,
+): ProgressionTrack[] {
+  const exerciseById = new Map(exercises.map((exercise) => [exercise.id, exercise]));
+  const versionByExercise = new Map(activeVersions.flatMap((version) => {
+    const exerciseId = frameExercise.get(version.frameId);
+    return exerciseId ? [[exerciseId, version] as const] : [];
+  }));
+  const specs = trackSpecsFrom(templates, exerciseById, versionByExercise);
+  return tracks.map((track) => {
+    const spec = specs.find((item) => item.id === track.id);
+    if (track.detailed || track.suspension || track.closedAt || !spec) return track;
+    const reference = track.references.at(-1);
+    const detailed = detailedTrajectory(reference ? { ...spec, reference } : spec, specs, workouts, exerciseById.get(spec.exerciseId)?.loadSteps, now, today);
+    return detailed ? { ...track, detailed } : track;
+  });
+}
+
+export async function seedDetailedReferences20261022(now: string = new Date().toISOString()): Promise<void> {
+  await db.transaction("rw", [db.sessionTemplates, db.exercises, db.strengthFrames, db.strengthFrameVersions, db.workouts, db.settings], async () => {
+    const install = await markers();
+    const stored = (await db.settings.get("progressionTracks"))?.value as ProgressionTrack[] | undefined;
+    const pending = (stored ?? []).some((track) => !track.detailed && !track.suspension && !track.closedAt && (track.engine === "load" || track.engine === "duration"));
+    if (stored && pending) {
+      const [templates, exercises, frames, versions, workouts] = await Promise.all([
+        db.sessionTemplates.toArray(),
+        db.exercises.toArray(),
+        db.strengthFrames.toArray(),
+        db.strengthFrameVersions.where("status").equals("active").toArray(),
+        db.workouts.where("status").equals("completed").toArray(),
+      ]);
+      const tracks = withDetailedReferences(
+        stored,
+        templates as SessionTemplate[],
+        exercises as Exercise[],
+        versions as StrengthFrameVersion[],
+        new Map(frames.map((frame) => [frame.id, frame.exerciseId])),
+        workouts as WorkoutSession[],
+        now,
+        formatLocalDate(new Date(now)),
+      );
+      if (tracks.some((track, index) => track !== stored[index])) await db.settings.put({ key: "progressionTracks", value: tracks });
+    }
+    if (install?.perspectiveDetailed20261022 === undefined) await db.settings.put({ key: "install", value: { ...(await markers()), perspectiveDetailed20261022: now } });
   });
 }

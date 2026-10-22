@@ -13,9 +13,13 @@ import {
   nextLoadUp,
   nextNegativesTarget,
   PACE_CAP,
+  estimatePlanStart,
+  planLevel,
   raiseTakenThisWeek,
+  sessionMeanLevel,
   sessionLevel,
   shapeAt,
+  simulateLoadPlan,
   trackResults,
   weeklyLevels,
   weekStatus,
@@ -251,5 +255,101 @@ describe("statut d'une semaine", () => {
     expect(weekStatus({ week: "2026-10-19", today: "2026-10-22", initialLevel: 73, actualLevel: 73.3 })).toBe("on_track");
     expect(weekStatus({ week: "2026-10-19", today: "2026-10-22", initialLevel: 80, actualLevel: 73.3 })).toBe("consolidate");
     expect(weekStatus({ week: "2026-10-19", today: "2026-10-22", initialLevel: 80, actualLevel: 73.3, suspended: true })).toBe("suspended");
+  });
+});
+
+describe("séances complètes semaine par semaine (correction du 22/10)", () => {
+  const plan = (history: SessionResult[], prescription: LoadPrescription, steps: LoadSteps, pace: number) =>
+    simulateLoadPlan({ history, prescription, steps, pace, fromWeek: "2026-10-26", until: "2027-03-31" });
+  const text = (sets: ReadonlyArray<{ kg?: number; reps?: number; stretch?: true }>) => sets.map((item) => `${item.kg}×${item.stretch ? `${item.reps! - 1}–${item.reps}` : item.reps}`).join(" ");
+  /* Tes séances réelles (sauvegarde du 22/10). */
+  const ROWING_A = [
+    result("2026-10-04", [set(40, 12, 8), set(40, 12, 8), set(40, 12, 10)]),
+    result("2026-10-11", [set(45, 8, 8), set(45, 8, 8), set(45, 8, 8)]),
+    result("2026-10-19", [set(50, 8, 8), set(50, 8, 8), set(50, 10, 8)]),
+  ];
+  const CHEST_B = [
+    result("2026-10-06", [set(45, 8, 8), set(45, 8, 8), set(45, 8, 8)]),
+    result("2026-10-13", [set(50, 8, 8), set(50, 8, 8), set(50, 8, 9)]),
+    result("2026-10-21", [set(55, 8, 8), set(55, 8, 9), set(55, 6, 9)]),
+  ];
+
+  it("niveau d'une séance complète : moyenne de toutes les séries — un progrès de la dernière série compte, la meilleure série seule l'ignorait", () => {
+    const before = result("2026-10-21", [set(55, 8, 8), set(55, 8, 9), set(55, 6, 9)]);
+    const after = result("2026-10-28", [set(55, 8, 8), set(55, 8, 9), set(55, 7, 9)]);
+    expect(sessionLevel(after)).toBe(sessionLevel(before));
+    expect(sessionMeanLevel(after)).toBeGreaterThan(sessionMeanLevel(before));
+    expect(planLevel([{ kg: 55, reps: 8 }, { kg: 55, reps: 8 }, { kg: 55, reps: 7, stretch: true }], 9)).toBeCloseTo(planLevel([{ kg: 55, reps: 8 }, { kg: 55, reps: 8 }, { kg: 55, reps: 6 }], 9));
+  });
+
+  it("profil d'effort sur plusieurs séances : le 10 de la dernière série du rowing (19/10) n'en fait pas une série plus forte ; une série n'est jamais plus forte que la précédente", () => {
+    expect(estimatePlanStart(ROWING_A, 3, 9).profile.map((share) => Math.round(share * 1000) / 1000)).toEqual([1, 1, 1]);
+    const chest = estimatePlanStart(CHEST_B, 3, 9).profile;
+    expect(chest[0]).toBeGreaterThanOrEqual(chest[1]!);
+    expect(chest[1]).toBeGreaterThan(chest[2]!);
+    /* Une seule séance dont la 3e série est la plus forte : ramenée au niveau de la précédente. */
+    const single = estimatePlanStart([result("2026-10-15", [set(50, 8, 8), set(50, 8, 8), set(50, 12, 8)])], 3, 8).profile;
+    expect(single[2]).toBeLessThanOrEqual(single[1]!);
+  });
+
+  it("séance atypique : une dernière séance isolée (RPE mal noté) ne déplace pas seule le point de départ", () => {
+    const steady = [0, 1, 2, 3].map((week) => result(`2026-10-${String(1 + 7 * week).padStart(2, "0")}`, [set(50, 8, 8), set(50, 8, 8), set(50, 8, 8)]));
+    const odd = [...steady, result("2026-10-29", [set(50, 8, 5), set(50, 8, 5), set(50, 8, 5)])];
+    const flat = estimatePlanStart(steady, 3, 9).level;
+    expect(sessionMeanLevel(odd.at(-1)!) / flat).toBeGreaterThan(1.07);
+    expect(estimatePlanStart(odd, 3, 9).level).toBeCloseTo(flat, 5);
+  });
+
+  it("rowing A : la hausse justifiée par le réel est **proposée** la 1re semaine, jamais freinée ; la progression se répartit entre les séries ; semaines jusqu'au 16 novembre", () => {
+    const weeks = plan(ROWING_A, presc(3, 6, 8, 9), FIVE, PACE_CAP);
+    expect(weeks[0]).toMatchObject({ week: "2026-10-26", kind: "raise", sets: [{ kg: 55, reps: 6 }, { kg: 55, reps: 6 }, { kg: 55, reps: 6 }] });
+    expect(plan(ROWING_A, presc(3, 6, 8, 9), FIVE, 0)[0]).toMatchObject({ kind: "raise" });
+    expect(weeks.slice(0, 4).map((week) => text(week.sets))).toEqual(["55×6 55×6 55×6", "55×6 55×6 55×6", "55×6–7 55×6 55×6", "55×6–7 55×6 55×6"]);
+    /* Plus de concentration sur la dernière série : quand toutes ont de la marge, toutes progressent. */
+    expect(weeks.some((week) => text(week.sets) === "55×7 55×7 55×7")).toBe(true);
+    expect(weeks.every((week) => week.sets.length === 3)).toBe(true);
+  });
+
+  it("chest press B : le +1 visé de la 3e série reste visé tant que sa capacité ne le permet pas, devient entier dès qu'elle le permet ; jamais indéfiniment au minimum avec un rythme positif", () => {
+    const weeks = plan(CHEST_B, presc(3, 6, 8, 9), FIVE, PACE_CAP);
+    expect(weeks.slice(0, 3).map((week) => text(week.sets))).toEqual(["55×8 55×8 55×6–7", "55×8 55×8 55×6–7", "55×8 55×8 55×7–8"]);
+    expect(weeks.some((week) => week.sets.every((item) => item.kg === 60))).toBe(true);
+  });
+
+  it("faisabilité interne série par série : une moyenne suffisante ne suffit pas, chaque série doit pouvoir faire son minimum", () => {
+    const history = [0, 1, 2].map((week) => result(`2026-10-${String(1 + 7 * week).padStart(2, "0")}`, [set(60, 8, 6), set(60, 8, 6), set(60, 6, 9)]));
+    const weeks = plan(history, presc(3, 6, 8, 9), FIVE, 0);
+    expect(weeks[0]!.sets.at(-1)).toEqual({ kg: 60, reps: 7, stretch: true });
+    expect(planLevel(weeks[0]!.sets, 9)).toBeLessThan(sessionMeanLevel(history.at(-1)!));
+    expect(weeks[0]!.done!.at(-1)!.reps).toBe(6);
+    expect(weeks.every((week) => week.sets.at(-1)!.kg === 60 && week.sets.at(-1)!.reps! <= 7)).toBe(true);
+  });
+
+  it("transition (écarté 5 × 15 · 5 × 15 · 7,5 × 12, RPE 8) : chaque série a sa charge et ses répétitions, nouveau cran en premier", () => {
+    const weeks = plan([result("2026-10-15", [set(5, 15, 8), set(5, 15, 8), set(7.5, 12, 8)])], presc(3, 12, 15, 8), POULIE, PACE_CAP);
+    expect(weeks[0]!.sets).toEqual([{ kg: 7.5, reps: 12, step: "new" }, { kg: 7.5, reps: 12, step: "new" }, { kg: 5, reps: 15, step: "previous" }]);
+    expect(weeks.every((week) => week.sets.length === 3 && week.sets.every((item) => item.kg !== undefined && item.reps !== undefined))).toBe(true);
+  });
+
+  it("RPE absent : compté au plafond pour la tendance seulement ; jamais pour valider un palier ni proposer une hausse", () => {
+    const history = [
+      result("2026-10-05", [set(45, 8, 8), set(45, 8, 8), set(45, 8, 8)]),
+      result("2026-10-12", [set(50, 8, 8), set(50, 8, 8), set(50, 8, 8)]),
+    ];
+    const withoutRpe = [...history, result("2026-10-19", [set(55, 8), set(55, 8), set(55, 8)])];
+    const atCap = [...history, result("2026-10-19", [set(55, 8, 9), set(55, 8, 9), set(55, 8, 9)])];
+    /* Tendance : RPE absent = RPE au plafond (hypothèse prudente), même point de départ. */
+    expect(estimatePlanStart(withoutRpe, 3, 9).level).toBeCloseTo(estimatePlanStart(atCap, 3, 9).level, 6);
+    /* Objectif : 8/8/8 au haut de la fourchette valide le palier seulement avec le RPE noté. */
+    expect(plan(atCap, presc(3, 6, 8, 9), FIVE, PACE_CAP)[0]).toMatchObject({ kind: "raise", sets: [{ kg: 60 }, { kg: 60 }, { kg: 60 }] });
+    const weeks = plan(withoutRpe, presc(3, 6, 8, 9), FIVE, PACE_CAP);
+    expect(weeks[0]).toMatchObject({ kind: "consolidate", sets: [{ kg: 55, reps: 8 }, { kg: 55, reps: 8 }, { kg: 55, reps: 8 }] });
+    expect(weeks[0]!.sets.every((item) => item.kg === 55)).toBe(true);
+    expect(nextLoadTarget({ prescription: presc(3, 6, 8, 9), steps: FIVE, last: withoutRpe.at(-1)!, now: NOW }).kind).toBe("consolidate");
+  });
+
+  it("répétition visée à égalité : sur la première des séries les plus faibles, plus sur la dernière", () => {
+    const target = nextLoadTarget({ prescription: presc(3, 6, 8, 9), steps: FIVE, last: result("2026-10-26", [set(55, 6, 9), set(55, 6, 9), set(55, 6, 9)]), now: NOW });
+    expect(target.sets).toEqual([{ kg: 55, reps: 7, stretch: true }, { kg: 55, reps: 6 }, { kg: 55, reps: 6 }]);
   });
 });

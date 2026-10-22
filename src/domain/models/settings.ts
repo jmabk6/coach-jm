@@ -126,6 +126,8 @@ export interface InstallMarkers {
   shoulderRpe20261022?: string;
   /** Seed 44 : pistes des perspectives au 31 mars et trajectoires initiales. */
   perspectiveTracks20261022?: string;
+  /** Seed 45 : référence détaillée datée des pistes (objectif de chaque série). */
+  perspectiveDetailed20261022?: string;
   /** Programme V2 : modèles, règle, tests, séances du 04/10, cadres, objectifs (seed 19). */
   programV2?: string;
   /** Modèles V1 de musculation et de cardio archivés à partir du 04/10 (seed 20). */

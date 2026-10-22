@@ -67,24 +67,30 @@ afterEach(async () => {
 });
 
 describe("vue d'une piste", () => {
-  it("chest press B : initial, présenté, réel et actualisé distincts ; semaines à venir jamais jugées ; prévision provisoire (encore 1 séance) ; limite du 31 mars", async () => {
+  it("chest press B : repère initial, référence détaillée, présenté, réel et actualisé distincts ; chaque série détaillée ; semaines à venir jamais jugées ; prévision provisoire ; limite du 31 mars", async () => {
     await withChestHistory();
     const presented: DayTarget = { computedAt: "2026-10-27T17:00:00.000Z", kind: "progress", rpeMax: 9, reason: "x", sets: [{ kg: 55, reps: 8 }, { kg: 55, reps: 8 }, { kg: 55, reps: 7, stretch: true }] };
     await db.workouts.put(chest("2026-10-27", 55, [8, 8, 8], [8, 9, 9], presented));
 
     const view = (await loadPerspectives("2026-10-29", "2026-10-29T10:00:00.000Z")).find((item) => item.track.id === "v2-muscu-b-chest-press")!;
     expect(view.weeks[0]).toMatchObject({ week: "2026-10-19", actual: { date: "2026-10-21" } });
-    expect(view.weeks[0]!.initial).toBeDefined();
+    /* Repère initial : une meilleure série (sens d'origine) ; référence détaillée datée : chaque série, dès la semaine suivante. */
+    expect(view.weeks[0]!.initial).toMatchObject({ kg: 55, reps: 8 });
+    expect(view.weeks[0]!.reference).toBeUndefined();
+    expect(view.track.detailed).toMatchObject({ createdAt: "2026-10-22T10:00:00.000Z", basis: { date: "2026-10-21" } });
+    expect(view.weeks.find((row) => row.week === "2026-10-26")!.reference).toMatchObject({ sets: [{ kg: 55, reps: 8 }, { kg: 55, reps: 8 }, { kg: 55, reps: 7, stretch: true }] });
+    expect(view.weeks.filter((row) => row.reference).every((row) => row.reference!.sets.length === 3)).toBe(true);
     const thisWeek = view.weeks.find((row) => row.week === "2026-10-26")!;
     expect(thisWeek.presented).toEqual(presented);
     expect(thisWeek.actual?.date).toBe("2026-10-27");
     expect(["ahead", "on_track", "consolidate"]).toContain(thisWeek.status);
-    /* La semaine suivante porte l'objectif de la prochaine séance (règles), les autres la prévision. */
+    /* La semaine suivante porte l'objectif de la prochaine séance (règles sur le réel du 27/10), les autres l'objectif complet prévu. */
     const nextRow = view.weeks.find((row) => row.week === "2026-11-02")!;
-    expect(nextRow).toMatchObject({ status: "upcoming", actualized: { next: { kind: "raise", sets: [{ kg: 60, reps: 6 }, { kg: 60, reps: 6 }, { kg: 60, reps: 6 }] } } });
-    expect(view.weeks.filter((row) => row.week > "2026-10-26").every((row) => row.status === "upcoming" && row.actual === undefined)).toBe(true);
+    expect(nextRow).toMatchObject({ status: "upcoming", actualized: { next: true, repeat: false, sets: [{ kg: 60, reps: 6 }, { kg: 60, reps: 6 }, { kg: 60, reps: 6 }] } });
+    expect(view.weeks.filter((row) => row.week > "2026-10-26").every((row) => row.status === "upcoming" && row.actual === undefined && "sets" in row.actualized! && row.actualized.sets.length === 3 && !row.actualized.next === (row.week !== "2026-11-02"))).toBe(true);
     expect(view.weeks.at(-1)!.week <= "2027-03-31").toBe(true);
     expect(view.forecast).toMatchObject({ provisional: true, weeksWithSession: 4 });
+    expect(view.forecast!.probable).toHaveLength(3);
     expect(forecastText(view, {})).toContain("provisoire : historique encore insuffisant (4 semaines avec séance sur les 5 nécessaires).");
   });
 
@@ -124,10 +130,24 @@ describe("vue d'une piste", () => {
     expect(fallback.status).toBe("consolidate");
   });
 
+  it("séance encore ouverte : l'exercice déjà noté est « Séance en cours », pas « À venir »", async () => {
+    await withChestHistory();
+    const open = { ...chest("2026-10-28", 55, [8, 8, 7], [8, 9, 9]), id: "w-ouverte", status: "in_progress" as const };
+    delete (open as Partial<WorkoutSession>).completedAt;
+    await db.workouts.put(open);
+    const view = (await loadPerspectives("2026-10-28", "2026-10-28T19:00:00.000Z")).find((item) => item.track.id === "v2-muscu-b-chest-press")!;
+    const row = view.weeks.find((item) => item.week === "2026-10-26")!;
+    expect(row).toMatchObject({ status: "in_session", ongoing: [{ kg: 55, reps: 8 }, { kg: 55, reps: 8 }, { kg: 55, reps: 7 }] });
+    expect(row.actual).toBeUndefined();
+    expect(row.actualized).toBeUndefined();
+    const { statusLabel } = await import("./perspectiveText");
+    expect(statusLabel(row.status)).toBe("Séance en cours");
+  });
+
   it("historique insuffisant : « provisoire », même quand le rythme est encore nul ; le compte est celui des semaines avec séance", async () => {
-    const flat = { kg: 7.5, reps: 12 };
+    const flat = [{ kg: 7.5, reps: 12 }, { kg: 7.5, reps: 12 }, { kg: 7.5, reps: 12 }];
     const view = { track: {}, last: { date: "2026-10-15", sets: [] }, forecast: { provisional: true, weeksWithSession: 1, paceWeekly: 0, low: flat, high: flat, probable: flat } } as unknown as Parameters<typeof forecastText>[0];
-    expect(forecastText(view, {})).toBe("31 mars : 7,5 kg × 12 — provisoire : historique encore insuffisant (1 semaine avec séance sur les 5 nécessaires).");
+    expect(forecastText(view, {})).toBe("31 mars : 7,5 kg · 12/12/12 — provisoire : historique encore insuffisant (1 semaine avec séance sur les 5 nécessaires).");
     /* Deux séances la même semaine : une seule semaine comptée. */
     await withChestHistory();
     await db.workouts.put({ ...chest("2026-10-22", 55, [8, 8, 7], [8, 9, 9]), id: "w-meme-semaine" });
@@ -161,7 +181,11 @@ describe("à l'écran", () => {
     expect(within(card).getByText(/provisoire/)).toBeDefined();
     fireEvent.click(card);
     expect(await screen.findByText("Semaine par semaine", {}, { timeout: 5000 })).toBeDefined();
-    expect(screen.getAllByText(/^Initial :/).length).toBeGreaterThan(20);
+    expect(screen.getAllByText(/^Repère initial \(meilleure série\) :/).length).toBeGreaterThan(20);
+    expect(screen.getAllByText(/^Référence détaillée : 55 kg · 8\/8\/6–7$/).length).toBeGreaterThan(0);
+    const planned = [...document.querySelectorAll(".perspective-week__planned")].map((line) => line.textContent ?? "");
+    expect(planned.length).toBeGreaterThan(20);
+    expect(planned.every((line) => /: \d+ kg · \d+(–\d+)?\/\d+(–\d+)?\/\d+(–\d+)?/.test(line))).toBe(true);
     expect(screen.getByRole("link", { name: "‹ Perspectives" }).getAttribute("href")).toBe("/objectifs/perspectives?seance=B");
   }, 20000);
 

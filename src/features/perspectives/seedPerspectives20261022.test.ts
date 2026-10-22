@@ -10,7 +10,7 @@ import { readBackup, serializeBackup } from "../backup/exportBackup";
 import { parseBackup } from "../backup/restoreBackup";
 import { resetAndRestore } from "../backup/resetAndRestore";
 import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
-import { LOAD_STEPS_20261022, seedLoadSteps20261022, seedPerspectiveTracks20261022, seedShoulderRpe20261022 } from "./seedPerspectives20261022";
+import { LOAD_STEPS_20261022, seedDetailedReferences20261022, seedLoadSteps20261022, seedPerspectiveTracks20261022, seedShoulderRpe20261022 } from "./seedPerspectives20261022";
 
 /**
  * Perspectives au 31 mars, mise en place (lot P1, 22/10/2026) : crans
@@ -124,6 +124,72 @@ describe("seed 44 — pistes A/B/C", () => {
     await withoutMarker("perspectiveTracks20261022");
     await seedPerspectiveTracks20261022(NOW);
     expect(await tracks()).toEqual(edited);
+  });
+});
+
+describe("seed 45 — référence détaillée datée", () => {
+  it("ajoutée aux pistes qui n'en ont pas, datée du passage ; le repère initial garde son sens d'origine (meilleure série) et n'est pas touché ; jamais réécrite ; presse suspendue sans référence", async () => {
+    const chestWorkout = (date: string, kg: number, reps: number[], rpe: number[]) =>
+      ({
+        id: `w-${date}`, source: "planned", sessionTemplateId: "v2-muscu-b", status: "completed", date, startedAt: NOW, completedAt: NOW, lastActionAt: NOW, activeDurationSec: 0, createdAt: NOW, updatedAt: NOW,
+        blocks: [{ id: "b", sourceBlockId: "v2-muscu-b-chest-press", kind: "exercise", position: 1, addedDuringWorkout: false, exerciseId: "chest-press", status: "performed", snapshotInstructions: { shape: "reps", sets: 3, reps: { min: 6, max: 8 }, restBetweenSetsSec: 150 }, series: reps.map((value, index) => ({ id: `s${index}`, position: index, status: "completed", role: "travail", load: { kind: "total", kg }, reps: value, rpe: rpe[index], completedAt: NOW })) }],
+      }) as unknown as WorkoutSession;
+    await db.workouts.bulkPut([chestWorkout("2026-10-06", 45, [8, 8, 8], [8, 8, 8]), chestWorkout("2026-10-13", 50, [8, 8, 8], [8, 8, 9]), chestWorkout("2026-10-21", 55, [8, 8, 6], [8, 9, 9])]);
+    /* Pistes telles que créées le 22/10 avant la correction : sans référence détaillée. */
+    await db.settings.delete("progressionTracks");
+    await withoutMarker("perspectiveTracks20261022");
+    await seedPerspectiveTracks20261022(NOW);
+    const old = (await tracks()).map((track) => {
+      const copy = { ...track };
+      delete copy.detailed;
+      return copy;
+    });
+    await db.settings.put({ key: "progressionTracks", value: old });
+    await withoutMarker("perspectiveDetailed20261022");
+
+    const LATER = "2026-10-23T08:00:00.000Z";
+    await seedDetailedReferences20261022(LATER);
+    const after = await tracks();
+    const chest = after.find((track) => track.id === "v2-muscu-b-chest-press")!;
+    expect(chest.initial).toEqual(old.find((track) => track.id === chest.id)!.initial);
+    expect(chest.initial.weeks[0]!.probable).toEqual({ kg: 55, reps: 8 });
+    expect(chest.detailed).toMatchObject({ createdAt: LATER, basis: { workoutId: "w-2026-10-21", date: "2026-10-21" }, provisional: true });
+    expect(chest.detailed!.weeks[0]).toMatchObject({ week: "2026-10-26", sets: [{ kg: 55, reps: 8 }, { kg: 55, reps: 8 }, { kg: 55, reps: 7, stretch: true }] });
+    expect(after.filter((track) => track.exerciseId === "presse-cuisses").every((track) => track.detailed === undefined)).toBe(true);
+    expect(after.filter((track) => track.engine === "v6").every((track) => track.detailed === undefined)).toBe(true);
+    /* Rythme inconnu (moins de 3 semaines avec séance) : pas encore de référence détaillée. */
+    expect(after.find((track) => track.id === "v2-muscu-a-chest-press")!.detailed).toBeUndefined();
+
+    /* Rejoué (rechargement, mise à jour) : rien ne bouge, même avec de nouvelles séances. */
+    await db.workouts.put(chestWorkout("2026-10-27", 55, [8, 8, 8], [8, 9, 9]));
+    resumeSeedsForTests();
+    await runSeeds();
+    await withoutMarker("perspectiveDetailed20261022");
+    await seedDetailedReferences20261022("2026-11-01T08:00:00.000Z");
+    expect(await tracks()).toEqual(after);
+  });
+});
+
+describe("seed 45 — rythme connu plus tard", () => {
+  it("une piste au rythme inconnu reçoit sa référence détaillée, datée, au premier lancement où il devient connu ; ensuite plus jamais réécrite", async () => {
+    const chestA = (date: string, kg: number) =>
+      ({
+        id: `wa-${date}`, source: "planned", sessionTemplateId: "v2-muscu-a", status: "completed", date, startedAt: NOW, completedAt: NOW, lastActionAt: NOW, activeDurationSec: 0, createdAt: NOW, updatedAt: NOW,
+        blocks: [{ id: "b", sourceBlockId: "v2-muscu-a-chest-press", kind: "exercise", position: 1, addedDuringWorkout: false, exerciseId: "chest-press", status: "performed", snapshotInstructions: { shape: "reps", sets: 2, reps: { min: 8, max: 12 }, restBetweenSetsSec: 150 }, series: [0, 1].map((index) => ({ id: `s${index}`, position: index, status: "completed", role: "travail", load: { kind: "total", kg }, reps: 10, rpe: 8, completedAt: NOW })) }],
+      }) as unknown as WorkoutSession;
+    await db.workouts.bulkPut([chestA("2026-10-05", 40), chestA("2026-10-12", 45)]);
+    resumeSeedsForTests();
+    await runSeeds();
+    expect((await tracks()).find((track) => track.id === "v2-muscu-a-chest-press")!.detailed).toBeUndefined();
+
+    await db.workouts.put(chestA("2026-10-19", 50));
+    await seedDetailedReferences20261022("2026-10-20T07:00:00.000Z");
+    const created = (await tracks()).find((track) => track.id === "v2-muscu-a-chest-press")!.detailed!;
+    expect(created).toMatchObject({ createdAt: "2026-10-20T07:00:00.000Z", basis: { date: "2026-10-19" } });
+
+    await db.workouts.put(chestA("2026-10-26", 55));
+    await seedDetailedReferences20261022("2026-10-27T07:00:00.000Z");
+    expect((await tracks()).find((track) => track.id === "v2-muscu-a-chest-press")!.detailed).toEqual(created);
   });
 });
 

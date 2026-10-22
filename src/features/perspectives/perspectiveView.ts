@@ -1,48 +1,75 @@
-import type { DayTarget, Exercise, Id, ProgressionTrack, SetTarget, TrajectoryWeek, WorkoutSession } from "../../domain";
+import type { DayTarget, Exercise, Id, PlanWeek, ProgressionTrack, SetTarget, WorkoutSession } from "../../domain";
 import { PERSPECTIVE_HORIZON } from "../../domain";
 import {
+  BAND_HIGH,
+  BAND_LOW,
   estimatePace,
-  forecastWeeks,
   mondayOf,
+  PACE_KNOWN_FROM,
   sessionLevel,
+  sessionMeanDuration,
+  sessionMeanLevel,
+  simulateDurationPlan,
+  simulateLoadPlan,
   trackResults,
   weeklyLevels,
   weekStatus,
+  workSetsOf,
+  type PerformedSet,
   type SessionResult,
   type WeekStatus,
 } from "../../domain/rules/progressionRules";
 import { v6State } from "../goals/tractionV6";
 import { dayTargetForTrack, type DayTargetContext } from "./dayTargets";
-import { sourceIdsOf, type TrackSpec } from "./tracks";
+import { planStartWeek, sourceIdsOf, type TrackSpec } from "./tracks";
 
 /**
  * Perspectives au 31 mars (lot P3, 22/10/2026) : la vue d'une piste.
- * Quatre repères, jamais confondus :
- * - **initial** : la trajectoire enregistrée au départ (jamais réécrite) ;
+ * Repères jamais confondus :
+ * - **repère initial** (22/10) : trajectoire de départ, au sens d'origine —
+ *   une meilleure série, pas un objectif par série (jamais réécrit) ;
+ * - **référence détaillée** (correction du 22/10) : l'objectif de chaque
+ *   série semaine par semaine, datée, jamais réécrite ;
  * - **présenté** : l'objectif du jour figé sur la séance de cette semaine ;
- * - **réel** : ce qui a été noté ;
- * - **actualisé** : pour les semaines à venir, l'objectif de la prochaine
- *   séance puis la prévision recalculée aujourd'hui (jamais stockée).
+ * - **réel** : ce qui a été noté ; **en cours** : noté dans une séance ouverte ;
+ * - **actualisé** : pour les semaines à venir, l'objectif complet de chaque
+ *   séance, recalculé aujourd'hui (jamais stocké).
  * Une semaine à venir n'a jamais de statut réussi ou raté.
  */
 
 export type PerspectiveStatus = "ahead" | "on_track" | "consolidate" | "insufficient" | "suspended";
 
+/** Statut d'une semaine ; « séance en cours » : exercice noté dans une séance pas encore enregistrée. */
+export type WeekRowStatus = WeekStatus | "in_session";
+
 export interface WeekRow {
   /** Lundi de la semaine. */
   week: string;
+  /** Repère initial : meilleure série (sens d'origine). */
   initial?: SetTarget | undefined;
+  /** Référence détaillée : chaque série. */
+  reference?: PlanWeek | undefined;
   presented?: DayTarget | undefined;
-  /** Semaines à venir : objectif de la prochaine séance (semaine courante), puis prévision. */
-  actualized?: { next?: DayTarget | undefined; forecast?: SetTarget | undefined } | undefined;
+  /** Semaines à venir : objectif complet ; `next` pour la prochaine séance (règles sur tes séances réelles). */
+  /**
+   * Semaines à venir : objectif complet. `next` : la prochaine séance,
+   * proposée par les règles sur tes séances réelles (jamais jugée
+   * d'avance). `repeat` : même objectif que la semaine d'avant, reconduit
+   * par la simulation interne. `toRefine` : rythme encore
+   * inconnu, pas d'objectif au-delà de la prochaine séance.
+   */
+  actualized?: { sets: SetTarget[]; next: boolean; repeat: boolean } | { toRefine: true } | undefined;
   actual?: SessionResult | undefined;
-  status: WeekStatus;
+  /** Séries déjà notées dans la séance en cours. */
+  ongoing?: PerformedSet[] | undefined;
+  status: WeekRowStatus;
 }
 
 export interface PerspectiveForecast {
-  probable?: SetTarget | undefined;
-  low?: SetTarget | undefined;
-  high?: SetTarget | undefined;
+  /** Au 31 mars : la dernière séance simulée atteinte, série par série (répétitions faites). */
+  probable: SetTarget[];
+  low: SetTarget[];
+  high: SetTarget[];
   /** Provisoire tant que moins de `PROVISIONAL_BELOW` semaines comptent une séance comparable. */
   provisional: boolean;
   /** Semaines distinctes avec au moins une séance comparable (deux séances la même semaine comptent pour une). */
@@ -53,6 +80,10 @@ export interface PerspectiveForecast {
 }
 
 export interface PerspectiveView {
+  /** Plafond de RPE de la piste (affichage des objectifs). */
+  rpeMax?: number | undefined;
+  /** Semaines distinctes avec une séance comparable ; sous 3, le rythme est inconnu. */
+  paceWeeks?: number | undefined;
   track: ProgressionTrack;
   exercise: Exercise | undefined;
   results: SessionResult[];
@@ -132,36 +163,69 @@ export function buildPerspectiveView(
   }
 
   const next = dayTargetForTrack(track.id, today, context, now);
-  const points = weeklyLevels(results);
-  const pace = estimatePace(points);
+  const pace = estimatePace(weeklyLevels(results, sessionMeanLevel));
   const steps = exercise?.loadSteps;
+  const rpeMax = spec?.load?.rpeMax ?? spec?.duration?.rpeMax;
+  const ongoing = ongoingSets(allWorkouts, sourceIds, thisWeek);
 
-  let forecast: PerspectiveForecast | undefined;
-  let forecastByWeek = new Map<string, TrajectoryWeek>();
-  if (!track.suspension && last && track.engine === "load" && spec?.load && steps) {
-    const weeks = forecastWeeks({ level: points.at(-1)!.level, pace, fromWeek: thisWeek, until: PERSPECTIVE_HORIZON, prescription: spec.load, steps, currentKg: Math.max(...last.sets.map((set) => set.kg)) });
-    forecastByWeek = new Map(weeks.map((week) => [week.week, week]));
-    const end = weeks.at(-1);
-    forecast = { probable: end?.probable, low: end?.low, high: end?.high, provisional: pace.provisional, weeksWithSession: pace.points, paceWeekly: pace.weekly, paceRaw: pace.raw };
-  }
+  /* Objectifs complets semaine par semaine : probable, fourchette basse et haute (rythme × 0,4 et × 1,3). */
+  const first = next && next.sets.length > 0 ? next : undefined;
+  const planFrom = planStartWeek(last, today);
+  /* Rythme inconnu (pas nul) : seule la prochaine séance est projetée ; au-delà, « prévision à affiner ». */
+  const paceKnown = pace.points >= PACE_KNOWN_FROM;
+  const until = paceKnown ? PERSPECTIVE_HORIZON : planFrom;
+  const plan = (factor: number): PlanWeek[] | undefined => {
+    if (track.suspension || !last) return undefined;
+    if (track.engine === "load" && spec?.load && steps) {
+      return simulateLoadPlan({ history: results, prescription: spec.load, steps, pace: pace.weekly * factor, fromWeek: planFrom, until, first });
+    }
+    if (track.engine === "duration" && spec?.duration) {
+      return simulateDurationPlan({ last, prescription: spec.duration, fromWeek: planFrom, until, first });
+    }
+    return undefined;
+  };
+  const probable = plan(1);
+  const low = track.engine === "load" ? plan(BAND_LOW) : probable;
+  const high = track.engine === "load" ? plan(BAND_HIGH) : probable;
+  const planByWeek = new Map((probable ?? []).map((week) => [week.week, week]));
+  const forecast: PerspectiveForecast | undefined =
+    paceKnown && probable?.length && low?.length && high?.length
+      ? { probable: lastDone(probable), low: lastDone(low), high: lastDone(high), provisional: pace.provisional, weeksWithSession: pace.points, paceWeekly: pace.weekly, paceRaw: pace.raw }
+      : undefined;
 
+  const referenceByWeek = new Map((track.detailed?.weeks ?? []).map((week) => [week.week, week]));
+  const referenceFrom = track.detailed?.weeks[0]?.week;
   const weeks: WeekRow[] = [];
   for (let week = fromWeek; week <= PERSPECTIVE_HORIZON; week = addDays(week, 7)) {
     const initial = initialByWeek.get(week);
+    const reference = referenceByWeek.get(week);
     const actual = resultsByWeek.get(week);
-    const future = week > thisWeek || (week === thisWeek && !actual);
+    /* Exercice déjà noté dans la séance ouverte : la ligne « En cours » remplace l'objectif actualisé. */
+    const inSession = week === thisWeek && !actual && ongoing.length > 0;
+    const planned = week >= planFrom && !actual && !inSession ? planByWeek.get(week) : undefined;
+    const suspended = track.suspension !== undefined && week >= mondayOf(track.suspension.from);
+    /* Comparaison : référence détaillée (toutes les séries) dès qu'elle couvre la semaine ; avant, repère initial (meilleure série). */
+    const byReference = referenceFrom !== undefined && week >= referenceFrom;
+    const actualLevel = actual ? (byReference ? (track.engine === "duration" ? sessionMeanDuration(actual) : sessionMeanLevel(actual)) : sessionLevel(actual)) : undefined;
+    const status: WeekRowStatus =
+      inSession
+        ? "in_session"
+        : weekStatus({ week, today, initialLevel: byReference ? reference?.level : initial?.level, actualLevel, suspended });
     weeks.push({
       week,
       initial: initial?.probable,
+      reference,
       presented: presented.get(week),
-      actualized: future ? { forecast: forecastByWeek.get(week)?.probable } : undefined,
+      actualized: planned
+        ? { sets: planned.sets, next: week === planFrom, repeat: week !== planFrom && samePlan(planByWeek.get(addDays(week, -7))?.sets, planned.sets) }
+        : week > planFrom && !actual && probable && !paceKnown
+          ? { toRefine: true }
+          : undefined,
       actual,
-      status: weekStatus({ week, today, initialLevel: initial?.level, actualLevel: actual ? sessionLevel(actual) : undefined, suspended: track.suspension !== undefined && week >= mondayOf(track.suspension.from) }),
+      ...(week === thisWeek && ongoing.length > 0 ? { ongoing } : {}),
+      status,
     });
   }
-  /* La prochaine séance : la semaine courante si elle n'a pas encore de résultat, sinon la suivante. */
-  const nextRow = weeks.find((row) => row.actualized !== undefined);
-  if (nextRow?.actualized) nextRow.actualized = { ...nextRow.actualized, next };
 
   const latestPast = [...weeks].reverse().find((row) => row.actual);
   const status: PerspectiveStatus = track.suspension
@@ -176,10 +240,28 @@ export function buildPerspectiveView(
             ? "consolidate"
             : latestPast?.status === "on_track"
               ? "on_track"
-              : track.initial.weeks.length === 0
+              : track.initial.weeks.length === 0 && !track.detailed
                 ? "insufficient"
                 : "on_track";
-  return { track, exercise, results, last, next, forecast, status, weeks };
+  return { track, exercise, results, last, next, forecast, status, weeks, rpeMax, paceWeeks: pace.points };
+}
+
+/** Deux objectifs complets identiques, série par série. */
+function samePlan(a: ReadonlyArray<SetTarget> | undefined, b: ReadonlyArray<SetTarget>): boolean {
+  return a !== undefined && a.length === b.length && a.every((set, index) => set.kg === b[index]!.kg && set.reps === b[index]!.reps && set.stretch === b[index]!.stretch && set.step === b[index]!.step);
+}
+
+/** La dernière séance simulée jugée réalisable (estimation de ce que tu ferais), sinon l'objectif de la dernière semaine. */
+function lastDone(plan: ReadonlyArray<PlanWeek>): SetTarget[] {
+  return [...plan].reverse().find((week) => week.done)?.done ?? plan.at(-1)!.sets;
+}
+
+/** Les séries de travail déjà notées pour la piste dans la séance en cours de la semaine. */
+function ongoingSets(workouts: ReadonlyArray<WorkoutSession>, sourceIds: ReadonlyArray<Id>, week: string): PerformedSet[] {
+  const wanted = new Set(sourceIds);
+  const current = workouts.find((workout) => workout.status === "in_progress" && mondayOf(workout.date) === week);
+  const block = current?.blocks.find((item) => item.kind === "exercise" && item.sourceBlockId !== undefined && wanted.has(item.sourceBlockId));
+  return block?.kind === "exercise" ? workSetsOf(block) : [];
 }
 
 /**

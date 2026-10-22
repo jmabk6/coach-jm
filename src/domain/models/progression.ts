@@ -93,6 +93,27 @@ export interface TrajectoryWeek {
   high?: SetTarget;
 }
 
+/**
+ * Une semaine de la référence détaillée (correction du 22/10/2026) :
+ * l'objectif de **chaque** série, comme en séance.
+ */
+export interface PlanWeek {
+  /** Lundi de la semaine (YYYY-MM-DD). */
+  week: string;
+  sets: SetTarget[];
+  kind?: DayTargetKind;
+  /** Moyenne des niveaux des séries au minimum accepté (outil interne). */
+  level: number;
+  /**
+   * Validation **interne** de la simulation : la séance simulée peut-elle
+   * faire cet objectif ? Sinon il est repris la semaine suivante. Jamais
+   * présenté comme un résultat : une semaine à venir n'est jamais « atteinte ».
+   */
+  feasible: boolean;
+  /** Réalisable : ce que la séance simulée fait, série par série (la répétition visée faite ou non). */
+  done?: SetTarget[];
+}
+
 export type ProgressionEngine =
   /** Charge et répétitions (machines, poulies, haltères). */
   | "load"
@@ -123,13 +144,30 @@ export interface ProgressionTrack {
    */
   shareGroup?: string;
   createdAt: string;
-  /** Trajectoire initiale : calculée une fois, jamais réécrite. */
+  /**
+   * Trajectoire initiale : calculée une fois, jamais réécrite. Son sens
+   * d'origine est conservé : un **repère de meilleure série** (une charge et
+   * un nombre de répétitions), pas un objectif pour chaque série.
+   */
   initial: {
     createdAt: string;
     weeks: TrajectoryWeek[];
     /** Moins de 5 séances comparables au départ. */
     provisional: boolean;
     /** Recréée après la restauration d'une sauvegarde qui ne la contenait pas. */
+    recreated?: true;
+  };
+  /**
+   * Référence détaillée, datée, ajoutée par la correction du 22/10/2026 :
+   * l'objectif de chaque série semaine par semaine, calculé une fois sur
+   * les séances d'alors, jamais réécrit. N'efface pas `initial`.
+   */
+  detailed?: {
+    createdAt: string;
+    /** Dernière séance réelle sur laquelle elle part. */
+    basis?: { workoutId: Id; date: string };
+    weeks: PlanWeek[];
+    provisional: boolean;
     recreated?: true;
   };
   /**

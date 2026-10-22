@@ -17,11 +17,16 @@ import {
   estimatePace,
   forecastWeeks,
   mondayOf,
+  PACE_KNOWN_FROM,
   PROVISIONAL_BELOW,
+  sessionMeanLevel,
+  simulateDurationPlan,
+  simulateLoadPlan,
   trackResults,
   weeklyLevels,
   type DurationPrescription,
   type LoadPrescription,
+  type SessionResult,
 } from "../../domain/rules/progressionRules";
 import { V6_REFERENCE } from "../goals/tractionV6";
 
@@ -196,6 +201,45 @@ export function initialTrajectory(
   return { createdAt: now, weeks: [], provisional: true };
 }
 
+/** Première semaine projetée : celle de `today`, ou la suivante si la séance de la semaine est déjà faite. */
+export function planStartWeek(last: SessionResult | undefined, today: string): string {
+  const week = mondayOf(today);
+  return last && mondayOf(last.date) === week ? addDays(week, 7) : week;
+}
+
+/**
+ * Référence détaillée (correction du 22/10/2026) : l'objectif de chaque
+ * série, semaine par semaine, sur l'historique comparable de `today`. Le
+ * rythme se mesure sur toutes les séries (`sessionMeanLevel`). Rien pour la
+ * traction (pari V6) ni les négatives (pas de prévision), ni tant que le
+ * rythme est inconnu (moins de 3 semaines avec séance) : elle sera
+ * enregistrée, datée, dès qu'il sera connu.
+ */
+export function detailedTrajectory(
+  spec: TrackSpec,
+  all: ReadonlyArray<TrackSpec>,
+  workouts: ReadonlyArray<WorkoutSession>,
+  steps: LoadSteps | undefined,
+  now: string,
+  today: string,
+): NonNullable<ProgressionTrack["detailed"]> | undefined {
+  if (spec.engine !== "load" && spec.engine !== "duration") return undefined;
+  const results = trackResults(workouts, sourceIdsOf(spec, all), spec.reference.from).filter((result) => result.date <= today);
+  const last = results.at(-1);
+  if (!last) return undefined;
+  const points = weeklyLevels(results, sessionMeanLevel);
+  if (points.length < PACE_KNOWN_FROM) return undefined;
+  const base = { createdAt: now, basis: { workoutId: last.workoutId, date: last.date }, provisional: points.length < PROVISIONAL_BELOW };
+  const fromWeek = planStartWeek(last, today);
+  if (spec.engine === "load" && spec.load && steps) {
+    return { ...base, weeks: simulateLoadPlan({ history: results, prescription: spec.load, steps, pace: estimatePace(points).weekly, fromWeek, until: PERSPECTIVE_HORIZON }) };
+  }
+  if (spec.engine === "duration" && spec.duration) {
+    return { ...base, weeks: simulateDurationPlan({ last, prescription: spec.duration, fromWeek, until: PERSPECTIVE_HORIZON }) };
+  }
+  return undefined;
+}
+
 export function buildTrack(
   spec: TrackSpec,
   all: ReadonlyArray<TrackSpec>,
@@ -213,6 +257,9 @@ export function buildTrack(
     ...(spec.shareGroup ? { shareGroup: spec.shareGroup } : {}),
     createdAt: now,
     initial: initialTrajectory(spec, all, workouts, steps, now, today),
+    ...withDetailed(detailedTrajectory(spec, all, workouts, steps, now, today)),
     references: [spec.reference],
   };
 }
+
+const withDetailed = (detailed: ProgressionTrack["detailed"]) => (detailed ? { detailed } : {});
