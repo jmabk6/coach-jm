@@ -41,7 +41,6 @@ import {
   discardBlock,
   skipRest,
   endSeries,
-  startNextSeries,
   substituteExercise,
   substituteGroupChild,
   unskipBlock,
@@ -402,7 +401,7 @@ export function WorkoutScreen() {
       busy={busy}
       onAdjust={(delta) => void run((current, at) => adjustRest(current, delta, at))}
       onSkip={() => void run((current, at) => skipRest(current, at))}
-      onStartNext={workout.activeRest.fromSeriesEnd ? () => void run((current, at) => startNextSeries(current, at)) : undefined}
+      canSkip={!workout.activeRest.fromSeriesEnd}
       compact={workout.activeRest.kind === "between_sets"}
     />
   ) : null;

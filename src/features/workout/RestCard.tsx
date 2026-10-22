@@ -13,10 +13,10 @@ interface RestCardProps {
   onAdjust: (deltaSec: number) => void;
   onSkip: () => void;
   /**
-   * Repos parti de « Série terminée » (15/10/2026) : « Démarrer la série
-   * suivante » remplace `Passer` ; c'est le seul geste qui mesure le repos.
+   * Repos parti de « Série terminée » (simplifié le 22/10/2026) : ni
+   * `Passer` ni repos réel ; −30 s / +30 s seulement, on reprend quand on veut.
    */
-  onStartNext?: (() => void) | undefined;
+  canSkip?: boolean;
   /**
    * Entre deux séries (15/10/2026) : une ligne pour le temps, une pour
    * les commandes, pour rester visible avec la saisie sur iPhone.
@@ -45,7 +45,7 @@ export function RestCard({
   busy,
   onAdjust,
   onSkip,
-  onStartNext,
+  canSkip = true,
   compact = false,
 }: RestCardProps) {
   const countdown = getRestCountdown(rest, now);
@@ -67,10 +67,11 @@ export function RestCard({
           <Hourglass size={18} strokeWidth={2} aria-hidden="true" />
           {done ? "Repos terminé" : "Repos"}
         </span>
-        {compact && (
+        {/* Entre deux séries (22/10/2026) : pas de temps écoulé une fois le décompte fini — seul le repos prévu compte. */}
+        {compact && !done && (
           <span className="rest-card__time rest-card__time--inline">
-            {done ? formatMmSs(countdown.elapsedSec) : formatMmSs(countdown.remainingSec)}
-            <small>{done ? "écoulé" : "restant"}</small>
+            {formatMmSs(countdown.remainingSec)}
+            <small>restant</small>
           </span>
         )}
         <span className="rest-card__planned">
@@ -99,9 +100,9 @@ export function RestCard({
         </p>
       ) : done && !compact ? (
         <p className="rest-card__note">
-          {onStartNext
-            ? "Le repos est mesuré jusqu'à « Démarrer la série suivante » ; `+30 s` relance un décompte sans le remettre à zéro."
-            : "Le repos réel court jusqu'à la validation suivante, ou jusqu'à `Passer` ; `+30 s` relance un décompte sans le remettre à zéro."}
+          {canSkip
+            ? "Le repos réel court jusqu'à la validation suivante, ou jusqu'à `Passer` ; `+30 s` relance un décompte sans le remettre à zéro."
+            : "Reprends quand tu es prêt ; `+30 s` relance un décompte de 30 s."}
         </p>
       ) : null}
 
@@ -131,14 +132,11 @@ export function RestCard({
           <Minus size={16} strokeWidth={2.4} aria-hidden="true" />
           30 s
         </button>
-        <button
-          type="button"
-          className={`rest-card__skip${onStartNext ? " rest-card__skip--next" : ""}`}
-          onClick={onStartNext ?? onSkip}
-          disabled={locked}
-        >
-          {onStartNext ? "Démarrer la série suivante" : "Passer"}
-        </button>
+        {canSkip && (
+          <button type="button" className="rest-card__skip" onClick={onSkip} disabled={locked}>
+            Passer
+          </button>
+        )}
         <button
           type="button"
           className="rest-card__adjust"

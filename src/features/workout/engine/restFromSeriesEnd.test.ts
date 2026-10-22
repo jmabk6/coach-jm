@@ -8,7 +8,6 @@ import {
   endWorkoutSession,
   pauseWorkout,
   resumeWorkout,
-  startNextSeries,
   validateSeries,
 } from "./workoutEngine";
 import { getRestCountdown, summarizeRests } from "./workoutTime";
@@ -16,10 +15,10 @@ import { getRestCountdown, summarizeRests } from "./workoutTime";
 /**
  * Repos depuis la fin de série (15/10/2026) : « Série terminée » pose la
  * fin de série et démarre le décompte ; la saisie se fait pendant le repos ;
- * « Enregistrer » ne touche pas au chrono ; « Démarrer la série suivante »
- * clôt la mesure et date le début de la série suivante. Sans cet appui, le
- * repos est « non mesuré », hors repos moyen. Les anciennes séances (sans
- * fin de série) gardent leur fonctionnement.
+ * « Enregistrer » ne touche pas au chrono. Depuis le 22/10/2026, plus de
+ * « Démarrer la série suivante » : aucun repos réel n'est mesuré pour ces
+ * séries (« non mesuré », hors repos moyen), seul le repos prévu compte.
+ * Les anciennes séances (sans fin de série) gardent leur fonctionnement.
  */
 
 const T0 = "2026-10-15T17:00:00.000Z";
@@ -105,51 +104,29 @@ describe("le repos démarre à la fin de la série", () => {
   });
 });
 
-describe("repos réel : mesuré seulement par « Démarrer la série suivante »", () => {
-  it("avant la fin du décompte : repos réel exact, début de la série 2 daté, repos moyen", () => {
+describe("pas de repos réel (22/10/2026) : seul le repos prévu compte", () => {
+  it("le décompte à zéro ne clôt rien ; « Série terminée » suivante : repos précédent non mesuré, hors repos moyen, nouveau décompte", () => {
     let w = endSeries(session([bench()]), "bench", "b1", at(1), newId);
     w = validateSeries(w, "bench", "b1", { reps: 10 }, at(1, 25), newId);
-    w = startNextSeries(w, at(2, 40));
-    expect(w.activeRest).toBeUndefined();
-    expect(seriesOf(w, "bench", "b1")).toMatchObject({ actualRestAfterSec: 100, restComparable: true });
-    expect(seriesOf(w, "bench", "b2")).toMatchObject({ status: "active", startedAt: at(2, 40) });
-    expect(summarizeRests(w.blocks).averageSec).toBe(100);
-  });
-
-  it("possible avant l'enregistrement : la série 2 est datée, la saisie de la série 1 reste à faire", () => {
-    let w = endSeries(session([bench()]), "bench", "b1", at(1), newId);
-    w = startNextSeries(w, at(2));
-    expect(seriesOf(w, "bench", "b1")).toMatchObject({ status: "active", actualRestAfterSec: 60 });
-    expect(seriesOf(w, "bench", "b2").startedAt).toBe(at(2));
-    w = validateSeries(w, "bench", "b1", { reps: 10 }, at(2, 30), newId);
-    expect(w.activeRest).toBeUndefined();
-    expect(seriesOf(w, "bench", "b1")).toMatchObject({ status: "completed", actualRestAfterSec: 60 });
-  });
-
-  it("sans cet appui : « non mesuré », hors repos moyen, même si le décompte est arrivé à zéro", () => {
-    let w = endSeries(session([bench()]), "bench", "b1", at(1), newId);
-    w = validateSeries(w, "bench", "b1", { reps: 10 }, at(1, 25), newId);
+    expect(getRestCountdown(w.activeRest!, at(4))).toMatchObject({ phase: "done" });
+    expect(w.activeRest).toMatchObject({ afterEntryId: "b1" });
     w = endSeries(w, "bench", "b2", at(5), newId);
     const first = seriesOf(w, "bench", "b1");
     expect(first.actualRestAfterSec).toBeUndefined();
     expect(first).toMatchObject({ restUnmeasured: true, restComparable: false });
-    expect(w.activeRest).toMatchObject({ afterEntryId: "b2", startedAt: at(5) });
+    expect(w.activeRest).toMatchObject({ afterEntryId: "b2", startedAt: at(5), targetEndAt: at(7) });
     expect(summarizeRests(w.blocks).averageSec).toBeUndefined();
   });
 
-  it("double appui sur « Démarrer la série suivante » : sans effet la seconde fois", () => {
-    let w = endSeries(session([bench()]), "bench", "b1", at(1), newId);
-    w = startNextSeries(w, at(2));
-    expect(startNextSeries(w, at(2, 1))).toBe(w);
-  });
-
-  it("pause pendant le repos : mesuré mais hors moyenne ; ±30 s conservés", () => {
+  it("±30 s modifient le décompte en cours, jamais le repos prévu ; pause : le décompte continue", () => {
     let w = endSeries(session([bench()]), "bench", "b1", at(1), newId);
     w = adjustRest(w, 30, at(1, 10));
-    w = pauseWorkout(w, at(1, 20), newId);
+    expect(w.activeRest).toMatchObject({ targetEndAt: at(3, 30), plannedDurationSec: 120, adjustmentSec: 30 });
+    w = adjustRest(w, -30, at(1, 20));
+    expect(w.activeRest).toMatchObject({ targetEndAt: at(3), adjustmentSec: 0 });
+    w = pauseWorkout(w, at(1, 30), newId);
     w = resumeWorkout(w, at(1, 50));
-    w = startNextSeries(w, at(3));
-    expect(seriesOf(w, "bench", "b1")).toMatchObject({ actualRestAfterSec: 120, restComparable: false, restAdjustmentSec: 30 });
+    expect(w.activeRest?.targetEndAt).toBe(at(3));
   });
 
   it("fin de séance pendant le repos : chrono arrêté, repos non mesuré", () => {
@@ -166,16 +143,16 @@ describe("dernière série et exercice suivant", () => {
     let w = session([bench(2), rowing()]);
     w = endSeries(w, "bench", "b1", at(1), newId);
     w = validateSeries(w, "bench", "b1", { reps: 10 }, at(1, 20), newId);
-    w = startNextSeries(w, at(3));
     w = endSeries(w, "bench", "b2", at(4), newId);
     expect(w.activeRest).toMatchObject({ afterEntryId: "b2", plannedDurationSec: 120, targetEndAt: at(6) });
     expect(w.currentBlockId).toBe("bench");
     w = validateSeries(w, "bench", "b2", { reps: 9 }, at(4, 30), newId);
     expect(w.currentBlockId).toBe("row");
     expect(w.activeRest).toMatchObject({ afterBlockId: "bench", afterEntryId: "b2", targetEndAt: at(6) });
-    w = startNextSeries(w, at(5, 30));
-    expect(seriesOf(w, "bench", "b2").actualRestAfterSec).toBe(90);
-    expect(seriesOf(w, "row", "r1").startedAt).toBe(at(5, 30));
+    /* Première série de l'exercice suivant terminée : le repos d'avant se clôt, non mesuré. */
+    w = endSeries(w, "row", "r1", at(7), newId);
+    expect(seriesOf(w, "bench", "b2")).toMatchObject({ restUnmeasured: true });
+    expect(w.activeRest).toMatchObject({ afterBlockId: "row", afterEntryId: "r1", plannedDurationSec: 90 });
   });
 
   it("série en durée (gainage) : même parcours, la durée saisie reste celle du champ", () => {

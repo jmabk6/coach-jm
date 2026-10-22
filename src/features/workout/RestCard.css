@@ -217,16 +217,6 @@
   font-size: 0.75rem;
 }
 
-/* « Démarrer la série suivante » (15/10/2026) : toute la largeur, sous −30 s / +30 s. */
-.rest-card__actions:has(.rest-card__skip--next) {
-  grid-template-columns: 1fr 1fr;
-}
-
-.rest-card__skip--next {
-  grid-column: 1 / -1;
-  order: 1;
-}
-
 /* Entre deux séries (15/10/2026) : compacte, pour tenir avec la saisie sur iPhone. */
 .rest-card.rest-card--compact {
   gap: 8px;
@@ -241,10 +231,6 @@
 }
 
 .rest-card--compact .rest-card__actions {
-  grid-template-columns: 64px 64px minmax(0, 1fr);
-}
-
-.rest-card--compact .rest-card__actions:has(.rest-card__skip--next) {
   grid-template-columns: 64px 64px minmax(0, 1fr);
 }
 
@@ -267,4 +253,9 @@
 
 .rest-card__next-line strong {
   color: var(--color-text);
+}
+
+/* Sans `Passer` (22/10/2026) : −30 s et +30 s se partagent la largeur. */
+.rest-card.rest-card--compact .rest-card__actions:not(:has(.rest-card__skip)) {
+  grid-template-columns: 1fr 1fr;
 }

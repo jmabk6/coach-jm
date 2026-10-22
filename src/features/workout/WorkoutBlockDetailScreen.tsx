@@ -658,7 +658,7 @@ function SeriesTable({
                     {item.rpe ?? "—"}
                   </td>
                   <td>
-                    {item.actualRestAfterSec !== undefined ? formatSeconds(item.actualRestAfterSec) : item.restUnmeasured ? "non mesuré" : "—"}
+                    {item.actualRestAfterSec !== undefined ? formatSeconds(item.actualRestAfterSec) : "—"}
                     {item.restComparable === false && (
                       <span className="recap-table__note" title="Repos non comparable"> *</span>
                     )}

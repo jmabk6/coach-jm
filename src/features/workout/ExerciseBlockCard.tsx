@@ -658,7 +658,6 @@ function SeriesRow({
               {series.restComparable === false ? " · hors moyenne" : ""}
             </span>
           )}
-          {series.restUnmeasured && <span className="wseries__rest">Repos non mesuré</span>}
         </span>
         {!editing && (
           <button type="button" className="wseries__edit" onClick={onEdit}>

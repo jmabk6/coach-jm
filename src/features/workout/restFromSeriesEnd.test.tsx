@@ -12,9 +12,10 @@ import { WorkoutScreen } from "./WorkoutScreen";
 /**
  * Écran de séance (15/10/2026) : « Série terminée · Démarrer le repos »,
  * saisie pendant le repos, « Enregistrer » sans remise à zéro, un seul
- * chrono placé sous la série terminée et au-dessus de la suivante,
- * « Démarrer la série suivante » qui mesure le repos, saisie retrouvée
- * après un rechargement, dernière série.
+ * chrono placé sous la série terminée et au-dessus de la suivante, sans
+ * `Passer` ni « Démarrer la série suivante » (22/10/2026 : −30 s / +30 s
+ * seulement, pas de repos réel), saisie retrouvée après un rechargement,
+ * dernière série.
  */
 
 const T0 = new Date(Date.now() - 60_000).toISOString();
@@ -81,7 +82,7 @@ afterEach(async () => {
 });
 
 describe("repos depuis la fin de série, à l'écran", () => {
-  it("série terminée → chrono sous la saisie et au-dessus de la série 2 ; enregistrement sans remise à zéro ; un seul chrono ; « Démarrer la série suivante » mesure le repos", async () => {
+  it("série terminée → chrono sous la saisie et au-dessus de la série 2 ; enregistrement sans remise à zéro ; un seul chrono, −30 s / +30 s seulement ; la série suivante clôt le repos, sans repos réel affiché", async () => {
     await seedWorkout();
     renderLive();
 
@@ -97,7 +98,9 @@ describe("repos depuis la fin de série, à l'écran", () => {
     const slot = restSlot();
     expect(slot.previousElementSibling?.contains(save)).toBe(true);
     expect(slot.nextElementSibling?.textContent).toMatch(/À venir/);
-    expect(within(slot).getByRole("button", { name: "Démarrer la série suivante" })).toBeDefined();
+    /* Deux commandes seulement : −30 s et +30 s ; ni « Passer » ni « Démarrer la série suivante ». */
+    expect(within(slot).getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual(["Réduire le repos de 30 secondes", "Prolonger le repos de 30 secondes"]);
+    expect(screen.queryByText("Démarrer la série suivante")).toBeNull();
     expect(document.querySelector(".rest-bar")).toBeNull();
     expect(slot.querySelector(".rest-card__next-line")).toBeNull();
 
@@ -110,13 +113,17 @@ describe("repos depuis la fin de série, à l'écran", () => {
     /* Toujours un seul chrono, toujours sous la série 1 et au-dessus de la série 2, qui attend son « Série terminée ». */
     await waitFor(() => expect(restSlot().nextElementSibling?.querySelector(".wseries__end")).not.toBeNull(), { timeout: 5000 });
 
-    fireEvent.click(within(restSlot()).getByRole("button", { name: "Démarrer la série suivante" }));
-    await waitFor(async () => expect((await stored()).activeRest).toBeUndefined(), { timeout: 5000 });
-    const measured = await stored();
-    expect(seriesOf(measured, "a", 0).actualRestAfterSec).toBeGreaterThanOrEqual(0);
-    expect(seriesOf(measured, "a", 1).startedAt).toBeDefined();
-    expect(document.querySelectorAll(".wseries__rest-slot")).toHaveLength(0);
-    expect(screen.getByText(/^Repos réel/)).toBeDefined();
+    /* « +30 s » prolonge le décompte en cours. */
+    fireEvent.click(within(restSlot()).getByRole("button", { name: "Prolonger le repos de 30 secondes" }));
+    await waitFor(async () => expect((await stored()).activeRest?.adjustmentSec).toBe(30), { timeout: 5000 });
+
+    /* Série 2 terminée : nouveau décompte, sous la série 2 ; le repos de la série 1 n'affiche aucun « repos réel ». */
+    fireEvent.click(restSlot().nextElementSibling!.querySelector(".wseries__end")!);
+    await waitFor(async () => expect((await stored()).activeRest?.afterEntryId).toBe("a-s2"), { timeout: 5000 });
+    expect(seriesOf(await stored(), "a", 0)).toMatchObject({ restUnmeasured: true });
+    expect(seriesOf(await stored(), "a", 0).actualRestAfterSec).toBeUndefined();
+    expect(screen.queryByText(/Repos réel|non mesuré/)).toBeNull();
+    expect(document.querySelectorAll(".wseries__rest-slot")).toHaveLength(1);
   });
 
   it("double appui sur « Série terminée » : un seul repos", async () => {
