@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronUp, EllipsisVertical, Hourglass, Plus, Targe
 import { advisedLoadOf, formatAdvisedLoad } from "./advisedLoad";
 import type {
   CardioStepSettings,
+  DayTarget,
   Exercise,
   Id,
   PerformedCardioStep,
@@ -26,10 +27,14 @@ import {
   hasCompletedEntries,
   isOpenEndedBlock,
   proposeSeriesValues,
+  type ProposedSeriesValues,
 } from "./engine/workoutBlocks";
 import type { LastComparableStep, LastPerformance } from "./lastPerformance";
 import { SeriesForm } from "./SeriesForm";
 import { seriesDraftKey } from "./seriesDraft";
+import { DayTargetBlock } from "../perspectives/DayTargetBlock";
+import { formatDayMonth, formatLastSession, formatTargetLines } from "../perspectives/dayTargetFormat";
+import { assessDurationSession, assessLoadSession, workSetsOf } from "../../domain/rules/progressionRules";
 import type { BetSet } from "../goals/tractionBet";
 import { formatDecimal } from "./workoutRecap";
 import { SimpleMeasurementForm } from "./SimpleMeasurementForm";
@@ -167,8 +172,17 @@ export function ExerciseBlockCard({
   const assistance = loadSemanticsOf(exercise) === "assistance";
   /* Lot M.2 : un exercice à venir annonce sa charge conseillée, chiffrée ;
      la traction du pari, celle du moteur V6. */
+  /* Perspectives (P2, 22/10/2026) : objectif du jour figé, et retour une fois toutes ses séries notées. */
+  const target = bet ? undefined : block.dayTarget;
+  const targetSummary =
+    target && target.kind !== "suspended" && target.kind !== "insufficient" ? formatTargetLines(target, exercise?.equipment === "Haltères")[0] : undefined;
+  const doneSets = target ? workSetsOf(block) : [];
+  const outcome =
+    target && target.sets.length > 0 && (performed || doneSets.length >= target.sets.length)
+      ? (target.sets.some((set) => set.kg !== undefined) ? assessLoadSession : assessDurationSession)(target, doneSets)
+      : undefined;
   const advised =
-    !expanded && !performedOrSkipped(block) && !hasCompletedEntries(block) && block.series
+    !target && !expanded && !performedOrSkipped(block) && !hasCompletedEntries(block) && block.series
       ? bet?.sets[0]
         ? { value: bet.sets[0].assistKg, unit: "kg" as const, assistance: true }
         : advisedLoadOf(exercise, frameVersion, lastTime?.allSeries)
@@ -202,6 +216,12 @@ export function ExerciseBlockCard({
               )}
             </span>
             {advised && <span className="wblock__advice">Charge conseillée : {formatAdvisedLoad(advised)}</span>}
+            {targetSummary && !expanded && !performedOrSkipped(block) && !hasCompletedEntries(block) && (
+              <span className="wblock__advice">Objectif : {targetSummary}</span>
+            )}
+            {outcome && performed && !expanded && (
+              <span className={`wblock__outcome wblock__outcome--${outcome.kind}`}>{outcome.text}</span>
+            )}
           </span>
           <span className="wblock__aside">
             {performed ? (
@@ -243,16 +263,36 @@ export function ExerciseBlockCard({
 
       {expanded && !skipped && block.series && (
         <div className="wblock__content">
-          {bet ? <BetGoal bet={bet} /> : frameVersion && <FrameGoal block={block} frameVersion={frameVersion} lastTime={lastTime} />}
+          {bet ? (
+            <BetGoal bet={bet} />
+          ) : target ? (
+            <DayTargetBlock
+              target={target}
+              exercise={exercise}
+              lastLine={lastTime ? formatLastSession(lastTime.allSeries, exercise?.equipment === "Haltères") : undefined}
+              lastDate={lastTime ? formatDayMonth(lastTime.date) : undefined}
+              outcome={outcome}
+            />
+          ) : (
+            frameVersion && <FrameGoal block={block} frameVersion={frameVersion} lastTime={lastTime} />
+          )}
           {/* Avec le bandeau du pari, la ligne « Conseillé » du cadre ferait doublon. */}
           {/* Traction légère de Muscu B (pari V6) : hors palier, le cadre de la Muscu A ne s'y affiche pas. */}
-          <ReferenceBlock
-            block={block}
-            exercise={exercise}
-            lastTime={lastTime}
-            frameVersion={bet && block.reducedPrescription ? undefined : frameVersion}
-            hideSuggestion={bet !== undefined}
-          />
+          {target ? (
+            /* L'objectif du jour remplace « Pour valider » et « Conseillé » ; cadre, consigne et dernière fois restent dépliables. */
+            <details className="wref-details">
+              <summary>Cadre, consigne et dernière fois</summary>
+              <ReferenceBlock block={block} exercise={exercise} lastTime={lastTime} frameVersion={frameVersion} hideSuggestion />
+            </details>
+          ) : (
+            <ReferenceBlock
+              block={block}
+              exercise={exercise}
+              lastTime={lastTime}
+              frameVersion={bet && block.reducedPrescription ? undefined : frameVersion}
+              hideSuggestion={bet !== undefined}
+            />
+          )}
 
           <ol className={`wseries${tabular ? " wseries--table" : ""}`}>
             {tabular && (
@@ -703,7 +743,7 @@ function SeriesRow({
     /* Pari traction : la série prévue (aide, répétitions) l'emporte. */
     const proposed = plannedSet
       ? { ...proposeSeriesValues(block, lastTime?.series), load: { kind: "total" as const, kg: plannedSet.assistKg }, reps: plannedSet.reps }
-      : proposeSeriesValues(block, lastTime?.series);
+      : withDayTarget(proposeSeriesValues(block, lastTime?.series), block.dayTarget, index);
 
     return (
       <li className="wseries__row wseries__row--active">
@@ -962,4 +1002,26 @@ function StepRow({
 function plannedRestOf(block: PerformedExerciseBlock): number {
   const instructions = block.snapshotInstructions;
   return instructions.shape === "reps" || instructions.shape === "duration" ? instructions.restBetweenSetsSec : 0;
+}
+
+/**
+ * Préremplissage aligné sur l'objectif du jour (P2) : charge et
+ * répétitions de la série visée, jamais le ressenti. Progression suspendue :
+ * aucune charge préremplie (ne pas répéter d'office une charge douloureuse).
+ */
+function withDayTarget(proposed: ProposedSeriesValues, target: DayTarget | undefined, index: number): ProposedSeriesValues {
+  if (!target) return proposed;
+  if (target.kind === "suspended") {
+    const rest = { ...proposed };
+    delete rest.load;
+    return rest;
+  }
+  const goal = target.sets[index];
+  if (!goal) return proposed;
+  return {
+    ...proposed,
+    ...(goal.kg !== undefined ? { load: { kind: "total" as const, kg: goal.kg } } : {}),
+    ...(goal.reps !== undefined ? { reps: goal.stretch ? goal.reps - 1 : goal.reps } : {}),
+    ...(goal.durationSec !== undefined && goal.reps === undefined ? { durationSec: goal.durationSec } : {}),
+  };
 }

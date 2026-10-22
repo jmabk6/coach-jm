@@ -167,6 +167,8 @@ describe("pari V6 : la traction légère de Muscu B", () => {
     const active = (await db.strengthFrameVersions.get(frame.activeVersionId))!;
     await db.strengthFrameVersions.put({ ...active, currentTarget: { value: 120, unit: "kg", acceptedAt: T } });
     await db.workouts.put(done("w-presse", "2026-10-02", active.id, "presse-cuisses", 130, 10));
+    /* Sans les perspectives (22/10/2026) : ici, la règle « hors palier » d'avant ; la presse suspendue est testée avec l'objectif du jour. */
+    await db.settings.delete("progressionTracks");
     const template = (await db.sessionTemplates.get("v2-muscu-a"))!;
     await startFreeWorkout("2026-10-11", "2026-10-11T08:00:00.000Z", template);
     render(

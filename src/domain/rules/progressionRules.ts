@@ -291,7 +291,7 @@ export function nextLoadTarget(input: LoadTargetInput): DayTarget {
     ...base,
     kind: "progress",
     sets: target,
-    reason: `Séries faites au plafond (RPE ${p.rpeMax}, accepté) : +1 répétition visée à la série ${weakest + 1}, seulement si elle reste à RPE ≤ ${p.rpeMax} ; refaire ${sets[weakest]!.reps} dans le plafond compte comme atteint.`,
+    reason: `Plafond RPE ${p.rpeMax} accepté : +1 visé à la série ${weakest + 1}, seulement à RPE ≤ ${p.rpeMax} ; refaire ${sets[weakest]!.reps} compte comme atteint.`,
   };
 }
 
@@ -400,12 +400,13 @@ export function assessLoadSession(target: DayTarget, done: ReadonlyArray<Perform
   const overIndex = target.rpeMax !== undefined ? done.findIndex((set) => set.rpe! > target.rpeMax!) : -1;
   if (overIndex >= 0) return { kind: "consolidate", text: `Palier à consolider : RPE ${done[overIndex]!.rpe} à la série ${overIndex + 1} (plafond ${target.rpeMax}).` };
   let delta = 0;
+  let heavier = 0;
   let below = false;
   target.sets.forEach((goal, index) => {
     const set = done[index]!;
     const goalKg = goal.kg ?? 0;
     if (set.kg + EPSILON < goalKg) below = true;
-    else if (set.kg > goalKg + EPSILON) delta += 1;
+    else if (set.kg > goalKg + EPSILON) heavier += 1;
     if (goal.reps !== undefined) {
       /* Répétition visée : une de moins dans le plafond suffit. */
       const required = goal.stretch ? goal.reps - 1 : goal.reps;
@@ -414,9 +415,34 @@ export function assessLoadSession(target: DayTarget, done: ReadonlyArray<Perform
     }
   });
   if (below) return { kind: "consolidate", text: "Palier à consolider : objectif pas atteint sur toutes les séries." };
-  return delta > 0
-    ? { kind: "exceeded", text: `Objectif dépassé (+${delta} répétition${delta > 1 ? "s" : ""} ou cran au-dessus), dans le plafond de RPE.` }
+  const gains = [
+    ...(delta > 0 ? [`+${delta} répétition${delta > 1 ? "s" : ""}`] : []),
+    ...(heavier > 0 ? [`${heavier} série${heavier > 1 ? "s" : ""} au cran au-dessus`] : []),
+  ];
+  return gains.length > 0
+    ? { kind: "exceeded", text: `Objectif dépassé : ${gains.join(", ")}, dans le plafond de RPE.` }
     : { kind: "reached", text: "Objectif atteint." };
+}
+
+/** Le retour après la dernière série d'une suspension (durées tenues) ou de négatives (répétitions). */
+export function assessDurationSession(target: DayTarget, done: ReadonlyArray<PerformedSet>): SessionOutcome | undefined {
+  if (target.sets.length === 0) return undefined;
+  if (done.length < target.sets.length) return { kind: "incomplete", text: `Résultat incomplet : ${done.length} série${done.length > 1 ? "s" : ""} sur ${target.sets.length}.` };
+  if (target.rpeMax !== undefined && done.some((set) => set.rpe !== undefined && set.rpe > target.rpeMax!)) {
+    return { kind: "consolidate", text: `Palier à consolider : une série au-dessus de RPE ${target.rpeMax}.` };
+  }
+  let below = false;
+  let above = false;
+  target.sets.forEach((goal, index) => {
+    const set = done[index]!;
+    const byDuration = goal.durationSec !== undefined && goal.reps === undefined;
+    const value = byDuration ? (set.durationSec ?? 0) : set.reps;
+    const wanted = byDuration ? goal.durationSec! : (goal.reps ?? 0);
+    if (value < wanted) below = true;
+    else if (value > wanted) above = true;
+  });
+  if (below) return { kind: "consolidate", text: "Palier à consolider : objectif pas atteint sur toutes les séries." };
+  return above ? { kind: "exceeded", text: "Objectif dépassé, dans le plafond de RPE." } : { kind: "reached", text: "Objectif atteint." };
 }
 
 /* -------------------------------------------------------------------------- */

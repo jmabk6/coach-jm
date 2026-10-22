@@ -1,0 +1,77 @@
+/* Bloc « Objectif du jour » (lot P2, 22/10/2026) : compact, lisible pendant la séance. */
+.day-target {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+}
+
+.day-target p {
+  margin: 0;
+}
+
+.day-target__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+}
+
+.day-target__rpe {
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.day-target__goal {
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-target__last,
+.day-target__reason,
+.day-target__hint {
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.day-target__outcome {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.day-target__outcome--reached,
+.day-target__outcome--exceeded {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.day-target__outcome--consolidate,
+.day-target__outcome--incomplete {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.day-target__link {
+  align-self: flex-start;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.day-target--suspended {
+  background: var(--color-surface-soft);
+}
+
+.day-target--suspended .day-target__head {
+  color: var(--color-text);
+}

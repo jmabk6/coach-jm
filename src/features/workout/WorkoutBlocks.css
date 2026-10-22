@@ -1135,3 +1135,37 @@
 .wseries .wseries__rest-slot .rest-card.rest-card--done {
   background-image: linear-gradient(var(--color-success-soft), var(--color-success-soft));
 }
+
+/* Perspectives (P2) : cadre, consigne et dernière fois repliables sous l'objectif du jour ; retour sur la carte refermée. */
+.wref-details {
+  margin: 0 0 10px;
+}
+
+.wref-details > summary {
+  cursor: pointer;
+  padding: 4px 2px;
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.wref-details[open] > summary {
+  margin-bottom: 6px;
+}
+
+.wblock__outcome {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.wblock__outcome--reached,
+.wblock__outcome--exceeded {
+  color: var(--color-success);
+}
+
+.wblock__outcome--consolidate,
+.wblock__outcome--incomplete {
+  color: var(--color-text-soft);
+}

@@ -71,7 +71,7 @@ describe("objectif de la prochaine séance (exemples réels)", () => {
     const target = nextLoadTarget({ prescription: presc(3, 6, 8, 9), steps: FIVE, last: result("2026-10-21", [set(55, 8, 8), set(55, 8, 9), set(55, 6, 9)]), now: NOW });
     expect(target).toMatchObject({ kind: "progress", sets: [{ kg: 55, reps: 8 }, { kg: 55, reps: 8 }, { kg: 55, reps: 7, stretch: true }] });
     expect(target.sets[0]!.stretch).toBeUndefined();
-    expect(target.reason).toContain("seulement si elle reste à RPE ≤ 9");
+    expect(target.reason).toContain("seulement à RPE ≤ 9");
     expect(assessLoadSession(target, [set(55, 8, 8), set(55, 8, 9), set(55, 6, 9)])).toMatchObject({ kind: "reached" });
     expect(assessLoadSession(target, [set(55, 8, 8), set(55, 8, 9), set(55, 7, 9)])).toMatchObject({ kind: "reached" });
     expect(assessLoadSession(target, [set(55, 8, 8), set(55, 8, 9), set(55, 8, 9)])).toMatchObject({ kind: "exceeded" });

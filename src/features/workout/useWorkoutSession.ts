@@ -20,6 +20,7 @@ import {
 import { loadActiveFrameVersions, type ActiveFrameVersions } from "../strength/activeFrameVersions";
 import { applyWorkoutAction, type WorkoutAction } from "./engine/persistWorkout";
 import { findLastOwnBlockPerformances, findLastPerformances, type LastPerformance } from "./lastPerformance";
+import { freezeDayTargets } from "../perspectives/dayTargets";
 
 export interface WorkoutSessionData {
   workout: WorkoutSession;
@@ -91,6 +92,10 @@ export function useWorkoutSession(): {
         return;
       }
 
+      /* Perspectives (22/10/2026) : l'objectif du jour se fige à l'ouverture, avant tout geste ; sans effet sur le chrono. */
+      const withTargets = (await freezeDayTargets(workout.id, completed).catch(() => undefined)) ?? workout;
+      if (cancelled) return;
+
       const [template, rpeScale, frames] = await Promise.all([
         workout.sessionTemplateId ? getSessionTemplate(workout.sessionTemplateId) : undefined,
         workout.rpeScaleVersionId ? getRpeScaleVersion(workout.rpeScaleVersionId) : getActiveRpeScaleVersion(),
@@ -101,7 +106,7 @@ export function useWorkoutSession(): {
 
       setState({
         status: "ready",
-        workout,
+        workout: withTargets,
         template,
         exerciseById: new Map(exercises.map((exercise) => [exercise.id, exercise])),
         lastByExercise: findLastPerformances(completed, workout.id),
