@@ -26,6 +26,7 @@ import { seedProgramMuscuC20261009 } from "../program/seedProgramMuscuC20261009"
 import { seedWeightGoalStart20261015 } from "../goals/seedWeightGoalStart";
 import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { seedFixTractionRpe20261019 } from "../history/seedFixTractionRpe20261019";
+import { seedFixElevations20261023 } from "../history/seedFixElevations20261023";
 import { seedDetailedReferences20261022, seedLoadSteps20261022, seedPerspectiveTracks20261022, seedShoulderRpe20261022 } from "../perspectives/seedPerspectives20261022";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
@@ -132,6 +133,7 @@ export const SEEDS: SeedStep[] = [
   { name: "weightGoalStart20261015", dependsOn: ["goals"], run: () => seedWeightGoalStart20261015() },
   /* Seed 41 (19/10/2026) : RPE 9 sur la dernière traction de la Muscu A du 19/10. */
   { name: "fixTractionRpe20261019", dependsOn: ["exerciseCatalog"], run: () => seedFixTractionRpe20261019() },
+  { name: "fixElevations20261023", dependsOn: ["exerciseCatalog"], run: () => seedFixElevations20261023() },
   /* Seeds 42 à 44 (22/10/2026) : perspectives au 31 mars — crans réels, épaules RPE 9, pistes A/B/C. */
   { name: "loadSteps20261022", dependsOn: ["exerciseCatalog"], run: () => seedLoadSteps20261022() },
   { name: "shoulderRpe20261022", dependsOn: ["programmeMuscu20261005"], run: () => seedShoulderRpe20261022() },

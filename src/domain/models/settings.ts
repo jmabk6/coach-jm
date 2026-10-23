@@ -120,6 +120,8 @@ export interface InstallMarkers {
   weightGoalStart20261015?: string;
   /** Seed 41 : RPE 9 (et non 5) sur la dernière traction de la Muscu A du 19/10. */
   fixTractionRpe20261019?: string;
+  /** Seed 46 : élévations latérales du 23/10, dernière série 11 rép. à RPE 9. */
+  fixElevations20261023?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */
