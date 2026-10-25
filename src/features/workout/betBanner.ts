@@ -4,6 +4,7 @@ import {
   isRepli, V6_LIGHT_TEMPLATE_ID, V6_MAX_RPE, V6_STEP_KG, V6_VALIDATION_REPS, v6Color, v6ForceSession, v6LightSession, v6VolumeKgAfter, type V6Color, type V6State,
 } from "../goals/tractionV6";
 import { v6StatusLabel } from "../goals/tractionV6View";
+import { TRACTION_TEST_V4_COMPLEMENT } from "../tests/seedTractionTestV4";
 import type { BetBanner } from "./ExerciseBlockCard";
 
 /**
@@ -11,8 +12,8 @@ import type { BetBanner } from "./ExerciseBlockCard";
  * - Muscu A : le palier A réel (moteur V6), le statut par rapport à la
  *   référence, la consigne, la règle de repli, ce qui valide. Un repli
  *   saisi en série 1 bascule aussitôt les séries 2 et 3 un cran plus haut ;
- * - jour de test : rien — le test traction V3 remplace la traction de
- *   Muscu A (05/10/2026) ;
+ * - jour de test : le test traction V4 (25/10/2026), puis 2 séries de
+ *   complément à palier A + 7 kg, sans effet sur le palier ;
  * - Muscu B : le palier de volume du dernier palier A validé (`state.bKg`),
  *   3 × 8-10 (2 × 8 en semaine test).
  * Ailleurs : rien.
@@ -72,8 +73,25 @@ export function betBannerFor(workout: WorkoutSession, block: PerformedExerciseBl
     return { title: "Objectif gagné : 1 traction stricte", status, lines: [{ label: "Dernière séance", value: lastLine(state) }], sets: [] };
   }
 
-  /* Ancien jour de test (2 séries réduites) : depuis le test V3 (05/10/2026), le test remplace la traction. */
-  if (block.reducedPrescription) return undefined;
+  /*
+   * Jour de test : depuis le test V4 (25/10/2026), 2 séries de complément
+   * après le test, palier A + 7 kg d'aide, sans effet sur le palier. Une
+   * séance réduite sans test (anciens jours de test) : rien.
+   */
+  if (block.reducedPrescription) {
+    const tested = workout.blocks.some((item) => item.kind === "test" && item.protocolId === "protocol-traction");
+    if (!tested) return undefined;
+    const kg = a + TRACTION_TEST_V4_COMPLEMENT.offsetKg;
+    return {
+      title: `Complément après le test — ${kg} kg d'aide`,
+      status,
+      lines: [
+        { label: "Cette séance", value: `${TRACTION_TEST_V4_COMPLEMENT.sets} séries à ${kg} kg, jusqu'à ${TRACTION_TEST_V4_COMPLEMENT.reps} reps propres — RPE ${TRACTION_TEST_V4_COMPLEMENT.rpeMax} max, 3 min de repos après le test` },
+        { label: "Palier A", value: `${a} kg, inchangé : ces séries ne valident ni ne font reculer le palier` },
+      ],
+      sets: Array.from({ length: TRACTION_TEST_V4_COMPLEMENT.sets }, () => ({ assistKg: kg, reps: TRACTION_TEST_V4_COMPLEMENT.reps })),
+    };
+  }
 
   const force = v6ForceSession(state);
 

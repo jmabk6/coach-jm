@@ -124,8 +124,8 @@ describe("seed 27 : le test remplace la traction de Muscu A", () => {
 
   const NOW = "2026-10-05T08:00:00.000Z";
 
-  it("installation neuve : protocole V3 actif, calendrier au remplacement de la brique ; la séance du test n'a plus de traction de travail", async () => {
-    await runSeeds();
+  it("installation neuve (avant le test V4 du 25/10) : protocole V3 actif, calendrier au remplacement de la brique ; la séance du test n'a plus de traction de travail", async () => {
+    await runSeeds(SEEDS.filter((seed) => seed.name !== "tractionTestV420261025"));
     const protocol = (await db.testProtocols.get("protocol-traction"))!;
     const version = (await db.testProtocolVersions.get(protocol.activeVersionId))!;
     expect(version).toMatchObject({ status: "active", kind: "trials_descending", settings: TRACTION_TEST_V3_SETTINGS, primaryMeasureKey: "assistance_min_kg" });
