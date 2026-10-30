@@ -28,6 +28,7 @@ import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/s
 import { seedFixTractionRpe20261019 } from "../history/seedFixTractionRpe20261019";
 import { seedFixElevations20261023 } from "../history/seedFixElevations20261023";
 import { seedTractionTestV420261025 } from "../tests/seedTractionTestV4";
+import { seedAddNegatives20261029 } from "../history/seedAddNegatives20261029";
 import { seedDetailedReferences20261022, seedLoadSteps20261022, seedPerspectiveTracks20261022, seedShoulderRpe20261022 } from "../perspectives/seedPerspectives20261022";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
@@ -136,6 +137,7 @@ export const SEEDS: SeedStep[] = [
   { name: "fixTractionRpe20261019", dependsOn: ["exerciseCatalog"], run: () => seedFixTractionRpe20261019() },
   { name: "fixElevations20261023", dependsOn: ["exerciseCatalog"], run: () => seedFixElevations20261023() },
   { name: "tractionTestV420261025", dependsOn: ["tractionTestV320261005"], run: () => seedTractionTestV420261025() },
+  { name: "addNegatives20261029", dependsOn: ["exerciseCatalog"], run: () => seedAddNegatives20261029() },
   /* Seeds 42 à 44 (22/10/2026) : perspectives au 31 mars — crans réels, épaules RPE 9, pistes A/B/C. */
   { name: "loadSteps20261022", dependsOn: ["exerciseCatalog"], run: () => seedLoadSteps20261022() },
   { name: "shoulderRpe20261022", dependsOn: ["programmeMuscu20261005"], run: () => seedShoulderRpe20261022() },
