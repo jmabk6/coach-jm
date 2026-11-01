@@ -321,6 +321,48 @@ describe("séries", () => {
   });
 });
 
+describe("L1 (02/11/2026) — un échauffement ne consomme pas une série prévue", () => {
+  it("3 échauffements dans les 3 emplacements : chaque échauffement rend sa place, la brique reste en cours jusqu'aux 3 séries de travail", () => {
+    let w = activateBlock(workout([squatBlock(), crunchBlock()]), "squat-block", T0);
+    for (const [index, id] of ["s1", "s2", "s3"].entries()) {
+      w = validateSeries(w, "squat-block", id, { load: kg(20 + index * 10), reps: 5, role: "echauffement" }, at(index + 1), newId);
+      expect(exerciseOf(w, "squat-block").series).toHaveLength(4 + index);
+    }
+    expect(exerciseOf(w, "squat-block").status).not.toBe("performed");
+    expect(w.currentBlockId).toBe("squat-block");
+
+    /* Les 3 séries de travail dans les 3 emplacements restants, puis l'exercice suivant. */
+    for (const [index, entry] of exerciseOf(w, "squat-block").series!.slice(3).entries()) {
+      expect(w.currentBlockId).toBe("squat-block");
+      w = validateSeries(w, "squat-block", entry.id, { load: kg(50), reps: 8, rpe: 8, role: "travail" }, at(5 + index), newId);
+    }
+    const block = exerciseOf(w, "squat-block");
+    expect(block.series).toHaveLength(6);
+    expect(block.series!.map((entry) => entry.role)).toEqual(["echauffement", "echauffement", "echauffement", "travail", "travail", "travail"]);
+    expect(block.status).toBe("performed");
+    expect(w.currentBlockId).toBe("crunch-block");
+  });
+
+  it("sans échauffement : rien ne change (3 emplacements, 3 séries de travail, puis l'exercice suivant)", () => {
+    let x = activateBlock(workout([squatBlock(), crunchBlock()]), "squat-block", T0);
+    for (const id of ["s1", "s2", "s3"]) x = validateSeries(x, "squat-block", id, { load: kg(50), reps: 8, role: "travail" }, at(1), newId);
+    expect(exerciseOf(x, "squat-block").series).toHaveLength(3);
+    expect(exerciseOf(x, "squat-block").status).toBe("performed");
+    expect(x.currentBlockId).toBe("crunch-block");
+  });
+
+  it("les séries de travail déjà toutes faites : un échauffement noté ensuite n'ajoute rien", () => {
+    let w = activateBlock(workout([squatBlock(), crunchBlock()]), "squat-block", T0);
+    w = validateSeries(w, "squat-block", "s1", { load: kg(50), reps: 8, role: "travail" }, at(1), newId);
+    w = validateSeries(w, "squat-block", "s2", { load: kg(50), reps: 8, role: "travail" }, at(2), newId);
+    w = validateSeries(w, "squat-block", "s3", { load: kg(50), reps: 8, role: "travail" }, at(3), newId);
+    w = addSeries(w, "squat-block", at(4), newId);
+    const extra = exerciseOf(w, "squat-block").series!.at(-1)!;
+    w = validateSeries(w, "squat-block", extra.id, { load: kg(20), reps: 10, role: "echauffement" }, at(5), newId);
+    expect(exerciseOf(w, "squat-block").series).toHaveLength(4);
+  });
+});
+
 describe("séries — rôle et drapeau (lot 4A, v1.6 § 4.4)", () => {
   it("enregistre le rôle et le drapeau saisis ; une série antérieure sans rôle reste telle quelle", () => {
     const start = activateBlock(workout([squatBlock()]), "squat-block", T0);

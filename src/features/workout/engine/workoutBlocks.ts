@@ -153,7 +153,8 @@ export function isOpenEndedBlock(block: ExecutableBlock): boolean {
     block.series &&
     (instructions.shape === "reps" || instructions.shape === "duration")
   ) {
-    return block.series.length > instructions.sets;
+    /* L1 (02/11/2026) : les échauffements ne comptent pas — 3 échauffements et 3 séries de travail pour 3 prévues, ce n'est pas « plus que prévu ». */
+    return block.series.filter((series) => series.role !== "echauffement").length > instructions.sets;
   }
 
   if (block.cardioSteps && instructions.shape === "steps") {

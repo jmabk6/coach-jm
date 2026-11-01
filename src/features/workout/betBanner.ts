@@ -1,4 +1,5 @@
-import type { PerformedExerciseBlock, WorkoutSession } from "../../domain";
+import type { PerformedExerciseBlock, PerformedSeries, PerformedSeriesRole, WorkoutSession } from "../../domain";
+import { isWorkSeries } from "../../domain/rules/strengthRules";
 import { BET_EXERCISE_ID, BET_FORCE_TEMPLATES, formatBetSets, type BetSet } from "../goals/tractionBet";
 import {
   isRepli, V6_LIGHT_TEMPLATE_ID, V6_MAX_RPE, V6_STEP_KG, V6_VALIDATION_REPS, v6Color, v6ForceSession, v6LightSession, v6VolumeKgAfter, type V6Color, type V6State,
@@ -34,11 +35,22 @@ function lastLine(state: V6State): string {
   return `${reps}${rpe}${loads}`;
 }
 
-/** Séries déjà validées de la brique, à l'aide saisie. */
+/**
+ * Échauffement des tractions (L1, 02/11/2026) : 3 séries progressives avant
+ * le travail, au-dessus du palier du jour (A + 21, + 14, + 7 kg d'aide).
+ * Notées « Échauffement », elles n'entrent dans aucun calcul du pari.
+ */
+export const TRACTION_WARMUP: ReadonlyArray<{ offsetKg: number; reps: number }> = [
+  { offsetKg: 21, reps: 6 },
+  { offsetKg: 14, reps: 4 },
+  { offsetKg: 7, reps: 2 },
+];
+
+/** Séries de travail déjà validées de la brique, à l'aide saisie (l'échauffement n'en fait pas partie). */
 function doneSets(block: PerformedExerciseBlock): BetSet[] {
   return [...(block.series ?? [])]
     .sort((a, b) => a.position - b.position)
-    .filter((series) => series.status === "completed" && series.load?.kind === "total" && series.reps !== undefined)
+    .filter((series) => series.status === "completed" && isWorkSeries(series) && series.load?.kind === "total" && series.reps !== undefined)
     .map((series) => ({
       assistKg: (series.load as { kg: number }).kg,
       reps: series.reps!,
@@ -113,16 +125,60 @@ export function betBannerFor(workout: WorkoutSession, block: PerformedExerciseBl
   const fallback = a + V6_STEP_KG;
   const sets = repli ? force.sets.map((set, index) => (index === 0 ? set : { ...set, assistKg: fallback })) : force.sets;
 
+  const warmup = TRACTION_WARMUP.map((item) => ({ assistKg: a + item.offsetKg, reps: item.reps }));
+
   return {
     title: `Palier A — ${a} kg d'aide`,
     status,
     lines: [
       { label: "Dernière séance", value: lastLine(state) },
+      { label: "Échauffement", value: `${formatBetSets(warmup)}, repos 1 min — à noter en « Échauffement » : hors calcul du palier` },
       { label: "Cette séance", value: `3 séries à ${a} kg, jusqu'à ${V6_VALIDATION_REPS} reps propres — RPE ${V6_MAX_RPE} max, repos 3 min` },
       { label: "Repli", value: `série 1 à 2 reps ou moins, ou RPE 10 → séries 2 et 3 à ${fallback} kg ; le palier reste ${a} kg` },
       { label: "Validation", value: `5 / 5 / 5 à ${a} kg → ${a === V6_STEP_KG ? `phase essai libre, Muscu B à ${v6VolumeKgAfter(a)} kg` : `A passe à ${a - V6_STEP_KG} kg, Muscu B à ${v6VolumeKgAfter(a)} kg`}` },
     ],
     ...(repli ? { note: `Repli déclenché : séries 2 et 3 à ${fallback} kg. Le palier A reste ${a} kg ; séance exclue des régressions.` } : {}),
     sets,
+    warmup,
   };
+}
+
+/** Ce qui est proposé pour une série de la brique du pari : aide, répétitions et rôle. */
+export interface PlannedBetSeries extends BetSet {
+  role: PerformedSeriesRole;
+}
+
+/**
+ * La proposition de chaque série de la brique (L1, 02/11/2026), dans
+ * l'ordre : les séries de travail suivent les séries prévues du pari
+ * (`bet.sets`) dans leur ordre, quelle que soit leur position ; tant
+ * qu'aucune série de travail n'est notée, les séries à venir proposent
+ * d'abord l'échauffement qui reste (`bet.warmup`). Une série déjà notée
+ * en échauffement ne reçoit rien. Aucune règle du pari n'est lue ici.
+ */
+export function plannedSeriesFor(series: ReadonlyArray<PerformedSeries>, bet: Pick<BetBanner, "sets" | "warmup"> | undefined): Array<PlannedBetSeries | undefined> {
+  const ordered = [...series].sort((a, b) => a.position - b.position);
+  if (!bet) return ordered.map(() => undefined);
+  const warmup = bet.warmup ?? [];
+  let work = 0;
+  let warm = 0;
+  return ordered.map((item): PlannedBetSeries | undefined => {
+    if (item.status === "completed") {
+      if (!isWorkSeries(item)) {
+        warm += 1;
+        return undefined;
+      }
+      const planned = bet.sets[work];
+      work += 1;
+      return planned ? { ...planned, role: "travail" } : undefined;
+    }
+    if (work === 0 && warm < warmup.length) {
+      const planned = warmup[warm]!;
+      warm += 1;
+      return { ...planned, role: "echauffement" };
+    }
+    const planned = bet.sets[work];
+    work += 1;
+    return planned ? { ...planned, role: "travail" } : undefined;
+  });
 }

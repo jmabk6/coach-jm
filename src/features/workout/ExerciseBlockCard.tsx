@@ -36,6 +36,7 @@ import { DayTargetBlock } from "../perspectives/DayTargetBlock";
 import { formatDayMonth, formatLastSession, formatTargetLines } from "../perspectives/dayTargetFormat";
 import { assessDurationSession, assessLoadSession, workSetsOf } from "../../domain/rules/progressionRules";
 import type { BetSet } from "../goals/tractionBet";
+import { plannedSeriesFor, type PlannedBetSeries } from "./betBanner";
 import { formatDecimal } from "./workoutRecap";
 import { SimpleMeasurementForm } from "./SimpleMeasurementForm";
 import { StepForm } from "./StepForm";
@@ -187,6 +188,8 @@ export function ExerciseBlockCard({
         ? { value: bet.sets[0].assistKg, unit: "kg" as const, assistance: true }
         : advisedLoadOf(exercise, frameVersion, lastTime?.allSeries)
       : undefined;
+  /* Pari traction (L1, 02/11/2026) : chaque série reçoit l'échauffement ou la série de travail qui lui revient, pas celle de sa position. */
+  const planned = plannedSeriesFor(block.series ?? [], bet);
 
   return (
     <li
@@ -323,7 +326,7 @@ export function ExerciseBlockCard({
                   lastTime={lastTime}
                   rpeTable={rpeTable}
                   barWeightKg={frameVersion?.barWeightKg}
-                  plannedSet={bet?.sets[index]}
+                  plannedSet={planned[index]}
                   editing={editingId === series.id}
                   busy={busy}
                   onEdit={() => setEditingId(series.id)}
@@ -487,8 +490,10 @@ export interface BetBanner {
   status?: { label: string; tone: string };
   lines: Array<{ label: string; value: string }>;
   note?: string;
-  /** Séries prévues, dans l'ordre : préremplissage. */
+  /** Séries de travail prévues, dans l'ordre : préremplissage. */
   sets: BetSet[];
+  /** Échauffement proposé avant le travail (L1, 02/11/2026) : séries notées « Échauffement », hors calcul. */
+  warmup?: BetSet[];
 }
 
 function BetGoal({ bet }: { bet: BetBanner }) {
@@ -617,8 +622,8 @@ interface SeriesRowProps {
   lastTime: LastPerformance | undefined;
   rpeTable: RpeScaleVersion["table"] | undefined;
   barWeightKg: number | undefined;
-  /** Pari traction : l'aide et les répétitions prévues pour cette série. */
-  plannedSet?: BetSet | undefined;
+  /** Pari traction : l'aide, les répétitions et le rôle prévus pour cette série. */
+  plannedSet?: PlannedBetSeries | undefined;
   editing: boolean;
   busy: boolean;
   onEdit: () => void;
@@ -745,6 +750,10 @@ function SeriesRow({
     const proposed = plannedSet
       ? { ...proposeSeriesValues(block, lastTime?.series), load: { kind: "total" as const, kg: plannedSet.assistKg }, reps: plannedSet.reps }
       : withDayTarget(proposeSeriesValues(block, lastTime?.series), block.dayTarget, index);
+    /* Pari traction (L1) : si la proposition change (repli, série précédente corrigée), le formulaire repart
+       de la nouvelle proposition — nouvelle clé de formulaire et de brouillon, l'ancien brouillon est ignoré. */
+    const plannedKey = plannedSet ? `${plannedSet.role}-${plannedSet.assistKg}-${plannedSet.reps}` : "";
+    const formDraftKey = draftKey && plannedKey ? `${draftKey}:${plannedKey}` : draftKey;
 
     return (
       <li className="wseries__row wseries__row--active">
@@ -778,9 +787,9 @@ function SeriesRow({
         ) : (
           <div className="wseries__form">
             <SeriesForm
-              key={`entry-${series.id}`}
+              key={`entry-${series.id}${plannedKey ? `-${plannedKey}` : ""}`}
               layout={layout}
-              initial={{ ...proposed, ...(series.role !== undefined ? { role: series.role } : {}) }}
+              initial={{ ...proposed, ...(plannedSet ? { role: plannedSet.role } : series.role !== undefined ? { role: series.role } : {}) }}
               strengthFields={strengthFields}
               rpeTable={rpeTable}
               barWeightKg={barWeightKg}
@@ -788,7 +797,7 @@ function SeriesRow({
               powerUnit={powerUnit}
               sideRepsUnit={exercise?.measurementLabels?.value}
               submitLabel={series.endedAt !== undefined ? `Enregistrer la série ${index + 1}` : `Valider la série ${index + 1}`}
-              draftKey={series.endedAt !== undefined ? draftKey : undefined}
+              draftKey={series.endedAt !== undefined ? formDraftKey : undefined}
               onSubmit={onValidate}
               busy={busy}
             />

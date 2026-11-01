@@ -553,6 +553,22 @@ export function validateSeries(
     ),
   }));
 
+  /* L1 (02/11/2026) : un échauffement ne consomme pas une série prévue. Après
+     un échauffement, il reste toujours autant d'emplacements à venir que de
+     séries de travail prévues pas encore faites : la brique reste en cours
+     au lieu de passer à l'exercice suivant. */
+  next = withExerciseBlock(next, blockId, (item) => {
+    const prescribed = item.snapshotInstructions.shape === "reps" || item.snapshotInstructions.shape === "duration" ? item.snapshotInstructions.sets : undefined;
+    const entries = item.series ?? [];
+    if (prescribed === undefined || entries.find((entry) => entry.id === seriesId)?.role !== "echauffement") return item;
+    const workDone = entries.filter((entry) => entry.status === "completed" && entry.role !== "echauffement").length;
+    const pending = entries.filter((entry) => entry.status !== "completed").length;
+    const missing = prescribed - workDone - pending;
+    if (missing <= 0) return item;
+    const added = Array.from({ length: missing }, (_, offset) => createSeries(`${blockId}-set-${newId()}`, entries.length + offset));
+    return { ...item, series: [...entries, ...added] };
+  });
+
   next = afterEntryValidated(next, blockId, now);
   if (!alreadyEnded) {
     next = startRest(

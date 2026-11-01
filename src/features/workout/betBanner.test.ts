@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PerformedExerciseBlock, WorkoutSession } from "../../domain";
 import { v6State } from "../goals/tractionV6";
-import { betBannerFor } from "./betBanner";
+import { betBannerFor, plannedSeriesFor } from "./betBanner";
 
 /** Bandeau du pari traction V6 dans la séance (04/10/2026). */
 
@@ -32,6 +32,7 @@ describe("bandeau du pari traction V6", () => {
     expect(banner.status).toEqual({ label: "Conforme à la référence", tone: "on_track" });
     expect(banner.lines).toEqual([
       { label: "Dernière séance", value: "—" },
+      { label: "Échauffement", value: "56 × 6 · 49 × 4 · 42 × 2, repos 1 min — à noter en « Échauffement » : hors calcul du palier" },
       { label: "Cette séance", value: "3 séries à 35 kg, jusqu'à 5 reps propres — RPE 9 max, repos 3 min" },
       { label: "Repli", value: "série 1 à 2 reps ou moins, ou RPE 10 → séries 2 et 3 à 42 kg ; le palier reste 35 kg" },
       { label: "Validation", value: "5 / 5 / 5 à 35 kg → A passe à 28 kg, Muscu B à 42 kg" },
@@ -58,7 +59,7 @@ describe("bandeau du pari traction V6", () => {
     expect(banner.title).toBe("Palier A — 28 kg d'aide");
     expect(banner.status).toEqual({ label: "Conforme à la référence", tone: "on_track" });
     expect(banner.lines[0]).toEqual({ label: "Dernière séance", value: "5 / 5 / 5 — RPE 9 / 9 / 9" });
-    expect(banner.lines[3]).toEqual({ label: "Validation", value: "5 / 5 / 5 à 28 kg → A passe à 21 kg, Muscu B à 35 kg" });
+    expect(banner.lines[4]).toEqual({ label: "Validation", value: "5 / 5 / 5 à 28 kg → A passe à 21 kg, Muscu B à 35 kg" });
     const fast = v6State([done("2026-10-04", [[35, 5, 9], [35, 5, 9], [35, 5, 9]]), done("2026-10-11", [[28, 5, 9], [28, 5, 9], [28, 5, 9]])], "2026-10-18");
     expect(betBannerFor(on("2026-10-18", "v2-muscu-a"), block(), fast)!.status).toEqual({ label: "En avance sur la référence", tone: "on_track" });
     /* Le statut passé en 4e paramètre (palier du début de semaine) l'emporte sur l'état courant. */
@@ -86,6 +87,72 @@ describe("bandeau du pari traction V6", () => {
     const a = betBannerFor(on("2027-02-28", "v2-muscu-a"), block(), free)!;
     expect(a.title).toBe("Phase essai libre — 0 kg d'abord");
     expect(a.sets.map((set) => set.assistKg)).toEqual([0, 7, 7]);
+  });
+
+  it("L1 (02/11/2026) : l'échauffement du jour (A + 21, + 14, + 7) dans le bandeau ; ni au jour de test, ni en Muscu B", () => {
+    const after35 = v6State([done("2026-10-04", [[35, 5, 9], [35, 5, 9], [35, 5, 9]]), done("2026-10-11", [[28, 5, 9], [28, 5, 9], [28, 5, 9]])], "2026-10-18");
+    const banner = betBannerFor(on("2026-10-18", "v2-muscu-a"), block(), after35)!;
+    expect(banner.title).toBe("Palier A — 21 kg d'aide");
+    expect(banner.warmup).toEqual([{ assistKg: 42, reps: 6 }, { assistKg: 35, reps: 4 }, { assistKg: 28, reps: 2 }]);
+    expect(banner.lines[1]).toEqual({ label: "Échauffement", value: "42 × 6 · 35 × 4 · 28 × 2, repos 1 min — à noter en « Échauffement » : hors calcul du palier" });
+    expect(betBannerFor(on("2026-10-06", "v2-muscu-b"), block(), start)!.warmup).toBeUndefined();
+  });
+
+  it("L1 : le repli se lit sur la 1re série de TRAVAIL, même après 3 séries d'échauffement", () => {
+    const warm: Array<[number, number, number?]> = [[56, 6], [49, 4], [42, 2]];
+    const withWarmup = (work: Array<[number, number, number?]>) => {
+      const built = block(false, [...warm, ...work]);
+      return { ...built, series: built.series!.map((series, index) => (index < 3 ? { ...series, role: "echauffement" as const } : series)) };
+    };
+    const repli = betBannerFor(on("2026-10-04", "v2-muscu-a"), withWarmup([[35, 2, 9]]), start)!;
+    expect(repli.note).toBe("Repli déclenché : séries 2 et 3 à 42 kg. Le palier A reste 35 kg ; séance exclue des régressions.");
+    expect(repli.sets.map((set) => set.assistKg)).toEqual([35, 42, 42]);
+    const fine = betBannerFor(on("2026-10-04", "v2-muscu-a"), withWarmup([[35, 4, 9]]), start)!;
+    expect(fine.note).toBeUndefined();
+    /* Échauffement seul : pas de repli (ses séries ne sont pas au palier et ne comptent pas). */
+    expect(betBannerFor(on("2026-10-04", "v2-muscu-a"), withWarmup([]), start)!.note).toBeUndefined();
+  });
+
+  it("L1 : chaque série reçoit l'échauffement ou la série de travail qui lui revient, pas celle de sa position", () => {
+    const banner = betBannerFor(on("2026-10-04", "v2-muscu-a"), block(), start)!;
+    const pending = (position: number) => ({ id: `p${position}`, position, status: "upcoming" as const, role: "travail" as const });
+    const noted = (position: number, kg: number, reps: number, role: "travail" | "echauffement") => ({ id: `d${position}`, position, status: "completed" as const, role, load: { kind: "total" as const, kg }, reps });
+
+    /* Rien de noté : les 3 emplacements proposent l'échauffement. */
+    expect(plannedSeriesFor([pending(0), pending(1), pending(2)], banner)).toEqual([
+      { assistKg: 56, reps: 6, role: "echauffement" }, { assistKg: 49, reps: 4, role: "echauffement" }, { assistKg: 42, reps: 2, role: "echauffement" },
+    ]);
+    /* 3 échauffements notés, 3 séries ajoutées : le travail du palier, dans l'ordre. */
+    expect(plannedSeriesFor([noted(0, 56, 6, "echauffement"), noted(1, 49, 4, "echauffement"), noted(2, 42, 2, "echauffement"), pending(3), pending(4), pending(5)], banner)).toEqual([
+      undefined, undefined, undefined, { assistKg: 35, reps: 5, role: "travail" }, { assistKg: 35, reps: 5, role: "travail" }, { assistKg: 35, reps: 5, role: "travail" },
+    ]);
+    /* 1 échauffement puis du travail directement : la suite propose le travail, plus l'échauffement. */
+    expect(plannedSeriesFor([noted(0, 56, 6, "echauffement"), noted(1, 35, 5, "travail"), pending(2)], banner)).toEqual([
+      undefined, { assistKg: 35, reps: 5, role: "travail" }, { assistKg: 35, reps: 5, role: "travail" },
+    ]);
+    /* Sans échauffement : comme avant L1. */
+    expect(plannedSeriesFor([noted(0, 35, 5, "travail"), pending(1), pending(2)], banner)).toEqual([
+      { assistKg: 35, reps: 5, role: "travail" }, { assistKg: 35, reps: 5, role: "travail" }, { assistKg: 35, reps: 5, role: "travail" },
+    ]);
+    /* Muscu B (pas d'échauffement prévu) et hors pari : inchangé. */
+    const light = betBannerFor(on("2026-10-06", "v2-muscu-b"), block(), start)!;
+    expect(plannedSeriesFor([pending(0), pending(1), pending(2)], light)).toEqual(light.sets.map((set) => ({ ...set, role: "travail" })));
+    expect(plannedSeriesFor([pending(0)], undefined)).toEqual([undefined]);
+  });
+
+  it("L1 : le pari ignore l'échauffement — même palier, mêmes événements avec ou sans échauffement noté", () => {
+    const plain = done("2026-10-04", [[35, 5, 9], [35, 5, 9], [35, 5, 9]]);
+    const warmed = structuredClone(plain);
+    const traction = warmed.blocks[0] as PerformedExerciseBlock;
+    traction.series = [
+      ...[[56, 6], [49, 4], [42, 2]].map(([kg, reps], index) => ({ id: `w${index}`, position: index, status: "completed" as const, role: "echauffement" as const, load: { kind: "total" as const, kg: kg! }, reps: reps! })),
+      ...traction.series!.map((series, index) => ({ ...series, id: `t${index}`, position: index + 3 })),
+    ];
+    const a = v6State([plain], "2026-10-11");
+    const b = v6State([warmed], "2026-10-11");
+    expect(b.aKg).toBe(a.aKg);
+    expect(b.aKg).toBe(28);
+    expect(b.events.map((event) => [event.kind, event.detail])).toEqual(a.events.map((event) => [event.kind, event.detail]));
   });
 
   it("ancien jour de test (prescription réduite) : pas de bandeau ; autre exercice ou séance : rien", () => {

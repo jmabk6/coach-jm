@@ -60,7 +60,7 @@ import { GroupBlockCard } from "./GroupBlockCard";
 import { RestBand } from "./RestBand";
 import { cancelWorkout, isUntouchedWorkout } from "./deleteWorkout";
 import { endWorkout } from "./finishWorkout";
-import { betBannerFor } from "./betBanner";
+import { betBannerFor, plannedSeriesFor } from "./betBanner";
 import { BET_EXERCISE_ID } from "../goals/tractionBet";
 import { v6State, v6StatusState } from "../goals/tractionV6";
 import { findLastComparableStep, lastTimeOf } from "./lastPerformance";
@@ -390,7 +390,8 @@ export function WorkoutScreen() {
           const values = proposeSeriesValues(block, lastTimeOf(block, lastByExercise, lastByOwnBlock)?.series);
           /* Traction du pari : la série prévue par le moteur V6 (repli compris). */
           const pending = [...(block.series ?? [])].sort((a, b) => a.position - b.position).findIndex((series) => series.status !== "completed");
-          const planned = bet && pending >= 0 ? betBannerFor(workout, block, bet)?.sets[pending] : undefined;
+          /* L1 (02/11/2026) : l'échauffement ou la série de travail qui revient à cette série, pas celle de sa position. */
+          const planned = bet && pending >= 0 ? plannedSeriesFor(block.series ?? [], betBannerFor(workout, block, bet))[pending] : undefined;
           return planned ? { ...values, load: { kind: "total" as const, kg: planned.assistKg }, reps: planned.reps } : values;
         },
         (block) => {
