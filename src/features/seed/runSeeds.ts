@@ -29,6 +29,7 @@ import { seedFixTractionRpe20261019 } from "../history/seedFixTractionRpe2026101
 import { seedFixElevations20261023 } from "../history/seedFixElevations20261023";
 import { seedTractionTestV420261025 } from "../tests/seedTractionTestV4";
 import { seedAddNegatives20261029 } from "../history/seedAddNegatives20261029";
+import { seedWorkout20261101 } from "../history/seedWorkout20261101";
 import { seedDetailedReferences20261022, seedLoadSteps20261022, seedPerspectiveTracks20261022, seedShoulderRpe20261022 } from "../perspectives/seedPerspectives20261022";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
@@ -143,13 +144,15 @@ export const SEEDS: SeedStep[] = [
   { name: "shoulderRpe20261022", dependsOn: ["programmeMuscu20261005"], run: () => seedShoulderRpe20261022() },
   { name: "perspectiveTracks20261022", dependsOn: ["loadSteps20261022", "shoulderRpe20261022", "programmeMuscuC20261009"], run: () => seedPerspectiveTracks20261022() },
   { name: "perspectiveDetailed20261022", dependsOn: ["perspectiveTracks20261022"], run: () => seedDetailedReferences20261022() },
+  /* Seed 49 (01/11/2026) : la Muscu A du 01/11, faite sans téléphone ; après les pistes (objectifs du jour). */
+  { name: "addWorkout20261101", dependsOn: ["exerciseCatalog", "programmeMuscu20261005", "perspectiveDetailed20261022"], run: () => seedWorkout20261101() },
 ];
 
 /**
  * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
  * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
  */
-export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "loadSteps20261022", "shoulderRpe20261022", "perspectiveTracks20261022", "perspectiveDetailed20261022", "tractionTestV420261025"].includes(seed.name));
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "loadSteps20261022", "shoulderRpe20261022", "perspectiveTracks20261022", "perspectiveDetailed20261022", "tractionTestV420261025", "addWorkout20261101"].includes(seed.name));
 
 export interface SeedReport {
   ran: string[];

@@ -126,6 +126,8 @@ export interface InstallMarkers {
   tractionTestV420261025?: string;
   /** Seed 48 : tractions négatives de la Muscu C du 29/10, 2 × 2, descente 5 s, RPE 9. */
   addNegatives20261029?: string;
+  /** Seed 49 : la Muscu A du 01/11, faite sans téléphone, saisie après coup. */
+  addWorkout20261101?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */

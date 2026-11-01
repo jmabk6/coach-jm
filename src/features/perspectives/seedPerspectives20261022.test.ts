@@ -10,6 +10,7 @@ import { readBackup, serializeBackup } from "../backup/exportBackup";
 import { parseBackup } from "../backup/restoreBackup";
 import { resetAndRestore } from "../backup/resetAndRestore";
 import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
+import { WORKOUT_20261101_ID } from "../history/seedWorkout20261101";
 import { LOAD_STEPS_20261022, seedDetailedReferences20261022, seedLoadSteps20261022, seedPerspectiveTracks20261022, seedShoulderRpe20261022 } from "./seedPerspectives20261022";
 
 /**
@@ -233,7 +234,8 @@ describe.skipIf(!process.env.COACH_JM_BACKUP)("sur la sauvegarde réelle", () =>
     await runSeeds();
     const all = await tracks();
     if (all.length === 0) return;
-    expect(await db.workouts.toArray()).toHaveLength(workoutsBefore.length);
+    /* Seule séance ajoutée : la Muscu A du 01/11 (seed 49), si la sauvegarde l'attend encore. */
+    expect((await db.workouts.toArray()).filter((workout) => workout.id !== WORKOUT_20261101_ID)).toHaveLength(workoutsBefore.filter((workout) => workout.id !== WORKOUT_20261101_ID).length);
     const chest = all.find((track) => track.id === "v2-muscu-b-chest-press")!;
     if (chest.initial.weeks.length > 0) {
       const last = chest.initial.weeks.at(-1)!;
