@@ -220,7 +220,8 @@ export function WorkoutRecapScreen({ workoutId: forcedId }: WorkoutRecapScreenPr
       const { records, references } = computeWorkoutRecords(workout, completed, exerciseById, routineTemplateIds);
 
       setFeeling(workout.feeling);
-      setNote(workout.note ?? "");
+      /* Programme V4 : une séance à enregistrer reçoit la note préremplie de son modèle (padel). */
+      setNote(workout.note ?? (pending ? template?.notePrefill ?? "" : ""));
       setState({
         status: "success",
         workout,

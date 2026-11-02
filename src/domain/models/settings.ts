@@ -49,6 +49,12 @@ export interface TestScheduleEntry {
    */
   suspendedFrom?: string;
   suspendedUntil?: string;
+  /**
+   * Programme V4 (lot L4) : en semaine de tests, la séance de ce modèle à
+   * cette date est remplacée par celle de `templateId`, qui reçoit le test
+   * (le vélo côtes du mercredi cède la place au test cardio sur tapis).
+   */
+  insteadOfTemplateId?: Id;
 }
 
 /** Dates ISO d'installation : un seed dont le marqueur est posé ne se rejoue plus. */
@@ -130,6 +136,8 @@ export interface InstallMarkers {
   addWorkout20261101?: string;
   /** Seed 50 (programme V4, lot L3) : Muscu A, B et C de la V4, posé à partir du dimanche d'activation. */
   programmeMuscuV4?: string;
+  /** Seed 51 (programme V4, lot L4) : calendrier V4, posé à partir du dimanche d'activation. */
+  calendrierV4?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */

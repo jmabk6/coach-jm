@@ -30,6 +30,7 @@ import { formatFullDate } from "../../domain/rules/programRules";
 import {
   calculateBlockNumbering,
   calculateSessionTemplateDuration,
+  durationCompletions,
   formatSessionTemplateCardioLine,
   formatSessionTemplateDuration,
   formatSessionTemplateSummary,
@@ -186,7 +187,7 @@ export function SessionPreviewScreen() {
               <strong>{formatSessionTemplateDuration(duration)}</strong>
               <br />
               <small>
-                {formatDurationSource(duration.kind, completedWorkouts.length)}
+                {formatDurationSource(duration.kind, durationCompletions(template, completedWorkouts).length)}
               </small>
             </span>
           </span>

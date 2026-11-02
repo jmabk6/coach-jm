@@ -36,7 +36,7 @@ import { getOpenPause } from "../workout/engine/workoutTime";
 import { startFreeWorkout } from "../workout/startFreeWorkout";
 import { startWorkout } from "../workout/startWorkout";
 import { categoryForWorkout } from "../program/freeWorkouts";
-import { useTodayData, type TodayData } from "./useTodayData";
+import { useTodayData, type OptionalSession, type TodayData } from "./useTodayData";
 import "./TodayScreen.css";
 import { paths } from "../../app/paths";
 import { formatFullDate } from "../../domain/rules/programRules";
@@ -142,6 +142,12 @@ export function TodayScreen() {
         />
       ))}
 
+      {/* Programme V4 : le samedi, padel facultatif (jamais « manqué »). */}
+      {!inProgress &&
+        data.optional
+          .filter((item) => item.template.category !== "Routine")
+          .map((item) => <OptionalCard key={item.template.id} item={item} data={data} onStart={() => void startFree(item.template)} />)}
+
       {/* Accueil compact (27/09/2026) : séance du jour → pesée → routine du
           soir → objectifs → prochaines séances. */}
       {/* Pesée du jour (lot I.1), sur une ligne. */}
@@ -154,6 +160,12 @@ export function TodayScreen() {
       {evenings.map((entry) => (
         <EveningCard key={entry.session.id} session={entry.session} data={data} />
       ))}
+
+      {/* Programme V4 : le samedi soir, récupération douce facultative. */}
+      {!inProgress &&
+        data.optional
+          .filter((item) => item.template.category === "Routine")
+          .map((item) => <OptionalCard key={item.template.id} item={item} data={data} onStart={() => void startFree(item.template)} />)}
 
       {/* Mes 7 objectifs (lot J.2), en lignes compactes. */}
       <GoalCards today={data.today} />
@@ -245,6 +257,37 @@ function RestCard() {
           séance supplémentaire si tu le souhaites.
         </span>
       </p>
+    </section>
+  );
+}
+
+/** Séance facultative du jour (programme V4) : jamais prévue, donc jamais manquée. */
+function OptionalCard({ item, data, onStart }: { item: OptionalSession; data: TodayData; onStart: () => void }) {
+  const { template, warning } = item;
+  const padel = template.category === "Cardio";
+  const duration = data.durationOf(template.id);
+  return (
+    <section className="today-card today-card--optional" aria-label={`Facultatif : ${template.name}`}>
+      <div className="today-card__head">
+        <TemplateIcon template={template} />
+        <div className="today-card__body">
+          <h2 className="today-card__name">{template.name}</h2>
+          <span className="today-badge today-badge--optional">Facultatif</span>
+          <p className="today-card__text">
+            {padel ? "Seulement si tu joues aujourd'hui." : template.description ?? (duration ? `Environ ${duration.duration.minutes} min, facultatif.` : "Facultatif.")}
+          </p>
+        </div>
+      </div>
+      {warning && (
+        <p className="today-notice today-notice--warning">
+          <Info size={18} strokeWidth={2} aria-hidden="true" />
+          <span>{warning}</span>
+        </p>
+      )}
+      <button type="button" className="today__secondary" onClick={onStart}>
+        <Play size={18} strokeWidth={2.2} aria-hidden="true" />
+        {padel ? "Enregistrer une partie" : "Démarrer"}
+      </button>
     </section>
   );
 }

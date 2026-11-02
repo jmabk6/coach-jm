@@ -20,6 +20,15 @@ import type { Exercise, ExerciseBlock, ExerciseInstructions } from "../../domain
 /** Dimanche d'activation de la V4 : provisoire, fixé à la validation finale (cible 29/11). */
 export const PROGRAM_V4_START = "2026-11-29";
 
+/**
+ * L'heure donnée aux seeds V4 au lancement. Sous Vitest, elle est figée
+ * avant l'activation : les tests écrits pour le programme actuel le gardent
+ * quelle que soit la date du jour ; les tests de la V4 passent leur date.
+ */
+export function v4SeedNow(): string {
+  return import.meta.env.MODE === "test" ? "2026-11-02T12:00:00.000Z" : new Date().toISOString();
+}
+
 const ISOLATION = 90;
 
 function reps(sets: number, min: number, max: number, restBetweenSetsSec: number, targetRpe?: { min: number; max: number }): ExerciseInstructions {

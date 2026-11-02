@@ -560,3 +560,15 @@
   color: var(--color-warning-strong);
   font-weight: 600;
 }
+
+/* Programme V4 : séances facultatives du samedi (padel, récupération). */
+.today-badge.today-badge--optional {
+  background: var(--color-hover);
+  color: var(--color-text-muted);
+}
+
+.today-notice.today-notice--warning {
+  margin-bottom: 12px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning-strong);
+}

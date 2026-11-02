@@ -38,6 +38,14 @@ export interface SessionTemplate {
   origin?: "program_v1" | "program_v2";
   /** Bloc principal, remplacé par un test (Cardio A). */
   mainBlockId?: Id;
+  /**
+   * Programme V4 (lot L4) : date à partir de laquelle le contenu actuel est
+   * en place ; la durée moyenne ne compte que les séances faites depuis
+   * (avant, l'estimation du nouveau contenu fait foi).
+   */
+  contentSince?: string;
+  /** Note préremplie à l'enregistrement de la séance (padel : note structurée). */
+  notePrefill?: string;
 
   createdAt: string;
   updatedAt: string;

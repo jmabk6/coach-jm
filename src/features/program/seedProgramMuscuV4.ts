@@ -73,7 +73,7 @@ function withV4Blocks(template: SessionTemplate, definition: V4Template, existin
     }
     return { ...structuredClone(item.add), position };
   });
-  return { ...template, name: definition.name, subtitle: definition.subtitle, tags: [...definition.tags], description: definition.description, blocks, updatedAt: now };
+  return { ...template, name: definition.name, subtitle: definition.subtitle, tags: [...definition.tags], description: definition.description, blocks, contentSince: PROGRAM_V4_START, updatedAt: now };
 }
 
 /**

@@ -314,12 +314,19 @@ export type SessionTemplateDuration =
  * Durée affichée sur la carte : estimée avant 3 réalisations,
  * moyenne de la durée active à partir de 3 (§5, §12).
  */
+/** Programme V4 : les séances qui fondent la moyenne, celles du contenu actuel du modèle. */
+export function durationCompletions<T extends Pick<WorkoutSession, "date">>(template: Pick<SessionTemplate, "contentSince">, completedWorkouts: T[]): T[] {
+  const since = template.contentSince;
+  return since === undefined ? completedWorkouts : completedWorkouts.filter((workout) => workout.date >= since);
+}
+
 export function calculateSessionTemplateDuration(
   template: SessionTemplate,
   completedWorkouts: WorkoutSession[],
   /** Lot L2 : exercices « À valider » ou « Suspendus », retirés de l'estimation (ils seront sautés). */
   lockedExerciseIds: ReadonlySet<string> = new Set(),
 ): SessionTemplateDuration {
+  completedWorkouts = durationCompletions(template, completedWorkouts);
   if (completedWorkouts.length >= REAL_DURATION_MIN_COMPLETIONS) {
     const totalSec = completedWorkouts.reduce(
       (sum, workout) => sum + workout.activeDurationSec,

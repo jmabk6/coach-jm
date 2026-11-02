@@ -31,6 +31,8 @@ import { seedTractionTestV420261025 } from "../tests/seedTractionTestV4";
 import { seedAddNegatives20261029 } from "../history/seedAddNegatives20261029";
 import { seedWorkout20261101 } from "../history/seedWorkout20261101";
 import { seedProgramMuscuV4 } from "../program/seedProgramMuscuV4";
+import { seedCalendrierV4 } from "../program/seedCalendrierV4";
+import { v4SeedNow } from "../program/programV4";
 import { seedDetailedReferences20261022, seedLoadSteps20261022, seedPerspectiveTracks20261022, seedShoulderRpe20261022 } from "../perspectives/seedPerspectives20261022";
 import { seedJambesSuspended20261005 } from "../tests/seedJambesSuspended";
 import { seedTractionTest7kg20261003 } from "../tests/seedTractionTest7kg";
@@ -148,14 +150,16 @@ export const SEEDS: SeedStep[] = [
   /* Seed 49 (01/11/2026) : la Muscu A du 01/11, faite sans téléphone ; après les pistes (objectifs du jour). */
   { name: "addWorkout20261101", dependsOn: ["exerciseCatalog", "programmeMuscu20261005", "perspectiveDetailed20261022"], run: () => seedWorkout20261101() },
   /* Seed 50 (programme V4, lot L3) : Muscu A, B et C de la V4, rien avant le dimanche d'activation ; en dernier, pour que les seeds d'avant (séance du 01/11 d'une ancienne sauvegarde) trouvent les modèles V2. La référence détaillée du leg curl et des élévations de C est recalculée au lancement suivant. */
-  { name: "programmeMuscuV4", dependsOn: ["programmeMuscu20261005", "programmeMuscuC20261009", "perspectiveTracks20261022"], run: () => seedProgramMuscuV4() },
+  { name: "programmeMuscuV4", dependsOn: ["programmeMuscu20261005", "programmeMuscuC20261009", "perspectiveTracks20261022"], run: () => seedProgramMuscuV4(v4SeedNow()) },
+  /* Seed 51 (programme V4, lot L4) : le calendrier V4 (vélo, routine par soir, samedi facultatif), rien avant le dimanche d'activation. */
+  { name: "calendrierV4", dependsOn: ["programmeMuscuV4", "programV2", "testProtocols"], run: () => seedCalendrierV4(v4SeedNow()) },
 ];
 
 /**
  * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
  * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
  */
-export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "loadSteps20261022", "shoulderRpe20261022", "perspectiveTracks20261022", "perspectiveDetailed20261022", "tractionTestV420261025", "addWorkout20261101", "programmeMuscuV4"].includes(seed.name));
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "loadSteps20261022", "shoulderRpe20261022", "perspectiveTracks20261022", "perspectiveDetailed20261022", "tractionTestV420261025", "addWorkout20261101", "programmeMuscuV4", "calendrierV4"].includes(seed.name));
 
 export interface SeedReport {
   ran: string[];

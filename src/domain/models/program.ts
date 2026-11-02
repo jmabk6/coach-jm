@@ -22,6 +22,19 @@ export interface WeeklyProgram {
   /** Date de la routine A de référence. */
   eveningRotationAnchor?: string;
 
+  /**
+   * Programme V4 (lot L4) : la routine de chaque soir, par jour de la
+   * semaine. Présent, il remplace la rotation ; un jour absent n'a pas de
+   * routine (vendredi, samedi).
+   */
+  eveningByWeekday?: Partial<Record<Weekday, Id>>;
+
+  /**
+   * Programme V4 (lot L4) : séances facultatives d'un jour, jamais
+   * planifiées (padel et récupération du samedi) ; l'Accueil les propose.
+   */
+  optionalByWeekday?: Partial<Record<Weekday, Id[]>>;
+
   createdAt: string;
   updatedAt: string;
 }

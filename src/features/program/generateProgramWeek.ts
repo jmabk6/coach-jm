@@ -6,7 +6,9 @@ import {
 import { getSetting } from "../../db/repositories/settingsRepository";
 import { getAllTestProtocols } from "../../db/repositories/testRepository";
 import type { PlannedSession } from "../../domain";
+import { addDays, parseISO } from "date-fns";
 import {
+  formatLocalDate,
   generatePlannedSessionsForWeek,
   listWeekDates,
 } from "../../domain/rules/programRules";
@@ -40,6 +42,12 @@ export async function loadTestPlan(): Promise<TestPlan | undefined> {
 export async function generateProgramWeek(
   weekStartDate: string,
   now: string = new Date().toISOString(),
+  /**
+   * Programme V4 (lot L4) : complète aussi la semaine **en cours**, à partir
+   * de cette date seulement (la semaine d'activation, si elle n'avait pas
+   * encore été générée) ; les jours d'avant ne reçoivent rien.
+   */
+  fromDate?: string,
 ): Promise<PlannedSession[]> {
   const program = await getWeeklyProgram();
 
@@ -54,23 +62,27 @@ export async function generateProgramWeek(
   );
 
   const existingSessions = existingByDay.flat();
-  const generatedSessions = attachTestPlan({
+  /* Semaine en cours (V4) : la règle la traite comme une semaine à venir, vue de la veille. */
+  const ruleNow = fromDate !== undefined ? `${formatLocalDate(addDays(parseISO(weekStartDate), -1))}T12:00:00.000Z` : now;
+  const generated = attachTestPlan({
     weekStartDate,
     generated: [
       ...generatePlannedSessionsForWeek({
         program,
         weekStartDate,
         existingSessions,
-        now,
+        now: ruleNow,
       }),
       /* Lot K.2 : une routine chaque soir, en rotation. */
-      ...generateEveningRoutines({ program, weekStartDate, existingSessions, now }),
+      ...generateEveningRoutines({ program, weekStartDate, existingSessions, now: ruleNow }),
     ],
     existingSessions,
     program,
     plan: await loadTestPlan(),
     now,
   });
+  const generatedSessions =
+    fromDate === undefined ? generated : generated.filter((session) => session.date >= fromDate).map((session) => ({ ...session, createdAt: now, updatedAt: now }));
 
   if (generatedSessions.length > 0) {
     await savePlannedSessions(generatedSessions);

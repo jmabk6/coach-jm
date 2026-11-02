@@ -6,10 +6,9 @@ import type {
   TestCycleSettings,
   TestResult,
   TestScheduleEntry,
-  WeeklyProgram,
 } from "../models";
 import { formatLocalDate, getSourceDate, slotOf, weekdays } from "./programRules";
-import { eveningRoutineFor, isTestWeek } from "./testCycleRules";
+import { eveningRoutineFor, isTestWeek, type EveningProgram } from "./testCycleRules";
 
 /**
  * Tests d'une semaine de tests (conception V2 § 2.3, § 3.5.1, D26).
@@ -63,7 +62,7 @@ export function attachTestPlan({
   weekStartDate: string;
   generated: PlannedSession[];
   existingSessions: ReadonlyArray<PlannedSession>;
-  program: Pick<WeeklyProgram, "eveningRotation" | "eveningRotationAnchor">;
+  program: EveningProgram;
   plan: TestPlan | undefined;
   now: string;
 }): PlannedSession[] {
@@ -90,7 +89,14 @@ export function attachTestPlan({
           slotOf(session) === "day" &&
           (entry.templateId === undefined || session.sessionTemplateId === entry.templateId),
       );
-      if (target) attach(target, testOf(entry, protocolId));
+      /* Programme V4 : la séance prévue ce jour-là (vélo côtes) cède la place au modèle du test (tapis). */
+      const replaced =
+        target ??
+        (entry.insteadOfTemplateId !== undefined && entry.templateId !== undefined
+          ? sessions.find((session) => session.date === date && slotOf(session) === "day" && session.sessionTemplateId === entry.insteadOfTemplateId)
+          : undefined);
+      if (replaced && !target) replaced.sessionTemplateId = entry.templateId!;
+      if (replaced) attach(replaced, testOf(entry, protocolId));
       continue;
     }
 

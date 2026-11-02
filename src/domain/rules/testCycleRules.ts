@@ -1,6 +1,9 @@
 import { addDays, differenceInCalendarDays, parseISO } from "date-fns";
 import type { PlannedSession, TestCycleSettings, TestProtocol, TestResult, TestScheduleEntry, WeeklyProgram } from "../models";
-import { formatLocalDate, getSourceDate, getWeekStartDate, isFutureWeek, listWeekDates, slotOf, weekdays } from "./programRules";
+import { formatLocalDate, getSourceDate, getWeekdayOf, getWeekStartDate, isFutureWeek, listWeekDates, slotOf, weekdays } from "./programRules";
+
+/** Ce qui décide des routines du soir : la rotation (V2) ou la routine par jour (V4). */
+export type EveningProgram = Pick<WeeklyProgram, "eveningRotation" | "eveningRotationAnchor" | "eveningByWeekday">;
 
 /**
  * Semaine de tests (conception V2 § 2.3, § 5.9) : toutes les
@@ -32,9 +35,12 @@ export function daysUntilNextTestWeek(today: string, cycle: TestCycleSettings): 
 
 /**
  * Routine du soir d'une date (N3 : la rotation suit les jours) : la
- * rotation part de l'ancre et avance d'une routine par jour.
+ * rotation part de l'ancre et avance d'une routine par jour. Programme V4
+ * (lot L4) : la routine du jour de la semaine, quand elle est donnée par
+ * jour ; un jour sans routine n'en a pas.
  */
-export function eveningRoutineFor(program: Pick<WeeklyProgram, "eveningRotation" | "eveningRotationAnchor">, date: string): string | undefined {
+export function eveningRoutineFor(program: EveningProgram, date: string): string | undefined {
+  if (program.eveningByWeekday) return program.eveningByWeekday[getWeekdayOf(date)];
   const rotation = program.eveningRotation ?? [];
   if (rotation.length === 0 || !program.eveningRotationAnchor) return undefined;
 
@@ -57,7 +63,7 @@ export function generateEveningRoutines({
   existingSessions,
   now,
 }: {
-  program: Pick<WeeklyProgram, "eveningRotation" | "eveningRotationAnchor">;
+  program: EveningProgram;
   weekStartDate: string;
   existingSessions: ReadonlyArray<PlannedSession>;
   now: string;
