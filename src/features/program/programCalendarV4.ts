@@ -27,16 +27,13 @@ export const RECUPERATION_ID = "v4-recuperation";
 export const PADEL_EXERCISE_ID = "padel";
 export const OPEN_BOOK_EXERCISE_ID = "rotation-thoracique-allongee";
 
-/**
- * Routines du soir par jour. Le contenu V4 des routines arrive avec le lot
- * L5 (nouveaux modèles) ; d'ici là, les routines A, B et C actuelles.
- */
+/** Routines du soir par jour : les routines V4 (lot L5, `programRoutinesV4.ts`). */
 export const EVENING_BY_WEEKDAY_V4: Partial<Record<Weekday, string>> = {
-  sunday: "v1-routine-a",
-  monday: "v1-routine-b",
-  tuesday: "v1-routine-c",
-  wednesday: "v1-routine-a",
-  thursday: "v1-routine-b",
+  sunday: "v4-routine-a",
+  monday: "v4-routine-b",
+  tuesday: "v4-routine-c",
+  wednesday: "v4-routine-a",
+  thursday: "v4-routine-b",
 };
 
 export const PROGRAM_V4_DAYS: WeeklyProgram["days"] = [
@@ -210,6 +207,7 @@ const recuperation: TemplateContent = {
   tags: ["Souplesse"],
   description: "Environ 10 min, facultatif.",
   contentSince: PROGRAM_V4_START,
+  estimatedMinutes: 10,
   blocks: [
     stretch("v4-recuperation-flechisseurs", 0, "mobilite-flechisseur-hanche", 45, "45 s par côté, avec appui, bassin rentré, sans cambrer."),
     stretch("v4-recuperation-pectoraux", 1, "mobilite-ouverture-epaules-mur", 45, "45 s par côté, épaule détendue, sans forcer l'amplitude."),

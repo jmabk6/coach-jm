@@ -10,7 +10,9 @@ import { compositionSummary, type CompositionSummary } from "../../domain/rules/
 import { withingsCompositionReadings } from "../body/seedLegacyComposition";
 import { v6Progress, type V6Progress } from "./tractionV6View";
 import { goalProtocolId, nextTestDate } from "../../domain/rules/goalListRules";
-import { measureValue } from "../../domain/rules/goalRules";
+import { measureValue, type GoalCurve } from "../../domain/rules/goalRules";
+import { workSetsOf } from "../../domain/rules/progressionRules";
+import { HOLD_CURVES_V4 } from "../program/programRoutinesV4";
 import { formatTestNumber } from "../../domain/rules/testResultRules";
 import { weightGoalOverview, type WeightGoalOverview } from "../../domain/rules/weightGoalRules";
 import { weightWeekSummary, type WeightWeekSummary } from "../../domain/rules/weightRules";
@@ -73,6 +75,33 @@ export interface GoalDetail {
    */
   weight?: { overview: WeightGoalOverview; weeks: WeightWeekSummary };
   linkedSessions: LinkedSession[];
+  /** Programme V4 (lot L5) : courbes des maintiens en routine (Tronc, Souplesse). */
+  holds?: HoldCurve[];
+}
+
+export interface HoldCurve {
+  exerciseId: string;
+  label: string;
+  curve: GoalCurve;
+}
+
+/**
+ * Courbe des maintiens d'un exercice : une valeur par séance enregistrée,
+ * la durée tenue sur la série la plus faible (côté le plus faible pour un
+ * exercice par côté), échauffements exclus.
+ */
+export function holdCurveOf(exerciseId: string, workouts: ReadonlyArray<WorkoutSession>): GoalCurve {
+  const points = workouts
+    .filter((workout) => workout.status === "completed")
+    .flatMap((workout) =>
+      workout.blocks.flatMap((block) => {
+        if (block.kind !== "exercise" || block.exerciseId !== exerciseId || block.status !== "performed") return [];
+        const held = workSetsOf(block).map((set) => set.durationSec).filter((value): value is number => value !== undefined && value > 0);
+        return held.length > 0 ? [{ date: workout.date, value: Math.min(...held) }] : [];
+      }),
+    )
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return { series: points.length > 0 ? [{ segmentId: exerciseId, points }] : [] };
 }
 
 const METRIC_CAPTIONS: Record<ExercisePerformanceMetric, string> = {
@@ -279,5 +308,6 @@ export async function loadGoalDetail(key: GoalKey, today: string): Promise<GoalD
       ? { composition: [compositionSummary(withings, "fatPct", today), compositionSummary(withings, "muscleKg", today)] }
       : {}),
     linkedSessions: linkedSessionsOf(goal, workouts, exerciseById),
+    ...(HOLD_CURVES_V4[goal.key] ? { holds: HOLD_CURVES_V4[goal.key]!.map((item) => ({ ...item, curve: holdCurveOf(item.exerciseId, workouts) })) } : {}),
   };
 }

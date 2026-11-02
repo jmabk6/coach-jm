@@ -15,6 +15,7 @@ import { PADEL_ID, PADEL_TEST_EVE_WARNING, RECUPERATION_ID, VELO_COTES_ID, VELO_
 import { PROGRAM_V4_START } from "./programV4";
 import { plannedSessionsV4, seedCalendrierV4 } from "./seedCalendrierV4";
 import { seedProgramMuscuV4 } from "./seedProgramMuscuV4";
+import { seedRoutinesV4 } from "./seedRoutinesV4";
 
 /** Lot L4 (programme V4) : le calendrier V4, posé au dimanche d'activation. */
 
@@ -33,10 +34,17 @@ function expectNoDuplicates(sessions: PlannedSession[]) {
   expect(new Set(keys).size).toBe(keys.length);
 }
 
-async function activate() {
-  await seedProgramMuscuV4(ACTIVATION);
-  await seedCalendrierV4(ACTIVATION);
+async function activate(now: string = ACTIVATION) {
+  await seedProgramMuscuV4(now);
+  await seedRoutinesV4(now);
+  await seedCalendrierV4(now);
 }
+
+/** Les seeds du lancement, ceux de la V4 à la date donnée. */
+const seedsAt = (now: string) =>
+  SEEDS.map((seed) =>
+    seed.name === "programmeMuscuV4" ? { ...seed, run: () => seedProgramMuscuV4(now) } : seed.name === "routinesV4" ? { ...seed, run: () => seedRoutinesV4(now) } : seed.name === "calendrierV4" ? { ...seed, run: () => seedCalendrierV4(now) } : seed,
+  );
 
 describe("programme V4 — calendrier (installation neuve)", () => {
   beforeEach(async () => {
@@ -72,7 +80,7 @@ describe("programme V4 — calendrier (installation neuve)", () => {
       ["sunday", "v2-muscu-a"], ["monday", VELO_ENDURANCE_ID], ["tuesday", "v2-muscu-b"], ["wednesday", VELO_COTES_ID],
       ["thursday", "v2-muscu-c"], ["friday", undefined], ["saturday", undefined],
     ]);
-    expect(rule.eveningByWeekday).toEqual({ sunday: "v1-routine-a", monday: "v1-routine-b", tuesday: "v1-routine-c", wednesday: "v1-routine-a", thursday: "v1-routine-b" });
+    expect(rule.eveningByWeekday).toEqual({ sunday: "v4-routine-a", monday: "v4-routine-b", tuesday: "v4-routine-c", wednesday: "v4-routine-a", thursday: "v4-routine-b" });
     expect(rule.optionalByWeekday).toEqual({ saturday: [PADEL_ID, RECUPERATION_ID] });
     expect(rule.eveningRotation).toBeUndefined();
 
@@ -101,7 +109,7 @@ describe("programme V4 — calendrier (installation neuve)", () => {
       "2026-12-06": "v2-muscu-a", "2026-12-07": VELO_ENDURANCE_ID, "2026-12-08": "v2-muscu-b", "2026-12-09": VELO_COTES_ID, "2026-12-10": "v2-muscu-c",
     });
     expect(byDay(week, "evening")).toEqual({
-      "2026-12-06": "v1-routine-a", "2026-12-07": "v1-routine-b", "2026-12-08": "v1-routine-c", "2026-12-09": "v1-routine-a", "2026-12-10": "v1-routine-b",
+      "2026-12-06": "v4-routine-a", "2026-12-07": "v4-routine-b", "2026-12-08": "v4-routine-c", "2026-12-09": "v4-routine-a", "2026-12-10": "v4-routine-b",
     });
     expectNoDuplicates(week);
   });
@@ -116,7 +124,7 @@ describe("programme V4 — calendrier (installation neuve)", () => {
     expect(byDay(week, "day")).toMatchObject({ "2026-12-20": "v2-muscu-a", "2026-12-23": "v2-cardio-a", "2026-12-24": "v2-muscu-c" });
     expect(testsOn("2026-12-20", "day")).toEqual(["traction"]);
     expect(testsOn("2026-12-21", "evening")).toEqual(["souplesse", "tronc"]);
-    expect(week.find((session) => session.date === "2026-12-21" && session.slot === "evening")?.sessionTemplateId).toBe("v1-routine-b");
+    expect(week.find((session) => session.date === "2026-12-21" && session.slot === "evening")?.sessionTemplateId).toBe("v4-routine-b");
     expect(testsOn("2026-12-23", "day")).toEqual(["cardio"]);
     expect(testsOn("2026-12-24", "day")).toBeUndefined();
     expect(week.some((session) => session.sessionTemplateId === VELO_COTES_ID)).toBe(false);
@@ -146,7 +154,7 @@ describe("programme V4 — calendrier (installation neuve)", () => {
       "2026-12-11": "v2-cardio-c",
     });
     expect(Object.keys(byDay(after, "evening")).sort()).toEqual(["2026-11-29", "2026-11-30", "2026-12-01", "2026-12-02", "2026-12-03", "2026-12-06", "2026-12-07", "2026-12-08", "2026-12-09", "2026-12-10"]);
-    expect(byDay(after, "evening")["2026-11-29"]).toBe("v1-routine-a");
+    expect(byDay(after, "evening")["2026-11-29"]).toBe("v4-routine-a");
     expectNoDuplicates(after);
 
     /* Une seconde génération ne recrée rien. */
@@ -158,14 +166,13 @@ describe("programme V4 — calendrier (installation neuve)", () => {
     await activate();
     const week = await between("2026-11-29", "2026-12-05");
     expect(byDay(week, "day")).toEqual({ "2026-11-29": "v2-muscu-a", "2026-11-30": VELO_ENDURANCE_ID, "2026-12-01": "v2-muscu-b", "2026-12-02": VELO_COTES_ID, "2026-12-03": "v2-muscu-c" });
-    expect(byDay(week, "evening")["2026-11-29"]).toBe("v1-routine-a");
+    expect(byDay(week, "evening")["2026-11-29"]).toBe("v4-routine-a");
     expectNoDuplicates(week);
   });
 
   it("bascule un mardi (application ouverte en retard) : rien n'est créé avant ce mardi", async () => {
     const tuesday = "2026-12-01T18:00:00.000Z";
-    await seedProgramMuscuV4(tuesday);
-    await seedCalendrierV4(tuesday);
+    await activate(tuesday);
     const week = await between("2026-11-29", "2026-12-05");
     expect(Object.keys(byDay(week, "day")).sort()).toEqual(["2026-12-01", "2026-12-02", "2026-12-03"]);
     /* Au lancement suivant, rien n'est recréé. */
@@ -224,7 +231,7 @@ describe("programme V4 — calendrier sur la sauvegarde réelle", () => {
     const workoutsBefore = await db.workouts.toArray();
     const sessionsBefore = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V4_START);
     resumeSeedsForTests();
-    const report = await runSeeds(SEEDS.map((seed) => (seed.name === "programmeMuscuV4" ? { ...seed, run: () => seedProgramMuscuV4(ACTIVATION) } : seed.name === "calendrierV4" ? { ...seed, run: () => seedCalendrierV4(ACTIVATION) } : seed)));
+    const report = await runSeeds(seedsAt(ACTIVATION));
     expect(report.failed).toEqual([]);
     expect(await marker()).toBe(ACTIVATION);
     /* Les séances faites ne changent pas. */
@@ -274,7 +281,7 @@ describe("programme V4 — toutes les sauvegardes de Téléchargements", () => {
       await restoreBackup(envelope, db);
       const sessionsBefore = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V4_START);
       resumeSeedsForTests();
-      const report = await runSeeds(SEEDS.map((seed) => (seed.name === "programmeMuscuV4" ? { ...seed, run: () => seedProgramMuscuV4(ACTIVATION) } : seed.name === "calendrierV4" ? { ...seed, run: () => seedCalendrierV4(ACTIVATION) } : seed)));
+      const report = await runSeeds(seedsAt(ACTIVATION));
       expect(report.failed, name).toEqual([]);
       expect((await program()).eveningByWeekday, name).toBeDefined();
       const kept = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => sessionsBefore.some((item) => item.id === session.id && item.date < PROGRAM_V4_START));

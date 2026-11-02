@@ -322,6 +322,20 @@ function ProgressionTab({ detail, today, onChanged }: { detail: GoalDetail; toda
         </section>
       )}
 
+      {/* Programme V4 (lot L5) : les maintiens tenus en routine, séance après séance. */}
+      {detail.holds && (
+        <section className="goal-section">
+          <h2>Maintiens en routine</h2>
+          <p className="goal-section__lead">La durée tenue sur la série la plus faible de chaque routine.</p>
+          {detail.holds.map((hold) => (
+            <div key={hold.exerciseId} className="goal-hold">
+              <h3>{hold.label}</h3>
+              <GoalCurveChart curve={hold.curve} today={today} formatValue={(value) => `${value} s`} emptyText="La courbe apparaîtra après ta première routine avec cet exercice." />
+            </div>
+          ))}
+        </section>
+      )}
+
       {detail.composition && <BodyCompositionSection summaries={detail.composition} />}
 
       {goal.linkedExercises.length > 0 && (

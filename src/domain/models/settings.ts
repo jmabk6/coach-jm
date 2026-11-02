@@ -138,6 +138,8 @@ export interface InstallMarkers {
   programmeMuscuV4?: string;
   /** Seed 51 (programme V4, lot L4) : calendrier V4, posé à partir du dimanche d'activation. */
   calendrierV4?: string;
+  /** Seed 52 (programme V4, lot L5) : routines du soir V4, posées à partir du dimanche d'activation. */
+  routinesV4?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */

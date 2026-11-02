@@ -46,6 +46,12 @@ export interface SessionTemplate {
   contentSince?: string;
   /** Note préremplie à l'enregistrement de la séance (padel : note structurée). */
   notePrefill?: string;
+  /**
+   * Durée estimée fixée (routines V4 : les deux côtés et les mises en place
+   * comptés), à la place du calcul ; sert tant qu'il n'y a pas assez de
+   * séances pour une moyenne.
+   */
+  estimatedMinutes?: number;
 
   createdAt: string;
   updatedAt: string;

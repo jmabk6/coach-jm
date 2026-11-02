@@ -4,13 +4,16 @@ import type { DayTarget, PerformedSeries, SetTarget } from "../../domain";
 
 const kg = (value: number) => `${String(Math.round(value * 100) / 100).replace(".", ",")} kg`;
 
-export function formatTargetLines(target: Pick<DayTarget, "sets">, perDumbbell: boolean): string[] {
+export function formatTargetLines(target: Pick<DayTarget, "sets">, perDumbbell: boolean, perSide = false): string[] {
   const unit = (value: number) => `${kg(value)}${perDumbbell ? " par haltère" : ""}`;
   const reps = (set: SetTarget) => (set.stretch && set.reps !== undefined ? `${set.reps - 1}–${set.reps}` : String(set.reps ?? "—"));
   const sets = target.sets;
   if (sets.length === 0) return [];
   if (sets.every((set) => set.kg === undefined)) {
-    if (sets.every((set) => set.reps === undefined)) return [sets.map((set) => `${set.durationSec ?? "—"} s`).join(" / ")];
+    const side = perSide ? " par côté" : "";
+    if (sets.every((set) => set.reps === undefined)) return [`${sets.map((set) => `${set.durationSec ?? "—"} s`).join(" / ")}${side}`];
+    /* Routines V4 (lot L5) : des répétitions sans charge ni descente. */
+    if (sets.every((set) => set.durationSec === undefined)) return [`${sets.length} × ${sets[0]!.reps} répétitions${side}`];
     return [`${sets.length} × ${sets[0]!.reps} répétitions, descente ${sets[0]!.durationSec ?? "—"} s`];
   }
   if (sets.some((set) => set.step)) {
@@ -42,7 +45,16 @@ export function formatLastSession(series: ReadonlyArray<PerformedSeries>, perDum
   const work = series.filter((item) => item.status === "completed" && item.role !== "echauffement");
   if (work.length === 0) return undefined;
   const loads = work.map((item) => (item.load?.kind === "total" ? item.load.kg : undefined));
-  const values = work.map((item) => (item.reps !== undefined ? String(item.reps) : item.durationSec !== undefined ? `${item.durationSec} s` : "—"));
+  /* Par côté : le côté le plus faible (lot L5). */
+  const side = (item: PerformedSeries, key: "reps" | "durationSec") => {
+    const values = (item.sideValues ?? []).map((value) => value[key]).filter((value): value is number => value !== undefined);
+    return values.length > 0 ? Math.min(...values) : undefined;
+  };
+  const values = work.map((item) => {
+    const reps = item.reps ?? side(item, "reps");
+    const duration = item.durationSec ?? side(item, "durationSec");
+    return reps !== undefined ? String(reps) : duration !== undefined ? `${duration} s` : "—";
+  });
   const rpe = work.every((item) => item.rpe === undefined) ? "" : ` · RPE ${work.map((item) => item.rpe ?? "—").join("/")}`;
   const sameLoad = loads.every((value) => value === loads[0]);
   if (loads[0] === undefined && sameLoad) return `${values.join("/")}${rpe}`;

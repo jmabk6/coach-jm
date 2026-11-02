@@ -339,6 +339,8 @@ export function calculateSessionTemplateDuration(
     };
   }
 
+  if (template.estimatedMinutes !== undefined) return { kind: "estimated", minutes: template.estimatedMinutes };
+
   return {
     kind: "estimated",
     minutes: Math.round(

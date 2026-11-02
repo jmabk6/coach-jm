@@ -30,7 +30,7 @@ interface DayTargetBlockProps {
 
 export function DayTargetBlock({ target, exercise, lastLine, lastDate, outcome, trackId }: DayTargetBlockProps) {
   const perDumbbell = exercise?.equipment === "Haltères";
-  const lines = formatTargetLines(target, perDumbbell);
+  const lines = formatTargetLines(target, perDumbbell, exercise?.measurementType === "reps_per_side" || exercise?.measurementType === "duration_per_side");
   const reserve = reserveOf(target.rpeMax);
   const suspended = target.kind === "suspended";
   const insufficient = target.kind === "insufficient";
@@ -54,7 +54,7 @@ export function DayTargetBlock({ target, exercise, lastLine, lastDate, outcome, 
         </p>
       )}
       <p className="day-target__reason">{target.reason}</p>
-      {!suspended && !insufficient && reserve !== undefined && (
+      {!suspended && !insufficient && !target.routine && reserve !== undefined && (
         <p className="day-target__hint">
           RPE ≤ {target.rpeMax} : finir chaque série avec au moins {reserve} répétition{reserve > 1 ? "s" : ""} en réserve. Tu peux dépasser l’objectif sur n’importe quelle série en gardant cette réserve.
         </p>

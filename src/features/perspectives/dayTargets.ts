@@ -17,6 +17,10 @@ import {
   trackResults,
 } from "../../domain/rules/progressionRules";
 import { getProgressionTracks } from "./trackStore";
+import { workSetsOf } from "../../domain/rules/progressionRules";
+import { nextRoutineTarget } from "../../domain/rules/routineProgressionRules";
+import { ROUTINE_PROGRESSIONS, ROUTINE_RPE_MAX, ROUTINE_V4_BLOCKS } from "../program/programRoutinesV4";
+import { PROGRAM_V4_START } from "../program/programV4";
 import { LOCKED_LABELS, practiceLockOf } from "../../domain/rules/exerciseClearanceRules";
 import { PERSPECTIVE_TEMPLATES, sourceIdsOf, trackSpecsFrom, type TrackSpec } from "./tracks";
 
@@ -37,7 +41,45 @@ export interface DayTargetContext {
 }
 
 export function dayTargetFor(block: PerformedExerciseBlock, date: string, context: DayTargetContext, now: string): DayTarget | undefined {
-  return block.sourceBlockId ? dayTargetForTrack(block.sourceBlockId, date, context, now) : undefined;
+  if (!block.sourceBlockId) return undefined;
+  return ROUTINE_V4_BLOCKS.has(block.sourceBlockId) ? routineDayTarget(block.sourceBlockId, date, context, now) : dayTargetForTrack(block.sourceBlockId, date, context, now);
+}
+
+const PAIN_NOTE = /douleur|mal au|mal à/i;
+
+/**
+ * Programme V4 (lot L5) : l'objectif d'une brique de routine, d'après la
+ * dernière séance du **même exercice** dans n'importe quelle routine V4
+ * (suivi partagé : le dead bug de A et celui de C progressent ensemble).
+ * Un exercice « À valider » ou « Suspendu » n'en reçoit pas.
+ */
+export function routineDayTarget(sourceBlockId: Id, date: string, context: DayTargetContext, now: string): DayTarget | undefined {
+  const spec = ROUTINE_V4_BLOCKS.get(sourceBlockId);
+  const rule = spec ? ROUTINE_PROGRESSIONS[spec.exerciseId] : undefined;
+  if (!spec || !rule) return undefined;
+  if (practiceLockOf(context.exerciseById.get(spec.exerciseId))) return undefined;
+  const history = context.completed
+    .filter((workout) => workout.status === "completed" && workout.date >= PROGRAM_V4_START && workout.date <= date)
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.startedAt ?? "").localeCompare(b.startedAt ?? ""))
+    .flatMap((workout) =>
+      workout.blocks.flatMap((block) => {
+        if (block.kind !== "exercise" || block.status !== "performed" || !block.sourceBlockId) return [];
+        const source = ROUTINE_V4_BLOCKS.get(block.sourceBlockId);
+        return source && source.exerciseId === spec.exerciseId ? [{ workout, block, source }] : [];
+      }),
+    );
+  const latest = history.at(-1);
+  const frozen = latest?.block.dayTarget?.sets[0];
+  const last = latest
+    ? {
+        workoutId: latest.workout.id,
+        target: (rule.measure === "reps" ? frozen?.reps : frozen?.durationSec) ?? latest.source.start,
+        sets: latest.block.dayTarget?.sets.length || latest.source.sets,
+        done: workSetsOf(latest.block),
+        pain: (latest.block.series ?? []).some((series) => series.note !== undefined && PAIN_NOTE.test(series.note)),
+      }
+    : undefined;
+  return nextRoutineTarget({ rule: { ...rule, rpeMax: ROUTINE_RPE_MAX }, sets: spec.sets, start: spec.start, last, now });
 }
 
 /** L'objectif de la prochaine séance d'une piste, à une date donnée (séances enregistrées jusqu'à cette date). */
@@ -123,7 +165,6 @@ export function withPracticeSuspensions(tracks: ReadonlyArray<ProgressionTrack>,
  */
 export async function freezeDayTargets(workoutId: Id, completed: ReadonlyArray<WorkoutSession>, now: string = new Date().toISOString()): Promise<WorkoutSession | undefined> {
   const context = await loadDayTargetContext(completed);
-  if (context.tracks.length === 0) return undefined;
   return db.transaction("rw", db.workouts, async () => {
     const current = await db.workouts.get(workoutId);
     if (!current || current.status !== "in_progress" || current.endedAt !== undefined) return current;

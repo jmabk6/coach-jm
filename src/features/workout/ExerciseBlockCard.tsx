@@ -177,7 +177,7 @@ export function ExerciseBlockCard({
   /* Perspectives (P2, 22/10/2026) : objectif du jour figé, et retour une fois toutes ses séries notées. */
   const target = bet ? undefined : block.dayTarget;
   const targetSummary =
-    target && target.kind !== "suspended" && target.kind !== "insufficient" ? formatTargetLines(target, exercise?.equipment === "Haltères").join(" · ") : undefined;
+    target && target.kind !== "suspended" && target.kind !== "insufficient" ? formatTargetLines(target, exercise?.equipment === "Haltères", exercise?.measurementType === "reps_per_side" || exercise?.measurementType === "duration_per_side").join(" · ") : undefined;
   const doneSets = target ? workSetsOf(block) : [];
   const outcome =
     target && target.sets.length > 0 && (performed || doneSets.length >= target.sets.length)
@@ -277,7 +277,7 @@ export function ExerciseBlockCard({
               lastLine={lastTime ? formatLastSession(lastTime.allSeries, exercise?.equipment === "Haltères") : undefined}
               lastDate={lastTime ? formatDayMonth(lastTime.date) : undefined}
               outcome={outcome}
-              trackId={block.sourceBlockId}
+              trackId={target.routine ? undefined : block.sourceBlockId}
             />
           ) : (
             frameVersion && <FrameGoal block={block} frameVersion={frameVersion} lastTime={lastTime} />

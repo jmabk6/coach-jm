@@ -830,3 +830,15 @@
 .weight-goal .goal-actions__button {
   justify-self: start;
 }
+
+/* Programme V4 (lot L5) : une courbe par maintien de routine. */
+.goal-section .goal-hold + .goal-hold {
+  margin-top: 14px;
+}
+
+.goal-section .goal-hold h3 {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}

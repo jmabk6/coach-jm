@@ -80,6 +80,8 @@ export interface DayTarget {
   basisWorkoutId?: Id;
   /** Explication courte affichée avec l'objectif. */
   reason: string;
+  /** Programme V4 (lot L5) : objectif d'une routine du soir (suivi par exercice, sans perspective). */
+  routine?: true;
 }
 
 /** Une semaine de trajectoire ou de prévision : niveau estimé et forme lisible. */

@@ -119,13 +119,20 @@ export function workSetsOf(block: PerformedExerciseBlock): PerformedSet[] {
     .flatMap((series): PerformedSet[] => {
       const kg = series.load?.kind === "total" ? series.load.kg : series.load?.kind === "empty" ? 0 : series.load ? undefined : 0;
       if (kg === undefined) return [];
-      const reps = series.reps ?? 0;
+      /* Par côté (lot L5) : le côté le plus faible fait la série. */
+      const sides = series.sideValues ?? [];
+      const weakest = (values: Array<number | undefined>) => {
+        const known = values.filter((value): value is number => value !== undefined);
+        return known.length > 0 ? Math.min(...known) : undefined;
+      };
+      const reps = series.reps ?? weakest(sides.map((side) => side.reps)) ?? 0;
+      const durationSec = series.durationSec ?? weakest(sides.map((side) => side.durationSec));
       return [
         {
           kg,
           reps,
           ...(series.rpe !== undefined ? { rpe: series.rpe } : {}),
-          ...(series.durationSec !== undefined ? { durationSec: series.durationSec } : {}),
+          ...(durationSec !== undefined ? { durationSec } : {}),
           ...(series.repDurationsSec ? { repDurationsSec: [...series.repDurationsSec] } : {}),
         },
       ];
