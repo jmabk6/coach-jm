@@ -16,7 +16,7 @@ import { muscuTemplatesV4, seedProgramMuscuV4 } from "./seedProgramMuscuV4";
 
 /** Lot L3 (programme V4) : Muscu A, B et C de la V4, posées au dimanche d'activation. */
 
-const BEFORE = "2026-11-28T10:00:00.000Z";
+const BEFORE = "2026-11-01T10:00:00.000Z";
 const ACTIVATION = `${PROGRAM_V4_START}T08:00:00.000Z`;
 
 const ids = (template: SessionTemplate | undefined) => (template?.blocks ?? []).slice().sort((a, b) => a.position - b.position).map((block) => block.id);
@@ -125,7 +125,7 @@ describe("programme V4 — Muscu A, B, C (installation neuve)", () => {
   it("idempotent : un second passage ne change rien", async () => {
     await seedProgramMuscuV4(ACTIVATION);
     const once = { templates: await db.sessionTemplates.toArray(), tracks: await tracks(), frames: await db.strengthFrameVersions.toArray() };
-    await seedProgramMuscuV4("2026-11-30T08:00:00.000Z");
+    await seedProgramMuscuV4("2026-11-03T08:00:00.000Z");
     expect({ templates: await db.sessionTemplates.toArray(), tracks: await tracks(), frames: await db.strengthFrameVersions.toArray() }).toEqual(once);
   });
 

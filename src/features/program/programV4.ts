@@ -17,8 +17,8 @@ import type { Exercise, ExerciseBlock, ExerciseInstructions } from "../../domain
  * Rien ne s'applique avant `PROGRAM_V4_START` (Q1, Q6).
  */
 
-/** Dimanche d'activation de la V4 : provisoire, fixé à la validation finale (cible 29/11). */
-export const PROGRAM_V4_START = "2026-11-29";
+/** Jour d'activation de la V4 : lundi 02/11/2026 (décision de JM du 02/11, au lieu d'un dimanche). */
+export const PROGRAM_V4_START = "2026-11-02";
 
 /**
  * L'heure donnée aux seeds V4 au lancement. Sous Vitest, elle est figée
@@ -26,7 +26,7 @@ export const PROGRAM_V4_START = "2026-11-29";
  * quelle que soit la date du jour ; les tests de la V4 passent leur date.
  */
 export function v4SeedNow(): string {
-  return import.meta.env.MODE === "test" ? "2026-11-02T12:00:00.000Z" : new Date().toISOString();
+  return import.meta.env.MODE === "test" ? "2026-11-01T12:00:00.000Z" : new Date().toISOString();
 }
 
 const ISOLATION = 90;

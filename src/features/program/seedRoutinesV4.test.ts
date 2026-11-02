@@ -71,7 +71,7 @@ describe("programme V4 — routines du soir", () => {
   });
 
   it("avant le dimanche d'activation : rien ne change, aucun marqueur", async () => {
-    await seedRoutinesV4("2026-11-28T10:00:00.000Z");
+    await seedRoutinesV4("2026-11-01T10:00:00.000Z");
     expect(await db.sessionTemplates.get(ROUTINE_A_V4_ID)).toBeUndefined();
     expect((await db.sessionTemplates.get("v1-routine-a"))?.status).toBe("active");
     expect(await marker()).toBeUndefined();

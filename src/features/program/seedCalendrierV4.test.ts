@@ -19,7 +19,7 @@ import { seedRoutinesV4 } from "./seedRoutinesV4";
 
 /** Lot L4 (programme V4) : le calendrier V4, posé au dimanche d'activation. */
 
-const BEFORE = "2026-11-20T10:00:00.000Z";
+const BEFORE = "2026-10-28T10:00:00.000Z";
 const ACTIVATION = `${PROGRAM_V4_START}T08:00:00.000Z`;
 
 const marker = async () => ((await db.settings.get("install"))?.value as InstallMarkers | undefined)?.calendrierV4;
@@ -133,51 +133,53 @@ describe("programme V4 — calendrier (installation neuve)", () => {
 
   it("séances déjà générées : rien avant l'activation ne bouge ; après, seules les séances intactes suivent la V4", async () => {
     /* Semaines générées avec le programme actuel avant l'activation. */
-    for (const week of ["2026-11-22", "2026-11-29", "2026-12-06"]) await generateProgramWeek(week, BEFORE);
-    const moved = (await db.plannedSessions.get("weekly-2026-12-12"))!;
-    await db.plannedSessions.put({ ...moved, date: "2026-12-11", updatedAt: BEFORE });
-    const skipped = (await db.plannedSessions.get("weekly-2026-12-07"))!;
+    for (const week of ["2026-11-01", "2026-11-08"]) await generateProgramWeek(week, BEFORE);
+    const moved = (await db.plannedSessions.get("weekly-2026-11-14"))!;
+    await db.plannedSessions.put({ ...moved, date: "2026-11-13", updatedAt: BEFORE });
+    const skipped = (await db.plannedSessions.get("weekly-2026-11-09"))!;
     await db.plannedSessions.put({ ...skipped, status: "skipped", updatedAt: BEFORE });
-    const before = await between("2026-11-22", "2026-11-28");
+    /* Le dimanche 01/11, veille de l'activation : rien ne bouge. */
+    const before = await between("2026-11-01", "2026-11-01");
 
     await activate();
 
-    expect(await between("2026-11-22", "2026-11-28")).toEqual(before);
-    const after = await between("2026-11-29", "2026-12-12");
+    expect(await between("2026-11-01", "2026-11-01")).toEqual(before);
+    expect(byDay(before, "day")["2026-11-01"]).toBe("v2-muscu-a");
+    const after = await between("2026-11-02", "2026-11-14");
     expect(byDay(after, "day")).toEqual({
-      "2026-11-29": "v2-muscu-a", "2026-11-30": VELO_ENDURANCE_ID, "2026-12-01": "v2-muscu-b", "2026-12-02": VELO_COTES_ID, "2026-12-03": "v2-muscu-c",
-      "2026-12-06": "v2-muscu-a",
+      "2026-11-02": VELO_ENDURANCE_ID, "2026-11-03": "v2-muscu-b", "2026-11-04": VELO_COTES_ID, "2026-11-05": "v2-muscu-c",
+      "2026-11-08": "v2-muscu-a",
       /* Sautée par l'utilisateur : elle lui appartient. */
-      "2026-12-07": "v2-cardio-b",
-      "2026-12-08": "v2-muscu-b", "2026-12-09": VELO_COTES_ID, "2026-12-10": "v2-muscu-c",
+      "2026-11-09": "v2-cardio-b",
+      "2026-11-10": "v2-muscu-b", "2026-11-11": VELO_COTES_ID, "2026-11-12": "v2-muscu-c",
       /* Déplacée par l'utilisateur au vendredi : gardée. */
-      "2026-12-11": "v2-cardio-c",
+      "2026-11-13": "v2-cardio-c",
     });
-    expect(Object.keys(byDay(after, "evening")).sort()).toEqual(["2026-11-29", "2026-11-30", "2026-12-01", "2026-12-02", "2026-12-03", "2026-12-06", "2026-12-07", "2026-12-08", "2026-12-09", "2026-12-10"]);
-    expect(byDay(after, "evening")["2026-11-29"]).toBe("v4-routine-a");
+    expect(Object.keys(byDay(after, "evening")).sort()).toEqual(["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-08", "2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12"]);
+    expect(byDay(after, "evening")["2026-11-02"]).toBe("v4-routine-b");
     expectNoDuplicates(after);
 
     /* Une seconde génération ne recrée rien. */
-    for (const week of ["2026-12-06"]) await generateProgramWeek(week, ACTIVATION);
-    expectNoDuplicates(await between("2026-11-29", "2026-12-12"));
+    for (const week of ["2026-11-08"]) await generateProgramWeek(week, ACTIVATION);
+    expectNoDuplicates(await between("2026-11-01", "2026-11-14"));
   });
 
   it("semaine d'activation jamais générée : complétée à partir du jour de la bascule, sans séance passée", async () => {
     await activate();
-    const week = await between("2026-11-29", "2026-12-05");
-    expect(byDay(week, "day")).toEqual({ "2026-11-29": "v2-muscu-a", "2026-11-30": VELO_ENDURANCE_ID, "2026-12-01": "v2-muscu-b", "2026-12-02": VELO_COTES_ID, "2026-12-03": "v2-muscu-c" });
-    expect(byDay(week, "evening")["2026-11-29"]).toBe("v4-routine-a");
+    const week = await between("2026-11-01", "2026-11-07");
+    expect(byDay(week, "day")).toEqual({ "2026-11-02": VELO_ENDURANCE_ID, "2026-11-03": "v2-muscu-b", "2026-11-04": VELO_COTES_ID, "2026-11-05": "v2-muscu-c" });
+    expect(byDay(week, "evening")["2026-11-02"]).toBe("v4-routine-b");
     expectNoDuplicates(week);
   });
 
-  it("bascule un mardi (application ouverte en retard) : rien n'est créé avant ce mardi", async () => {
-    const tuesday = "2026-12-01T18:00:00.000Z";
+  it("bascule un jour plus tard (application ouverte en retard) : rien n'est créé avant ce mardi", async () => {
+    const tuesday = "2026-11-03T18:00:00.000Z";
     await activate(tuesday);
-    const week = await between("2026-11-29", "2026-12-05");
-    expect(Object.keys(byDay(week, "day")).sort()).toEqual(["2026-12-01", "2026-12-02", "2026-12-03"]);
+    const week = await between("2026-11-01", "2026-11-07");
+    expect(Object.keys(byDay(week, "day")).sort()).toEqual(["2026-11-03", "2026-11-04", "2026-11-05"]);
     /* Au lancement suivant, rien n'est recréé. */
-    await seedCalendrierV4("2026-12-02T08:00:00.000Z");
-    expectNoDuplicates(await between("2026-11-29", "2026-12-05"));
+    await seedCalendrierV4("2026-11-04T08:00:00.000Z");
+    expectNoDuplicates(await between("2026-11-01", "2026-11-07"));
   });
 
   it("plannedSessionsV4 : une séance démarrée, faite, retirée, ajoutée à la main ou avec un test n'est jamais touchée", () => {
@@ -189,7 +191,7 @@ describe("programme V4 — calendrier (installation neuve)", () => {
       { ...base, id: "d", date: "2026-12-05", sessionTemplateId: "v2-cardio-c", source: "manual" },
       { ...base, id: "e", date: "2026-12-23", sourceDate: "2026-12-23", sessionTemplateId: "v2-cardio-a", tests: [{ protocolId: "p", placement: "replace_block" }] },
       { ...base, id: "f", date: "2026-12-04", sourceDate: "2026-12-04", sessionTemplateId: "v1-routine-b", slot: "evening" },
-      { ...base, id: "g", date: "2026-11-28", sourceDate: "2026-11-28", sessionTemplateId: "v2-cardio-c" },
+      { ...base, id: "g", date: "2026-10-31", sourceDate: "2026-10-31", sessionTemplateId: "v2-cardio-c" },
     ];
     expect(plannedSessionsV4(sessions, ACTIVATION)).toEqual({ deleteIds: ["a", "f"], updates: [] });
   });
