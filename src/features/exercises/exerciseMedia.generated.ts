@@ -50,6 +50,15 @@ export const exerciseMedia = {
       "media/exercises/core/crunch-poulie-frame3.81ff2b60.webp",
     ],
   },
+  "curl-biceps-poulie": {
+    thumbnail: "media/exercises/bras/curl-biceps-poulie-thumb.6db75692.webp",
+    photo: "media/exercises/bras/curl-biceps-poulie.a2cc1230.webp",
+    frames: [
+      "media/exercises/bras/curl-biceps-poulie-frame1.d3f8f1eb.webp",
+      "media/exercises/bras/curl-biceps-poulie-frame2.7bf8d2ab.webp",
+      "media/exercises/bras/curl-biceps-poulie-frame3.8ff408bb.webp",
+    ],
+  },
   "curl-halteres": {
     thumbnail: "media/exercises/bras/curl-halteres-thumb.ff8243bc.webp",
     photo: "media/exercises/bras/curl-halteres.a024e126.webp",
@@ -176,6 +185,24 @@ export const exerciseMedia = {
       "media/exercises/epaules/face-pull-frame3.1ac65f0e.webp",
     ],
   },
+  "glisses-mur": {
+    thumbnail: "media/exercises/mobilite/glisses-mur-thumb.0a440019.webp",
+    photo: "media/exercises/mobilite/glisses-mur.5cf8f556.webp",
+    frames: [
+      "media/exercises/mobilite/glisses-mur-frame1.d2b79b5b.webp",
+      "media/exercises/mobilite/glisses-mur-frame2.befbcb73.webp",
+      "media/exercises/mobilite/glisses-mur-frame3.a6050378.webp",
+    ],
+  },
+  "hanches-90-90": {
+    thumbnail: "media/exercises/mobilite/hanches-90-90-thumb.ee2b190f.webp",
+    photo: "media/exercises/mobilite/hanches-90-90.152f17a8.webp",
+    frames: [
+      "media/exercises/mobilite/hanches-90-90-frame1.7733bbd5.webp",
+      "media/exercises/mobilite/hanches-90-90-frame2.9e35f85f.webp",
+      "media/exercises/mobilite/hanches-90-90-frame3.01d9888c.webp",
+    ],
+  },
   "hip-thrust": {
     thumbnail: "media/exercises/jambes/hip-thrust-thumb.e27b684a.webp",
     photo: "media/exercises/jambes/hip-thrust.98c913dd.webp",
@@ -228,6 +255,15 @@ export const exerciseMedia = {
       "media/exercises/mobilite/import-rotation-dos-allonge-frame1.cc49bc8d.webp",
       "media/exercises/mobilite/import-rotation-dos-allonge-frame2.34b530f4.webp",
       "media/exercises/mobilite/import-rotation-dos-allonge-frame3.a268c93c.webp",
+    ],
+  },
+  "ischio-sangle": {
+    thumbnail: "media/exercises/mobilite/ischio-sangle-thumb.f1f12fa6.webp",
+    photo: "media/exercises/mobilite/ischio-sangle.629b589a.webp",
+    frames: [
+      "media/exercises/mobilite/ischio-sangle-frame1.0bf65ca9.webp",
+      "media/exercises/mobilite/ischio-sangle-frame2.161b628e.webp",
+      "media/exercises/mobilite/ischio-sangle-frame3.3d495915.webp",
     ],
   },
   "leg-curl-assis": {
@@ -347,6 +383,15 @@ export const exerciseMedia = {
       "media/exercises/jambes/montee-banc-frame3.1a7864a1.webp",
     ],
   },
+  "pallof-elastique": {
+    thumbnail: "media/exercises/core/pallof-elastique-thumb.17d0853a.webp",
+    photo: "media/exercises/core/pallof-elastique.29dab800.webp",
+    frames: [
+      "media/exercises/core/pallof-elastique-frame1.accd8178.webp",
+      "media/exercises/core/pallof-elastique-frame2.e424a3ce.webp",
+      "media/exercises/core/pallof-elastique-frame3.0f1836a4.webp",
+    ],
+  },
   "pallof-press": {
     thumbnail: "media/exercises/core/pallof-press-thumb.d8add18d.webp",
     photo: "media/exercises/core/pallof-press.203dbe73.webp",
@@ -417,6 +462,15 @@ export const exerciseMedia = {
       "media/exercises/cardio/rameur-frame1.d5d02c5d.webp",
       "media/exercises/cardio/rameur-frame2.94b54656.webp",
       "media/exercises/cardio/rameur-frame3.861a8fab.webp",
+    ],
+  },
+  "rotation-thoracique-allongee": {
+    thumbnail: "media/exercises/mobilite/rotation-thoracique-allongee-thumb.0eae40b2.webp",
+    photo: "media/exercises/mobilite/rotation-thoracique-allongee.be868e9a.webp",
+    frames: [
+      "media/exercises/mobilite/rotation-thoracique-allongee-frame1.a2ac0f80.webp",
+      "media/exercises/mobilite/rotation-thoracique-allongee-frame2.95fb98ec.webp",
+      "media/exercises/mobilite/rotation-thoracique-allongee-frame3.d2a41287.webp",
     ],
   },
   "rowing-haltere-unilateral": {

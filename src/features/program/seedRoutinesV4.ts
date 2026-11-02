@@ -1,7 +1,7 @@
 import { db } from "../../db/database";
 import type { Goal, InstallMarkers, SessionTemplate, TestProtocolVersion } from "../../domain";
 import { formatLocalDate } from "../../domain/rules/programRules";
-import { coreGoalV4, flexibilityGoalV4, routineExercisesV4, ROUTINES_V1_IDS, ROUTINES_V4_TEMPLATES, SOUPLESSE_V4, TRONC_V4 } from "./programRoutinesV4";
+import { coreGoalV4, EPAULE_BLOCK_ID, EXTENSION_BLOCK_ID, EXTENSION_HAUT_DOS_ID, flexibilityGoalV4, ROUTINE_B_V4_ID, routineExercisesV4, ROUTINES_V1_IDS, ROUTINES_V4_TEMPLATES, SOUPLESSE_V4, TRONC_V4 } from "./programRoutinesV4";
 import { PROGRAM_V4_START } from "./programV4";
 
 /**
@@ -71,5 +71,30 @@ export async function seedRoutinesV4(now: string = new Date().toISOString()): Pr
     if (core) await db.goals.put(coreGoalV4(core, now));
 
     await db.settings.put({ key: "install", value: { ...install, routinesV4: now } });
+  });
+}
+
+/**
+ * Seed 53 (02/11/2026) — Routine B V4 : l'extension du haut du dos (que JM
+ * n'aime pas) est remplacée par l'étirement de l'épaule, main dans le dos
+ * (2 × 30 s par côté), à la même place ; l'objectif Souplesse suit. Rien si
+ * la routine n'a plus cette brique. Les séances faites ne bougent pas.
+ */
+export async function seedRoutineBEpaule20261102(now: string = new Date().toISOString()): Promise<void> {
+  await db.transaction("rw", [db.sessionTemplates, db.goals, db.settings], async () => {
+    const install = (await db.settings.get("install"))?.value as InstallMarkers | undefined;
+    if (install?.routineBEpaule20261102 !== undefined) return;
+    const definition = ROUTINES_V4_TEMPLATES.find((item) => item.id === ROUTINE_B_V4_ID)!;
+    const replacement = definition.blocks.find((block) => block.id === EPAULE_BLOCK_ID)!;
+    const routine = (await db.sessionTemplates.get(ROUTINE_B_V4_ID)) as SessionTemplate | undefined;
+    if (routine && routine.blocks.some((block) => block.id === EXTENSION_BLOCK_ID)) {
+      const blocks = routine.blocks.map((block) => (block.id === EXTENSION_BLOCK_ID ? { ...structuredClone(replacement), position: block.position } : block));
+      await db.sessionTemplates.put({ ...routine, blocks, updatedAt: now });
+    }
+    const flexibility = (await db.goals.where("key").equals("flexibility").first()) as Goal | undefined;
+    if (flexibility && flexibility.linkedExercises.some((link) => link.exerciseId === EXTENSION_HAUT_DOS_ID)) {
+      await db.goals.put({ ...flexibility, linkedExercises: flexibility.linkedExercises.map((link) => (link.exerciseId === EXTENSION_HAUT_DOS_ID ? { exerciseId: "etirement-epaule-main-dos" } : link)), updatedAt: now });
+    }
+    await db.settings.put({ key: "install", value: { ...install, routineBEpaule20261102: now } });
   });
 }

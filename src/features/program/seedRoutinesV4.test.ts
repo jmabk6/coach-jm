@@ -14,7 +14,7 @@ import { PROGRAM_V4_START } from "./programV4";
 import { ROUTINE_A_V4_ID, ROUTINE_B_V4_ID, ROUTINE_C_V4_ID } from "./programRoutinesV4";
 import { seedCalendrierV4 } from "./seedCalendrierV4";
 import { seedProgramMuscuV4 } from "./seedProgramMuscuV4";
-import { seedRoutinesV4 } from "./seedRoutinesV4";
+import { seedRoutineBEpaule20261102, seedRoutinesV4 } from "./seedRoutinesV4";
 import { holdCurveOf } from "../goals/goalDetail";
 import type { Goal, TestProtocolVersion } from "../../domain";
 
@@ -84,7 +84,7 @@ describe("programme V4 — routines du soir", () => {
       ["dead-bug", 3], ["planche", 3], ["planche-laterale", 3], ["pallof-elastique", 3], ["bird-dog", 2], ["mobilite-flechisseur-hanche", 2],
     ]);
     expect(exercisesOf(b).map((block) => block.exerciseId)).toEqual([
-      "mobilite-flechisseur-hanche", "ischio-sangle", "hanches-90-90", "rotation-thoracique-allongee", "mobilite-ouverture-epaules-mur", "glisses-mur", "extension-haut-dos", "papillon-assis",
+      "mobilite-flechisseur-hanche", "ischio-sangle", "hanches-90-90", "rotation-thoracique-allongee", "mobilite-ouverture-epaules-mur", "glisses-mur", "etirement-epaule-main-dos", "papillon-assis",
     ]);
     expect(exercisesOf(c).map((block) => block.exerciseId)).toEqual(["dead-bug", "planche-laterale", "ischio-sangle", "mobilite-flechisseur-hanche", "rotation-thoracique-allongee"]);
     const absSets = (template: SessionTemplate | undefined) =>
@@ -146,6 +146,25 @@ describe("programme V4 — routines du soir", () => {
     const deadBugExercise = (await db.exercises.get("dead-bug"))!;
     await db.exercises.put({ ...deadBugExercise, clearance: { status: "suspendu", since: ACTIVATION } });
     expect(routineDayTarget("v4-routine-c-dead-bug", "2026-12-01", await loadDayTargetContext([done]), "n")).toBeUndefined();
+  });
+
+  it("seed 53 : sur une Routine B déjà installée avec l'extension du haut du dos, l'étirement main dans le dos prend sa place ; l'objectif Souplesse suit", async () => {
+    await seedRoutinesV4(ACTIVATION);
+    const b = (await db.sessionTemplates.get(ROUTINE_B_V4_ID))!;
+    const old = { id: "v4-routine-b-extension", kind: "exercise" as const, position: 6, exerciseId: "extension-haut-dos", instructions: { shape: "duration" as const, sets: 2, durationSec: 30, restBetweenSetsSec: 15 } };
+    await db.sessionTemplates.put({ ...b, blocks: b.blocks.map((block) => (block.id === "v4-routine-b-epaule" ? old : block)) });
+    const goal = (await db.goals.where("key").equals("flexibility").first())!;
+    await db.goals.put({ ...goal, linkedExercises: goal.linkedExercises.map((link) => (link.exerciseId === "etirement-epaule-main-dos" ? { exerciseId: "extension-haut-dos" } : link)) });
+    const install = (await db.settings.get("install"))!.value as InstallMarkers;
+    delete install.routineBEpaule20261102;
+    await db.settings.put({ key: "install", value: install });
+
+    await seedRoutineBEpaule20261102(ACTIVATION);
+    const after = (await db.sessionTemplates.get(ROUTINE_B_V4_ID))!;
+    expect(exercisesOf(after).map((block) => block.exerciseId)).toContain("etirement-epaule-main-dos");
+    expect(exercisesOf(after).map((block) => block.exerciseId)).not.toContain("extension-haut-dos");
+    expect(after.blocks.find((block) => block.id === "v4-routine-b-epaule")).toMatchObject({ position: 6, instructions: { sets: 2, durationSec: 30 } });
+    expect((await db.goals.where("key").equals("flexibility").first())!.linkedExercises.map((link) => link.exerciseId)).toContain("etirement-epaule-main-dos");
   });
 
   it("indicateurs : Souplesse (mains dans le dos, papillon, ischio allongé en degrés ; doigts-sol facultatif) et Tronc (planche latérale facultative) ; objectifs mis à jour", async () => {

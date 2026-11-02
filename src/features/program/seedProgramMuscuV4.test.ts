@@ -41,7 +41,8 @@ describe("programme V4 — Muscu A, B, C (installation neuve)", () => {
     const before = await db.sessionTemplates.bulkGet(["v2-muscu-a", "v2-muscu-b", "v2-muscu-c"]);
     await seedProgramMuscuV4(BEFORE);
     expect(await db.sessionTemplates.bulkGet(["v2-muscu-a", "v2-muscu-b", "v2-muscu-c"])).toEqual(before);
-    expect(await db.exercises.get(CURL_POULIE_ID)).toBeUndefined();
+    /* Le curl poulie est au catalogue (pour ses images) : présent, mais absent des séances avant la V4. */
+    expect(before.some((template) => template!.blocks.some((block) => block.kind === "exercise" && block.exerciseId === CURL_POULIE_ID))).toBe(false);
     expect(await marker()).toBeUndefined();
   });
 

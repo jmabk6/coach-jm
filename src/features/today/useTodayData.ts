@@ -37,44 +37,24 @@ import {
   listNextPlannedSessions,
   type TodayState,
 } from "../../domain/rules/todayRules";
-import { generateProgramWeek, loadTestPlan } from "../program/generateProgramWeek";
-import { isTestWeek } from "../../domain/rules/testCycleRules";
-import { isSuspended, type TestPlan } from "../../domain/rules/testPlanRules";
-import { PADEL_ID, PADEL_TEST_EVE_WARNING } from "../program/programCalendarV4";
+import { generateProgramWeek } from "../program/generateProgramWeek";
 
-/** Une séance facultative du jour (programme V4 : padel et récupération du samedi). */
+/** Une séance facultative du jour (programme V4 : la récupération douce du samedi). */
 export interface OptionalSession {
   template: SessionTemplate;
-  /** Avertissement (padel la veille d'un test traction). */
-  warning?: string;
 }
 
-/** Vrai si un test traction est prévu le lendemain de `today` (semaine de tests, protocole actif, non suspendu). */
-export function tractionTestTomorrow(today: string, plan: TestPlan | undefined): boolean {
-  if (!plan || !plan.protocolIdByKey.has("traction")) return false;
-  const tomorrow = formatLocalDate(addDays(parseISO(today), 1));
-  if (!isTestWeek(getWeekStartDate(tomorrow), plan.cycle)) return false;
-  return plan.schedule.some((entry) => entry.protocolKey === "traction" && entry.slot === "day" && entry.weekday === getWeekdayOf(tomorrow) && !isSuspended(entry, tomorrow));
-}
-
-/**
- * Les séances facultatives d'aujourd'hui (règle hebdomadaire V4), sauf
- * celles déjà faites aujourd'hui ; la carte Padel porte l'avertissement de
- * la veille d'un test traction.
- */
+/** Les séances facultatives d'aujourd'hui (règle hebdomadaire V4), sauf celles déjà faites ou en cours aujourd'hui. */
 export function optionalSessionsFor(
-  today: string,
   optionalIds: ReadonlyArray<Id>,
   templateById: ReadonlyMap<Id, SessionTemplate>,
-  workoutsToday: ReadonlyArray<Pick<WorkoutSession, "sessionTemplateId" | "status">>,
-  plan: TestPlan | undefined,
+  workoutsToday: ReadonlyArray<Pick<WorkoutSession, "sessionTemplateId">>,
 ): OptionalSession[] {
-  const eve = tractionTestTomorrow(today, plan);
   return optionalIds.flatMap((id): OptionalSession[] => {
     const template = templateById.get(id);
     if (!template || template.status !== "active") return [];
     if (workoutsToday.some((workout) => workout.sessionTemplateId === id)) return [];
-    return [{ template, ...(eve && id === PADEL_ID ? { warning: PADEL_TEST_EVE_WARNING } : {}) }];
+    return [{ template }];
   });
 }
 
@@ -94,7 +74,7 @@ export interface TodayData {
   testNameById: Map<Id, string>;
   /** Séance terminée, pas encore enregistrée : elle n'empêche pas d'en démarrer une autre. */
   pendingWorkout?: WorkoutSession;
-  /** Programme V4 : séances facultatives du jour (samedi : padel, récupération). */
+  /** Programme V4 : séances facultatives du jour (samedi : récupération douce). */
   optional: OptionalSession[];
   /**
    * Durée d'un modèle et nombre de réalisations qui la fondent,
@@ -150,7 +130,6 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
           pendingWorkout,
           testNameById,
           program,
-          testPlan,
         ] = await Promise.all([
           getPlannedSessionsByDate(today),
           getPlannedSessionsBetween(shiftDate(today, 1), horizonEnd),
@@ -162,7 +141,6 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
           getPendingWorkout(),
           loadTestNames(),
           getWeeklyProgram(),
-          loadTestPlan(),
         ]);
 
         if (cancelled) return;
@@ -198,7 +176,7 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
             today,
           ),
           testNameById,
-          optional: optionalSessionsFor(today, program?.optionalByWeekday?.[getWeekdayOf(today)] ?? [], templateById, workoutsToday, testPlan),
+          optional: optionalSessionsFor(program?.optionalByWeekday?.[getWeekdayOf(today)] ?? [], templateById, workoutsToday),
           ...(pendingWorkout ? { pendingWorkout } : {}),
           templateById,
           exerciseById: new Map(

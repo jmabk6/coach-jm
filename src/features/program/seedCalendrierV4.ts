@@ -10,7 +10,7 @@ import {
   openBookExercise,
   OPTIONAL_BY_WEEKDAY_V4,
   PADEL_EXERCISE_ID,
-  padelExercise,
+  PADEL_ID,
   PROGRAM_V4_DAYS,
   testScheduleV4,
 } from "./programCalendarV4";
@@ -21,13 +21,13 @@ import { PROGRAM_V4_START } from "./programV4";
  * d'activation seulement** : avant, il ne fait rien et sera retenté au
  * lancement suivant (aucun marqueur posé).
  *
- * - Modèles créés : vélo endurance, vélo côtes, padel, récupération douce
- *   (et les exercices padel et rotation thoracique allongée).
+ * - Modèles créés : vélo endurance, vélo côtes, récupération douce (et
+ *   l'exercice rotation thoracique allongée).
  * - Cardio B et Cardio C archivés (historique conservé) ; Cardio A reste
  *   pour le test cardio sur tapis des semaines de tests.
  * - Règle hebdomadaire V4 : un modèle par jour, une routine par soir
- *   (vendredi et samedi sans routine), samedi sans séance prévue, padel et
- *   récupération proposés le samedi.
+ *   (vendredi et samedi sans routine), samedi sans séance prévue, récupération
+ *   proposée le samedi.
  * - Calendrier des tests : le test cardio prend la place du vélo côtes.
  * - Séances déjà générées **à partir du dimanche d'activation** : celles
  *   que la règle a créées et que personne n'a touchées suivent la V4 (ou
@@ -94,7 +94,6 @@ export async function seedCalendrierV4(now: string = new Date().toISOString()): 
     const install = (await db.settings.get("install"))?.value as InstallMarkers | undefined;
     if (install?.calendrierV4 !== undefined) return;
 
-    if (!(await db.exercises.get(PADEL_EXERCISE_ID))) await db.exercises.add(padelExercise(now));
     if (!(await db.exercises.get(OPEN_BOOK_EXERCISE_ID))) await db.exercises.add(openBookExercise(now));
 
     const templates = (await db.sessionTemplates.toArray()) as SessionTemplate[];
@@ -130,4 +129,27 @@ export async function seedCalendrierV4(now: string = new Date().toISOString()): 
   /* La semaine d'activation, si elle n'avait pas encore été générée : complétée à partir d'aujourd'hui
      (jamais de séance « manquée » dans le passé) ; une séance déjà là n'est jamais recréée. */
   if (getWeekStartDate(today) === getWeekStartDate(PROGRAM_V4_START)) await generateProgramWeek(getWeekStartDate(today), now, today);
+}
+
+/**
+ * Seed 54 (02/11/2026) — le padel retiré : JM joue à part, au hasard. La
+ * séance Padel et l'exercice sont archivés (rien n'est supprimé), la carte
+ * du samedi disparaît ; la récupération douce reste proposée.
+ */
+export async function seedSansPadel20261102(now: string = new Date().toISOString()): Promise<void> {
+  await db.transaction("rw", [db.sessionTemplates, db.exercises, db.weeklyPrograms, db.settings], async () => {
+    const install = (await db.settings.get("install"))?.value as InstallMarkers | undefined;
+    if (install?.sansPadel20261102 !== undefined) return;
+    const template = (await db.sessionTemplates.get(PADEL_ID)) as SessionTemplate | undefined;
+    if (template && template.status !== "archived") await db.sessionTemplates.put({ ...template, status: "archived", updatedAt: now });
+    const exercise = await db.exercises.get(PADEL_EXERCISE_ID);
+    if (exercise && exercise.status !== "archived") await db.exercises.put({ ...exercise, status: "archived", updatedAt: now });
+    const program = (await db.weeklyPrograms.toArray())[0] as WeeklyProgram | undefined;
+    const optional = program?.optionalByWeekday;
+    if (program && optional && Object.values(optional).some((ids) => ids?.includes(PADEL_ID))) {
+      const cleaned = Object.fromEntries(Object.entries(optional).map(([day, ids]) => [day, (ids ?? []).filter((id) => id !== PADEL_ID)]));
+      await db.weeklyPrograms.put({ ...program, optionalByWeekday: cleaned, updatedAt: now });
+    }
+    await db.settings.put({ key: "install", value: { ...install, sansPadel20261102: now } });
+  });
 }

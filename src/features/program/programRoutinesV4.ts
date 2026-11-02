@@ -27,6 +27,10 @@ export const ISCHIO_SANGLE_ID = "ischio-sangle";
 export const HANCHES_90_90_ID = "hanches-90-90";
 export const GLISSES_MUR_ID = "glisses-mur";
 export const EXTENSION_HAUT_DOS_ID = "extension-haut-dos";
+/** Étirement de l'épaule, main dans le dos (catalogue) : remplace l'extension du haut du dos dans la Routine B (02/11/2026). */
+export const EPAULE_MAIN_DOS_ID = "etirement-epaule-main-dos";
+export const EPAULE_BLOCK_ID = "v4-routine-b-epaule";
+export const EXTENSION_BLOCK_ID = "v4-routine-b-extension";
 
 /* -------------------------------------------------------------------------- */
 /* Exercices créés                                                            */
@@ -129,6 +133,7 @@ export const ROUTINE_PROGRESSIONS: Readonly<Record<string, RoutineProgression>> 
   "mobilite-ouverture-epaules-mur": { measure: "duration", step: 5, max: 60 },
   [GLISSES_MUR_ID]: { measure: "reps", step: 1, max: 15 },
   [EXTENSION_HAUT_DOS_ID]: { measure: "duration", step: 5, max: 45 },
+  [EPAULE_MAIN_DOS_ID]: { measure: "duration", step: 5, max: 60 },
   "papillon-assis": { measure: "duration", step: 10, max: 90 },
 };
 
@@ -187,7 +192,8 @@ const routineB: TemplateContent = {
     block("v4-routine-b-open-book", 3, OPEN_BOOK_EXERCISE_ID, reps(2, 8, STRETCH_REST), `Par côté, lentement, genoux collés au sol. ${PAIN}`),
     block("v4-routine-b-pectoraux", 4, "mobilite-ouverture-epaules-mur", hold(2, 45, STRETCH_REST), `Par côté, épaule détendue, sans forcer l'amplitude. ${PAIN}`),
     block("v4-routine-b-glisses", 5, GLISSES_MUR_ID, reps(2, 10, STRETCH_REST), `Dos et poignets contre le mur. ${PAIN}`),
-    block("v4-routine-b-extension", 6, EXTENSION_HAUT_DOS_ID, hold(2, 30, STRETCH_REST), `Le bas du dos ne bouge pas. ${PAIN}`),
+    /* 02/11/2026 : à la place de l'extension du haut du dos (JM ne l'aime pas) ; travaille la mesure « mains dans le dos ». */
+    block(EPAULE_BLOCK_ID, 6, EPAULE_MAIN_DOS_ID, hold(2, 30, STRETCH_REST), `Par côté, épaules basses, sans tirer fort sur le poignet. ${PAIN}`),
     block("v4-routine-b-papillon", 7, "papillon-assis", hold(1, 60, 0), `Dos droit, sans appuyer sur les genoux. ${PAIN}`),
   ],
 };
@@ -284,7 +290,7 @@ export function flexibilityGoalV4(goal: Goal, now: string): Goal {
       { kind: "test_measure", protocolId: "protocol-souplesse", measureKey: "papillon_cm" },
       { kind: "test_measure", protocolId: "protocol-souplesse", measureKey: "doigts_sol_cm" },
     ],
-    linkedExercises: ["mobilite-flechisseur-hanche", ISCHIO_SANGLE_ID, HANCHES_90_90_ID, OPEN_BOOK_EXERCISE_ID, "mobilite-ouverture-epaules-mur", GLISSES_MUR_ID, EXTENSION_HAUT_DOS_ID, "papillon-assis"].map((exerciseId) => ({ exerciseId })),
+    linkedExercises: ["mobilite-flechisseur-hanche", ISCHIO_SANGLE_ID, HANCHES_90_90_ID, OPEN_BOOK_EXERCISE_ID, "mobilite-ouverture-epaules-mur", GLISSES_MUR_ID, EPAULE_MAIN_DOS_ID, "papillon-assis"].map((exerciseId) => ({ exerciseId })),
     updatedAt: now,
   };
 }

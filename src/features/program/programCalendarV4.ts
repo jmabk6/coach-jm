@@ -12,10 +12,10 @@ import { PROGRAM_V4_START } from "./programV4";
  * | Mercredi  | Vélo côtes               | Routine A                    |
  * | Jeudi     | Muscu C                  | Routine B                    |
  * | Vendredi  | repos                    | rien                         |
- * | Samedi    | padel facultatif         | récupération facultative     |
+ * | Samedi    | libre                    | récupération facultative     |
  *
- * Le samedi n'a **aucune séance prévue** (Q4) : l'Accueil propose padel et
- * récupération. En semaine de tests, le test cardio sur tapis (Cardio A)
+ * Le samedi n'a **aucune séance prévue** (Q4) : l'Accueil propose la
+ * récupération douce. Le padel est retiré (02/11/2026). En semaine de tests, le test cardio sur tapis (Cardio A)
  * remplace le vélo côtes du mercredi. Rien ne change avant
  * `PROGRAM_V4_START`.
  */
@@ -46,38 +46,17 @@ export const PROGRAM_V4_DAYS: WeeklyProgram["days"] = [
   { weekday: "saturday" },
 ];
 
-export const OPTIONAL_BY_WEEKDAY_V4: Partial<Record<Weekday, string[]>> = { saturday: [PADEL_ID, RECUPERATION_ID] };
+export const OPTIONAL_BY_WEEKDAY_V4: Partial<Record<Weekday, string[]>> = { saturday: [RECUPERATION_ID] };
 
 /** Anciens cardios archivés à l'activation (historique conservé). Cardio A reste : c'est le support du test cardio sur tapis. */
 export const ARCHIVED_TEMPLATES_V4 = ["v2-cardio-b", "v2-cardio-c"] as const;
 
-/** Avertissement de la carte Padel la veille d'un test traction (spec § 2.6). */
-export const PADEL_TEST_EVE_WARNING = "Test traction demain : garde de la fraîcheur pour les bras et le dos.";
-
-export const PADEL_NOTE_PREFILL = "Fatigue jambes : …/10 · Rester bas : facile / moyen / difficile · Douleur : aucune / genou / dos — ";
 
 const KNEE = "Douleur au genou : arrêt.";
 
 /* -------------------------------------------------------------------------- */
 /* Exercices                                                                  */
 /* -------------------------------------------------------------------------- */
-
-export function padelExercise(now: string): Exercise {
-  return {
-    id: PADEL_EXERCISE_ID,
-    name: "Padel",
-    category: "Cardio",
-    equipment: "Poids du corps",
-    location: "Salle",
-    mode: "series",
-    measurementType: "duration",
-    description: "Partie de padel, enregistrée en durée avec le ressenti et une note sur les jambes et les douleurs.",
-    advice: "Échauffe-toi quelques minutes avant de jouer. Arrête en cas de douleur au genou ou au dos.",
-    status: "active",
-    createdAt: now,
-    updatedAt: now,
-  };
-}
 
 /** Rotation thoracique allongée (« open book ») : aussi utilisée par les routines V4 (lot L5). */
 export function openBookExercise(now: string): Exercise {
@@ -169,27 +148,6 @@ const veloCotes: TemplateContent = {
   ],
 };
 
-const padel: TemplateContent = {
-  id: PADEL_ID,
-  name: "Padel",
-  category: "Cardio",
-  subtitle: "Partie facultative du samedi",
-  tags: ["Padel"],
-  description: "Facultatif : seulement quand tu joues.",
-  contentSince: PROGRAM_V4_START,
-  notePrefill: PADEL_NOTE_PREFILL,
-  blocks: [
-    {
-      id: "v4-padel-partie",
-      kind: "exercise",
-      position: 0,
-      exerciseId: PADEL_EXERCISE_ID,
-      instructions: { shape: "duration", sets: 1, durationSec: { min: 3600, max: 5400 }, restBetweenSetsSec: 0 },
-      notes: `Note la durée de la partie. À l'enregistrement : le ressenti, puis complète la note (fatigue des jambes, rester bas, douleur). ${KNEE}`,
-    },
-  ],
-};
-
 const stretch = (id: string, position: number, exerciseId: string, durationSec: number, notes: string): ExerciseBlock => ({
   id,
   kind: "exercise",
@@ -223,7 +181,7 @@ const recuperation: TemplateContent = {
   ],
 };
 
-export const CALENDAR_V4_TEMPLATES: readonly TemplateContent[] = [veloEndurance, veloCotes, padel, recuperation];
+export const CALENDAR_V4_TEMPLATES: readonly TemplateContent[] = [veloEndurance, veloCotes, recuperation];
 
 /** Place des tests en V4 : le test cardio sur tapis (Cardio A) prend la place du vélo côtes du mercredi. */
 export function testScheduleV4(schedule: ReadonlyArray<TestScheduleEntry>): TestScheduleEntry[] {

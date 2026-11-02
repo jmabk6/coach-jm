@@ -140,6 +140,10 @@ export interface InstallMarkers {
   calendrierV4?: string;
   /** Seed 52 (programme V4, lot L5) : routines du soir V4, posées à partir du dimanche d'activation. */
   routinesV4?: string;
+  /** Seed 53 : Routine B V4, l'étirement de l'épaule main dans le dos à la place de l'extension du haut du dos. */
+  routineBEpaule20261102?: string;
+  /** Seed 54 : le padel retiré (séance et exercice archivés, plus de carte le samedi). */
+  sansPadel20261102?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */

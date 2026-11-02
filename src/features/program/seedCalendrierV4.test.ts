@@ -9,11 +9,11 @@ import { readBackup, serializeBackup } from "../backup/exportBackup";
 import { resetAndRestore } from "../backup/resetAndRestore";
 import { parseBackup, restoreBackup } from "../backup/restoreBackup";
 import { resumeSeedsForTests, runSeeds, SEEDS } from "../seed/runSeeds";
-import { optionalSessionsFor, tractionTestTomorrow } from "../today/useTodayData";
+import { optionalSessionsFor } from "../today/useTodayData";
 import { generateProgramWeek, loadTestPlan } from "./generateProgramWeek";
-import { PADEL_ID, PADEL_TEST_EVE_WARNING, RECUPERATION_ID, VELO_COTES_ID, VELO_ENDURANCE_ID } from "./programCalendarV4";
+import { PADEL_EXERCISE_ID, PADEL_ID, RECUPERATION_ID, VELO_COTES_ID, VELO_ENDURANCE_ID } from "./programCalendarV4";
 import { PROGRAM_V4_START } from "./programV4";
-import { plannedSessionsV4, seedCalendrierV4 } from "./seedCalendrierV4";
+import { plannedSessionsV4, seedCalendrierV4, seedSansPadel20261102 } from "./seedCalendrierV4";
 import { seedProgramMuscuV4 } from "./seedProgramMuscuV4";
 import { seedRoutinesV4 } from "./seedRoutinesV4";
 
@@ -81,10 +81,13 @@ describe("programme V4 — calendrier (installation neuve)", () => {
       ["thursday", "v2-muscu-c"], ["friday", undefined], ["saturday", undefined],
     ]);
     expect(rule.eveningByWeekday).toEqual({ sunday: "v4-routine-a", monday: "v4-routine-b", tuesday: "v4-routine-c", wednesday: "v4-routine-a", thursday: "v4-routine-b" });
-    expect(rule.optionalByWeekday).toEqual({ saturday: [PADEL_ID, RECUPERATION_ID] });
+    expect(rule.optionalByWeekday).toEqual({ saturday: [RECUPERATION_ID] });
     expect(rule.eveningRotation).toBeUndefined();
 
-    for (const id of [VELO_ENDURANCE_ID, VELO_COTES_ID, PADEL_ID, RECUPERATION_ID]) expect((await db.sessionTemplates.get(id))?.status).toBe("active");
+    for (const id of [VELO_ENDURANCE_ID, VELO_COTES_ID, RECUPERATION_ID]) expect((await db.sessionTemplates.get(id))?.status).toBe("active");
+    /* Padel retiré le 02/11 : ni séance ni exercice créés. */
+    expect(await db.sessionTemplates.get(PADEL_ID)).toBeUndefined();
+    expect(await db.exercises.get(PADEL_EXERCISE_ID)).toBeUndefined();
     expect((await db.sessionTemplates.get("v2-cardio-b"))?.status).toBe("archived");
     expect((await db.sessionTemplates.get("v2-cardio-c"))?.status).toBe("archived");
     expect((await db.sessionTemplates.get("v2-cardio-a"))?.status).toBe("active");
@@ -96,7 +99,6 @@ describe("programme V4 — calendrier (installation neuve)", () => {
     /* Les autres tests ne bougent pas (pari V6 : le test traction). */
     expect(schedule.filter((entry) => entry.protocolKey !== "cardio")).toEqual(scheduleBefore.filter((entry) => entry.protocolKey !== "cardio"));
     expect((await db.goals.where("key").equals("cardio").first())?.linkedExercises.map((link) => link.exerciseId)).toContain("velo");
-    expect((await db.sessionTemplates.get(PADEL_ID))?.notePrefill).toContain("Fatigue jambes");
     expect(await marker()).toBe(ACTIVATION);
   });
 
@@ -196,17 +198,28 @@ describe("programme V4 — calendrier (installation neuve)", () => {
     expect(plannedSessionsV4(sessions, ACTIVATION)).toEqual({ deleteIds: ["a", "f"], updates: [] });
   });
 
-  it("Accueil : padel et récupération proposés le samedi ; avertissement la veille d'un test traction ; carte masquée une fois la séance faite", async () => {
+  it("Accueil : la récupération douce proposée le samedi ; carte masquée une fois la séance faite", async () => {
     await activate();
-    const plan = await loadTestPlan();
     const templates = new Map(((await db.sessionTemplates.toArray()) as SessionTemplate[]).map((template) => [template.id, template]));
     const ids = (await program()).optionalByWeekday!.saturday!;
-    expect(tractionTestTomorrow("2026-12-19", plan)).toBe(true);
-    expect(tractionTestTomorrow("2026-12-12", plan)).toBe(false);
-    const eve = optionalSessionsFor("2026-12-19", ids, templates, [], plan);
-    expect(eve.map((item) => [item.template.id, item.warning])).toEqual([[PADEL_ID, PADEL_TEST_EVE_WARNING], [RECUPERATION_ID, undefined]]);
-    expect(optionalSessionsFor("2026-12-12", ids, templates, [], plan).every((item) => item.warning === undefined)).toBe(true);
-    expect(optionalSessionsFor("2026-12-12", ids, templates, [{ sessionTemplateId: PADEL_ID, status: "completed" }], plan).map((item) => item.template.id)).toEqual([RECUPERATION_ID]);
+    expect(optionalSessionsFor(ids, templates, []).map((item) => item.template.id)).toEqual([RECUPERATION_ID]);
+    expect(optionalSessionsFor(ids, templates, [{ sessionTemplateId: RECUPERATION_ID }])).toEqual([]);
+  });
+
+  it("seed 54 : une installation qui avait déjà le padel le perd (séance et exercice archivés, carte du samedi retirée)", async () => {
+    await activate();
+    const rule = await program();
+    await db.weeklyPrograms.put({ ...rule, optionalByWeekday: { saturday: [PADEL_ID, RECUPERATION_ID] } });
+    await db.sessionTemplates.add({ id: PADEL_ID, name: "Padel", category: "Cardio", status: "active", position: 99, blocks: [], createdAt: ACTIVATION, updatedAt: ACTIVATION } as SessionTemplate);
+    await db.exercises.add({ id: PADEL_EXERCISE_ID, name: "Padel", category: "Cardio", equipment: "Poids du corps", location: "Salle", mode: "series", measurementType: "duration", status: "active", createdAt: ACTIVATION, updatedAt: ACTIVATION });
+    const install = (await db.settings.get("install"))!.value as InstallMarkers;
+    delete install.sansPadel20261102;
+    await db.settings.put({ key: "install", value: install });
+
+    await seedSansPadel20261102(ACTIVATION);
+    expect((await program()).optionalByWeekday).toEqual({ saturday: [RECUPERATION_ID] });
+    expect((await db.sessionTemplates.get(PADEL_ID))?.status).toBe("archived");
+    expect((await db.exercises.get(PADEL_EXERCISE_ID))?.status).toBe("archived");
   });
 
   it("sauvegarde puis restauration après l'activation : la règle V4 est conservée telle quelle", async () => {

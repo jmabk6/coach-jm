@@ -3,7 +3,7 @@ import { exerciseCatalog } from "./exerciseCatalog";
 
 describe("exerciseCatalog", () => {
   it("contient les 61 exercices officiels : les 48 d'origine, les 7 du programme V1 (lot D), les 5 des routines du soir (lot K.0) et le leg curl couché (27/09/2026)", () => {
-    expect(exerciseCatalog).toHaveLength(61);
+    expect(exerciseCatalog).toHaveLength(67);
     const routines = ["bird-dog", "crunch-inverse", "hollow-body-genoux", "etirement-epaule-main-dos", "papillon-assis"];
     expect(exerciseCatalog.filter((exercise) => routines.includes(exercise.id))).toHaveLength(5);
     const programV1 = ["traction-negative", "suspension-omoplates", "montee-banc", "chaise-60", "marche-laterale-elastique", "mollets-debout", "sprint-velo"];
@@ -29,9 +29,9 @@ describe("exerciseCatalog", () => {
     }, {});
 
     expect(counts).toEqual({
-      Musculation: 40,
+      Musculation: 42,
       Cardio: 6,
-      Mobilité: 12,
+      Mobilité: 16,
       "Test mobilité": 3,
     });
   });
