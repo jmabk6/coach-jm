@@ -128,6 +128,8 @@ export interface InstallMarkers {
   addNegatives20261029?: string;
   /** Seed 49 : la Muscu A du 01/11, faite sans téléphone, saisie après coup. */
   addWorkout20261101?: string;
+  /** Seed 50 (programme V4, lot L3) : Muscu A, B et C de la V4, posé à partir du dimanche d'activation. */
+  programmeMuscuV4?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */
