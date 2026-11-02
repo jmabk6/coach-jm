@@ -169,26 +169,35 @@ describe("programme V4 — sur la sauvegarde réelle", () => {
     await db.delete();
     await db.open();
     await restoreBackup(parseBackup(await readFile(path!, "utf8")), db);
+    /* Comme au lancement : d'abord toutes les mises à jour d'avant la V4 (programme V2, pistes, corrections). */
+    resumeSeedsForTests();
+    expect((await runSeeds()).failed).toEqual([]);
     const workoutsBefore = await db.workouts.toArray();
     await seedProgramMuscuV4(ACTIVATION);
 
     expect(await db.workouts.toArray()).toEqual(workoutsBefore);
     const completed = (await db.workouts.where("status").equals("completed").toArray()) as WorkoutSession[];
     const context = await loadDayTargetContext(completed);
-    const ecarte = dayTargetForTrack("v2-muscu-c-ecarte", "2026-12-01", context, ACTIVATION);
-    expect(ecarte?.kind).not.toBe("insufficient");
-    expect(ecarte?.sets.length).toBe(3);
-    expect(ecarte?.basisWorkoutId).toBeDefined();
-    const legCurl = dayTargetForTrack("v2-muscu-a-leg-curl", "2026-12-03", context, ACTIVATION);
-    expect(legCurl?.kind).not.toBe("insufficient");
-    expect(legCurl?.sets.length).toBe(2);
+    /* L'historique n'est vérifié que si la sauvegarde en contient (les sauvegardes de septembre n'ont ni écarté ni leg curl couché). */
+    const performed = (sourceBlockId: string) => completed.some((workout) => workout.blocks.some((block) => block.kind === "exercise" && block.sourceBlockId === sourceBlockId && block.status === "performed"));
+    if (performed("v2-muscu-c-ecarte")) {
+      const ecarte = dayTargetForTrack("v2-muscu-c-ecarte", "2026-12-01", context, ACTIVATION);
+      expect(ecarte?.kind).not.toBe("insufficient");
+      expect(ecarte?.sets.length).toBe(3);
+      expect(ecarte?.basisWorkoutId).toBeDefined();
+    }
+    if (performed("v2-muscu-a-leg-curl")) {
+      const legCurl = dayTargetForTrack("v2-muscu-a-leg-curl", "2026-12-03", context, ACTIVATION);
+      expect(legCurl?.kind).not.toBe("insufficient");
+      expect(legCurl?.sets.length).toBe(2);
+    }
     const [a, b, c] = await db.sessionTemplates.bulkGet(["v2-muscu-a", "v2-muscu-b", "v2-muscu-c"]);
     expect(trackSpecsFrom([a!, b!, c!], context.exerciseById, new Map()).find((spec) => spec.id === "v2-muscu-c-ecarte")?.session).toBe("B");
     expect(ids(b)).toContain("v2-muscu-c-ecarte");
     expect(ids(c)).toContain("v2-muscu-a-leg-curl");
-    /* Référence détaillée du leg curl recalculée sur 2 × 12-15. */
-    const legTrack = (await tracks()).find((track) => track.id === "v2-muscu-a-leg-curl")!;
-    expect(legTrack.detailed?.createdAt).toBe(ACTIVATION);
+    /* Référence détaillée du leg curl : l'ancienne (2 × 10-12) n'est jamais gardée ; recalculée sur 2 × 12-15 dès que le rythme est connu. */
+    const legTrack = (await tracks()).find((track) => track.id === "v2-muscu-a-leg-curl");
+    if (legTrack?.detailed) expect(legTrack.detailed.createdAt).toBe(ACTIVATION);
   });
 
   it.skipIf(!path)("restauration d'une ancienne sauvegarde après l'activation : tous les seeds passent, la V4 est posée en dernier", async () => {

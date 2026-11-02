@@ -230,21 +230,21 @@ describe("programme V4 — calendrier sur la sauvegarde réelle", () => {
     await db.delete();
     await db.open();
     await restoreBackup(parseBackup(await readFile(path!, "utf8")), db);
+    /* Comme au lancement : d'abord toutes les mises à jour d'avant la V4 (corrections d'anciennes séances comprises). */
+    resumeSeedsForTests();
+    expect((await runSeeds()).failed).toEqual([]);
     const workoutsBefore = await db.workouts.toArray();
     const sessionsBefore = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V4_START);
-    resumeSeedsForTests();
     const report = await runSeeds(seedsAt(ACTIVATION));
     expect(report.failed).toEqual([]);
     expect(await marker()).toBe(ACTIVATION);
-    /* Les séances faites ne changent pas. */
+    /* La V4 ne change aucune séance faite, ni rien avant l'activation. */
     for (const workout of workoutsBefore) expect(await db.workouts.get(workout.id)).toEqual(workout);
-    /* Avant l'activation, rien ne change (sauf la séance du 01/11, ajoutée par le seed 49 si la sauvegarde ne l'avait pas). */
-    const untouched = (sessions: PlannedSession[]) => sessions.filter((session) => session.id !== "weekly-2026-11-01");
-    expect(untouched(((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V4_START))).toEqual(untouched(sessionsBefore));
+    expect(((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V4_START)).toEqual(sessionsBefore);
 
     const c = (await db.sessionTemplates.get("v2-muscu-c"))!;
     const completedC = ((await db.workouts.toArray()) as WorkoutSession[]).filter((workout) => workout.status === "completed" && workout.sessionTemplateId === "v2-muscu-c");
-    expect(completedC.length).toBeGreaterThanOrEqual(3);
+    /* Quel que soit le nombre d'anciennes Muscu C, l'estimation V4 fait foi. */
     expect(calculateSessionTemplateDuration(c, completedC)).toEqual({ kind: "estimated", minutes: 108 });
 
     await generateProgramWeek("2026-12-06", ACTIVATION);
