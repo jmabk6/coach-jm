@@ -197,6 +197,17 @@ export type ExerciseMeasurement =
       speedDisplay?: never;
     };
 
+/** Statut de pratique d'un exercice (lot L2) : « Validé » est la valeur par défaut. */
+export type ExerciseClearanceStatus = "a_valider" | "valide" | "suspendu";
+
+export interface ExerciseClearance {
+  status: ExerciseClearanceStatus;
+  /** Date du changement, posée à la confirmation. */
+  since: string;
+  /** Précision facultative (« Validé après avis du kiné », motif de suspension…). */
+  note?: string;
+}
+
 interface ExerciseBase {
   id: Id;
 
@@ -249,6 +260,13 @@ interface ExerciseBase {
    * non confirmés, aucune projection présentée comme fiable.
    */
   loadSteps?: LoadSteps;
+
+  /**
+   * Statut de pratique (programme V4, lot L2, D10/Q5) : « À valider » ou
+   * « Suspendu » verrouille l'exercice dans les séances ; absent = Validé.
+   * Changé seulement par l'utilisateur, jamais automatiquement.
+   */
+  clearance?: ExerciseClearance;
 
   status: ExerciseStatus;
 

@@ -554,3 +554,9 @@
   font-size: 0.8rem;
   white-space: nowrap;
 }
+
+/* Lot L2 : exercices « À valider » ou « Suspendus » de la séance du jour (sélecteur composé). */
+.today-card__text.today-card__locked {
+  color: var(--color-warning-strong);
+  font-weight: 600;
+}

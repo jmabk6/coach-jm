@@ -12,6 +12,7 @@ import type {
 import { getSetting } from "../../db/repositories/settingsRepository";
 import { getAllTestProtocols, getAllTestResults } from "../../db/repositories/testRepository";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
+import { practiceLockOf } from "../../domain/rules/exerciseClearanceRules";
 import {
   getPlannedSessionsBetween,
   getWeeklyProgram,
@@ -150,6 +151,8 @@ export function useProgramData(
               calculateSessionTemplateDuration(
                 template,
                 workoutsByTemplate.get(templateId) ?? [],
+                /* Lot L2 : exercices « À valider » ou « Suspendus », retirés de l'estimation. */
+                new Set(exercises.filter((exercise) => practiceLockOf(exercise)).map((exercise) => exercise.id)),
               ),
             );
           },

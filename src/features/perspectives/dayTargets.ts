@@ -17,6 +17,7 @@ import {
   trackResults,
 } from "../../domain/rules/progressionRules";
 import { getProgressionTracks } from "./trackStore";
+import { LOCKED_LABELS, practiceLockOf } from "../../domain/rules/exerciseClearanceRules";
 import { PERSPECTIVE_TEMPLATES, sourceIdsOf, trackSpecsFrom, type TrackSpec } from "./tracks";
 
 /**
@@ -96,7 +97,23 @@ export async function loadDayTargetContext(completed: ReadonlyArray<WorkoutSessi
     }),
   );
   const specs = trackSpecsFrom(templates.filter((template): template is SessionTemplate => template !== undefined), exerciseById, versionByExercise);
-  return { tracks, specs, completed: [...completed], exerciseById };
+  return { tracks: withPracticeSuspensions(tracks, exerciseById), specs, completed: [...completed], exerciseById };
+}
+
+/**
+ * Lot L2 : une piste dont l'exercice est « À valider » ou « Suspendu » se lit
+ * comme une piste suspendue (mécanisme existant : pas d'objectif du jour,
+ * pas de trajectoire qui avance, pas de « retard »). Calculé à la lecture,
+ * jamais enregistré ; une suspension déjà posée (douleur) l'emporte.
+ */
+export function withPracticeSuspensions(tracks: ReadonlyArray<ProgressionTrack>, exerciseById: ReadonlyMap<Id, Exercise>): ProgressionTrack[] {
+  return tracks.map((track) => {
+    if (track.suspension || track.closedAt) return track;
+    const exercise = exerciseById.get(track.exerciseId);
+    const lock = practiceLockOf(exercise);
+    if (!lock) return track;
+    return { ...track, suspension: { from: exercise!.clearance!.since.slice(0, 10), reason: LOCKED_LABELS[lock] } };
+  });
 }
 
 /**

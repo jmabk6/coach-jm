@@ -531,6 +531,10 @@ export function validateSeries(
     throw new Error("Cette série est déjà validée : passez par Modifier");
   }
 
+  if (block.locked) {
+    throw new Error("Cet exercice n'est pas autorisé : changez d'abord son statut dans sa fiche");
+  }
+
   if (!hasMeasuredValue(values)) {
     throw new Error("Une série validée porte au moins une valeur mesurée");
   }
@@ -1503,6 +1507,11 @@ export function unskipBlock(workout: WorkoutSession, blockId: Id, now: string): 
 
   if (!isExecutable(block) || block.status !== "skipped") {
     throw new Error("Cet exercice n'est pas sauté");
+  }
+
+  /* Lot L2 : un exercice « À valider » ou « Suspendu » reste sauté. */
+  if (block.kind === "exercise" && block.locked) {
+    throw new Error("Cet exercice n'est pas autorisé : changez d'abord son statut dans sa fiche");
   }
 
   const next = withBlock(workout, blockId, (item) => ({

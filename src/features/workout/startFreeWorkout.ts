@@ -7,6 +7,8 @@ import type { SessionTemplate, WorkoutSession } from "../../domain";
 import { assertRoutineStartable } from "../../domain/rules/sessionTemplateRules";
 import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { createWorkoutSnapshot } from "./createWorkoutSnapshot";
+import { getAllExercises } from "../../db/repositories/exerciseRepository";
+import { withPracticeLocks } from "./practiceLocks";
 
 /**
  * Démarre une réalisation libre (§10) : sans modèle, la séance part vide
@@ -34,7 +36,8 @@ export async function startFreeWorkout(
   /* Échelle de RPE et versions de cadre actives, capturées au démarrage (v1.6, § 4.3, § 4.5). */
   const [rpeScale, frames] = await Promise.all([getActiveRpeScaleVersion(), loadActiveFrameVersions()]);
 
-  const workout: WorkoutSession = {
+  const exercises = template ? await getAllExercises() : [];
+  const workout: WorkoutSession = withPracticeLocks({
     id: `free-${date}-${now}`,
     ...(template ? { sessionTemplateId: template.id } : {}),
     kind: "training",
@@ -48,7 +51,8 @@ export async function startFreeWorkout(
     blocks: template ? createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById) : [],
     createdAt: now,
     updatedAt: now,
-  };
+  /* Lot L2 : exercices « À valider » ou « Suspendus » sautés et verrouillés dès le démarrage. */
+  }, new Map(exercises.map((exercise) => [exercise.id, exercise])));
 
   await saveWorkout(workout);
 

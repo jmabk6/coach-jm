@@ -181,6 +181,13 @@ export interface PerformedExerciseBlock extends PerformedBaseBlock {
   exerciseId: Id;
 
   /**
+   * Verrou de pratique (lot L2) : l'exercice était « À valider » ou
+   * « Suspendu » quand la brique est entrée dans la séance. La brique est
+   * sautée, ne se reprend pas et ne se note pas. Absent = libre.
+   */
+  locked?: "a_valider" | "suspendu";
+
+  /**
    * Exercice prévu initialement si substitution.
    *
    * Pour un exercice autonome, la substitution est autorisée

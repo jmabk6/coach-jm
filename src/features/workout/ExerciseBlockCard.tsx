@@ -37,6 +37,7 @@ import { formatDayMonth, formatLastSession, formatTargetLines } from "../perspec
 import { assessDurationSession, assessLoadSession, workSetsOf } from "../../domain/rules/progressionRules";
 import type { BetSet } from "../goals/tractionBet";
 import { plannedSeriesFor, type PlannedBetSeries } from "./betBanner";
+import { LOCKED_LABELS } from "../../domain/rules/exerciseClearanceRules";
 import { formatDecimal } from "./workoutRecap";
 import { SimpleMeasurementForm } from "./SimpleMeasurementForm";
 import { StepForm } from "./StepForm";
@@ -232,7 +233,8 @@ export function ExerciseBlockCard({
                 <Check size={16} strokeWidth={3} aria-hidden="true" />
               </span>
             ) : skipped ? (
-              <span className="wblock__skipped">Sauté</span>
+              /* Lot L2 : un exercice verrouillé dit pourquoi il est sauté. */
+              <span className="wblock__skipped">{block.locked ? LOCKED_LABELS[block.locked] : "Sauté"}</span>
             ) : (
               <span className="wblock__status">{status}</span>
             )}
@@ -244,7 +246,7 @@ export function ExerciseBlockCard({
               ))}
           </span>
         </button>
-        {skipped ? (
+        {skipped && block.locked ? null : skipped ? (
           <button type="button" className="wblock__unskip" onClick={onUnskip} disabled={busy}>
             Annuler
           </button>

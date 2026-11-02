@@ -24,6 +24,11 @@ const {
   loadActiveFrameVersions: vi.fn(),
 }));
 
+/* Lot L2 : les exercices (statut de pratique) — aucun verrouillé ici. */
+vi.mock("../../db/repositories/exerciseRepository", () => ({
+  getAllExercises: async () => [],
+}));
+
 vi.mock("../../db/repositories/rpeScaleRepository", () => ({
   getActiveRpeScaleVersion,
 }));

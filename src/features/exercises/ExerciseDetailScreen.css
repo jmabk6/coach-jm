@@ -439,3 +439,11 @@
   font-weight: 700;
   text-decoration: none;
 }
+
+/* Lot L2 : statut de pratique « À valider » ou « Suspendu » (sélecteur composé : passe devant la règle générale des étiquettes). */
+.exercise-detail__tags span.exercise-detail__clearance {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-soft);
+  color: var(--color-warning-strong);
+  font-weight: 600;
+}

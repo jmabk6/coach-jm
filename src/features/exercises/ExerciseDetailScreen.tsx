@@ -3,8 +3,9 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from "reac
 import { paths } from "../../app/paths";
 import { ArrowDown, ArrowUp, BarChart3, ChevronRight, Dumbbell, Ellipsis, TriangleAlert, Trophy } from "lucide-react";
 import { CartesianGrid, LabelList, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import type { Exercise, PerformedSeries, StrengthFrameVersion, WorkoutSession } from "../../domain";
-import { getActiveExercises, getExercise } from "../../db/repositories/exerciseRepository";
+import type { Exercise, ExerciseClearanceStatus, PerformedSeries, StrengthFrameVersion, WorkoutSession } from "../../domain";
+import { getActiveExercises, getExercise, saveExercise } from "../../db/repositories/exerciseRepository";
+import { CLEARANCE_HINTS, CLEARANCE_LABELS, LOCKED_LABELS, clearanceStatusOf, practiceLockOf } from "../../domain/rules/exerciseClearanceRules";
 import { getCompletedWorkouts } from "../../db/repositories/workoutRepository";
 import { getStrengthFrameByExercise, getStrengthFrameVersions } from "../../db/repositories/strengthRepository";
 import { getProgressionTracks } from "../perspectives/trackStore";
@@ -91,6 +92,9 @@ export function ExerciseDetailScreen() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAllSessions, setShowAllSessions] = useState(false);
+  /* Lot L2 : choix du statut de pratique, puis confirmation. */
+  const [clearanceOpen, setClearanceOpen] = useState(false);
+  const [clearanceChoice, setClearanceChoice] = useState<ExerciseClearanceStatus | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -195,6 +199,14 @@ export function ExerciseDetailScreen() {
 
   const { exercise, performanceHistory, completedWorkouts, frameVersion, lastSeries, suspension, perspectives } = state;
   const tab = TABS.find((item) => item.key === searchParams.get("onglet"))?.key ?? "progression";
+  const clearance = clearanceStatusOf(exercise);
+
+  async function applyClearance(status: ExerciseClearanceStatus) {
+    const now = new Date().toISOString();
+    const updated: Exercise = { ...exercise, clearance: { status, since: now }, updatedAt: now };
+    await saveExercise(updated);
+    setState((current) => (current.status === "success" ? { ...current, exercise: updated } : current));
+  }
   const settingsOpen = searchParams.get("vue") === "reglages";
 
   function setParam(key: string, value: string | undefined) {
@@ -231,6 +243,7 @@ export function ExerciseDetailScreen() {
           {headerTagsOf(exercise).map((tag) => (
             <span key={tag}>{tag}</span>
           ))}
+          {clearance !== "valide" && <span className={`exercise-detail__clearance exercise-detail__clearance--${clearance}`}>{CLEARANCE_LABELS[clearance]}</span>}
         </div>
       </header>
     </>
@@ -253,7 +266,10 @@ export function ExerciseDetailScreen() {
 
   const cardio = isCardioByCourse(exercise);
   const cardioRows = cardio ? cardioRowsOf(exercise, completedWorkouts) : [];
-  const next = cardio ? undefined : nextSessionOf(exercise, frameVersion, lastSeries, suspension);
+  /* Lot L2 : un exercice « À valider » ou « Suspendu » ne recommande rien, comme une progression suspendue. */
+  const lock = practiceLockOf(exercise);
+  const effectiveSuspension = suspension ?? (lock ? { from: exercise.clearance!.since.slice(0, 10), reason: LOCKED_LABELS[lock] } : undefined);
+  const next = cardio ? undefined : nextSessionOf(exercise, frameVersion, lastSeries, effectiveSuspension);
   const rows = sessionRowsOf(performanceHistory);
   const metric = getDefaultPerformanceMetric(exercise);
   const summary = metric ? buildExercisePerformanceSummary(performanceHistory, metric, loadSemanticsOf(exercise)) : undefined;
@@ -514,10 +530,58 @@ export function ExerciseDetailScreen() {
           actions={[
             { label: "Modifier l'exercice", onSelect: () => navigate(`/exercises/${exercise.id}/edit`) },
             {
+              label: "Statut de pratique",
+              hint: `Actuellement : ${CLEARANCE_LABELS[clearance]}`,
+              onSelect: () => {
+                setMenuOpen(false);
+                setClearanceOpen(true);
+              },
+            },
+            {
               label: "Réglages de progression",
               onSelect: () => {
                 setMenuOpen(false);
                 setParam("vue", "reglages");
+              },
+            },
+          ]}
+        />
+      )}
+
+      {clearanceOpen && (
+        <BottomSheet
+          title="Statut de pratique"
+          message={`${exercise.name} — actuellement « ${CLEARANCE_LABELS[clearance]} ».`}
+          onDismiss={() => setClearanceOpen(false)}
+          actions={(["valide", "a_valider", "suspendu"] as const).map((status) => ({
+            label: CLEARANCE_LABELS[status],
+            hint: status === clearance ? `Statut actuel. ${CLEARANCE_HINTS[status]}` : CLEARANCE_HINTS[status],
+            disabled: status === clearance,
+            onSelect: () => {
+              setClearanceOpen(false);
+              setClearanceChoice(status);
+            },
+          }))}
+        />
+      )}
+
+      {clearanceChoice && (
+        <BottomSheet
+          title={`Passer en « ${CLEARANCE_LABELS[clearanceChoice]} » ?`}
+          message={
+            clearanceChoice === "valide"
+              ? "À confirmer seulement après l'avis du professionnel de santé. L'exercice redevient exécutable dans les prochaines séances."
+              : "L'exercice sera sauté et verrouillé dans les prochaines séances. Les séances déjà faites ne changent pas."
+          }
+          onDismiss={() => setClearanceChoice(undefined)}
+          actions={[
+            {
+              label: "Confirmer",
+              tone: "primary",
+              onSelect: () => {
+                const status = clearanceChoice;
+                setClearanceChoice(undefined);
+                void applyClearance(status);
               },
             },
           ]}

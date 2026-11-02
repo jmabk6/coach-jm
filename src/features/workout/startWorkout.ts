@@ -17,6 +17,8 @@ import { assertRoutineStartable } from "../../domain/rules/sessionTemplateRules"
 import { loadActiveFrameVersions } from "../strength/activeFrameVersions";
 import { createWorkoutSnapshot, type SnapshotTest } from "./createWorkoutSnapshot";
 import { v6SnapshotAdjustments } from "../goals/tractionV6";
+import { getAllExercises } from "../../db/repositories/exerciseRepository";
+import { withPracticeLocks } from "./practiceLocks";
 
 export async function startWorkout(
   plannedSessionId: Id,
@@ -87,7 +89,8 @@ export async function startWorkout(
      aucune version n'existe encore. */
   const [rpeScale, frames] = await Promise.all([getActiveRpeScaleVersion(), loadActiveFrameVersions()]);
 
-  const workout: WorkoutSession = {
+  const exercises = await getAllExercises();
+  const workout: WorkoutSession = withPracticeLocks({
     id: `workout-${plannedSession.id}`,
     plannedSessionId: plannedSession.id,
     sessionTemplateId: template.id,
@@ -103,7 +106,8 @@ export async function startWorkout(
     blocks: createWorkoutSnapshot(template, frames.versionIdByExercise, frames.versionById, tests, v6SnapshotAdjustments(template, plannedSession.date)),
     createdAt: now,
     updatedAt: now,
-  };
+  /* Lot L2 : exercices « À valider » ou « Suspendus » sautés et verrouillés dès le démarrage. */
+  }, new Map(exercises.map((exercise) => [exercise.id, exercise])));
 
   await saveWorkout(workout);
 

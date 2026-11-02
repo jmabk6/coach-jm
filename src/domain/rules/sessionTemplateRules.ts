@@ -317,6 +317,8 @@ export type SessionTemplateDuration =
 export function calculateSessionTemplateDuration(
   template: SessionTemplate,
   completedWorkouts: WorkoutSession[],
+  /** Lot L2 : exercices « À valider » ou « Suspendus », retirés de l'estimation (ils seront sautés). */
+  lockedExerciseIds: ReadonlySet<string> = new Set(),
 ): SessionTemplateDuration {
   if (completedWorkouts.length >= REAL_DURATION_MIN_COMPLETIONS) {
     const totalSec = completedWorkouts.reduce(
@@ -333,7 +335,10 @@ export function calculateSessionTemplateDuration(
   return {
     kind: "estimated",
     minutes: Math.round(
-      estimateSessionTemplateDurationSec(template.blocks, template.category) / 60,
+      estimateSessionTemplateDurationSec(
+        lockedExerciseIds.size === 0 ? template.blocks : template.blocks.filter((block) => block.kind !== "exercise" || !lockedExerciseIds.has(block.exerciseId)),
+        template.category,
+      ) / 60,
     ),
   };
 }

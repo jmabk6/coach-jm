@@ -9,6 +9,7 @@ import type {
   WorkoutSession,
 } from "../../domain";
 import { getAllExercises } from "../../db/repositories/exerciseRepository";
+import { practiceLockOf } from "../../domain/rules/exerciseClearanceRules";
 import {
   getPlannedSessionsBetween,
   getPlannedSessionsByDate,
@@ -131,6 +132,9 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
           completedByTemplate.set(workout.sessionTemplateId, list);
         }
 
+        /* Lot L2 : exercices « À valider » ou « Suspendus ». */
+        const lockedIds = new Set(exercises.filter((exercise) => practiceLockOf(exercise)).map((exercise) => exercise.id));
+
         setState({
           status: "success",
           today,
@@ -155,6 +159,7 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
             .filter((template) => template.status === "active")
             .sort((a, b) => a.position - b.position),
           durationOf: (templateId) => {
+            /* Lot L2 : les exercices verrouillés ne comptent pas dans l'estimation. */
             const template = templateById.get(templateId);
 
             if (!template) return undefined;
@@ -162,7 +167,7 @@ export function useTodayData(): { state: TodayDataState; reload: () => void } {
             const completed = completedByTemplate.get(templateId) ?? [];
 
             return {
-              duration: calculateSessionTemplateDuration(template, completed),
+              duration: calculateSessionTemplateDuration(template, completed, lockedIds),
               completionCount: completed.length,
             };
           },

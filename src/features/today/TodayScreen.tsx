@@ -44,6 +44,7 @@ import { WeightCard } from "../weight/WeightCard";
 import { MeasurementsCard } from "../weight/MeasurementsCard";
 import { BodyMeasurementCard } from "../body/BodyMeasurementCard";
 import { SessionName } from "../sessions/SessionName";
+import { formatLockedCount, lockedTemplateExerciseIds } from "../../domain/rules/exerciseClearanceRules";
 
 /**
  * Aujourd'hui (§10, mockups 21–22) : la journée telle qu'elle est
@@ -283,6 +284,8 @@ function PlannedCard({ session, data, onStart }: PlannedCardProps) {
   const summary = summarizeSessionTemplate(template.blocks, data.exerciseById);
   const cardioLine = formatSessionTemplateCardioLine(summary);
   const durationInfo = data.durationOf(template.id);
+  /* Lot L2 : exercices « À valider » ou « Suspendus » de la séance, sautés au démarrage. */
+  const lockedLine = formatLockedCount(lockedTemplateExerciseIds(template.blocks, data.exerciseById).length);
 
   return (
     <section className="today-card">
@@ -304,6 +307,7 @@ function PlannedCard({ session, data, onStart }: PlannedCardProps) {
             {formatSessionTemplateSummary(summary, template.description)}
           </span>
           {cardioLine && <span className="today-card__text">{cardioLine}</span>}
+          {lockedLine && <span className="today-card__text today-card__locked">{lockedLine}</span>}
           {testNamesOf(session, data).map((name) => (
             <span key={name} className="today-badge today-badge--test">
               Test {name.toLowerCase()}

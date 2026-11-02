@@ -61,6 +61,7 @@ import { RestBand } from "./RestBand";
 import { cancelWorkout, isUntouchedWorkout } from "./deleteWorkout";
 import { endWorkout } from "./finishWorkout";
 import { betBannerFor, plannedSeriesFor } from "./betBanner";
+import { withPracticeLocks } from "./practiceLocks";
 import { BET_EXERCISE_ID } from "../goals/tractionBet";
 import { v6State, v6StatusState } from "../goals/tractionV6";
 import { findLastComparableStep, lastTimeOf } from "./lastPerformance";
@@ -243,16 +244,21 @@ export function WorkoutScreen() {
       const replacement = exercises[0]!;
       const frameVersionId = versionIdByExercise.get(replacement.id);
 
+      /* Lot L2 : un remplaçant « À valider » ou « Suspendu » verrouille la brique. */
       void apply((current, at) =>
-        substituteChildId
-          ? substituteGroupChild(current, substituteBlockId, substituteChildId, replacement, at, frameVersionId)
-          : substituteExercise(current, substituteBlockId, replacement, at, frameVersionId),
+        withPracticeLocks(
+          substituteChildId
+            ? substituteGroupChild(current, substituteBlockId, substituteChildId, replacement, at, frameVersionId)
+            : substituteExercise(current, substituteBlockId, replacement, at, frameVersionId),
+          state.exerciseById,
+        ),
       );
       return;
     }
 
+    /* Lot L2 : un exercice ajouté « À valider » ou « Suspendu » entre verrouillé. */
     void apply((current, at) =>
-      addExerciseBlocks(current, exercises, at, undefined, versionIdByExercise, preferences?.freeWorkoutRestSec),
+      withPracticeLocks(addExerciseBlocks(current, exercises, at, undefined, versionIdByExercise, preferences?.freeWorkoutRestSec), state.exerciseById),
     );
   }, [state, pendingAddIds, substituteBlockId, substituteChildId, apply, setSearchParams, preferences]);
 
@@ -879,9 +885,12 @@ export function WorkoutScreen() {
             const frameVersionId = frames.versionIdByExercise.get(replacement.id);
             setSubstitution(undefined);
             void run((now, at) =>
-              target.groupChildId
-                ? substituteGroupChild(now, target.block.id, target.groupChildId, replacement, at, frameVersionId)
-                : substituteExercise(now, target.block.id, replacement, at, frameVersionId),
+              withPracticeLocks(
+                target.groupChildId
+                  ? substituteGroupChild(now, target.block.id, target.groupChildId, replacement, at, frameVersionId)
+                  : substituteExercise(now, target.block.id, replacement, at, frameVersionId),
+                exerciseById,
+              ),
             );
           };
 

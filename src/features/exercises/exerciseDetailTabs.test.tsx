@@ -53,4 +53,30 @@ describe("fiche exercice — onglets et menu", () => {
     expect(await screen.findByText("Cadre de progression", {}, { timeout: 4000 })).toBeDefined();
     expect(screen.getByRole("button", { name: "← Fiche" })).toBeDefined();
   }, 20000);
+
+  it("lot L2 : ⋯ > Statut de pratique — Validé par défaut ; passer en « Suspendu » demande une confirmation, puis s'affiche et s'enregistre", async () => {
+    render(
+      <MemoryRouter initialEntries={["/exercises/leg-curl-couche"]}>
+        <Routes>
+          <Route path="/exercises/:exerciseId" element={<ExerciseDetailScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole("tab", { name: "Progression" }, { timeout: 4000 });
+    expect(screen.queryByText("Suspendu")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Autres actions" }));
+    expect(screen.getByText("Actuellement : Validé")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: /Statut de pratique/ }));
+    /* Le statut actuel n'est pas proposé. */
+    expect((screen.getByRole("button", { name: /^Validé/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: /^Suspendu/ }));
+    expect(screen.getByText("Passer en « Suspendu » ?")).toBeDefined();
+    /* Rien n'est enregistré avant la confirmation. */
+    expect((await db.exercises.get("leg-curl-couche"))!.clearance).toBeUndefined();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmer" }));
+
+    expect(await screen.findByText("Suspendu", { selector: ".exercise-detail__clearance" }, { timeout: 4000 })).toBeDefined();
+    expect((await db.exercises.get("leg-curl-couche"))!.clearance?.status).toBe("suspendu");
+  }, 20000);
 });
