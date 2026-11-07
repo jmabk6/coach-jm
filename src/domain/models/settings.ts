@@ -166,26 +166,6 @@ export interface InstallMarkers {
   archiveProgramV1?: string;
 }
 
-/**
- * « Dos du jour » (programme V5, 07/11/2026) : un relevé par jour, rempli
- * en quelques secondes sur l'Accueil. Tous les champs sont facultatifs.
- */
-export type BackWalk = "lt2" | "2to5" | "gt5";
-export type BackSitting = "ok" | "painful";
-
-export interface BackDayEntry {
-  date: string;
-  /** Douleur au réveil, de 0 à 10. */
-  morningPain?: number;
-  /** Temps pour marcher normalement au lever. */
-  walk?: BackWalk;
-  /** Une décharge dans la journée. */
-  discharge?: boolean;
-  /** Position assise prolongée. */
-  sitting?: BackSitting;
-  updatedAt: string;
-}
-
 export type SettingsRecord =
   | { key: "profile"; value: ProfileSettings }
   | { key: "preferences"; value: PreferenceSettings }
@@ -203,9 +183,7 @@ export type SettingsRecord =
   /** Cible personnelle indicative de composition corporelle (phase 2.1). */
   | { key: "bodyCompositionTargets"; value: BodyCompositionTargets }
   /** Perspectives au 31 mars (22/10/2026) : une piste par exercice des séances Muscu A, B, C. */
-  | { key: "progressionTracks"; value: ProgressionTrack[] }
-  /** « Dos du jour » (programme V5) : un relevé par jour. */
-  | { key: "backLog"; value: BackDayEntry[] };
+  | { key: "progressionTracks"; value: ProgressionTrack[] };
 
 export type SettingsKey = SettingsRecord["key"];
 

@@ -43,7 +43,6 @@ import { formatFullDate } from "../../domain/rules/programRules";
 import { WeightCard } from "../weight/WeightCard";
 import { MeasurementsCard } from "../weight/MeasurementsCard";
 import { BodyMeasurementCard } from "../body/BodyMeasurementCard";
-import { BackDayCard } from "../back/BackDayCard";
 import { SessionName } from "../sessions/SessionName";
 import { formatLockedCount, lockedTemplateExerciseIds } from "../../domain/rules/exerciseClearanceRules";
 
@@ -148,8 +147,6 @@ export function TodayScreen() {
           soir → objectifs → prochaines séances. */}
       {/* Pesée du jour (lot I.1), sur une ligne. */}
       <WeightCard today={data.today} />
-      {/* Programme V5 : le relevé « Dos du jour ». */}
-      <BackDayCard today={data.today} />
       {/* Dernière mesure corporelle (Corps, phase 2) : une carte compacte, le détail sur son écran. */}
       <BodyMeasurementCard />
       {/* Mensurations du matin, le lundi d'une semaine de tests (lot I.3). */}
