@@ -19,7 +19,9 @@ import {
 import { getProgressionTracks } from "./trackStore";
 import { workSetsOf } from "../../domain/rules/progressionRules";
 import { nextRoutineTarget } from "../../domain/rules/routineProgressionRules";
-import { ROUTINE_PROGRESSIONS, ROUTINE_RPE_MAX, ROUTINE_V4_BLOCKS } from "../program/programRoutinesV4";
+import { ROUTINE_RPE_MAX, ROUTINE_V4_BLOCKS } from "../program/programRoutinesV4";
+import { routineProgressionOf, ROUTINE_V5_BLOCKS } from "../program/programV5";
+import { getWeekStartDate } from "../../domain/rules/programRules";
 import { PROGRAM_V4_START } from "../program/programV4";
 import { LOCKED_LABELS, practiceLockOf } from "../../domain/rules/exerciseClearanceRules";
 import { PERSPECTIVE_TEMPLATES, sourceIdsOf, trackSpecsFrom, type TrackSpec } from "./tracks";
@@ -42,10 +44,13 @@ export interface DayTargetContext {
 
 export function dayTargetFor(block: PerformedExerciseBlock, date: string, context: DayTargetContext, now: string): DayTarget | undefined {
   if (!block.sourceBlockId) return undefined;
-  return ROUTINE_V4_BLOCKS.has(block.sourceBlockId) ? routineDayTarget(block.sourceBlockId, date, context, now) : dayTargetForTrack(block.sourceBlockId, date, context, now);
+  return ROUTINE_BLOCKS.has(block.sourceBlockId) ? routineDayTarget(block.sourceBlockId, date, context, now) : dayTargetForTrack(block.sourceBlockId, date, context, now);
 }
 
 const PAIN_NOTE = /douleur|mal au|mal à/i;
+
+/** Les briques de routine suivies : routines V4 et routine dos V5. */
+const ROUTINE_BLOCKS: ReadonlyMap<string, { exerciseId: string; sets: number; start: number }> = new Map([...ROUTINE_V4_BLOCKS, ...ROUTINE_V5_BLOCKS]);
 
 /**
  * Programme V4 (lot L5) : l'objectif d'une brique de routine, d'après la
@@ -54,8 +59,8 @@ const PAIN_NOTE = /douleur|mal au|mal à/i;
  * Un exercice « À valider » ou « Suspendu » n'en reçoit pas.
  */
 export function routineDayTarget(sourceBlockId: Id, date: string, context: DayTargetContext, now: string): DayTarget | undefined {
-  const spec = ROUTINE_V4_BLOCKS.get(sourceBlockId);
-  const rule = spec ? ROUTINE_PROGRESSIONS[spec.exerciseId] : undefined;
+  const spec = ROUTINE_BLOCKS.get(sourceBlockId);
+  const rule = spec ? routineProgressionOf(spec.exerciseId) : undefined;
   if (!spec || !rule) return undefined;
   if (practiceLockOf(context.exerciseById.get(spec.exerciseId))) return undefined;
   const history = context.completed
@@ -64,11 +69,43 @@ export function routineDayTarget(sourceBlockId: Id, date: string, context: DayTa
     .flatMap((workout) =>
       workout.blocks.flatMap((block) => {
         if (block.kind !== "exercise" || block.status !== "performed" || !block.sourceBlockId) return [];
-        const source = ROUTINE_V4_BLOCKS.get(block.sourceBlockId);
+        const source = ROUTINE_BLOCKS.get(block.sourceBlockId);
         return source && source.exerciseId === spec.exerciseId ? [{ workout, block, source }] : [];
       }),
     );
-  const latest = history.at(-1);
+  /*
+   * Routine dos V5, faite tous les jours : la cible ne change qu'une fois par
+   * semaine. Déjà faite cette semaine : on garde la cible de la semaine ;
+   * sinon, elle se décide sur la dernière séance des semaines d'avant.
+   */
+  if (ROUTINE_V5_BLOCKS.has(sourceBlockId)) {
+    const week = getWeekStartDate(date);
+    const thisWeek = history.filter((item) => item.workout.date >= week).at(-1);
+    const weekTarget = thisWeek?.block.dayTarget?.sets[0];
+    const value = rule.measure === "reps" ? weekTarget?.reps : weekTarget?.durationSec;
+    if (thisWeek && value !== undefined) {
+      return {
+        computedAt: now,
+        rpeMax: ROUTINE_RPE_MAX,
+        routine: true,
+        basisWorkoutId: thisWeek.workout.id,
+        kind: "consolidate",
+        sets: Array.from({ length: spec.sets }, () => (rule.measure === "reps" ? { reps: value } : { durationSec: value })),
+        reason: "Cible de la semaine : elle ne change qu'une fois par semaine.",
+      };
+    }
+    const before = history.filter((item) => item.workout.date < week);
+    return nextFromLatest(before.at(-1), spec, rule, now);
+  }
+  return nextFromLatest(history.at(-1), spec, rule, now);
+}
+
+function nextFromLatest(
+  latest: { workout: WorkoutSession; block: PerformedExerciseBlock; source: { exerciseId: string; sets: number; start: number } } | undefined,
+  spec: { exerciseId: string; sets: number; start: number },
+  rule: NonNullable<ReturnType<typeof routineProgressionOf>>,
+  now: string,
+): DayTarget {
   const frozen = latest?.block.dayTarget?.sets[0];
   const last = latest
     ? {

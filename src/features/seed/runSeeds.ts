@@ -41,6 +41,8 @@ import { seedTractionTestV320261005 } from "../tests/seedTractionTestV3";
 import { seedGoals } from "../goals/seedGoals";
 import { seedTestProtocols } from "../tests/seedTestProtocols";
 import { seedSettingsDefaults, seedThemeLight } from "./seedSettingsDefaults";
+import { v5SeedNow } from "../program/programV5";
+import { seedCalendrierV5, seedProgramMuscuV5, seedRoutineDosComplete20261122, seedRoutinesV5 } from "../program/seedProgramV5";
 
 /**
  * Seeds du lancement (SCHEMA_DEXIE_V3_MIGRATION.md § 5) : exécutés après
@@ -160,13 +162,21 @@ export const SEEDS: SeedStep[] = [
   { name: "routineBEpaule20261102", dependsOn: ["routinesV4"], run: () => seedRoutineBEpaule20261102() },
   /* Seed 54 (02/11/2026) : le padel retiré (séance et exercice archivés, plus de carte le samedi). */
   { name: "sansPadel20261102", run: () => seedSansPadel20261102() },
+  /* Seed 55 (programme V5) : Muscu A, B et C de la V5, rien avant le dimanche d'activation. */
+  { name: "programmeMuscuV5", dependsOn: ["programmeMuscuV4"], run: () => seedProgramMuscuV5(v5SeedNow()) },
+  /* Seed 56 (programme V5) : la routine dos + abdos, avant le calendrier qui l'affecte aux soirs. */
+  { name: "routinesV5", dependsOn: ["routinesV4"], run: () => seedRoutinesV5(v5SeedNow()) },
+  /* Seed 57 (programme V5) : cardios sur tapis et calendrier V5. */
+  { name: "calendrierV5", dependsOn: ["programmeMuscuV5", "routinesV5", "calendrierV4", "sansPadel20261102"], run: () => seedCalendrierV5(v5SeedNow()) },
+  /* Seed 58 : la routine dos complète à partir du 22/11/2026. */
+  { name: "routineDosComplete20261122", dependsOn: ["calendrierV5"], run: () => seedRoutineDosComplete20261122(v5SeedNow()) },
 ];
 
 /**
  * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
  * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
  */
-export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "loadSteps20261022", "shoulderRpe20261022", "perspectiveTracks20261022", "perspectiveDetailed20261022", "tractionTestV420261025", "addWorkout20261101", "programmeMuscuV4", "routinesV4", "calendrierV4", "routineBEpaule20261102", "sansPadel20261102"].includes(seed.name));
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "loadSteps20261022", "shoulderRpe20261022", "perspectiveTracks20261022", "perspectiveDetailed20261022", "tractionTestV420261025", "addWorkout20261101", "programmeMuscuV4", "routinesV4", "calendrierV4", "routineBEpaule20261102", "sansPadel20261102", "programmeMuscuV5", "routinesV5", "calendrierV5", "routineDosComplete20261122"].includes(seed.name));
 
 export interface SeedReport {
   ran: string[];

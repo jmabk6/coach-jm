@@ -144,6 +144,14 @@ export interface InstallMarkers {
   routineBEpaule20261102?: string;
   /** Seed 54 : le padel retiré (séance et exercice archivés, plus de carte le samedi). */
   sansPadel20261102?: string;
+  /** Seed 55 (programme V5) : Muscu A, B et C de la V5, posé à partir du dimanche d'activation. */
+  programmeMuscuV5?: string;
+  /** Seed 56 (programme V5) : routine dos + abdos (complète et légère), pont fessier. */
+  routinesV5?: string;
+  /** Seed 57 (programme V5) : cardios sur tapis, calendrier V5, vélos et routines V4 archivés. */
+  calendrierV5?: string;
+  /** Seed 58 : routine dos complète du dimanche au vendredi, à partir du 22/11/2026. */
+  routineDosComplete20261122?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */
