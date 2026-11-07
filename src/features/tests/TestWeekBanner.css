@@ -21,3 +21,7 @@
 .test-week-banner strong {
   color: var(--color-text);
 }
+
+.test-week-banner .test-week-banner__photos {
+  font-size: 0.85rem;
+}

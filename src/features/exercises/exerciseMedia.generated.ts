@@ -437,6 +437,15 @@ export const exerciseMedia = {
       "media/exercises/pecs/pompes-frame3.aac6648c.webp",
     ],
   },
+  "pont-fessier": {
+    thumbnail: "media/exercises/jambes/pont-fessier-thumb.c3539a72.webp",
+    photo: "media/exercises/jambes/pont-fessier.012060dc.webp",
+    frames: [
+      "media/exercises/jambes/pont-fessier-frame1.1f9be226.webp",
+      "media/exercises/jambes/pont-fessier-frame2.37a7885f.webp",
+      "media/exercises/jambes/pont-fessier-frame3.771124bb.webp",
+    ],
+  },
   "presse-cuisses": {
     thumbnail: "media/exercises/jambes/presse-cuisses-thumb.bd0c00c2.webp",
     photo: "media/exercises/jambes/presse-cuisses.2a2e336f.webp",

@@ -39,6 +39,13 @@ export function TestWeekBanner({ today, cycle: given }: { today: string; cycle?:
         <strong>Semaine de tests{days > 0 ? ` dans ${days} jour${days > 1 ? "s" : ""}` : ""}</strong>
         <br />
         {formatWeekRange(weekStart)}
+        {/* Programme V5 : photos de progression toutes les 4 semaines, la semaine de tests. */}
+        {days === 0 && (
+          <>
+            <br />
+            <span className="test-week-banner__photos">Photos de progression : face, profil et dos, même lumière que la dernière fois.</span>
+          </>
+        )}
       </span>
       <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
     </Link>

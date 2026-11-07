@@ -670,6 +670,27 @@ export const exerciseCatalog = [
     createdAt,
     updatedAt: createdAt,
   },
+  /* Programme V5 (07/11/2026) : créé par le seed 56 (routine dos) ; au catalogue pour ses images. */
+  {
+    id: "pont-fessier",
+    name: "Pont fessier au sol",
+    category: "Musculation",
+    zone: "Jambes",
+    movement: "Charnière",
+    equipment: "Poids du corps",
+    progressionGroup: "Fessiers",
+    location: "Maison",
+    mode: "series",
+    measurementType: "reps",
+    media: officialExerciseMedia("pont-fessier"),
+    technique: "Allongé sur le dos, genoux pliés, pieds à plat au sol à largeur de hanches, bras le long du corps. Serre les fessiers et soulève le bassin jusqu'à aligner épaules, hanches et genoux, marque un temps en haut, puis redescends lentement.",
+    description: "Renforcement des fessiers à la maison, sans charge sur la colonne : des fessiers forts soulagent le bas du dos en position debout.",
+    advice: "La poussée vient des fessiers et des talons, pas du bas du dos : ne cambre pas en haut. Douleur dans le bas du dos : monte moins haut.",
+    muscles: ["Fessiers", "Ischio-jambiers", "Core"],
+    status: "active",
+    createdAt,
+    updatedAt: createdAt,
+  },
   /* Programme V4 (02/11/2026) : créé par le seed 50 ; au catalogue pour ses images. */
   {
     id: "curl-biceps-poulie",
