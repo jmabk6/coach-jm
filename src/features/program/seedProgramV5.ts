@@ -32,6 +32,7 @@ import {
   PONT_FESSIER_ID,
   pontFessierExercise,
   PROGRAM_V5_DAYS,
+  PROGRAM_V5_FIRST_DAY,
   PROGRAM_V5_START,
   RECALCULATED_TRACKS_V5,
   ROUTINE_DOS_COMPLETE_START,
@@ -255,8 +256,8 @@ export async function seedCalendrierV5(now: string = new Date().toISOString()): 
     const schedule = (await db.settings.get("testSchedule"))?.value as TestScheduleEntry[] | undefined;
     if (schedule) await db.settings.put({ key: "testSchedule", value: testScheduleV5(schedule) });
 
-    const sessions = (await db.plannedSessions.where("date").aboveOrEqual(PROGRAM_V5_START).toArray()) as PlannedSession[];
-    const { deleteIds, updates } = plannedSessionsV5(sessions, PROGRAM_V5_START, EVENING_BY_WEEKDAY_V5_START, now);
+    const sessions = (await db.plannedSessions.where("date").aboveOrEqual(PROGRAM_V5_FIRST_DAY).toArray()) as PlannedSession[];
+    const { deleteIds, updates } = plannedSessionsV5(sessions, PROGRAM_V5_FIRST_DAY, EVENING_BY_WEEKDAY_V5_START, now);
     if (deleteIds.length > 0) await db.plannedSessions.bulkDelete(deleteIds);
     if (updates.length > 0) await db.plannedSessions.bulkPut(updates);
 
@@ -264,7 +265,7 @@ export async function seedCalendrierV5(now: string = new Date().toISOString()): 
   });
 
   /* La semaine d'activation, complétée à partir d'aujourd'hui (jamais de séance « manquée » dans le passé). */
-  if (getWeekStartDate(today) === getWeekStartDate(PROGRAM_V5_START)) await generateProgramWeek(getWeekStartDate(today), now, today);
+  if (getWeekStartDate(today) === getWeekStartDate(PROGRAM_V5_FIRST_DAY)) await generateProgramWeek(getWeekStartDate(today), now, today);
   /* Semaines à venir déjà générées en V4 : les jours et soirs que la V4 n'avait pas (cardio du vendredi, soirs du vendredi et du samedi) sont ajoutés. */
   if (applied) await completeFutureWeeks(today, now);
 }

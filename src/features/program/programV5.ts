@@ -22,14 +22,21 @@ import { ROUTINE_PROGRESSIONS, ROUTINE_RPE_MAX, type RoutineProgression } from "
  * Rien ne s'applique avant `PROGRAM_V5_START`.
  */
 
-/** Jour d'activation de la V5 : dimanche 08/11/2026 (décision de JM du 07/11). */
-export const PROGRAM_V5_START = "2026-11-08";
+/**
+ * Activation de la V5 : dès le samedi 07/11/2026 au soir (décision de JM :
+ * « fais-le à partir de ce soir »). Le calendrier V5 commence le lendemain,
+ * `PROGRAM_V5_FIRST_DAY` : aucune séance V5 n'est prévue le 07/11, donc
+ * aucune séance « manquée ».
+ */
+export const PROGRAM_V5_START = "2026-11-07";
+/** Premier jour du calendrier V5 : dimanche 08/11/2026 (Muscu A). */
+export const PROGRAM_V5_FIRST_DAY = "2026-11-08";
 /** À partir de ce dimanche, la routine complète remplace la légère (sauf le samedi). */
 export const ROUTINE_DOS_COMPLETE_START = "2026-11-22";
 
 /** L'heure donnée aux seeds V5 au lancement ; sous Vitest, figée avant l'activation (les tests V5 passent leur date). */
 export function v5SeedNow(): string {
-  return import.meta.env.MODE === "test" ? "2026-11-07T12:00:00.000Z" : new Date().toISOString();
+  return import.meta.env.MODE === "test" ? "2026-11-06T12:00:00.000Z" : new Date().toISOString();
 }
 
 const ISOLATION = 90;

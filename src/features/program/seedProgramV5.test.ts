@@ -9,7 +9,7 @@ import { parseBackup, restoreBackup } from "../backup/restoreBackup";
 import { routineDayTarget, type DayTargetContext } from "../perspectives/dayTargets";
 import { resumeSeedsForTests, runSeeds, SEEDS } from "../seed/runSeeds";
 import { generateProgramWeek } from "./generateProgramWeek";
-import { PROGRAM_V5_START, ROUTINE_DOS_ID, ROUTINE_DOS_LEGERE_ID, PONT_FESSIER_ID } from "./programV5";
+import { PROGRAM_V5_FIRST_DAY, PROGRAM_V5_START, ROUTINE_DOS_ID, ROUTINE_DOS_LEGERE_ID, PONT_FESSIER_ID } from "./programV5";
 import { seedCalendrierV4 } from "./seedCalendrierV4";
 import { seedProgramMuscuV4 } from "./seedProgramMuscuV4";
 import { seedCalendrierV5, seedProgramMuscuV5, seedRoutineDosComplete20261122, seedRoutinesV5 } from "./seedProgramV5";
@@ -18,8 +18,10 @@ import { seedRoutinesV4 } from "./seedRoutinesV4";
 /** Programme V5 (décisions de JM du 07/11/2026) : seeds 55 à 58. */
 
 const V4 = "2026-11-02T08:00:00.000Z";
-const BEFORE = "2026-11-07T20:00:00.000Z";
-const ACTIVATION = `${PROGRAM_V5_START}T07:00:00.000Z`;
+const BEFORE = "2026-11-06T20:00:00.000Z";
+const ACTIVATION = `${PROGRAM_V5_FIRST_DAY}T07:00:00.000Z`;
+/** Le soir du 07/11 : la V5 se pose, le calendrier V5 commence le lendemain. */
+const TONIGHT = `${PROGRAM_V5_START}T22:30:00.000Z`;
 const COMPLETE = "2026-11-22T07:00:00.000Z";
 
 const install = async () => (await db.settings.get("install"))?.value as InstallMarkers | undefined;
@@ -131,7 +133,7 @@ describe("programme V5 — installation passée en V4", () => {
   });
 
   it("calendrier : 3 cardios sur tapis, routine légère tous les soirs, vélos et routines V4 archivés", async () => {
-    const before = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_START);
+    const before = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_FIRST_DAY);
     await activateV5();
     expect((await program()).days.map((day) => day.sessionTemplateId ?? null)).toEqual(["v2-muscu-a", "v2-cardio-a", "v2-muscu-b", "v2-cardio-b", "v2-muscu-c", "v2-cardio-c", null]);
     expect(Object.values((await program()).eveningByWeekday ?? {})).toEqual(Array(7).fill(ROUTINE_DOS_LEGERE_ID));
@@ -156,11 +158,29 @@ describe("programme V5 — installation passée en V4", () => {
     expectNoDuplicates(await db.plannedSessions.toArray() as PlannedSession[]);
 
     /* Rien avant l'activation ne change. */
-    expect(((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_START)).toEqual(before);
+    expect(((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_FIRST_DAY)).toEqual(before);
 
     /* Test cardio : il prend la place des intervalles du mercredi. */
     const schedule = (await db.settings.get("testSchedule"))!.value as TestScheduleEntry[];
     expect(schedule.find((entry) => entry.protocolKey === "cardio")?.insteadOfTemplateId).toBe("v2-cardio-b");
+  });
+
+  it("le soir du 07/11 : tout bascule, rien n'est prévu le 07/11, le calendrier V5 commence le 08/11", async () => {
+    const before = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_FIRST_DAY);
+    await activateV5(TONIGHT);
+    expect((await install())?.calendrierV5).toBe(TONIGHT);
+    expect(await blockIds("v2-muscu-c")).not.toContain("v2-muscu-c-tapis-incline");
+    const sessions = await planned();
+    expect(at(sessions, "2026-11-07", "evening")).toBeUndefined();
+    expect(at(sessions, "2026-11-08", "day")).toBe("v2-muscu-a");
+    expect(at(sessions, "2026-11-09", "day")).toBe("v2-cardio-a");
+    expect(at(sessions, "2026-11-11", "day")).toBe("v2-cardio-b");
+    expect(at(sessions, "2026-11-12", "day")).toBe("v2-muscu-c");
+    expect(at(sessions, "2026-11-13", "day")).toBe("v2-cardio-c");
+    expect(at(sessions, "2026-11-08", "evening")).toBe(ROUTINE_DOS_LEGERE_ID);
+    expect(at(sessions, "2026-11-14", "evening")).toBe(ROUTINE_DOS_LEGERE_ID);
+    expect(((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_FIRST_DAY)).toEqual(before);
+    expectNoDuplicates((await db.plannedSessions.toArray()) as PlannedSession[]);
   });
 
   it("une seule fois : relancer ne change rien", async () => {
@@ -238,10 +258,10 @@ describe("programme V5 — sauvegarde réelle", () => {
     await db.open();
     await restoreBackup(parseBackup(await readFile(process.env.COACH_JM_BACKUP!, "utf8")), db);
     const workouts = await db.workouts.toArray();
-    const before = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_START);
+    const before = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_FIRST_DAY);
     resumeSeedsForTests();
     const steps = SEEDS.map((seed) =>
-      seed.name === "programmeMuscuV5" ? { ...seed, run: () => seedProgramMuscuV5(ACTIVATION) } : seed.name === "routinesV5" ? { ...seed, run: () => seedRoutinesV5(ACTIVATION) } : seed.name === "calendrierV5" ? { ...seed, run: () => seedCalendrierV5(ACTIVATION) } : seed,
+      seed.name === "programmeMuscuV5" ? { ...seed, run: () => seedProgramMuscuV5(TONIGHT) } : seed.name === "routinesV5" ? { ...seed, run: () => seedRoutinesV5(TONIGHT) } : seed.name === "calendrierV5" ? { ...seed, run: () => seedCalendrierV5(TONIGHT) } : seed,
     );
     const report = await runSeeds(steps);
     expect(report.failed).toEqual([]);
@@ -251,7 +271,7 @@ describe("programme V5 — sauvegarde réelle", () => {
     expect(await blockIds("v2-muscu-b")).toContain("v2-muscu-b-developpe-epaules");
     expect((await blockIds("v2-muscu-b"))[2]).toBe("v2-muscu-b-developpe-epaules");
     expect(await db.workouts.toArray()).toEqual(workouts);
-    expect(((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_START)).toEqual(before);
+    expect(((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_FIRST_DAY)).toEqual(before);
     expectNoDuplicates((await db.plannedSessions.toArray()) as PlannedSession[]);
     const sessions = await planned();
     expect(at(sessions, "2026-11-08", "day")).toBe("v2-muscu-a");
