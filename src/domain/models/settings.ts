@@ -152,6 +152,8 @@ export interface InstallMarkers {
   calendrierV5?: string;
   /** Seed 58 : routine dos complète du dimanche au vendredi, à partir du 22/11/2026. */
   routineDosComplete20261122?: string;
+  /** Seed 59 : développé épaules machine du 10/11, dernière série à 20 kg (et non 10 kg). */
+  fixDeveloppeEpaules20261110?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */

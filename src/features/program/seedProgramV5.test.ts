@@ -8,6 +8,7 @@ import { calculateSessionTemplateDuration } from "../../domain/rules/sessionTemp
 import { parseBackup, restoreBackup } from "../backup/restoreBackup";
 import { routineDayTarget, type DayTargetContext } from "../perspectives/dayTargets";
 import { resumeSeedsForTests, runSeeds, SEEDS } from "../seed/runSeeds";
+import { fixDeveloppeEpaules20261110 } from "../history/seedFixDeveloppeEpaules20261110";
 import { generateProgramWeek } from "./generateProgramWeek";
 import { PROGRAM_V5_FIRST_DAY, PROGRAM_V5_START, ROUTINE_DOS_ID, ROUTINE_DOS_LEGERE_ID, PONT_FESSIER_ID } from "./programV5";
 import { seedCalendrierV4 } from "./seedCalendrierV4";
@@ -270,7 +271,9 @@ describe("programme V5 — sauvegarde réelle", () => {
     expect(markers?.calendrierV5).toBeDefined();
     expect(await blockIds("v2-muscu-b")).toContain("v2-muscu-b-developpe-epaules");
     expect((await blockIds("v2-muscu-b"))[2]).toBe("v2-muscu-b-developpe-epaules");
-    expect(await db.workouts.toArray()).toEqual(workouts);
+    /* Seule exception : le seed 59 corrige la Muscu B du 10/11 si la sauvegarde la contient dans l'état constaté. */
+    const after = await db.workouts.toArray();
+    expect(after).toEqual(workouts.map((workout) => fixDeveloppeEpaules20261110(workout, after.find((item) => item.id === workout.id)?.updatedAt ?? "") ?? workout));
     expect(((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_FIRST_DAY)).toEqual(before);
     expectNoDuplicates((await db.plannedSessions.toArray()) as PlannedSession[]);
     const sessions = await planned();

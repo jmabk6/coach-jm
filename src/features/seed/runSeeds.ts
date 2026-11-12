@@ -27,6 +27,7 @@ import { seedWeightGoalStart20261015 } from "../goals/seedWeightGoalStart";
 import { seedFixTractionRpe20261004, seedFixWorkout20261004 } from "../history/seedFixWorkout20261004";
 import { seedFixTractionRpe20261019 } from "../history/seedFixTractionRpe20261019";
 import { seedFixElevations20261023 } from "../history/seedFixElevations20261023";
+import { seedFixDeveloppeEpaules20261110 } from "../history/seedFixDeveloppeEpaules20261110";
 import { seedTractionTestV420261025 } from "../tests/seedTractionTestV4";
 import { seedAddNegatives20261029 } from "../history/seedAddNegatives20261029";
 import { seedWorkout20261101 } from "../history/seedWorkout20261101";
@@ -170,6 +171,8 @@ export const SEEDS: SeedStep[] = [
   { name: "calendrierV5", dependsOn: ["programmeMuscuV5", "routinesV5", "calendrierV4", "sansPadel20261102"], run: () => seedCalendrierV5(v5SeedNow()) },
   /* Seed 58 : la routine dos complète à partir du 22/11/2026. */
   { name: "routineDosComplete20261122", dependsOn: ["calendrierV5"], run: () => seedRoutineDosComplete20261122(v5SeedNow()) },
+  /* Seed 59 (12/11/2026) : 20 kg (et non 10 kg) sur la dernière série de développé épaules de la Muscu B du 10/11. */
+  { name: "fixDeveloppeEpaules20261110", dependsOn: ["exerciseCatalog"], run: () => seedFixDeveloppeEpaules20261110() },
 ];
 
 /**

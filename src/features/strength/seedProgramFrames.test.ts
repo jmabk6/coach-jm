@@ -10,6 +10,7 @@ import { expectedAfterFrameTargets } from "./seedFrameTargets20260925";
 import { expectedCurlEzVersionAfterFix, FIX_WORKOUT_ID as FIX_20261004_ID, fixesOf20261004 } from "../history/seedFixWorkout20261004";
 import { FIX_TRACTION_RPE_20261019_WORKOUT_ID, fixTractionRpe20261019 } from "../history/seedFixTractionRpe20261019";
 import { FIX_ELEVATIONS_20261023_WORKOUT_ID, fixElevations20261023 } from "../history/seedFixElevations20261023";
+import { FIX_DEVELOPPE_EPAULES_20261110_WORKOUT_ID, fixDeveloppeEpaules20261110 } from "../history/seedFixDeveloppeEpaules20261110";
 import { ADD_NEGATIVES_20261029_WORKOUT_ID, addNegatives20261029 } from "../history/seedAddNegatives20261029";
 import { canonicalStringify } from "../backup/canonicalJson";
 import { resetAndRestore } from "../backup/resetAndRestore";
@@ -253,7 +254,10 @@ describe("T-21 (R) — sauvegarde réelle : le cadre existant n'est ni doublé n
                     : /* Seed 48 : les négatives de la Muscu C du 29/10, si la séance n'en a pas encore. */
                       workout.id === ADD_NEGATIVES_20261029_WORKOUT_ID
                       ? (addNegatives20261029(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "") ?? workout)
-                      : workout,
+                      : /* Seed 59 : 20 kg sur la dernière série de développé épaules de la Muscu B du 10/11, dans l'état constaté. */
+                        workout.id === FIX_DEVELOPPE_EPAULES_20261110_WORKOUT_ID
+                        ? (fixDeveloppeEpaules20261110(workout, workouts.find((item) => item.id === workout.id)?.updatedAt ?? "") ?? workout)
+                        : workout,
       ),
       ...(added ? [buildWorkout20260925(added.createdAt)] : []),
     ];
