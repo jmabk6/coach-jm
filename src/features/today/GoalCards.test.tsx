@@ -66,7 +66,7 @@ describe("Accueil — Mes 7 objectifs", () => {
     expect(document.querySelectorAll(".goal-card-home")).toHaveLength(7);
     expect(within(card("traction")).getByText("À mesurer · test dim. 27 sept.")).toBeDefined();
     expect(within(card("cardio")).getByText("À mesurer · test mer. 30 sept.")).toBeDefined();
-    expect(within(card("legs")).getByText("Indicateur à choisir après 2 tests")).toBeDefined();
+    expect(within(card("legs")).getByText(/^Indicateur à choisir après 2 tests/)).toBeDefined();
     /* 15/10/2026 : sans mesure RENPHO, une explication, jamais un statut favorable. */
     expect(within(card("weight")).getByText("Pas encore de pesée RENPHO")).toBeDefined();
     expect(document.querySelectorAll(".goal-card-home__status")).toHaveLength(0);
@@ -89,11 +89,12 @@ describe("Accueil — Mes 7 objectifs", () => {
     await db.testResults.put(result);
     renderCards();
     await screen.findByText("Mes 7 objectifs");
-    expect(within(card("traction")).getByText("0 kg")).toBeDefined();
+    /* La valeur, suivie de la date du prochain test quand il est prévu (13/11/2026). */
+    expect(within(card("traction")).getByText(/^0 kg/)).toBeDefined();
     expect(within(card("traction")).getByText("Palier atteint").className).toContain("goal-card-home__status--reached");
   });
 
-  it("test manqué : « Test à replanifier » ; Poids : mêmes calculs que l'écran de l'objectif (−0,5 kg/semaine)", async () => {
+  it("test manqué mais prochain test prévu : sa date (décision du 13/11/2026) ; Poids : mêmes calculs que l'écran de l'objectif (−0,5 kg/semaine)", async () => {
     const missed: PlannedSession = {
       id: "p", date: "2026-09-16", sessionTemplateId: "v1-cardio-a", status: "skipped", source: "weekly_program", createdAt: T, updatedAt: T,
       tests: [{ protocolId: testProtocolId("cardio"), placement: "replace_block" }],
@@ -107,7 +108,8 @@ describe("Accueil — Mes 7 objectifs", () => {
     );
     renderCards();
     await screen.findByText("Mes 7 objectifs");
-    expect(within(card("cardio")).getByText("À replanifier").className).toContain("goal-card-home__status--warning");
+    expect(within(card("cardio")).queryByText("À replanifier")).toBeNull();
+    expect(card("cardio").textContent).toMatch(/· test /);
     expect(within(card("weight")).getByText("87,75 kg · 2,7 kg d'avance")).toBeDefined();
     expect(within(card("weight")).getByText("En avance").className).toContain("goal-card-home__status--ahead");
   });

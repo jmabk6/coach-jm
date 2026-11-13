@@ -90,8 +90,8 @@ export function nextTestDate({
 }
 
 /**
- * Badge d'une ligne : « À replanifier » passe avant la date du prochain
- * test ; le Poids dit si la pesée du jour reste à faire.
+ * Badge d'une ligne : la date du prochain test ; « À replanifier » seulement
+ * sans prochain test prévu ; le Poids dit si la pesée du jour reste à faire.
  */
 export function goalBadge({
   goal,
@@ -121,13 +121,14 @@ export function goalBadge({
   const protocolId = goalProtocolId(goal, segment);
   if (!protocolId || !protocolKey) return undefined;
 
+  /* Décision de JM (13/11/2026) : la date du prochain test passe avant « À replanifier » ; un test manqué ne s'affiche que s'il n'y a pas de prochain test. */
+  const date = cycle ? nextTestDate({ protocolId, protocolKey, sessions, schedule, cycle, results, today }) : undefined;
+  if (date) return { kind: "test", date, label: `Test le ${formatTestDay(date)}` };
+
   if (listTestsToReschedule(sessions, results, today).some((item) => item.test.protocolId === protocolId)) {
     return { kind: "reschedule", label: "À replanifier" };
   }
-
-  if (!cycle) return undefined;
-  const date = nextTestDate({ protocolId, protocolKey, sessions, schedule, cycle, results, today });
-  return date ? { kind: "test", date, label: `Test le ${formatTestDay(date)}` } : undefined;
+  return undefined;
 }
 
 export interface GoalRowText {

@@ -84,7 +84,7 @@ describe("M4 — liste des objectifs", () => {
     expect(within(row("weight")).getByText("Pesée du jour")).toBeDefined();
   });
 
-  it("pesée faite : « Pesée demain » ; test manqué : « À replanifier »", async () => {
+  it("pesée faite : « Pesée demain » ; test manqué mais prochain test prévu : sa date, pas « À replanifier » (décision du 13/11/2026)", async () => {
     await db.weightEntries.add({ id: "w1", date: "2026-09-23", kg: 80, createdAt: T, updatedAt: T } as never);
     const missed: PlannedSession = {
       id: "p-cardio", date: "2026-09-16", sessionTemplateId: "v1-cardio-a", status: "skipped", source: "weekly_program", createdAt: T, updatedAt: T,
@@ -94,7 +94,8 @@ describe("M4 — liste des objectifs", () => {
     renderScreen();
     await screen.findByText("Traction");
     expect(within(row("weight")).getByText("Pesée demain")).toBeDefined();
-    expect(within(row("cardio")).getByText("À replanifier")).toBeDefined();
+    expect(within(row("cardio")).queryByText("À replanifier")).toBeNull();
+    expect(within(row("cardio")).getByText(/^Test le /)).toBeDefined();
   });
 
   it("Traction à 0 kg : « Palier atteint », jamais « objectif atteint » ; barre pleine", async () => {

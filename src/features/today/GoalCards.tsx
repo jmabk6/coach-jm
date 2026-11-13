@@ -62,9 +62,9 @@ export function GoalCards({ today }: { today: string }) {
   );
 }
 
-/** La valeur, ou « À mesurer · test dim. 27 sept. » quand un test est prévu. */
+/** La valeur, suivie de la date du prochain test quand il est prévu : « 122 bpm · test sam. 28 nov. » (décision de JM du 13/11/2026). */
 function valueOf(row: GoalListRow): string {
-  if (row.text.value === "À mesurer" && row.badge?.kind === "test") return `À mesurer · test ${formatShortDay(row.badge.date)}`;
+  if (row.badge?.kind === "test") return `${row.text.value} · test ${formatShortDay(row.badge.date)}`;
   return row.text.value;
 }
 
