@@ -201,6 +201,8 @@ export interface SnapshotAdjustment {
   rounds?: number;
   removeStepIds?: Id[];
   remove?: true;
+  /** Paliers rallongés ou raccourcis (durée en secondes, par identifiant de palier). */
+  stepDurationsSec?: Record<Id, number>;
 }
 
 /**
@@ -236,9 +238,12 @@ function applyAdjustments(blocks: SessionBlock[], tests: ReadonlyArray<SnapshotT
       if ((instructions.shape === "reps" || instructions.shape === "duration") && wanted.sets !== undefined) {
         return { ...block, instructions: { ...instructions, sets: wanted.sets } };
       }
-      if (instructions.shape === "steps" && wanted.removeStepIds) {
-        const removed = new Set(wanted.removeStepIds);
-        const steps = instructions.steps.filter((step) => !removed.has(step.id)).map((step, position) => ({ ...step, position }));
+      if (instructions.shape === "steps" && (wanted.removeStepIds || wanted.stepDurationsSec)) {
+        const removed = new Set(wanted.removeStepIds ?? []);
+        const durations = wanted.stepDurationsSec ?? {};
+        const steps = instructions.steps
+          .filter((step) => !removed.has(step.id))
+          .map((step, position) => ({ ...step, position, ...(durations[step.id] !== undefined ? { durationSec: durations[step.id]! } : {}) }));
         return { ...block, instructions: { ...instructions, steps } };
       }
       return block;

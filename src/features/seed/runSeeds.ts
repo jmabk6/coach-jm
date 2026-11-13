@@ -30,6 +30,7 @@ import { seedFixElevations20261023 } from "../history/seedFixElevations20261023"
 import { seedFixDeveloppeEpaules20261110 } from "../history/seedFixDeveloppeEpaules20261110";
 import { seedCalendrier20261115, seedCardiosLibres20261115, seedProgramMuscu20261115 } from "../program/seedProgram20261115";
 import { seedNow20261115 } from "../program/program20261115";
+import { seedTestJambesV2 } from "../tests/seedTestJambesV2";
 import { seedTractionTestV420261025 } from "../tests/seedTractionTestV4";
 import { seedAddNegatives20261029 } from "../history/seedAddNegatives20261029";
 import { seedWorkout20261101 } from "../history/seedWorkout20261101";
@@ -181,13 +182,15 @@ export const SEEDS: SeedStep[] = [
   { name: "cardiosLibres20261115", dependsOn: ["calendrierV5", "routinesV5"], run: () => seedCardiosLibres20261115(seedNow20261115()) },
   /* Seed 62 (programme 4+2, lot 3) : calendrier du 15/11, tests, plus de routine du soir ; après les modèles (D, cardios, séances libres). */
   { name: "calendrier20261115", dependsOn: ["programmeMuscu20261115", "cardiosLibres20261115", "calendrierV5"], run: () => seedCalendrier20261115(seedNow20261115()) },
+  /* Seed 63 (13/11/2026) : test jambes V2, après le calendrier 4+2 (le mardi de test vit dans le Cardio A). */
+  { name: "testJambesV2_20261113", dependsOn: ["calendrier20261115", "testProtocols"], run: () => seedTestJambesV2(seedNow20261115()) },
 ];
 
 /**
  * Pour les tests qui figent l'état d'avant le programme V2 (modèles,
  * cadres et objectifs V1) : tous les seeds sauf 19 et 20.
  */
-export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "loadSteps20261022", "shoulderRpe20261022", "perspectiveTracks20261022", "perspectiveDetailed20261022", "tractionTestV420261025", "addWorkout20261101", "programmeMuscuV4", "routinesV4", "calendrierV4", "routineBEpaule20261102", "sansPadel20261102", "programmeMuscuV5", "routinesV5", "calendrierV5", "routineDosComplete20261122", "programmeMuscu20261115", "cardiosLibres20261115", "calendrier20261115"].includes(seed.name));
+export const SEEDS_BEFORE_PROGRAM_V2: SeedStep[] = SEEDS.filter((seed) => !["programV2", "archiveProgramV1", "tractionPriority20261003", "tractionV620261004", "tractionTestV320261005", "negativesMuscuC20261005", "jambesSuspended20261005", "legPressMuscuA20261005", "curlHalteresMuscuA20261004", "tractionLightNote20261005", "programmeMuscu20261005", "programmeMuscuC20261009", "loadSteps20261022", "shoulderRpe20261022", "perspectiveTracks20261022", "perspectiveDetailed20261022", "tractionTestV420261025", "addWorkout20261101", "programmeMuscuV4", "routinesV4", "calendrierV4", "routineBEpaule20261102", "sansPadel20261102", "programmeMuscuV5", "routinesV5", "calendrierV5", "routineDosComplete20261122", "programmeMuscu20261115", "cardiosLibres20261115", "calendrier20261115", "testJambesV2_20261113"].includes(seed.name));
 
 export interface SeedReport {
   ran: string[];

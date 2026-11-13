@@ -220,7 +220,12 @@ describe("programme 4+2 — sauvegarde réelle", () => {
     await restoreBackup(parseBackup(await readFile(process.env.COACH_JM_BACKUP!, "utf8")), db);
     resumeSeedsForTests();
     expect((await runSeeds()).failed).toEqual([]);
-    /* Une sauvegarde déjà en V5 (non modifiée à la main) doit recevoir le programme ; une plus ancienne, non. */
+    /* Une sauvegarde déjà passée au programme 4+2 (iPhone du 13/11) : D est là, rien à rejouer. */
+    if ((await install())?.programmeMuscu20261115 !== undefined) {
+      expect(await db.sessionTemplates.get(MUSCU_D_ID)).toBeDefined();
+      return;
+    }
+    /* Une sauvegarde encore en V5 (non modifiée à la main) doit recevoir le programme ; une plus ancienne, non. */
     const ready = seedProgram20261115Ready(await db.sessionTemplates.toArray());
     if ((await install())?.programmeMuscuV5 !== undefined) expect(ready).toBe(true);
     if (!ready) return;

@@ -160,6 +160,8 @@ export interface InstallMarkers {
   cardiosLibres20261115?: string;
   /** Seed 62 : programme 4+2, calendrier du 15/11/2026, tests, fin des routines du soir. */
   calendrier20261115?: string;
+  /** Seed 63 : test jambes V2 (endurance), au mardi de la semaine de tests ; objectif Jambes sur les squats sur chaise. */
+  testJambesV2_20261113?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */

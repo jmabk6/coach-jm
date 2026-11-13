@@ -43,6 +43,15 @@ export interface TestMeasureSpec {
   signed?: boolean;
   /** Exercice du catalogue qui illustre la mesure. */
   exerciseId?: Id;
+  /**
+   * Test jambes V2 (13/11/2026) : réponse par boutons (Oui / Non ; Aucun /
+   * Genou / Dos), enregistrée comme un nombre.
+   */
+  choices?: Array<{ value: number; label: string }>;
+  /** Plafond de saisie (squats : 40 ; chaise : 120 s). */
+  max?: number;
+  /** Préremplie avec la valeur du test précédent (distance talons-mur). */
+  prefill?: "previous";
 }
 
 export interface TestProtocolVersion {
@@ -77,9 +86,15 @@ export interface TestTrial {
 
 export interface TestMeasureValue {
   key: string;
+  /** Valeur retenue pour les calculs et les comparaisons (plafonnée si la mesure a un plafond). */
   value: number;
   unit: string;
   side?: "left" | "right";
+  /**
+   * Test jambes V2 (13/11/2026) : la valeur réellement saisie quand elle
+   * dépasse le plafond du protocole (45 squats → `value` 40, `entered` 45).
+   */
+  entered?: number;
 }
 
 export interface TestResult {
@@ -122,7 +137,12 @@ export interface PlannedTest {
    * remplacés par le test. Prime sur `targetStepId`.
    */
   targetStepIds?: Id[];
-  adjustments?: Array<{ blockId: Id; sets: number }>;
+  /**
+   * Ajustements du jour de test : séries en moins (traction), brique retirée
+   * et palier rallongé (test jambes V2 : bloc jambes retiré, retour au calme
+   * à 10 min).
+   */
+  adjustments?: Array<{ blockId: Id; sets?: number; remove?: true; stepDurationsSec?: Record<Id, number> }>;
   /** D26 : posé par « Replanifier ». */
   rescheduledToPlannedSessionId?: Id;
 }

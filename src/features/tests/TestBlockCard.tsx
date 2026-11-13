@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, ChevronDown, ChevronUp, ClipboardCheck, X } from "lucide-react";
 import type { PerformedTestBlock, TestMeasureSpec, TestProtocolVersion, TestResult } from "../../domain";
-import { getTestResult } from "../../db/repositories/testRepository";
+import { getTestResult, getTestResultsForProtocol } from "../../db/repositories/testRepository";
 import {
   computeTestResult,
   draftFromResult,
@@ -24,6 +24,7 @@ import { NumberField } from "../workout/NumberField";
 import { formatNumberInput, parseNumber } from "../workout/numberInput";
 import { formatDecimal } from "../workout/workoutRecap";
 import { fixSprintUnit, type SprintUnit } from "./fixSprintUnit";
+import { TestTools } from "./TestTools";
 import { useTestProtocolVersion } from "./useTestProtocolVersion";
 import "./TestBlockCard.css";
 
@@ -153,6 +154,8 @@ export function TestBlockCard({
             </ul>
           </details>
 
+          {canEdit && <TestTools settings={version.settings} />}
+
           {version.kind === "trials_descending" ? (
             <TrialsPanel block={block} version={version} canEdit={canEdit} apply={apply} start={trialStart} />
           ) : (
@@ -228,13 +231,24 @@ function ResultLines({ version, measures }: { version: TestProtocolVersion; meas
       return {
         spec,
         text: found
-          .map((measure) => `${measure.side === "left" ? "G " : measure.side === "right" ? "D " : ""}${formatValue(measure.value, measure.unit)}`)
+          .map((measure) => `${measure.side === "left" ? "G " : measure.side === "right" ? "D " : ""}${formatValue(measure.value, measure.unit)}${measure.entered !== undefined ? ` (plafond ; ${formatValue(measure.entered, measure.unit)} saisis)` : ""}`)
           .join(" · "),
       };
     });
 
+  /* Test jambes V2 : arrêt sur douleur → gardé, mais exclu des comparaisons. */
+  const painSpec = version.measures.find((spec) => spec.key === "arret_douleur");
+  const pain = measures.find((measure) => measure.key === "arret_douleur" && measure.value > 0);
+  const painLabel = pain ? painSpec?.choices?.find((choice) => choice.value === pain.value)?.label : undefined;
+
   return (
     <dl className="test-card__lines">
+      {painLabel && (
+        <div className="test-card__line">
+          <dt>Arrêt sur douleur</dt>
+          <dd>{painLabel} — exclu des comparaisons</dd>
+        </div>
+      )}
       {lines.map(({ spec, text }) => (
         <div key={spec.key} className={spec.key === version.primaryMeasureKey ? "test-card__line test-card__line--primary" : "test-card__line"}>
           <dt>{spec.label}</dt>
@@ -428,8 +442,9 @@ function MeasuresPanel({
 }) {
   const [unitError, setUnitError] = useState<string>();
   const entered = version.measures.filter((spec) => spec.input === "entered");
-  const required = entered.filter((spec) => spec.required);
-  const optional = entered.filter((spec) => !spec.required);
+  /* Les réponses par boutons (arrêt sur douleur) restent toujours visibles, même facultatives. */
+  const required = entered.filter((spec) => spec.required || spec.choices);
+  const optional = entered.filter((spec) => !spec.required && !spec.choices);
   const needsUnit = version.measures.some((spec) => spec.key.startsWith("sprint_")) && !version.settings?.unit;
 
   async function chooseUnit(unit: SprintUnit) {
@@ -443,7 +458,9 @@ function MeasuresPanel({
   }
 
   const field = (spec: TestMeasureSpec) =>
-    spec.side ? (
+    spec.choices ? (
+      <ChoiceField key={spec.key} block={block} spec={spec} canEdit={canEdit} apply={apply} />
+    ) : spec.side ? (
       <SideField key={spec.key} block={block} spec={spec} version={version} canEdit={canEdit} apply={apply} />
     ) : (
       <ValueField
@@ -506,11 +523,32 @@ function ValueField({
   const [text, setText] = useCommittedText(stored);
   const unit = measureUnit(spec, version);
 
+  /* Test jambes V2 : la distance talons-mur reprend celle du test précédent. */
+  useEffect(() => {
+    if (spec.prefill !== "previous" || stored !== undefined || !canEdit) return;
+    let cancelled = false;
+    void getTestResultsForProtocol(block.protocolId).then((results) => {
+      const previous = [...results]
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .reverse()
+        .map((result) => result.measures.find((measure) => measure.key === spec.key)?.value)
+        .find((value) => value !== undefined);
+      if (!cancelled && previous !== undefined) void apply((current, at) => setTestValue(current, block.id, spec, previous, at));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Une seule fois à l'ouverture du champ vide.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function commit() {
     const parsed = parseNumber(text);
     if (parsed === stored) return;
     void apply((current, at) => setTestValue(current, block.id, spec, parsed, at));
   }
+  /* Plafond du protocole (squats 40, chaise 120 s) : la saisie est gardée telle quelle, le calcul retient le plafond. */
+  const capped = stored !== undefined && spec.max !== undefined && stored > spec.max;
 
   return (
     <label className="test-card__field">
@@ -532,7 +570,50 @@ function ValueField({
         {unit && <span>{unit}</span>}
       </span>
       {spec.signed && <small>0 = niveau des pieds ; négatif = au-delà</small>}
+      {spec.max !== undefined && (
+        <small className={capped ? "test-card__capped" : undefined}>
+          {capped ? `Au-delà du plafond : ${formatNumberInput(stored)} gardé dans l'historique, ${spec.max} retenu pour les comparaisons` : `Plafond du test : ${spec.max}`}
+        </small>
+      )}
+      {spec.prefill === "previous" && <small>Même distance à chaque test : reprise du test précédent quand il y en a un</small>}
     </label>
+  );
+}
+
+/** Réponse par boutons (test jambes V2 : cadence tenue, arrêt sur douleur). Sans réponse, le premier choix « 0 » est affiché comme valeur par défaut. */
+function ChoiceField({
+  block,
+  spec,
+  canEdit,
+  apply,
+}: {
+  block: PerformedTestBlock;
+  spec: TestMeasureSpec;
+  canEdit: boolean;
+  apply: (action: WorkoutAction) => unknown;
+}) {
+  const stored = block.draft?.values?.[spec.key];
+  const shown = stored ?? (spec.required ? undefined : 0);
+  return (
+    <fieldset className="test-card__field test-card__choices">
+      <legend>{spec.label}</legend>
+      <div role="group" aria-label={spec.label}>
+        {(spec.choices ?? []).map((choice) => (
+          <button
+            key={choice.value}
+            type="button"
+            aria-pressed={shown === choice.value}
+            className={shown === choice.value ? "is-active" : ""}
+            disabled={!canEdit}
+            onClick={() => {
+              if (stored !== choice.value) void apply((current, at) => setTestValue(current, block.id, spec, choice.value, at));
+            }}
+          >
+            {choice.label}
+          </button>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 

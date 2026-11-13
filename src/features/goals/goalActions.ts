@@ -1,4 +1,5 @@
 import { db } from "../../db/database";
+import { LEGS_MEASURES_V2 } from "../tests/testJambesV2";
 import type { Goal, GoalDirection, GoalSegment, Id } from "../../domain";
 import { testProtocolId } from "../tests/testProtocolsV1";
 
@@ -9,11 +10,8 @@ import { testProtocolId } from "../tests/testProtocolsV1";
  */
 
 /** Mesures de Jambes proposées au choix (§ 2.2), avec leur sens. */
-export const LEGS_MEASURES: ReadonlyArray<{ measureKey: string; direction: GoalDirection }> = [
-  { measureKey: "sprint_puissance_moy", direction: "increase" },
-  { measureKey: "sprint_baisse_pct", direction: "decrease" },
-  { measureKey: "chaise_duree_s", direction: "increase" },
-];
+/** Test jambes V2 (13/11/2026) : squats sur chaise, chaise contre le mur, FC de fin des montées. */
+export const LEGS_MEASURES: ReadonlyArray<{ measureKey: string; direction: GoalDirection }> = LEGS_MEASURES_V2;
 
 export interface SegmentEdit {
   target?: number;

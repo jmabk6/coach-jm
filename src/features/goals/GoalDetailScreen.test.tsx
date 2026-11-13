@@ -166,14 +166,16 @@ describe("M5 — édition", () => {
     renderGoal("legs");
     fireEvent.click(await screen.findByRole("button", { name: "Modifier la mesure, la cible et l'échéance" }));
     const sheet = await screen.findByRole("dialog");
-    fireEvent.change(within(sheet).getByLabelText("Mesure"), { target: { value: "sprint_baisse_pct" } });
+    /* Test jambes V2 (13/11/2026) : les mesures de sprint ne sont plus proposées ; la chaise reste. */
+    expect(within(sheet).queryByRole("option", { name: "Baisse du 1er au 6e sprint" })).toBeNull();
+    fireEvent.change(within(sheet).getByLabelText("Mesure"), { target: { value: "chaise_duree_s" } });
     fireEvent.click(within(sheet).getByRole("button", { name: /Enregistrer/ }));
 
     await waitFor(async () =>
       expect((await db.goals.get("goal-legs"))!.segments[0]).toMatchObject({
-        measure: { source: "test", protocolId: "protocol-jambes", measureKey: "sprint_baisse_pct" },
-        direction: "decrease",
-        label: "Baisse du 1er au 6e sprint",
+        measure: { source: "test", protocolId: "protocol-jambes", measureKey: "chaise_duree_s" },
+        direction: "increase",
+        label: "Chaise contre le mur",
       }),
     );
     expect((await db.goals.get("goal-legs"))!.segments[0]!.target).toBeUndefined();

@@ -35,11 +35,17 @@ export function measureValue(result: Pick<TestResult, "measures">, key: string, 
  * Points de test d'un segment : résultats **complets** de son protocole qui
  * portent sa mesure, par date. Un résultat incomplet n'entre pas (§ 3.7.3).
  */
+/** Test jambes V2 : un test arrêté sur douleur (genou, dos) est gardé mais exclu des comparaisons. */
+export const PAIN_STOP_MEASURE_KEY = "arret_douleur";
+export function stoppedOnPain(result: Pick<TestResult, "measures">): boolean {
+  return result.measures.some((measure) => measure.key === PAIN_STOP_MEASURE_KEY && measure.value > 0);
+}
+
 export function testPointsFor(segment: GoalSegment, results: ReadonlyArray<TestResult>): GoalPoint[] {
   const measure = segment.measure;
   if (measure?.source !== "test") return [];
   return results
-    .filter((result) => result.protocolId === measure.protocolId && result.status === "complete")
+    .filter((result) => result.protocolId === measure.protocolId && result.status === "complete" && !stoppedOnPain(result))
     .map((result) => ({ result, value: measureValue(result, measure.measureKey, segment.direction) }))
     .filter((item): item is { result: TestResult; value: number } => item.value !== undefined)
     .map(({ result, value }) => ({ date: result.date, value, versionId: result.versionId, resultId: result.id }))

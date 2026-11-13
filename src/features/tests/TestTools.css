@@ -1,0 +1,80 @@
+/* Test jambes V2, lot 2 : métronome et chronos, grands boutons lisibles sur iPhone. */
+.test-tools {
+  display: grid;
+  gap: 10px;
+}
+
+.test-tools h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.test-tools ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.test-tools__stage {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.test-tools__stage.is-running {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
+}
+
+.test-tools__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.test-tools__clock {
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.test-tools__stage.is-running .test-tools__clock {
+  color: var(--color-accent);
+}
+
+.test-tools__hint,
+.test-tools__done,
+.test-tools__muted {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+}
+
+.test-tools__start,
+.test-tools__stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 700;
+}
+
+.test-tools__start {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.test-tools__stop {
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+}

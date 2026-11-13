@@ -258,6 +258,8 @@ describe("programme V5 — sauvegarde réelle", () => {
     await db.delete();
     await db.open();
     await restoreBackup(parseBackup(await readFile(process.env.COACH_JM_BACKUP!, "utf8")), db);
+    /* Sauvegarde déjà passée au programme 4+2 (iPhone du 13/11) : la V5 est derrière elle, rien à vérifier ici. */
+    if ((await install())?.programmeMuscu20261115 !== undefined) return;
     const workouts = await db.workouts.toArray();
     const before = ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => session.date < PROGRAM_V5_FIRST_DAY);
     resumeSeedsForTests();

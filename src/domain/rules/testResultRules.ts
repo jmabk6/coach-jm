@@ -68,6 +68,12 @@ function derive(key: string, values: Record<string, number>, trials: TestTrial[]
       const weight = values.poids_jour_kg;
       return best === undefined || weight === undefined ? undefined : roundTo(weight - best, 0.1);
     }
+    /* Test jambes V2 : récupération cardiaque = FC fin des montées − FC 1 min après. */
+    case "step_fc_recup": {
+      const end = values.step_fc_fin;
+      const after = values.step_fc_1min;
+      return end === undefined || after === undefined ? undefined : end - after;
+    }
     case "fc_moy_16_20": {
       const readings = [16, 17, 18, 19, 20].map((minute) => values[`fc_${minute}`]);
       if (readings.some((reading) => reading === undefined)) return undefined;
@@ -123,7 +129,9 @@ export function computeTestResult(
 
     const value = spec.input === "entered" ? values[spec.key] : derive(spec.key, values, trials);
     if (value !== undefined) {
-      measures.push({ key: spec.key, value, unit });
+      /* Plafond du protocole : la valeur saisie est gardée, la valeur retenue est plafonnée. */
+      if (spec.max !== undefined && value > spec.max) measures.push({ key: spec.key, value: spec.max, unit, entered: value });
+      else measures.push({ key: spec.key, value, unit });
       continue;
     }
     if (spec.required) {
@@ -186,7 +194,7 @@ export function draftFromResult(result: Pick<TestResult, "measures" | "trials" |
     if (measure.side) {
       draft.sideValues = { ...draft.sideValues, [measure.key]: { ...draft.sideValues?.[measure.key], [measure.side]: measure.value } };
     } else {
-      draft.values = { ...draft.values, [measure.key]: measure.value };
+      draft.values = { ...draft.values, [measure.key]: measure.entered ?? measure.value };
     }
   }
   if (result.trials && result.trials.length > 0) draft.trials = structuredClone(result.trials);
