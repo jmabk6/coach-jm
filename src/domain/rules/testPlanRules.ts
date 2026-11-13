@@ -108,7 +108,8 @@ export function attachTestPlan({
 
     let evening = sessions.find((session) => session.date === date && slotOf(session) === "evening");
     if (!evening) {
-      const routineId = eveningRoutineFor(program, date);
+      /* Programme 4+2 (15/11/2026) : plus de routine du soir ; le soir de test se crée sur le modèle de l'entrée (Souplesse). */
+      const routineId = eveningRoutineFor(program, date) ?? entry.templateId;
       if (!routineId) continue;
       evening = {
         id: eveningSessionId(date),

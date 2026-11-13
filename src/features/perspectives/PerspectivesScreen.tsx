@@ -10,7 +10,9 @@ import { forecastText, statusLabel } from "./perspectiveText";
 import type { PerspectiveView } from "./perspectiveView";
 import "./Perspectives.css";
 
-const SESSIONS: PerspectiveSession[] = ["A", "B", "C"];
+const SESSIONS: PerspectiveSession[] = ["A", "B", "C", "D"];
+/** La Muscu D (programme 4+2) n'apparaît qu'une fois qu'elle a des pistes. */
+const sessionsOf = (views: PerspectiveView[] | undefined) => SESSIONS.filter((item) => item !== "D" || (views ?? []).some((view) => view.track.session === "D"));
 
 /**
  * Objectifs › Perspectives au 31 mars (lot P3, 22/10/2026) : pour chaque
@@ -45,7 +47,7 @@ export function PerspectivesScreen() {
       <p className="perspectives__lead">Où tu en es, ce que tu vises à la prochaine séance, et une prévision qui s’ajuste à tes résultats. Des repères, pas une obligation.</p>
 
       <div className="perspectives__sessions" role="group" aria-label="Séance">
-        {SESSIONS.map((item) => (
+        {sessionsOf(views).map((item) => (
           <button key={item} type="button" aria-pressed={item === session} className={item === session ? "is-active" : ""} onClick={() => setParams({ seance: item }, { replace: true })}>
             Muscu {item}
           </button>

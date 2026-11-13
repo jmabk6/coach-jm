@@ -153,19 +153,23 @@ export function EveningRow({ session, template, durationLabel, tests = [], onOpe
 interface FreeWorkoutRowProps {
   workout: WorkoutSession;
   exerciseById: Map<Id, Exercise>;
+  /** Le modèle lancé hors planning (Souplesse, Abdos…) : son nom et sa catégorie. */
+  template?: SessionTemplate | undefined;
   onOpenMenu: (workout: WorkoutSession) => void;
 }
 
 /**
  * Une réalisation libre au calendrier : même structure de ligne,
- * badge `Faite · Libre`, résumé du contenu réellement fait.
+ * badge `Faite · Libre`, résumé du contenu réellement fait. Lancée depuis
+ * un modèle (programme 4+2 : Souplesse, Abdos), elle porte son nom.
  */
 export function FreeWorkoutRow({
   workout,
   exerciseById,
+  template,
   onOpenMenu,
 }: FreeWorkoutRowProps) {
-  const category = inferFreeWorkoutCategory(workout, exerciseById);
+  const category = template?.category ?? inferFreeWorkoutCategory(workout, exerciseById);
 
   return (
     <div className="program-row">
@@ -182,7 +186,7 @@ export function FreeWorkoutRow({
         </span>
 
         <span className="program-row__body">
-          <span className="program-row__name">Séance libre</span>
+          <span className="program-row__name">{template?.name ?? "Séance libre"}</span>
           <span className="program-row__meta program-row__meta--wrap">
             {formatFreeWorkoutSummary(workout, exerciseById)}
           </span>

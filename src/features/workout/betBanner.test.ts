@@ -83,7 +83,8 @@ describe("bandeau du pari traction V6", () => {
       [35, 28, 21, 14, 7].map((kg, index) => done(["2026-10-04", "2026-11-01", "2026-12-06", "2027-01-10", "2027-02-21"][index]!, [[kg, 5, 9], [kg, 5, 9], [kg, 5, 9]])),
       "2027-02-22",
     );
-    expect(betBannerFor(on("2027-02-23", "v2-muscu-b"), block(), free)!.title).toBe("Traction légère — 14 kg d'aide (phase essai libre)");
+    /* Depuis le 15/11/2026, la traction légère est en Muscu C (programme 4+2). */
+    expect(betBannerFor(on("2027-02-24", "v2-muscu-c"), block(), free)!.title).toBe("Traction légère — 14 kg d'aide (phase essai libre)");
     const a = betBannerFor(on("2027-02-28", "v2-muscu-a"), block(), free)!;
     expect(a.title).toBe("Phase essai libre — 0 kg d'abord");
     expect(a.sets.map((set) => set.assistKg)).toEqual([0, 7, 7]);

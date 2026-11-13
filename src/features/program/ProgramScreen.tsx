@@ -420,6 +420,7 @@ function EntryRow({
       <FreeWorkoutRow
         workout={entry.workout}
         exerciseById={data.exerciseById}
+        template={entry.workout.sessionTemplateId ? data.templateById.get(entry.workout.sessionTemplateId) : undefined}
         onOpenMenu={onOpenFreeMenu}
       />
     );
@@ -907,7 +908,7 @@ function isVisibleInMonth(entry: ProgramEntry, today: string): boolean {
 
 /** Catégorie d'une entrée : celle du modèle, sinon la nature réelle de la séance libre. */
 function entryCategory(entry: ProgramEntry, data: ProgramData): SessionCategory | undefined {
-  if (entry.kind === "free") return categoryForWorkout(entry.workout, undefined, data.exerciseById);
+  if (entry.kind === "free") return (entry.workout.sessionTemplateId ? data.templateById.get(entry.workout.sessionTemplateId)?.category : undefined) ?? categoryForWorkout(entry.workout, undefined, data.exerciseById);
   return data.templateById.get(entry.session.sessionTemplateId)?.category;
 }
 
@@ -1075,6 +1076,7 @@ function ProgramFlow({
       return (
         <FreeWorkoutMenu
           workout={flow.workout}
+          name={flow.workout.sessionTemplateId ? data.templateById.get(flow.workout.sessionTemplateId)?.name : undefined}
           onOpenRecap={(workout) => onOpenRecap(workout.id)}
           onDismiss={onDismiss}
         />

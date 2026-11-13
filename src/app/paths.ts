@@ -105,7 +105,7 @@ export const paths = {
 
   goals: () => ROUTES.goals,
   goal: (key: string, query?: { onglet?: "exercices" | "conseils" }) => withQuery(`${ROUTES.goals}/${key}`, query),
-  perspectives: (query?: { seance?: "A" | "B" | "C" }) => withQuery(ROUTES.perspectives, query),
+  perspectives: (query?: { seance?: "A" | "B" | "C" | "D" }) => withQuery(ROUTES.perspectives, query),
   perspective: (trackId: string, query?: { retour?: "seance" }) => withQuery(`${ROUTES.perspectives}/${trackId}`, query),
 
   planning: (query?: { date?: string; view?: "mois"; month?: string }) => withQuery(ROUTES.planning, query),

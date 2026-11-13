@@ -154,6 +154,12 @@ export interface InstallMarkers {
   routineDosComplete20261122?: string;
   /** Seed 59 : développé épaules machine du 10/11, dernière série à 20 kg (et non 10 kg). */
   fixDeveloppeEpaules20261110?: string;
+  /** Seed 60 : programme 4+2, Muscu A, B, C et D (à partir du 15/11/2026). */
+  programmeMuscu20261115?: string;
+  /** Seed 61 : programme 4+2, cardios (fractionné + jambes, endurance longue), séances libres Souplesse et Abdos. */
+  cardiosLibres20261115?: string;
+  /** Seed 62 : programme 4+2, calendrier du 15/11/2026, tests, fin des routines du soir. */
+  calendrier20261115?: string;
   /** Seed 42 : crans réels des équipements (perspectives). */
   loadSteps20261022?: string;
   /** Seed 43 : développé épaules machine, plafond RPE 9. */

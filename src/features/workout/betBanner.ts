@@ -2,7 +2,7 @@ import type { PerformedExerciseBlock, PerformedSeries, PerformedSeriesRole, Work
 import { isWorkSeries } from "../../domain/rules/strengthRules";
 import { BET_EXERCISE_ID, BET_FORCE_TEMPLATES, formatBetSets, type BetSet } from "../goals/tractionBet";
 import {
-  isRepli, V6_LIGHT_TEMPLATE_ID, V6_MAX_RPE, V6_STEP_KG, V6_VALIDATION_REPS, v6Color, v6ForceSession, v6LightSession, v6VolumeKgAfter, type V6Color, type V6State,
+  isRepli, v6LightTemplateIdAt, V6_MAX_RPE, V6_STEP_KG, V6_VALIDATION_REPS, v6Color, v6ForceSession, v6LightSession, v6VolumeKgAfter, type V6Color, type V6State,
 } from "../goals/tractionV6";
 import { v6StatusLabel } from "../goals/tractionV6View";
 import { TRACTION_TEST_V4_COMPLEMENT } from "../tests/seedTractionTestV4";
@@ -65,7 +65,7 @@ function doneSets(block: PerformedExerciseBlock): BetSet[] {
 export function betBannerFor(workout: WorkoutSession, block: PerformedExerciseBlock, state: V6State, statusState: V6State = state): BetBanner | undefined {
   if (block.exerciseId !== BET_EXERCISE_ID) return undefined;
 
-  if (workout.sessionTemplateId === V6_LIGHT_TEMPLATE_ID) {
+  if (workout.sessionTemplateId === v6LightTemplateIdAt(workout.date)) {
     const light = v6LightSession(state, workout.date);
     const lastValidation = [...state.events].reverse().find((event) => event.kind === "validation");
     const why = state.phase === "essai_libre" ? "phase essai libre" : lastValidation ? `volume après ${lastValidation.detail} validé` : "volume, avant toute validation";

@@ -21,6 +21,7 @@ import { workSetsOf } from "../../domain/rules/progressionRules";
 import { nextRoutineTarget } from "../../domain/rules/routineProgressionRules";
 import { ROUTINE_RPE_MAX, ROUTINE_V4_BLOCKS } from "../program/programRoutinesV4";
 import { routineProgressionOf, ROUTINE_V5_BLOCKS } from "../program/programV5";
+import { libreBlockRules, libreRoutineBlocks } from "../program/program20261115";
 import { getWeekStartDate } from "../../domain/rules/programRules";
 import { PROGRAM_V4_START } from "../program/programV4";
 import { LOCKED_LABELS, practiceLockOf } from "../../domain/rules/exerciseClearanceRules";
@@ -49,8 +50,15 @@ export function dayTargetFor(block: PerformedExerciseBlock, date: string, contex
 
 const PAIN_NOTE = /douleur|mal au|mal à/i;
 
-/** Les briques de routine suivies : routines V4 et routine dos V5. */
-const ROUTINE_BLOCKS: ReadonlyMap<string, { exerciseId: string; sets: number; start: number }> = new Map([...ROUTINE_V4_BLOCKS, ...ROUTINE_V5_BLOCKS]);
+/** Les briques de routine suivies : routines V4, routine dos V5 et séances libres Souplesse et Abdos (programme 4+2). */
+const ROUTINE_BLOCKS: ReadonlyMap<string, { exerciseId: string; sets: number; start: number }> = new Map([
+  ...ROUTINE_V4_BLOCKS,
+  ...ROUTINE_V5_BLOCKS,
+  ...libreRoutineBlocks((exerciseId) => routineProgressionOf(exerciseId) !== undefined),
+]);
+
+/** Séances libres Souplesse et Abdos : leurs propres pas et plafonds de RPE (l'historique reste celui de l'exercice). */
+const LIBRE_BLOCK_RULES = libreBlockRules(routineProgressionOf);
 
 /**
  * Programme V4 (lot L5) : l'objectif d'une brique de routine, d'après la
@@ -60,7 +68,7 @@ const ROUTINE_BLOCKS: ReadonlyMap<string, { exerciseId: string; sets: number; st
  */
 export function routineDayTarget(sourceBlockId: Id, date: string, context: DayTargetContext, now: string): DayTarget | undefined {
   const spec = ROUTINE_BLOCKS.get(sourceBlockId);
-  const rule = spec ? routineProgressionOf(spec.exerciseId) : undefined;
+  const rule = spec ? (LIBRE_BLOCK_RULES.get(sourceBlockId) ?? routineProgressionOf(spec.exerciseId)) : undefined;
   if (!spec || !rule) return undefined;
   if (practiceLockOf(context.exerciseById.get(spec.exerciseId))) return undefined;
   const history = context.completed
@@ -103,7 +111,7 @@ export function routineDayTarget(sourceBlockId: Id, date: string, context: DayTa
 function nextFromLatest(
   latest: { workout: WorkoutSession; block: PerformedExerciseBlock; source: { exerciseId: string; sets: number; start: number } } | undefined,
   spec: { exerciseId: string; sets: number; start: number },
-  rule: NonNullable<ReturnType<typeof routineProgressionOf>>,
+  rule: NonNullable<ReturnType<typeof routineProgressionOf>> & { rpeMax?: number },
   now: string,
 ): DayTarget {
   const frozen = latest?.block.dayTarget?.sets[0];
@@ -116,7 +124,7 @@ function nextFromLatest(
         pain: (latest.block.series ?? []).some((series) => series.note !== undefined && PAIN_NOTE.test(series.note)),
       }
     : undefined;
-  return nextRoutineTarget({ rule: { ...rule, rpeMax: ROUTINE_RPE_MAX }, sets: spec.sets, start: spec.start, last, now });
+  return nextRoutineTarget({ rule: { ...rule, rpeMax: rule.rpeMax ?? ROUTINE_RPE_MAX }, sets: spec.sets, start: spec.start, last, now });
 }
 
 /** L'objectif de la prochaine séance d'une piste, à une date donnée (séances enregistrées jusqu'à cette date). */

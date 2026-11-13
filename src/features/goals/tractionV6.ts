@@ -357,6 +357,16 @@ export function v6LightSession(state: V6State, date: string): { assistKg: number
 export const V6_FORCE_BLOCK_ID = "v2-muscu-a-traction";
 export const V6_LIGHT_BLOCK_ID = "v2-muscu-b-traction";
 export const V6_LIGHT_TEMPLATE_ID = "v2-muscu-b";
+/**
+ * Programme 4+2 (15/11/2026) : la traction légère passe de la Muscu B à la
+ * Muscu C avec sa brique (`v2-muscu-b-traction`) ; mêmes règles du pari.
+ */
+export const V6_LIGHT_IN_C_FROM = "2026-11-15";
+
+/** Le modèle qui porte la traction légère à cette date : B jusqu'au 14/11, C ensuite. */
+export function v6LightTemplateIdAt(date: string): "v2-muscu-b" | "v2-muscu-c" {
+  return date >= V6_LIGHT_IN_C_FROM ? "v2-muscu-c" : V6_LIGHT_TEMPLATE_ID;
+}
 
 /** Muscu C : les tractions négatives, à partir du 01/11/2026 (§ 11). */
 export const V6_NEGATIVES_BLOCK_ID = "v2-muscu-c-negatives";
@@ -379,7 +389,8 @@ export interface V6Adjustment {
 
 /**
  * Allègement au démarrage d'une séance (§ 9 et § 11), décidé par la date :
- * - Muscu B en semaine test : la traction à 2 séries (2 × 8) ;
+ * - séance légère (Muscu B, Muscu C depuis le 15/11) en semaine test : la
+ *   traction à 2 séries (2 × 8) ;
  * - Muscu C en semaine test (−50 %) : 3 séries → 2, 2 → 1 (la moitié,
  *   arrondie au-dessus), « Rester bas » 3 tours → 2 ; l'échauffement ne
  *   bouge pas ;
@@ -391,11 +402,17 @@ export function v6SnapshotAdjustments(template: AdjustableTemplate, date: string
   if (date < V6_START_DATE) return [];
   const testWeek = v6WeekOf(date).kind === "test" && getWeekStartDate(date) >= V6_START_DATE;
 
-  if (template.id === V6_LIGHT_TEMPLATE_ID) return testWeek ? [{ blockId: V6_LIGHT_BLOCK_ID, sets: 2 }] : [];
+  const lightHere = template.id === v6LightTemplateIdAt(date);
+  if (template.id === V6_LIGHT_TEMPLATE_ID) return lightHere && testWeek ? [{ blockId: V6_LIGHT_BLOCK_ID, sets: 2 }] : [];
 
   if (template.id === "v2-muscu-c") {
     const adjustments: V6Adjustment[] = [];
     for (const block of template.blocks) {
+      /* Traction légère (en C depuis le 15/11) : la règle du pari, 2 × 8 en semaine test. */
+      if (lightHere && block.id === V6_LIGHT_BLOCK_ID) {
+        if (testWeek) adjustments.push({ blockId: block.id, sets: 2 });
+        continue;
+      }
       if (block.id === V6_NEGATIVES_BLOCK_ID && date < V6_NEGATIVES_START) {
         adjustments.push({ blockId: block.id, remove: true });
         continue;

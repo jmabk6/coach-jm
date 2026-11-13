@@ -58,7 +58,11 @@ interface SeriesFormProps {
    * choisit watts ou mètres ; présente, elle est imposée.
    */
   powerUnit?: PowerUnit | undefined;
-  /** Unité d'une saisie par côté en répétitions : « pas » pour la marche latérale. */
+  /**
+   * Unité d'une saisie par côté en répétitions : « pas » pour la marche
+   * latérale. Sur une charge × répétitions, libellé du champ des répétitions :
+   * « Reps par jambe (la plus faible) » pour la presse à une jambe.
+   */
   sideRepsUnit?: string | undefined;
   submitLabel: string;
   /**
@@ -105,7 +109,7 @@ export function SeriesForm({
   barWeightKg,
   loadSemantics = "external",
   powerUnit,
-  sideRepsUnit = "reps",
+  sideRepsUnit: sideRepsLabel,
   submitLabel,
   draftKey,
   onSubmit,
@@ -128,6 +132,8 @@ export function SeriesForm({
           : undefined,
     )),
   );
+  const sideRepsUnit = sideRepsLabel ?? "reps";
+  const repsLabel = layout === "load_reps" && sideRepsLabel ? sideRepsLabel : "Reps";
   const [reps, setReps] = useState(restored("reps", formatNumberInput(initial.reps)));
   const [duration, setDuration] = useState(restored("duration", formatNumberInput(initial.durationSec)));
   const [left, setLeft] = useState(
@@ -314,7 +320,7 @@ export function SeriesForm({
         )}
 
         {(layout === "load_reps" || layout === "reps" || layout === "reps_duration") && (
-          <NumberField label="Reps" value={reps} onChange={setReps} step={1} min={0} />
+          <NumberField label={repsLabel} value={reps} onChange={setReps} step={1} min={0} />
         )}
 
         {layout === "duration" && (

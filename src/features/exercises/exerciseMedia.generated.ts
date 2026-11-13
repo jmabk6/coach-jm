@@ -41,6 +41,15 @@ export const exerciseMedia = {
       "media/exercises/core/crunch-inverse-frame3.dc30c9fe.webp",
     ],
   },
+  "crunch-machine": {
+    thumbnail: "media/exercises/core/crunch-machine-thumb.fefb636e.webp",
+    photo: "media/exercises/core/crunch-machine.3b1cc690.webp",
+    frames: [
+      "media/exercises/core/crunch-machine-frame1.9ad411fb.webp",
+      "media/exercises/core/crunch-machine-frame2.a06a7d12.webp",
+      "media/exercises/core/crunch-machine-frame3.f0e969b9.webp",
+    ],
+  },
   "crunch-poulie": {
     thumbnail: "media/exercises/core/crunch-poulie-thumb.3a3656e4.webp",
     photo: "media/exercises/core/crunch-poulie.5e16208a.webp",
@@ -455,6 +464,15 @@ export const exerciseMedia = {
       "media/exercises/jambes/presse-cuisses-frame3.69966cd2.webp",
     ],
   },
+  "presse-cuisses-une-jambe": {
+    thumbnail: "media/exercises/jambes/presse-cuisses-une-jambe-thumb.29cfa567.webp",
+    photo: "media/exercises/jambes/presse-cuisses-une-jambe.b6f7eba8.webp",
+    frames: [
+      "media/exercises/jambes/presse-cuisses-une-jambe-frame1.55610579.webp",
+      "media/exercises/jambes/presse-cuisses-une-jambe-frame2.6eadf921.webp",
+      "media/exercises/jambes/presse-cuisses-une-jambe-frame3.da748f4c.webp",
+    ],
+  },
   "pullover-poulie": {
     thumbnail: "media/exercises/dos/pullover-poulie-thumb.0262b061.webp",
     photo: "media/exercises/dos/pullover-poulie.fdb2e9d6.webp",
@@ -471,6 +489,15 @@ export const exerciseMedia = {
       "media/exercises/cardio/rameur-frame1.d5d02c5d.webp",
       "media/exercises/cardio/rameur-frame2.94b54656.webp",
       "media/exercises/cardio/rameur-frame3.861a8fab.webp",
+    ],
+  },
+  "rotary": {
+    thumbnail: "media/exercises/core/rotary-thumb.b6c9b36f.webp",
+    photo: "media/exercises/core/rotary.00ee19c0.webp",
+    frames: [
+      "media/exercises/core/rotary-frame1.1a27ecad.webp",
+      "media/exercises/core/rotary-frame2.14e14a36.webp",
+      "media/exercises/core/rotary-frame3.3077ca63.webp",
     ],
   },
   "rotation-thoracique-allongee": {
@@ -525,6 +552,15 @@ export const exerciseMedia = {
       "media/exercises/jambes/squat-frame1.bc7d3363.webp",
       "media/exercises/jambes/squat-frame2.557d6b4e.webp",
       "media/exercises/jambes/squat-frame3.5ee0aa52.webp",
+    ],
+  },
+  "squat-chaise": {
+    thumbnail: "media/exercises/jambes/squat-chaise-thumb.876543a3.webp",
+    photo: "media/exercises/jambes/squat-chaise.a7436172.webp",
+    frames: [
+      "media/exercises/jambes/squat-chaise-frame1.9b6affdf.webp",
+      "media/exercises/jambes/squat-chaise-frame2.a2a438b2.webp",
+      "media/exercises/jambes/squat-chaise-frame3.c4dd0120.webp",
     ],
   },
   "suspension-omoplates": {

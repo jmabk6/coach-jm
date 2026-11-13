@@ -1,6 +1,7 @@
 import type { Exercise, ExerciseBlock, ExerciseInstructions, SessionTemplate, SpeedInclineStepInstruction, TestScheduleEntry, WeeklyProgram, Weekday } from "../../domain";
 import type { V4Template } from "./programV4";
 import { ROUTINE_PROGRESSIONS, ROUTINE_RPE_MAX, type RoutineProgression } from "./programRoutinesV4";
+import { LIBRE_PROGRESSIONS } from "./program20261115";
 
 /**
  * Programme V5 (audit et décisions de JM du 07/11/2026,
@@ -376,7 +377,7 @@ export const ROUTINES_V5_TEMPLATES: readonly TemplateContent[] = [routineDos, ro
 
 /** La progression d'un exercice de routine (V4 ou V5). */
 export function routineProgressionOf(exerciseId: string): RoutineProgression | undefined {
-  return ROUTINE_PROGRESSIONS_V5[exerciseId] ?? ROUTINE_PROGRESSIONS[exerciseId];
+  return ROUTINE_PROGRESSIONS_V5[exerciseId] ?? ROUTINE_PROGRESSIONS[exerciseId] ?? (LIBRE_PROGRESSIONS[exerciseId] as RoutineProgression | undefined);
 }
 
 /**

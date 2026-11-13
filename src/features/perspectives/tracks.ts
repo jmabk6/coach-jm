@@ -36,7 +36,7 @@ import { V6_REFERENCE } from "../goals/tractionV6";
  * (tapis) et les groupes n'en ont pas : ils gardent leur fonctionnement.
  */
 
-export const PERSPECTIVE_TEMPLATES: Readonly<Record<PerspectiveSession, Id>> = { A: "v2-muscu-a", B: "v2-muscu-b", C: "v2-muscu-c" };
+export const PERSPECTIVE_TEMPLATES: Readonly<Record<PerspectiveSession, Id>> = { A: "v2-muscu-a", B: "v2-muscu-b", C: "v2-muscu-c", D: "v2-muscu-d" };
 
 /**
  * Référence par défaut : tout l'historique du programme V2 (04/10/2026).
@@ -94,7 +94,7 @@ export function trackSpecsFrom(
   activeVersions: ReadonlyMap<Id, StrengthFrameVersion>,
 ): TrackSpec[] {
   const specs: TrackSpec[] = [];
-  for (const session of ["A", "B", "C"] as const) {
+  for (const session of ["A", "B", "C", "D"] as const) {
     const template = templates.find((item) => item.id === PERSPECTIVE_TEMPLATES[session]);
     if (!template) continue;
     const blocks = template.blocks.filter((block): block is ExerciseBlock => block.kind === "exercise").sort((a, b) => a.position - b.position);

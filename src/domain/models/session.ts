@@ -28,8 +28,8 @@ export interface SessionTemplate {
 
   blocks: SessionBlock[];
 
-  /** Lettre du programme V1 (A, B, C) ; absente sur un modèle utilisateur. */
-  letter?: "A" | "B" | "C";
+  /** Lettre du programme (A, B, C ; D depuis le programme 4+2) ; absente sur un modèle utilisateur. */
+  letter?: "A" | "B" | "C" | "D";
   /** « Traction force / dos », « Endurance facile ». */
   subtitle?: string;
   /** « Haut du corps · Dos » (M2). */

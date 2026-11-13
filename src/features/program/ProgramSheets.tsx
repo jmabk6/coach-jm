@@ -195,6 +195,8 @@ export function PlannedSessionMenu({
 
 interface FreeWorkoutMenuProps {
   workout: WorkoutSession;
+  /** Nom du modèle lancé hors planning (Souplesse, Abdos…), sinon « Séance libre ». */
+  name?: string | undefined;
   onOpenRecap: (workout: WorkoutSession) => void;
   onDismiss: () => void;
 }
@@ -205,12 +207,13 @@ interface FreeWorkoutMenuProps {
  */
 export function FreeWorkoutMenu({
   workout,
+  name,
   onOpenRecap,
   onDismiss,
 }: FreeWorkoutMenuProps) {
   return (
     <BottomSheet
-      title={formatPlannedSessionTitle("Séance libre", workout.date)}
+      title={formatPlannedSessionTitle(name ?? "Séance libre", workout.date)}
       message="Faite · réalisée hors programme, la règle hebdomadaire n'est pas concernée"
       actions={[
         {

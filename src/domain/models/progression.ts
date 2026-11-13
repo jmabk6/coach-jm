@@ -26,7 +26,8 @@ export interface LoadSteps {
   below?: number[];
 }
 
-export type PerspectiveSession = "A" | "B" | "C";
+/** Séance D : programme 4+2, à partir du 15/11/2026. */
+export type PerspectiveSession = "A" | "B" | "C" | "D";
 
 /** Une série visée : charge (kg, par haltère pour les haltères), répétitions, durée. */
 export interface SetTarget {

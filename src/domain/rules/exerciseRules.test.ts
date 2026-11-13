@@ -58,10 +58,10 @@ describe("règles de classification (v1.5, § 2.1)", () => {
 describe("catalogue officiel — classification validée le 20/09/2026", () => {
   const catalog = exerciseCatalog as readonly Exercise[];
 
-  it("les 43 exercices de musculation (30 + 6 du lot D + 3 du lot K.0 + le leg curl couché du 27/09 + curl poulie et pallof élastique V4 + pont fessier V5) ont un groupe cohérent avec leur zone ; les 25 autres n'ont ni groupe ni famille", () => {
+  it("les 47 exercices de musculation (30 + 6 du lot D + 3 du lot K.0 + le leg curl couché du 27/09 + curl poulie et pallof élastique V4 + pont fessier V5 + abdos machine, rotary, presse à une jambe et squat sur chaise du programme 4+2) ont un groupe cohérent avec leur zone ; les 25 autres n'ont ni groupe ni famille", () => {
     const strength = catalog.filter((e) => e.category === "Musculation");
     const others = catalog.filter((e) => e.category !== "Musculation");
-    expect(strength).toHaveLength(43);
+    expect(strength).toHaveLength(47);
     expect(others).toHaveLength(25);
     /* Lot D : mollets debout n'a pas de groupe — la table n'en prévoit aucun pour les mollets. */
     const withoutGroup = ["mollets-debout"];
