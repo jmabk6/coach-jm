@@ -29,6 +29,7 @@ import {
   MUSCU_D_20261115,
   MUSCU_D_ID,
   muscuDTemplateBase,
+  PROGRAM_4P2_FIRST_DAY,
   PROGRAM_4P2_START,
   RECALCULATED_TRACKS_20261115,
 } from "./program20261115";
@@ -334,16 +335,17 @@ export async function seedCalendrier20261115(now: string = new Date().toISOStrin
     const schedule = (await db.settings.get("testSchedule"))?.value as TestScheduleEntry[] | undefined;
     if (schedule) await db.settings.put({ key: "testSchedule", value: testSchedule20261115(schedule) });
 
-    const sessions = (await db.plannedSessions.where("date").aboveOrEqual(today).toArray()) as PlannedSession[];
-    const ids = plannedToRegenerate20261115(sessions, today);
+    /* Rien avant le dimanche 15/11 : la semaine en cours garde l'ancien programme (Cardio C, routines du 13 et du 14). */
+    const from = today > PROGRAM_4P2_FIRST_DAY ? today : PROGRAM_4P2_FIRST_DAY;
+    const sessions = (await db.plannedSessions.where("date").aboveOrEqual(from).toArray()) as PlannedSession[];
+    const ids = plannedToRegenerate20261115(sessions, from);
     if (ids.length > 0) await db.plannedSessions.bulkDelete(ids);
-    const current = getWeekStartDate(today);
-    weeks = [...new Set([current, ...sessions.map((session) => getWeekStartDate(session.date))])].sort();
+    weeks = [...new Set([getWeekStartDate(from), ...sessions.map((session) => getWeekStartDate(session.date))])].sort();
 
     await db.settings.put({ key: "install", value: { ...install, calendrier20261115: now, routineDosComplete20261122: install?.routineDosComplete20261122 ?? now } });
   });
 
-  /* La semaine en cours à partir d'aujourd'hui (jamais de séance « manquée » dans le passé), puis les semaines déjà générées. */
+  /* À partir du 15/11 : la semaine en cours à partir d'aujourd'hui (jamais de séance « manquée » dans le passé), puis les semaines déjà générées. */
   for (const week of weeks) {
     if (week === getWeekStartDate(today)) await generateProgramWeek(week, now, today);
     else await generateProgramWeek(week, now);

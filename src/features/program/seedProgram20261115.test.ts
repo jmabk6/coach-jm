@@ -9,7 +9,7 @@ import { v6State } from "../goals/tractionV6";
 import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
 import { betBannerFor } from "../workout/betBanner";
 import { generateProgramWeek } from "./generateProgramWeek";
-import { MUSCU_D_ID, PROGRAM_4P2_START } from "./program20261115";
+import { MUSCU_D_ID, PROGRAM_4P2_FIRST_DAY, PROGRAM_4P2_START } from "./program20261115";
 import { seedCalendrierV4 } from "./seedCalendrierV4";
 import { seedProgram20261115Ready, seedProgramMuscu20261115 } from "./seedProgram20261115";
 import { seedProgramMuscuV4 } from "./seedProgramMuscuV4";
@@ -23,8 +23,8 @@ import { seedRoutinesV4 } from "./seedRoutinesV4";
 
 const V4 = "2026-11-02T08:00:00.000Z";
 const V5 = "2026-11-07T22:30:00.000Z";
-const BEFORE = "2026-11-14T20:00:00.000Z";
-const SWITCH = `${PROGRAM_4P2_START}T07:00:00.000Z`;
+const BEFORE = "2026-11-12T20:00:00.000Z";
+const SWITCH = `${PROGRAM_4P2_FIRST_DAY}T07:00:00.000Z`;
 
 const install = async () => (await db.settings.get("install"))?.value as InstallMarkers | undefined;
 const template = async (id: string) => (await db.sessionTemplates.get(id)) as SessionTemplate;
@@ -78,7 +78,7 @@ describe("programme 4+2 — Muscu A, B, C, D (seed 60)", () => {
     expect(await db.sessionTemplates.get(MUSCU_D_ID)).toBeUndefined();
   });
 
-  it("avant le dimanche 15/11 : rien ne change, aucun marqueur", async () => {
+  it("avant le 13/11 : rien ne change, aucun marqueur", async () => {
     const before = await db.sessionTemplates.toArray();
     const tracksBefore = await tracks();
     await seedProgramMuscu20261115(BEFORE);
@@ -158,9 +158,9 @@ describe("programme 4+2 — Muscu A, B, C, D (seed 60)", () => {
     }
     expect((await track("v2-muscu-a-chest-press"))?.closedAt).toBe(SWITCH);
     expect((await track("v2-muscu-b-rowing"))?.closedAt).toBe(SWITCH);
-    expect((await track("v2-muscu-c-ecarte"))?.references.at(-1)).toEqual({ from: PROGRAM_4P2_START, reason: "Programme 4+2 : 3 × 12-15, départ 10 kg puis 7,5 kg." });
+    expect((await track("v2-muscu-c-ecarte"))?.references.at(-1)).toEqual({ from: PROGRAM_4P2_FIRST_DAY, reason: "Programme 4+2 : 3 × 12-15, départ 10 kg puis 7,5 kg." });
     for (const id of ["v2-muscu-a-elevations", "v2-muscu-b-elevations"]) {
-      expect((await track(id))?.references.at(-1)).toEqual({ from: PROGRAM_4P2_START, reason: "Programme 4+2 : 6 kg partout, 3 × 12-15." });
+      expect((await track(id))?.references.at(-1)).toEqual({ from: PROGRAM_4P2_FIRST_DAY, reason: "Programme 4+2 : 6 kg partout, 3 × 12-15." });
       expect((await track(id))?.shareGroup).toBe("shared:elevations-laterales-halteres");
     }
     for (const [id, session, exerciseId] of [

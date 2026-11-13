@@ -9,7 +9,7 @@ import { dayTargetForTrack, loadDayTargetContext, routineDayTarget } from "../pe
 import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
 import { createWorkoutSnapshot } from "../workout/createWorkoutSnapshot";
 import { generateProgramWeek } from "./generateProgramWeek";
-import { ABDOS_ID, ENDURANCE_ID, FRACTIONNE_ID, MUSCU_D_ID, PROGRAM_4P2_START, SOUPLESSE_ID } from "./program20261115";
+import { ABDOS_ID, ENDURANCE_ID, FRACTIONNE_ID, MUSCU_D_ID, PROGRAM_4P2_FIRST_DAY, PROGRAM_4P2_START, SOUPLESSE_ID } from "./program20261115";
 import { seedCalendrierV4 } from "./seedCalendrierV4";
 import { seedCalendrier20261115, seedCardiosLibres20261115, seedProgramMuscu20261115 } from "./seedProgram20261115";
 import { seedProgramMuscuV4 } from "./seedProgramMuscuV4";
@@ -23,8 +23,8 @@ import { seedRoutinesV4 } from "./seedRoutinesV4";
 
 const V4 = "2026-11-02T08:00:00.000Z";
 const V5 = "2026-11-07T22:30:00.000Z";
-const BEFORE = "2026-11-14T20:00:00.000Z";
-const SWITCH = `${PROGRAM_4P2_START}T07:00:00.000Z`;
+const BEFORE = "2026-11-12T20:00:00.000Z";
+const SWITCH = `${PROGRAM_4P2_FIRST_DAY}T07:00:00.000Z`;
 
 const install = async () => (await db.settings.get("install"))?.value as InstallMarkers | undefined;
 const live = async () => ((await db.plannedSessions.toArray()) as PlannedSession[]).filter((session) => !session.removedAt);
@@ -63,7 +63,7 @@ describe("programme 4+2 — calendrier du 15/11 (seed 62)", () => {
     await db.delete();
   });
 
-  it("avant le 15/11 : rien ne change, aucun marqueur ; le planning V5 du 14/11 (routine du soir) reste", async () => {
+  it("avant le 13/11 : rien ne change, aucun marqueur ; le planning V5 du 14/11 (routine du soir) reste", async () => {
     const before = await db.plannedSessions.toArray();
     await seedCalendrier20261115(BEFORE);
     expect(await db.plannedSessions.toArray()).toEqual(before);
@@ -71,7 +71,7 @@ describe("programme 4+2 — calendrier du 15/11 (seed 62)", () => {
   });
 
   it("le 15/11 : semaine type A / B / Cardio A / C / D / repos / Cardio B, plus aucune routine du soir ; avant le 15/11, rien ne bouge", async () => {
-    const before14 = (await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_START);
+    const before14 = (await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_FIRST_DAY);
     await switchTo4p2();
     expect((await install())?.calendrier20261115).toBe(SWITCH);
     const program = (await db.weeklyPrograms.toArray())[0] as WeeklyProgram;
@@ -89,8 +89,8 @@ describe("programme 4+2 — calendrier du 15/11 (seed 62)", () => {
     }
     /* Semaine du 29/11 aussi. */
     expect(day(sessions, "2026-12-03").map((session) => session.sessionTemplateId)).toEqual([MUSCU_D_ID]);
-    expect(sessions.filter((session) => session.date >= PROGRAM_4P2_START && session.slot === "evening" && session.date !== "2026-11-23")).toEqual([]);
-    expect((await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_START)).toEqual(before14);
+    expect(sessions.filter((session) => session.date >= PROGRAM_4P2_FIRST_DAY && session.slot === "evening" && session.date !== "2026-11-23")).toEqual([]);
+    expect((await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_FIRST_DAY)).toEqual(before14);
 
     /* Archivés, jamais supprimés. */
     for (const id of ["v2-cardio-c", "v5-routine-dos", "v5-routine-dos-legere"]) expect((await db.sessionTemplates.get(id))?.status, id).toBe("archived");
@@ -213,6 +213,25 @@ describe("programme 4+2 — calendrier du 15/11 (seed 62)", () => {
     expect(pallof.sets).toEqual([{ reps: 11 }, { reps: 11 }, { reps: 11 }]);
   });
 
+  it("activation le vendredi 13/11 au soir : le 13 et le 14 gardent l'ancien programme (Cardio C, routines du soir, pas de Cardio B le samedi 14) ; le nouveau calendrier commence le 15/11", async () => {
+    const tonight = `${PROGRAM_4P2_START}T21:00:00.000Z`;
+    const kept = (await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_FIRST_DAY);
+    await switchTo4p2(tonight);
+    expect((await install())?.programmeMuscu20261115).toBe(tonight);
+    expect((await install())?.calendrier20261115).toBe(tonight);
+    expect((await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_FIRST_DAY)).toEqual(kept);
+    const sessions = await live();
+    expect(day(sessions, "2026-11-13").map((session) => session.sessionTemplateId)).toEqual(["v2-cardio-c"]);
+    expect(evening(sessions, "2026-11-13").map((session) => session.sessionTemplateId)).toEqual(["v5-routine-dos-legere"]);
+    expect(evening(sessions, "2026-11-14").map((session) => session.sessionTemplateId)).toEqual(["v5-routine-dos-legere"]);
+    expect(day(sessions, "2026-11-14")).toEqual([]);
+    expect(day(sessions, "2026-11-15").map((session) => session.sessionTemplateId)).toEqual(["v2-muscu-a"]);
+    expect(day(sessions, "2026-11-19").map((session) => session.sessionTemplateId)).toEqual([MUSCU_D_ID]);
+    expect(sessions.filter((session) => session.date >= PROGRAM_4P2_FIRST_DAY && session.slot === "evening").map((session) => session.date)).toEqual(["2026-11-23"]);
+    /* Les modèles du 13 et du 14 sont archivés mais restent lisibles par leurs séances prévues. */
+    expect((await db.sessionTemplates.get("v2-cardio-c"))?.blocks.length).toBeGreaterThan(0);
+  });
+
   it("une seule fois ; sans Muscu D (modèles modifiés à la main) : le calendrier V5 reste", async () => {
     await switchTo4p2();
     const sessions = await db.plannedSessions.toArray();
@@ -256,13 +275,13 @@ describe("programme 4+2, lot 3 — sauvegarde réelle", () => {
     expect((await runSeeds()).failed).toEqual([]);
     if ((await install())?.calendrierV5 === undefined) return;
     const workouts = await db.workouts.toArray();
-    const before = (await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_START);
+    const before = (await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_FIRST_DAY);
     await switchTo4p2();
     expect(await db.workouts.toArray()).toEqual(workouts);
-    expect((await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_START)).toEqual(before);
+    expect((await db.plannedSessions.toArray()).filter((session) => session.date < PROGRAM_4P2_FIRST_DAY)).toEqual(before);
     const sessions = await live();
     expect(day(sessions, "2026-11-19").map((session) => session.sessionTemplateId)).toEqual([MUSCU_D_ID]);
     expect(day(sessions, "2026-11-28")[0]?.tests?.map((test) => test.protocolId)).toEqual(["protocol-cardio"]);
-    expect(sessions.filter((session) => session.date >= PROGRAM_4P2_START && session.slot === "evening").map((session) => session.date)).toEqual(["2026-11-23"]);
+    expect(sessions.filter((session) => session.date >= PROGRAM_4P2_FIRST_DAY && session.slot === "evening").map((session) => session.date)).toEqual(["2026-11-23"]);
   });
 });

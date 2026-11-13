@@ -21,12 +21,19 @@ import { V6_LIGHT_IN_C_FROM } from "../goals/tractionV6";
  * Rien ne s'applique avant `PROGRAM_4P2_START`.
  */
 
-/** Bascule : dimanche 15/11/2026 (Muscu A). La traction légère passe en C le même jour. */
-export const PROGRAM_4P2_START = V6_LIGHT_IN_C_FROM;
+/**
+ * Activation : dès le vendredi 13/11/2026 (décision de JM : « la mise en
+ * ligne maintenant », la semaine en cours gardant l'ancien programme). Le
+ * calendrier 4+2 commence le dimanche `PROGRAM_4P2_FIRST_DAY` : les séances
+ * du 13 et du 14/11 (Cardio C, routines du soir) restent telles quelles.
+ */
+export const PROGRAM_4P2_START = "2026-11-13";
+/** Premier jour du calendrier 4+2 : dimanche 15/11/2026 (Muscu A). La traction légère passe en C le même jour. */
+export const PROGRAM_4P2_FIRST_DAY = V6_LIGHT_IN_C_FROM;
 
-/** L'heure donnée au seed au lancement ; sous Vitest, figée avant la bascule (les tests du programme passent leur date). */
+/** L'heure donnée au seed au lancement ; sous Vitest, figée avant l'activation (les tests du programme passent leur date). */
 export function seedNow20261115(): string {
-  return import.meta.env.MODE === "test" ? "2026-11-13T12:00:00.000Z" : new Date().toISOString();
+  return import.meta.env.MODE === "test" ? "2026-11-12T12:00:00.000Z" : new Date().toISOString();
 }
 
 export const MUSCU_D_ID = "v2-muscu-d";
@@ -279,7 +286,7 @@ export const RECALCULATED_TRACKS_20261115 = [
  * de B proposerait une transition 6 / 5 / 5 kg, impossible dans la salle
  * sans haltères de 5 kg.
  */
-export const ELEVATIONS_6KG_REFERENCE = { from: PROGRAM_4P2_START, reason: "Programme 4+2 : 6 kg partout, 3 × 12-15." } as const;
+export const ELEVATIONS_6KG_REFERENCE = { from: PROGRAM_4P2_FIRST_DAY, reason: "Programme 4+2 : 6 kg partout, 3 × 12-15." } as const;
 export const ELEVATIONS_6KG_TRACKS = ["v2-muscu-a-elevations", "v2-muscu-b-elevations"] as const;
 
 /**
@@ -287,7 +294,7 @@ export const ELEVATIONS_6KG_TRACKS = ["v2-muscu-a-elevations", "v2-muscu-b-eleva
  * serait lue comme « incomplète » et donnerait 10 kg × 11 / 5 / 12. Nouvelle
  * référence : la 1re séance D suit la note (10 kg, puis 7,5 kg).
  */
-export const ECARTE_REFERENCE = { from: PROGRAM_4P2_START, reason: "Programme 4+2 : 3 × 12-15, départ 10 kg puis 7,5 kg." } as const;
+export const ECARTE_REFERENCE = { from: PROGRAM_4P2_FIRST_DAY, reason: "Programme 4+2 : 3 × 12-15, départ 10 kg puis 7,5 kg." } as const;
 export const ECARTE_TRACK = "v2-muscu-c-ecarte";
 
 /** Cadres qui changent (nouvelle version ; l'ancienne reste consultable). */

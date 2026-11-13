@@ -10,7 +10,7 @@ import { routineDayTarget, type DayTargetContext } from "../perspectives/dayTarg
 import { resumeSeedsForTests, runSeeds } from "../seed/runSeeds";
 import { advisedLoadOf } from "../workout/advisedLoad";
 import { generateProgramWeek } from "./generateProgramWeek";
-import { ABDOS_ID, ENDURANCE_ID, FRACTIONNE_ID, PROGRAM_4P2_START, SOUPLESSE_ID } from "./program20261115";
+import { ABDOS_ID, ENDURANCE_ID, FRACTIONNE_ID, PROGRAM_4P2_FIRST_DAY, PROGRAM_4P2_START, SOUPLESSE_ID } from "./program20261115";
 import { seedCalendrierV4 } from "./seedCalendrierV4";
 import { seedCardiosLibres20261115, seedProgramMuscu20261115 } from "./seedProgram20261115";
 import { seedProgramMuscuV4 } from "./seedProgramMuscuV4";
@@ -25,8 +25,8 @@ import { seedRoutinesV4 } from "./seedRoutinesV4";
 
 const V4 = "2026-11-02T08:00:00.000Z";
 const V5 = "2026-11-07T22:30:00.000Z";
-const BEFORE = "2026-11-14T20:00:00.000Z";
-const SWITCH = `${PROGRAM_4P2_START}T07:00:00.000Z`;
+const BEFORE = "2026-11-12T20:00:00.000Z";
+const SWITCH = `${PROGRAM_4P2_FIRST_DAY}T07:00:00.000Z`;
 
 const install = async () => (await db.settings.get("install"))?.value as InstallMarkers | undefined;
 const template = async (id: string) => (await db.sessionTemplates.get(id)) as SessionTemplate;
@@ -69,7 +69,7 @@ describe("programme 4+2 — cardios, bloc jambes, Souplesse et Abdos (seed 61)",
     await db.delete();
   });
 
-  it("sous Vitest, les seeds du lancement ne le posent pas ; avant le 15/11 : rien, aucun marqueur", async () => {
+  it("sous Vitest, les seeds du lancement ne le posent pas ; avant le 13/11 : rien, aucun marqueur", async () => {
     resumeSeedsForTests();
     expect((await runSeeds()).failed).toEqual([]);
     expect((await install())?.cardiosLibres20261115).toBeUndefined();
